@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'clinicians',
     'xero_integration',
     'sms_integration',
-    'documents',  # S3 document storage
+    'documents',
+    'ai_services',  # S3 document storage
 ]
 
 MIDDLEWARE = [
