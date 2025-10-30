@@ -1,7 +1,7 @@
 'use client';
 
 import { Container, Title, Tabs, rem } from '@mantine/core';
-import { IconBrandXing, IconMessage, IconSettings as IconSettingsIcon, IconBell, IconCloud, IconNote } from '@tabler/icons-react';
+import { IconBrandXing, IconMessage, IconSettings as IconSettingsIcon, IconBell, IconCloud, IconNote, IconFileText } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
 
 // We'll import these as separate components
@@ -9,6 +9,7 @@ import XeroIntegration from '../components/settings/XeroIntegration';
 import SMSIntegration from '../components/settings/SMSIntegration';
 import S3Integration from '../components/settings/S3Integration';
 import NotesTest from '../components/settings/NotesTest';
+import ATReport from '../components/settings/ATReport';
 
 export default function SettingsPage() {
   const iconStyle = { width: rem(16), height: rem(16) };
@@ -51,6 +52,12 @@ export default function SettingsPage() {
               Notes Test
             </Tabs.Tab>
             <Tabs.Tab 
+              value="at-report" 
+              leftSection={<IconFileText style={iconStyle} />}
+            >
+              AT Report
+            </Tabs.Tab>
+            <Tabs.Tab 
               value="notifications" 
               leftSection={<IconBell style={iconStyle} />}
             >
@@ -77,6 +84,10 @@ export default function SettingsPage() {
 
           <Tabs.Panel value="notes" pt="xl">
             <NotesTest />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="at-report" pt="xl">
+            <ATReport />
           </Tabs.Panel>
 
           <Tabs.Panel value="notifications" pt="xl">
