@@ -175,7 +175,7 @@ export default function ATReportPart2({ formData, setFormData }: ATReportPart2Pr
       </Paper>
 
       {/* Participant Goals */}
-      <Paper p="md" withBorder">
+      <Paper p="md" withBorder>
         <Title order={4} size="h5" mb="md">Participant Goals</Title>
         <Stack gap="sm">
           <Textarea
