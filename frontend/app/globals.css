@@ -13,6 +13,36 @@ body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
+/* FullCalendar Light Mode (Default) */
+[data-mantine-color-scheme='light'] {
+  --fc-border-color: #dee2e6;
+  --fc-neutral-bg-color: #ffffff;
+  --fc-neutral-text-color: #212529;
+  --fc-page-bg-color: #ffffff;
+}
+
+[data-mantine-color-scheme='light'] .fc {
+  color: #212529;
+}
+
+[data-mantine-color-scheme='light'] .fc-theme-standard td,
+[data-mantine-color-scheme='light'] .fc-theme-standard th {
+  border-color: #dee2e6;
+  background-color: #ffffff;
+}
+
+[data-mantine-color-scheme='light'] .fc-col-header-cell {
+  background-color: #f8f9fa !important;
+}
+
+[data-mantine-color-scheme='light'] .fc-timegrid-slot {
+  background-color: #ffffff !important;
+}
+
+[data-mantine-color-scheme='light'] .fc-non-business {
+  background-color: #f8f9fa !important;
+}
+
 /* FullCalendar Dark Mode Support */
 [data-mantine-color-scheme='dark'] {
   --fc-border-color: #373A40;

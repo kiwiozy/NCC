@@ -11,7 +11,8 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box } from '@mantine/core';
+import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme } from '@mantine/core';
+import { IconMenu2 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
 // Type definitions
@@ -43,6 +44,8 @@ export default function ClinicCalendar() {
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { colorScheme } = useMantineColorScheme();
 
   // Fetch appointments from backend
   useEffect(() => {
@@ -209,17 +212,23 @@ export default function ClinicCalendar() {
   };
 
   return (
-    <Group align="flex-start" gap="md" style={{ height: '100%' }}>
-      {/* Sidebar with clinic toggles */}
-      <Paper p="md" shadow="sm" style={{ width: 250, height: 'calc(100vh - 180px)' }}>
-        <Title order={3} size="h4" mb="md">Clinics</Title>
-        <Stack gap="sm">
+    <>
+      {/* Drawer for clinic toggles */}
+      <Drawer
+        opened={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Clinics"
+        padding="md"
+        size="sm"
+        position="left"
+      >
+        <Stack gap="md">
           {clinics.map((clinic) => (
             <Group key={clinic.id} gap="xs" wrap="nowrap">
               <Box
                 style={{
-                  width: 16,
-                  height: 16,
+                  width: 20,
+                  height: 20,
                   borderRadius: 4,
                   backgroundColor: clinic.color,
                   flexShrink: 0
@@ -230,18 +239,28 @@ export default function ClinicCalendar() {
                 onChange={() => toggleClinic(clinic.id)}
                 label={clinic.title}
                 styles={{
-                  label: { fontSize: '0.9rem', cursor: 'pointer' }
+                  label: { fontSize: '1rem', cursor: 'pointer' }
                 }}
               />
             </Group>
           ))}
         </Stack>
-      </Paper>
+      </Drawer>
 
       {/* Main Calendar */}
-      <Paper p="md" shadow="sm" style={{ flex: 1, height: 'calc(100vh - 180px)' }}>
+      <Paper p="md" shadow="sm" style={{ height: 'calc(100vh - 100px)' }}>
         <Group justify="space-between" mb="md">
-          <Title order={2}>Clinic Schedule</Title>
+          <Group>
+            <ActionIcon
+              size="lg"
+              variant="default"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open clinic filter"
+            >
+              <IconMenu2 size={20} />
+            </ActionIcon>
+            <Title order={2}>Clinic Schedule</Title>
+          </Group>
           <Group>
             <Button variant="light" onClick={fetchAppointments}>
               Refresh
@@ -249,15 +268,7 @@ export default function ClinicCalendar() {
           </Group>
         </Group>
 
-        <Group mb="md">
-          <Badge color="blue">Scheduled</Badge>
-          <Badge color="green">Checked In</Badge>
-          <Badge color="purple">Completed</Badge>
-          <Badge color="red">Cancelled</Badge>
-          <Badge color="orange">No Show</Badge>
-        </Group>
-
-        <div style={{ height: 'calc(100vh - 350px)' }}>
+        <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
@@ -291,7 +302,7 @@ export default function ClinicCalendar() {
           />
         </div>
       </Paper>
-    </Group>
+    </>
   );
 }
 
