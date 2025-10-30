@@ -1,12 +1,13 @@
 'use client';
 
 import { Container, Title, Tabs, rem } from '@mantine/core';
-import { IconBrandXing, IconMessage, IconSettings as IconSettingsIcon, IconBell } from '@tabler/icons-react';
+import { IconBrandXing, IconMessage, IconSettings as IconSettingsIcon, IconBell, IconCloud } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
 
 // We'll import these as separate components
 import XeroIntegration from '../components/settings/XeroIntegration';
 import SMSIntegration from '../components/settings/SMSIntegration';
+import S3Integration from '../components/settings/S3Integration';
 
 export default function SettingsPage() {
   const iconStyle = { width: rem(16), height: rem(16) };
@@ -37,6 +38,12 @@ export default function SettingsPage() {
               SMS
             </Tabs.Tab>
             <Tabs.Tab 
+              value="s3" 
+              leftSection={<IconCloud style={iconStyle} />}
+            >
+              S3 Storage
+            </Tabs.Tab>
+            <Tabs.Tab 
               value="notifications" 
               leftSection={<IconBell style={iconStyle} />}
             >
@@ -55,6 +62,10 @@ export default function SettingsPage() {
 
           <Tabs.Panel value="sms" pt="xl">
             <SMSIntegration />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="s3" pt="xl">
+            <S3Integration />
           </Tabs.Panel>
 
           <Tabs.Panel value="notifications" pt="xl">

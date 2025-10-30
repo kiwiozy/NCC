@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper } from '@mantine/core';
+import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon } from '@mantine/core';
 import { 
   IconLayoutDashboard, 
   IconUsers, 
@@ -16,7 +16,8 @@ import {
   IconDisabled,
   IconHandStop,
   IconBuilding,
-  IconBuildingHospital
+  IconBuildingHospital,
+  IconArrowLeft
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -170,6 +171,17 @@ export default function Navigation({ children }: NavigationProps) {
         }}
       >
         <Group h="100%" px="lg" justify="space-between" wrap="nowrap">
+          {/* Left: Back Button */}
+          <ActionIcon
+            variant="default"
+            size="lg"
+            onClick={() => router.back()}
+            title="Back"
+            style={{ minWidth: rem(36) }}
+          >
+            <IconArrowLeft size={20} stroke={1.5} />
+          </ActionIcon>
+
           {/* Navigation Items - Centered */}
           <Group gap="xs" style={{ flex: 1, justifyContent: 'center' }}>
             {navItems.map((item) => (
@@ -290,6 +302,7 @@ export default function Navigation({ children }: NavigationProps) {
       <AppShell.Main
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
+          padding: 0,
         }}
       >
         {children}

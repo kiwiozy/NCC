@@ -54,10 +54,11 @@ export default function SMSIntegration() {
       const response = await fetch('https://localhost:8000/api/sms/templates/');
       if (response.ok) {
         const data = await response.json();
-        setTemplates(data);
+        setTemplates(data.results || data || []);
       }
     } catch (error) {
       console.error('Error fetching templates:', error);
+      setTemplates([]);
     }
   };
 
@@ -228,7 +229,7 @@ export default function SMSIntegration() {
               <Select
                 label="Template (Optional)"
                 placeholder="Choose a template"
-                data={templates.map(t => ({ value: t.id, label: t.name }))}
+                data={(templates || []).map(t => ({ value: t.id, label: t.name }))}
                 value={selectedTemplate}
                 onChange={handleTemplateSelect}
                 clearable

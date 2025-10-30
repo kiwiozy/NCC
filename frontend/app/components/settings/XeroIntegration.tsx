@@ -226,12 +226,10 @@ export default function XeroIntegration() {
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Token Expires:</Text>
-              <Text size="sm">
-                {new Date(status.connection?.expires_at || '').toLocaleString()}
-                {status.connection?.is_token_expired && (
-                  <Badge color="red" size="sm" ml="xs">Expired</Badge>
-                )}
-              </Text>
+              <Text size="sm">{new Date(status.connection?.expires_at || '').toLocaleString()}</Text>
+              {status.connection?.is_token_expired && (
+                <Badge color="red" size="sm">Expired</Badge>
+              )}
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Last Refresh:</Text>
