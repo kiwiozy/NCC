@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* FullCalendar Dark Mode Support */
+[data-mantine-color-scheme='dark'] {
+  --fc-border-color: #373A40;
+  --fc-neutral-bg-color: #1A1B1E;
+  --fc-neutral-text-color: #C1C2C5;
+  --fc-page-bg-color: #1A1B1E;
+}
+
+[data-mantine-color-scheme='dark'] .fc {
+  color: #C1C2C5;
+}
+
+[data-mantine-color-scheme='dark'] .fc-theme-standard td,
+[data-mantine-color-scheme='dark'] .fc-theme-standard th {
+  border-color: #373A40;
+  background-color: #1A1B1E;
+}
+
+[data-mantine-color-scheme='dark'] .fc-scrollgrid {
+  border-color: #373A40;
+}
+
+[data-mantine-color-scheme='dark'] .fc-col-header-cell {
+  background-color: #25262b !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-timegrid-slot {
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-timegrid-slot-lane {
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-timegrid-col {
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-timegrid-slot-label {
+  color: #909296;
+  border-color: #373A40;
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-day {
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-scrollgrid-sync-table {
+  background-color: #1A1B1E !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc .fc-button-primary {
+  background-color: #228BE6;
+  border-color: #228BE6;
+}
+
+[data-mantine-color-scheme='dark'] .fc .fc-button-primary:hover {
+  background-color: #1C7ED6;
+  border-color: #1C7ED6;
+}
+
+[data-mantine-color-scheme='dark'] .fc .fc-button-primary:disabled {
+  background-color: #373A40;
+  border-color: #373A40;
+  color: #5c5f66;
+}
+
+[data-mantine-color-scheme='dark'] .fc-daygrid-day-number {
+  color: #C1C2C5;
+}
+
+[data-mantine-color-scheme='dark'] .fc-resource-timeline-divider {
+  background-color: #373A40;
+}
+
+/* Business hours styling for dark mode */
+[data-mantine-color-scheme='dark'] .fc-non-business {
+  background-color: #141517 !important;
+}
+
+[data-mantine-color-scheme='dark'] .fc-timegrid-axis {
+  background-color: #1A1B1E !important;
+}
+

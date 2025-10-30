@@ -1,0 +1,6 @@
+project_id   = "referrer-map"
+region       = "australia-southeast1"
+db_password  = "change_me"
+api_image    = "gcr.io/referrer-map/wep-api:latest"
+web_image    = "gcr.io/referrer-map/wep-web:latest"
+app_domain   = 
