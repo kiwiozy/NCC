@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Container, 
   Paper, 
@@ -14,6 +14,8 @@ import {
   Modal,
   Text,
   LoadingOverlay,
+  Select,
+  NumberInput,
 } from '@mantine/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -21,6 +23,16 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import FontFamily from '@tiptap/extension-font-family';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import { 
   IconBold, 
   IconItalic, 
@@ -29,6 +41,7 @@ import {
   IconAlignLeft,
   IconAlignCenter,
   IconAlignRight,
+  IconAlignJustified,
   IconList,
   IconListNumbers,
   IconH1,
@@ -37,6 +50,18 @@ import {
   IconMail,
   IconFileTypePdf,
   IconTrash,
+  IconLink,
+  IconUnlink,
+  IconPhoto,
+  IconTable,
+  IconHighlight,
+  IconClearFormatting,
+  IconSubscript,
+  IconSuperscript,
+  IconQuote,
+  IconSeparator,
+  IconCode,
+  IconCodeDots,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -54,9 +79,31 @@ export default function LetterComposer() {
       Underline,
       TextStyle,
       Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      FontFamily,
+      Subscript,
+      Superscript,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline',
+        },
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: `
       <p><br></p>
@@ -84,135 +131,271 @@ export default function LetterComposer() {
       return null;
     }
 
+    const addLink = () => {
+      const url = prompt('Enter URL');
+      if (url) {
+        editor.chain().focus().setLink({ href: url }).run();
+      }
+    };
+
+    const addImage = () => {
+      const url = prompt('Enter image URL');
+      if (url) {
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+    };
+
     return (
-      <Group gap="xs" p="sm" style={{ borderBottom: '1px solid #dee2e6', flexWrap: 'wrap' }}>
-        {/* Text Formatting */}
-        <Button
-          size="sm"
-          variant={editor.isActive('bold') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          title="Bold (Ctrl+B)"
-        >
-          <IconBold size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('italic') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          title="Italic (Ctrl+I)"
-        >
-          <IconItalic size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('underline') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          title="Underline (Ctrl+U)"
-        >
-          <IconUnderlineIcon size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('strike') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          title="Strikethrough"
-        >
-          <IconStrikethrough size={16} />
-        </Button>
+      <Stack gap="xs" p="sm" style={{ borderBottom: '1px solid #dee2e6' }}>
+        {/* Row 1: Text Formatting */}
+        <Group gap="xs" wrap="nowrap">
+          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Format:</Text>
+          <Button
+            size="sm"
+            variant={editor.isActive('bold') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            title="Bold (Ctrl+B)"
+          >
+            <IconBold size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('italic') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            title="Italic (Ctrl+I)"
+          >
+            <IconItalic size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('underline') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            title="Underline (Ctrl+U)"
+          >
+            <IconUnderlineIcon size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('strike') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            title="Strikethrough"
+          >
+            <IconStrikethrough size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('subscript') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleSubscript().run()}
+            title="Subscript"
+          >
+            <IconSubscript size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('superscript') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleSuperscript().run()}
+            title="Superscript"
+          >
+            <IconSuperscript size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('highlight') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
+            title="Highlight"
+          >
+            <IconHighlight size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => editor.chain().focus().unsetAllMarks().run()}
+            title="Clear Formatting"
+          >
+            <IconClearFormatting size={16} />
+          </Button>
+        </Group>
 
-        <Divider orientation="vertical" />
+        {/* Row 2: Headings & Styles */}
+        <Group gap="xs" wrap="nowrap">
+          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Style:</Text>
+          <Button
+            size="sm"
+            variant={editor.isActive('heading', { level: 1 }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            title="Heading 1"
+          >
+            <IconH1 size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('heading', { level: 2 }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            title="Heading 2"
+          >
+            <IconH2 size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('heading', { level: 3 }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            title="Heading 3"
+          >
+            <IconH3 size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('blockquote') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            title="Blockquote"
+          >
+            <IconQuote size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('code') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleCode().run()}
+            title="Inline Code"
+          >
+            <IconCode size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('codeBlock') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            title="Code Block"
+          >
+            <IconCodeDots size={16} />
+          </Button>
+        </Group>
 
-        {/* Headings */}
-        <Button
-          size="sm"
-          variant={editor.isActive('heading', { level: 1 }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          title="Heading 1"
-        >
-          <IconH1 size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('heading', { level: 2 }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          title="Heading 2"
-        >
-          <IconH2 size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('heading', { level: 3 }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          title="Heading 3"
-        >
-          <IconH3 size={16} />
-        </Button>
+        {/* Row 3: Alignment & Lists */}
+        <Group gap="xs" wrap="nowrap">
+          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Align:</Text>
+          <Button
+            size="sm"
+            variant={editor.isActive({ textAlign: 'left' }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+            title="Align Left"
+          >
+            <IconAlignLeft size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive({ textAlign: 'center' }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+            title="Align Center"
+          >
+            <IconAlignCenter size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive({ textAlign: 'right' }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+            title="Align Right"
+          >
+            <IconAlignRight size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive({ textAlign: 'justify' }) ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+            title="Justify"
+          >
+            <IconAlignJustified size={16} />
+          </Button>
+          <Divider orientation="vertical" />
+          <Button
+            size="sm"
+            variant={editor.isActive('bulletList') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            title="Bullet List"
+          >
+            <IconList size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant={editor.isActive('orderedList') ? 'filled' : 'default'}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            title="Numbered List"
+          >
+            <IconListNumbers size={16} />
+          </Button>
+        </Group>
 
-        <Divider orientation="vertical" />
-
-        {/* Alignment */}
-        <Button
-          size="sm"
-          variant={editor.isActive({ textAlign: 'left' }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          title="Align Left"
-        >
-          <IconAlignLeft size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive({ textAlign: 'center' }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          title="Align Center"
-        >
-          <IconAlignCenter size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive({ textAlign: 'right' }) ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          title="Align Right"
-        >
-          <IconAlignRight size={16} />
-        </Button>
-
-        <Divider orientation="vertical" />
-
-        {/* Lists */}
-        <Button
-          size="sm"
-          variant={editor.isActive('bulletList') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          title="Bullet List"
-        >
-          <IconList size={16} />
-        </Button>
-        <Button
-          size="sm"
-          variant={editor.isActive('orderedList') ? 'filled' : 'default'}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          title="Numbered List"
-        >
-          <IconListNumbers size={16} />
-        </Button>
-
-        <Divider orientation="vertical" />
-
-        {/* Text Color */}
-        <input
-          type="color"
-          onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
-          value={editor.getAttributes('textStyle').color || '#000000'}
-          style={{
-            width: '40px',
-            height: '32px',
-            border: '1px solid #dee2e6',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-          title="Text Color"
-        />
-      </Group>
+        {/* Row 4: Insert & Colors */}
+        <Group gap="xs" wrap="nowrap">
+          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Insert:</Text>
+          <Button
+            size="sm"
+            variant={editor.isActive('link') ? 'filled' : 'default'}
+            onClick={addLink}
+            title="Add Link"
+          >
+            <IconLink size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => editor.chain().focus().unsetLink().run()}
+            disabled={!editor.isActive('link')}
+            title="Remove Link"
+          >
+            <IconUnlink size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={addImage}
+            title="Add Image"
+          >
+            <IconPhoto size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            title="Insert Table"
+          >
+            <IconTable size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            title="Horizontal Line"
+          >
+            <IconSeparator size={16} />
+          </Button>
+          <Divider orientation="vertical" />
+          <input
+            type="color"
+            onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
+            value={editor.getAttributes('textStyle').color || '#000000'}
+            style={{
+              width: '40px',
+              height: '32px',
+              border: '1px solid #dee2e6',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+            title="Text Color"
+          />
+          <input
+            type="color"
+            onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()}
+            value="#ffff00"
+            style={{
+              width: '40px',
+              height: '32px',
+              border: '1px solid #dee2e6',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+            title="Highlight Color"
+          />
+        </Group>
+      </Stack>
     );
   };
 
@@ -377,7 +560,68 @@ export default function LetterComposer() {
             fontFamily: 'Georgia, serif',
             fontSize: '14px',
             lineHeight: '1.6',
+            color: '#000',
           }}>
+            <style dangerouslySetInnerHTML={{__html: `
+              .ProseMirror table {
+                border-collapse: collapse;
+                margin: 1em 0;
+                width: 100%;
+              }
+              .ProseMirror table td,
+              .ProseMirror table th {
+                border: 1px solid #ddd;
+                padding: 8px;
+                min-width: 50px;
+              }
+              .ProseMirror table th {
+                background-color: #f5f5f5;
+                font-weight: bold;
+                text-align: left;
+              }
+              .ProseMirror a {
+                color: #1c7ed6;
+                text-decoration: underline;
+                cursor: pointer;
+              }
+              .ProseMirror mark {
+                background-color: #ffeb3b;
+                padding: 0.1em 0.2em;
+              }
+              .ProseMirror blockquote {
+                border-left: 3px solid #ddd;
+                padding-left: 1em;
+                margin-left: 0;
+                font-style: italic;
+                color: #666;
+              }
+              .ProseMirror code {
+                background-color: #f5f5f5;
+                padding: 0.2em 0.4em;
+                border-radius: 3px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9em;
+              }
+              .ProseMirror pre {
+                background-color: #f5f5f5;
+                padding: 1em;
+                border-radius: 5px;
+                overflow-x: auto;
+              }
+              .ProseMirror pre code {
+                background: none;
+                padding: 0;
+              }
+              .ProseMirror img {
+                max-width: 100%;
+                height: auto;
+              }
+              .ProseMirror hr {
+                border: none;
+                border-top: 2px solid #ddd;
+                margin: 2em 0;
+              }
+            `}} />
             <EditorContent editor={editor} />
           </div>
         </Paper>
