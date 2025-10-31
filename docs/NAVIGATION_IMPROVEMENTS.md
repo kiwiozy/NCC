@@ -1,19 +1,19 @@
 # 🧭 Navigation Improvements - Settings Submenu
 
 **Date:** October 31, 2025  
-**Version:** 2.0.0
+**Version:** 2.1.0
 
 ---
 
 ## 🎯 Overview
 
-Enhanced the main navigation system to include a **Settings submenu** with dropdown functionality, matching the existing Contacts submenu behavior. This provides quick access to all settings pages directly from the main navigation bar.
+Enhanced the main navigation system to include a **Settings submenu** with dropdown functionality, matching the existing Contacts submenu behavior. This provides quick access to all settings pages directly from the main navigation bar. Also simplified the Settings page header to show only the active tab name.
 
 ---
 
 ## ✨ What's New
 
-### **Settings Submenu**
+### **Settings Submenu (Main Navigation)**
 - **Hover over Settings icon** → Dropdown submenu appears
 - **8 Settings Options** accessible from the dropdown:
   1. **General** - General settings
@@ -24,6 +24,11 @@ Enhanced the main navigation system to include a **Settings submenu** with dropd
   6. **Notes Test** - Clinical notes testing
   7. **AT Report** - NDIS AT Report generator
   8. **Notifications** - System notifications
+
+### **Simplified Settings Header**
+- **Single header row** showing active tab name (e.g., "Gmail", "AT Report")
+- **Removed hamburger menu** - navigation via main Settings submenu
+- **Clean, focused design** - no redundant navigation elements
 
 ### **Navigation Behavior**
 - ✅ **Hover to Open** - Submenu appears when hovering over Settings icon
@@ -37,17 +42,34 @@ Enhanced the main navigation system to include a **Settings submenu** with dropd
 ## 🛠️ Technical Implementation
 
 ### **Files Modified**
-- `frontend/app/components/Navigation.tsx` - Main navigation component
+- `frontend/app/components/Navigation.tsx` - Main navigation component with Settings submenu
+- `frontend/app/components/SettingsHeader.tsx` - Simplified settings page header
 
 ### **Key Changes**
 
-#### **1. Added Settings State Management**
+#### **1. Settings Header Component (SettingsHeader.tsx)**
 ```typescript
-const [showContactsMenu, setShowContactsMenu] = useState(false);
-const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+// Simplified to single header row showing active tab name
+const activeMenuItem = menuItems.find(item => item.value === activeTab);
+
+return (
+  <Box>
+    <Group justify="center">
+      <Title order={2}>
+        {activeMenuItem?.label || 'General'}
+      </Title>
+    </Group>
+  </Box>
+);
 ```
 
-#### **2. Settings Submenu Items**
+**Changes:**
+- ✅ Removed second row with icon + label
+- ✅ Removed hamburger menu
+- ✅ Header now dynamically shows active tab name
+- ✅ Clean, single-row design
+
+#### **2. Navigation Settings Submenu (Navigation.tsx)**
 ```typescript
 const settingsSubItems = [
   { icon: <IconSettings />, label: 'General', href: '/settings?tab=general' },
@@ -128,16 +150,18 @@ const navItems = [
 ## 📊 Benefits
 
 ### **User Experience**
-- ✅ **Faster Navigation** - Access any settings page in 2 clicks/hovers
-- ✅ **Discoverability** - All settings options visible at a glance
+- ✅ **Faster Navigation** - Access any settings page in 1 hover + 1 click
+- ✅ **Discoverability** - All settings options visible at a glance in submenu
 - ✅ **Consistency** - Same pattern as Contacts submenu
 - ✅ **Intuitive** - Natural hover behavior users expect
+- ✅ **Clean Interface** - Simplified header without redundant elements
 
 ### **Developer Experience**
 - ✅ **Maintainable** - Easy to add new settings pages
 - ✅ **Reusable Pattern** - Can apply to other navigation items
 - ✅ **Type Safe** - Full TypeScript support
 - ✅ **Clean Code** - Well-organized and documented
+- ✅ **Simplified Components** - Removed unnecessary UI elements
 
 ---
 
@@ -184,6 +208,7 @@ const settingsSubItems = [
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.0 | Oct 31, 2025 | Simplified Settings header - removed hamburger menu, single row design |
 | 2.0.0 | Oct 31, 2025 | Added Settings submenu with 8 options |
 | 1.1.0 | Oct 31, 2025 | Fixed SVG icon sizes and hover effects |
 | 1.0.0 | (Previous) | Initial Contacts submenu implementation |

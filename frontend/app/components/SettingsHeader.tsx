@@ -35,7 +35,7 @@ export default function SettingsHeader({
 
   return (
     <Box>
-      {/* First Row: Title */}
+      {/* Header: Active Tab Title */}
       <Group
         justify="center"
         wrap="nowrap"
@@ -46,7 +46,7 @@ export default function SettingsHeader({
           margin: 0,
         }}
       >
-        {/* Center: Title */}
+        {/* Center: Active Tab Title */}
         <Title 
           order={2} 
           style={{ 
@@ -55,71 +55,8 @@ export default function SettingsHeader({
             fontWeight: 500,
           }}
         >
-          {title}
+          {activeMenuItem?.label || 'General'}
         </Title>
-      </Group>
-
-      {/* Second Row: Active Tab and Hamburger Menu */}
-      <Group
-        justify="space-between"
-        wrap="nowrap"
-        style={{
-          backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
-          padding: `${rem(12)} ${rem(24)}`,
-          borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-        }}
-      >
-        {/* Left: Active Tab Display */}
-        <Group gap="xs">
-          {activeMenuItem?.icon}
-          <Text size="sm" fw={500}>
-            {activeMenuItem?.label || 'General'}
-          </Text>
-        </Group>
-
-        {/* Right: Hamburger Menu */}
-        <Popover
-          opened={menuOpened}
-          onChange={setMenuOpened}
-          position="bottom-end"
-          shadow="md"
-          width={250}
-        >
-          <Popover.Target>
-            <ActionIcon
-              variant="default"
-              size="lg"
-              onClick={() => setMenuOpened((o) => !o)}
-              title="Settings Menu"
-            >
-              <IconMenu2 size={20} stroke={1.5} />
-            </ActionIcon>
-          </Popover.Target>
-          <Popover.Dropdown p={0}>
-            <Stack gap={0}>
-              {menuItems.map((item, index) => (
-                <Button
-                  key={index}
-                  variant={activeTab === item.value ? 'light' : 'subtle'}
-                  color="blue"
-                  leftSection={item.icon}
-                  onClick={() => {
-                    router.push(`/settings?tab=${item.value}`);
-                    setMenuOpened(false);
-                  }}
-                  style={{
-                    justifyContent: 'flex-start',
-                    height: rem(42),
-                    borderRadius: 0,
-                    borderBottom: index < menuItems.length - 1 ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : 'none',
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Stack>
-          </Popover.Dropdown>
-        </Popover>
       </Group>
     </Box>
   );
