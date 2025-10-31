@@ -184,6 +184,8 @@ export default function LetterComposer() {
       return null;
     }
 
+    const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
     const addLink = () => {
       const url = prompt('Enter URL');
       if (url) {
@@ -199,333 +201,235 @@ export default function LetterComposer() {
     };
 
     return (
-      <Stack gap="xs" p="sm" style={{ borderBottom: '1px solid #dee2e6' }}>
-        {/* Row 1: Text Formatting */}
-        <Group gap="xs" wrap="nowrap">
-          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Format:</Text>
+      <Group gap="xs" p="sm" style={{ borderBottom: '1px solid #dee2e6' }}>
+        {/* Format Section */}
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setExpandedSection('format')}
+          onMouseLeave={() => setExpandedSection(null)}
+        >
           <Button
             size="sm"
-            variant={editor.isActive('bold') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            title="Bold (Ctrl+B)"
+            variant="light"
+            leftSection={<IconBold size={16} />}
+            style={{ minWidth: '90px' }}
           >
-            <IconBold size={16} />
+            Format
           </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('italic') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            title="Italic (Ctrl+I)"
-          >
-            <IconItalic size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('underline') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            title="Underline (Ctrl+U)"
-          >
-            <IconUnderlineIcon size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('strike') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            title="Strikethrough"
-          >
-            <IconStrikethrough size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('subscript') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleSubscript().run()}
-            title="Subscript"
-          >
-            <IconSubscript size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('superscript') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleSuperscript().run()}
-            title="Superscript"
-          >
-            <IconSuperscript size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('highlight') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
-            title="Highlight"
-          >
-            <IconHighlight size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={() => editor.chain().focus().unsetAllMarks().run()}
-            title="Clear Formatting"
-          >
-            <IconClearFormatting size={16} />
-          </Button>
-        </Group>
+          {expandedSection === 'format' && (
+            <Paper
+              shadow="md"
+              p="xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                zIndex: 1000,
+                minWidth: '400px',
+              }}
+            >
+              <Group gap="xs">
+                <Button size="sm" variant={editor.isActive('bold') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold"><IconBold size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('italic') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic"><IconItalic size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('underline') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline"><IconUnderlineIcon size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('strike') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strike"><IconStrikethrough size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('subscript') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleSubscript().run()} title="Subscript"><IconSubscript size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('superscript') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleSuperscript().run()} title="Superscript"><IconSuperscript size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('highlight') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight"><IconHighlight size={16} /></Button>
+                <Button size="sm" variant="default" onClick={() => editor.chain().focus().unsetAllMarks().run()} title="Clear"><IconClearFormatting size={16} /></Button>
+              </Group>
+            </Paper>
+          )}
+        </div>
 
-        {/* Row 2: Font Family & Size */}
-        <Group gap="xs" wrap="nowrap">
-          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Font:</Text>
-          <Select
-            size="xs"
-            placeholder="Font Family"
-            value={editor.getAttributes('textStyle').fontFamily || ''}
-            onChange={(value) => {
-              if (value) {
-                editor.chain().focus().setFontFamily(value).run();
-              } else {
-                editor.chain().focus().unsetFontFamily().run();
-              }
-            }}
-            data={[
-              { value: '', label: 'Default (Georgia)' },
-              { value: 'Arial', label: 'Arial' },
-              { value: 'Helvetica', label: 'Helvetica' },
-              { value: 'Times New Roman', label: 'Times New Roman' },
-              { value: 'Georgia', label: 'Georgia' },
-              { value: 'Courier New', label: 'Courier New' },
-              { value: 'Verdana', label: 'Verdana' },
-              { value: 'Tahoma', label: 'Tahoma' },
-              { value: 'Comic Sans MS', label: 'Comic Sans MS' },
-              { value: 'Impact', label: 'Impact' },
-              { value: 'Trebuchet MS', label: 'Trebuchet MS' },
-              { value: 'Palatino', label: 'Palatino' },
-              { value: 'Garamond', label: 'Garamond' },
-              { value: 'Bookman', label: 'Bookman' },
-              { value: 'Arial Black', label: 'Arial Black' },
-            ]}
-            style={{ width: '180px' }}
-            clearable
-          />
-          <Select
-            size="xs"
-            placeholder="Font Size"
-            value={editor.getAttributes('textStyle').fontSize || ''}
-            onChange={(value) => {
-              if (value) {
-                editor.chain().focus().setFontSize(value).run();
-              } else {
-                editor.chain().focus().unsetFontSize().run();
-              }
-            }}
-            data={[
-              { value: '', label: 'Default (14px)' },
-              { value: '8px', label: '8px (Tiny)' },
-              { value: '10px', label: '10px (Small)' },
-              { value: '12px', label: '12px' },
-              { value: '14px', label: '14px (Normal)' },
-              { value: '16px', label: '16px' },
-              { value: '18px', label: '18px' },
-              { value: '20px', label: '20px (Large)' },
-              { value: '24px', label: '24px' },
-              { value: '28px', label: '28px' },
-              { value: '32px', label: '32px (Huge)' },
-              { value: '36px', label: '36px' },
-              { value: '48px', label: '48px' },
-              { value: '72px', label: '72px' },
-            ]}
-            style={{ width: '160px' }}
-            clearable
-          />
+        {/* Font Section */}
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setExpandedSection('font')}
+          onMouseLeave={() => setExpandedSection(null)}
+        >
           <Button
             size="sm"
-            variant="default"
-            onClick={() => {
-              editor.chain().focus().unsetFontFamily().run();
-              editor.chain().focus().unsetFontSize().run();
-            }}
-            title="Reset Font"
+            variant="light"
+            style={{ minWidth: '80px' }}
           >
-            Reset
+            Font
           </Button>
-        </Group>
+          {expandedSection === 'font' && (
+            <Paper
+              shadow="md"
+              p="xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                zIndex: 1000,
+                minWidth: '400px',
+              }}
+            >
+              <Group gap="xs">
+                <Select
+                  size="xs"
+                  placeholder="Font Family"
+                  value={editor.getAttributes('textStyle').fontFamily || ''}
+                  onChange={(value) => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
+                  data={[
+                    { value: '', label: 'Default (Georgia)' },
+                    { value: 'Arial', label: 'Arial' },
+                    { value: 'Helvetica', label: 'Helvetica' },
+                    { value: 'Times New Roman', label: 'Times New Roman' },
+                    { value: 'Georgia', label: 'Georgia' },
+                    { value: 'Courier New', label: 'Courier New' },
+                    { value: 'Verdana', label: 'Verdana' },
+                  ]}
+                  style={{ width: '180px' }}
+                  clearable
+                />
+                <Select
+                  size="xs"
+                  placeholder="Size"
+                  value={editor.getAttributes('textStyle').fontSize || ''}
+                  onChange={(value) => value ? editor.chain().focus().setFontSize(value).run() : editor.chain().focus().unsetFontSize().run()}
+                  data={[
+                    { value: '', label: 'Default' },
+                    { value: '10px', label: '10px' },
+                    { value: '12px', label: '12px' },
+                    { value: '14px', label: '14px' },
+                    { value: '16px', label: '16px' },
+                    { value: '18px', label: '18px' },
+                    { value: '20px', label: '20px' },
+                    { value: '24px', label: '24px' },
+                  ]}
+                  style={{ width: '120px' }}
+                  clearable
+                />
+              </Group>
+            </Paper>
+          )}
+        </div>
 
-        {/* Row 3: Headings & Styles */}
-        <Group gap="xs" wrap="nowrap">
-          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Style:</Text>
+        {/* Style Section */}
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setExpandedSection('style')}
+          onMouseLeave={() => setExpandedSection(null)}
+        >
           <Button
             size="sm"
-            variant={editor.isActive('heading', { level: 1 }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            title="Heading 1"
+            variant="light"
+            leftSection={<IconH1 size={16} />}
+            style={{ minWidth: '80px' }}
           >
-            <IconH1 size={16} />
+            Style
           </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('heading', { level: 2 }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            title="Heading 2"
-          >
-            <IconH2 size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('heading', { level: 3 }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            title="Heading 3"
-          >
-            <IconH3 size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('blockquote') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            title="Blockquote"
-          >
-            <IconQuote size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('code') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            title="Inline Code"
-          >
-            <IconCode size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('codeBlock') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            title="Code Block"
-          >
-            <IconCodeDots size={16} />
-          </Button>
-        </Group>
+          {expandedSection === 'style' && (
+            <Paper
+              shadow="md"
+              p="xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                zIndex: 1000,
+                minWidth: '350px',
+              }}
+            >
+              <Group gap="xs">
+                <Button size="sm" variant={editor.isActive('heading', { level: 1 }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="H1"><IconH1 size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('heading', { level: 2 }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="H2"><IconH2 size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('heading', { level: 3 }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="H3"><IconH3 size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('blockquote') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote"><IconQuote size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('code') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleCode().run()} title="Code"><IconCode size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('codeBlock') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block"><IconCodeDots size={16} /></Button>
+              </Group>
+            </Paper>
+          )}
+        </div>
 
-        {/* Row 4: Alignment & Lists */}
-        <Group gap="xs" wrap="nowrap">
-          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Align:</Text>
+        {/* Align Section */}
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setExpandedSection('align')}
+          onMouseLeave={() => setExpandedSection(null)}
+        >
           <Button
             size="sm"
-            variant={editor.isActive({ textAlign: 'left' }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            title="Align Left"
+            variant="light"
+            leftSection={<IconAlignLeft size={16} />}
+            style={{ minWidth: '80px' }}
           >
-            <IconAlignLeft size={16} />
+            Align
           </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive({ textAlign: 'center' }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            title="Align Center"
-          >
-            <IconAlignCenter size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive({ textAlign: 'right' }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            title="Align Right"
-          >
-            <IconAlignRight size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive({ textAlign: 'justify' }) ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-            title="Justify"
-          >
-            <IconAlignJustified size={16} />
-          </Button>
-          <Divider orientation="vertical" />
-          <Button
-            size="sm"
-            variant={editor.isActive('bulletList') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            title="Bullet List"
-          >
-            <IconList size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant={editor.isActive('orderedList') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            title="Numbered List"
-          >
-            <IconListNumbers size={16} />
-          </Button>
-        </Group>
+          {expandedSection === 'align' && (
+            <Paper
+              shadow="md"
+              p="xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                zIndex: 1000,
+                minWidth: '350px',
+              }}
+            >
+              <Group gap="xs">
+                <Button size="sm" variant={editor.isActive({ textAlign: 'left' }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Left"><IconAlignLeft size={16} /></Button>
+                <Button size="sm" variant={editor.isActive({ textAlign: 'center' }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Center"><IconAlignCenter size={16} /></Button>
+                <Button size="sm" variant={editor.isActive({ textAlign: 'right' }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Right"><IconAlignRight size={16} /></Button>
+                <Button size="sm" variant={editor.isActive({ textAlign: 'justify' }) ? 'filled' : 'default'} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justify"><IconAlignJustified size={16} /></Button>
+                <Divider orientation="vertical" />
+                <Button size="sm" variant={editor.isActive('bulletList') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullets"><IconList size={16} /></Button>
+                <Button size="sm" variant={editor.isActive('orderedList') ? 'filled' : 'default'} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbers"><IconListNumbers size={16} /></Button>
+              </Group>
+            </Paper>
+          )}
+        </div>
 
-        {/* Row 5: Insert & Colors */}
-        <Group gap="xs" wrap="nowrap">
-          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Insert:</Text>
+        {/* Insert Section */}
+        <div
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setExpandedSection('insert')}
+          onMouseLeave={() => setExpandedSection(null)}
+        >
           <Button
             size="sm"
-            variant={editor.isActive('link') ? 'filled' : 'default'}
-            onClick={addLink}
-            title="Add Link"
+            variant="light"
+            leftSection={<IconLink size={16} />}
+            style={{ minWidth: '80px' }}
           >
-            <IconLink size={16} />
+            Insert
           </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={() => editor.chain().focus().unsetLink().run()}
-            disabled={!editor.isActive('link')}
-            title="Remove Link"
-          >
-            <IconUnlink size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={addImage}
-            title="Add Image"
-          >
-            <IconPhoto size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-            title="Insert Table"
-          >
-            <IconTable size={16} />
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            title="Horizontal Line"
-          >
-            <IconSeparator size={16} />
-          </Button>
-          <Divider orientation="vertical" />
-          <input
-            type="color"
-            onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
-            value={editor.getAttributes('textStyle').color || '#000000'}
-            style={{
-              width: '40px',
-              height: '32px',
-              border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-            title="Text Color"
-          />
-          <input
-            type="color"
-            onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()}
-            value="#ffff00"
-            style={{
-              width: '40px',
-              height: '32px',
-              border: '1px solid #dee2e6',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-            title="Highlight Color"
-          />
-        </Group>
-      </Stack>
+          {expandedSection === 'insert' && (
+            <Paper
+              shadow="md"
+              p="xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                zIndex: 1000,
+                minWidth: '400px',
+              }}
+            >
+              <Group gap="xs">
+                <Button size="sm" variant={editor.isActive('link') ? 'filled' : 'default'} onClick={addLink} title="Link"><IconLink size={16} /></Button>
+                <Button size="sm" variant="default" onClick={() => editor.chain().focus().unsetLink().run()} disabled={!editor.isActive('link')} title="Unlink"><IconUnlink size={16} /></Button>
+                <Button size="sm" variant="default" onClick={addImage} title="Image"><IconPhoto size={16} /></Button>
+                <Button size="sm" variant="default" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Table"><IconTable size={16} /></Button>
+                <Button size="sm" variant="default" onClick={() => editor.chain().focus().setHorizontalRule().run()} title="HR"><IconSeparator size={16} /></Button>
+                <Divider orientation="vertical" />
+                <input type="color" onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes('textStyle').color || '#000000'} style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Text Color" />
+                <input type="color" onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()} value="#ffff00" style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Highlight" />
+              </Group>
+            </Paper>
+          )}
+        </div>
+      </Group>
     );
   };
 
