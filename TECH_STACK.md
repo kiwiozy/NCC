@@ -136,6 +136,7 @@
 ✅ Multi-step AT Report form with PDF generation  
 ✅ Gmail OAuth2 with multi-account support  
 ✅ Professional email signatures  
+✅ Letter Composer with WYSIWYG editor  
 ✅ AI-powered clinical note enhancement  
 ✅ NDIS-branded PDF reports  
 ✅ Xero invoicing automation  

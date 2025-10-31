@@ -23,7 +23,8 @@ import {
   IconMessage,
   IconCloud,
   IconNote,
-  IconBell
+  IconBell,
+  IconPencil
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -150,6 +151,7 @@ export default function Navigation({ children }: NavigationProps) {
   const settingsSubItems = [
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'General', href: '/settings?tab=general' },
     { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Gmail', href: '/settings?tab=gmail' },
+    { icon: <IconPencil size={subIconSize} stroke={1.5} />, label: 'Letter Composer', href: '/settings?tab=letters' },
     { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/settings?tab=xero' },
     { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/settings?tab=sms' },
     { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/settings?tab=s3' },

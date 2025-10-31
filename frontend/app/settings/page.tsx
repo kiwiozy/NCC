@@ -13,8 +13,9 @@ import S3Integration from '../components/settings/S3Integration';
 import NotesTest from '../components/settings/NotesTest';
 import ATReport from '../components/settings/ATReport';
 import GmailIntegration from '../components/settings/GmailIntegration';
+import LetterComposer from '../components/settings/LetterComposer';
 
-type SettingsTab = 'general' | 'gmail' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
+type SettingsTab = 'general' | 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -31,6 +32,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'gmail':
         return <GmailIntegration />;
+      case 'letters':
+        return <LetterComposer />;
       case 'xero':
         return <XeroIntegration />;
       case 'sms':
