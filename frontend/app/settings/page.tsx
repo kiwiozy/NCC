@@ -1,8 +1,10 @@
 'use client';
 
-import { Container, Title, Tabs, rem } from '@mantine/core';
-import { IconBrandXing, IconMessage, IconSettings as IconSettingsIcon, IconBell, IconCloud, IconNote, IconFileText } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Container, rem } from '@mantine/core';
 import Navigation from '../components/Navigation';
+import SettingsHeader from '../components/SettingsHeader';
 
 // We'll import these as separate components
 import XeroIntegration from '../components/settings/XeroIntegration';
@@ -10,91 +12,58 @@ import SMSIntegration from '../components/settings/SMSIntegration';
 import S3Integration from '../components/settings/S3Integration';
 import NotesTest from '../components/settings/NotesTest';
 import ATReport from '../components/settings/ATReport';
+import GmailIntegration from '../components/settings/GmailIntegration';
+
+type SettingsTab = 'general' | 'gmail' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
 
 export default function SettingsPage() {
-  const iconStyle = { width: rem(16), height: rem(16) };
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as SettingsTab;
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'gmail':
+        return <GmailIntegration />;
+      case 'xero':
+        return <XeroIntegration />;
+      case 'sms':
+        return <SMSIntegration />;
+      case 's3':
+        return <S3Integration />;
+      case 'notes':
+        return <NotesTest />;
+      case 'at-report':
+        return <ATReport />;
+      case 'notifications':
+        return (
+          <div>
+            <h3 style={{ marginBottom: rem(16) }}>Notification Settings</h3>
+            <p>Coming soon...</p>
+          </div>
+        );
+      case 'general':
+      default:
+        return (
+          <div>
+            <h3 style={{ marginBottom: rem(16) }}>General Settings</h3>
+            <p>Coming soon...</p>
+          </div>
+        );
+    }
+  };
 
   return (
     <Navigation>
+      <SettingsHeader />
       <Container size="xl" py="xl">
-        <Title order={1} mb="xl">Settings</Title>
-        
-        <Tabs defaultValue="general" variant="outline">
-          <Tabs.List>
-            <Tabs.Tab 
-              value="general" 
-              leftSection={<IconSettingsIcon style={iconStyle} />}
-            >
-              General
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="xero" 
-              leftSection={<IconBrandXing style={iconStyle} />}
-            >
-              Xero Integration
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="sms" 
-              leftSection={<IconMessage style={iconStyle} />}
-            >
-              SMS
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="s3" 
-              leftSection={<IconCloud style={iconStyle} />}
-            >
-              S3 Storage
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="notes" 
-              leftSection={<IconNote style={iconStyle} />}
-            >
-              Notes Test
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="at-report" 
-              leftSection={<IconFileText style={iconStyle} />}
-            >
-              AT Report
-            </Tabs.Tab>
-            <Tabs.Tab 
-              value="notifications" 
-              leftSection={<IconBell style={iconStyle} />}
-            >
-              Notifications
-            </Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="general" pt="xl">
-            <Title order={3} mb="md">General Settings</Title>
-            <p>Coming soon...</p>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="xero" pt="xl">
-            <XeroIntegration />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="sms" pt="xl">
-            <SMSIntegration />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="s3" pt="xl">
-            <S3Integration />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="notes" pt="xl">
-            <NotesTest />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="at-report" pt="xl">
-            <ATReport />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="notifications" pt="xl">
-            <Title order={3} mb="md">Notification Settings</Title>
-            <p>Coming soon...</p>
-          </Tabs.Panel>
-        </Tabs>
+        {renderContent()}
       </Container>
     </Navigation>
   );

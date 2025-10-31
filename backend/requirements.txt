@@ -1,2 +1,4 @@
 openai==2.6.1
 pypdf==5.1.0
+reportlab==4.0.7
+Pillow==10.1.0

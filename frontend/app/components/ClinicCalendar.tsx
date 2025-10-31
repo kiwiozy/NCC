@@ -65,7 +65,7 @@ export default function ClinicCalendar() {
     setLoading(true);
     try {
       // Fetch data from Django API
-      const response = await fetch(`https://localhost:8000/api/appointments/calendar_data/`);
+      const response = await fetch(`http://localhost:8000/api/appointments/calendar_data/`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch appointments');
@@ -125,7 +125,7 @@ export default function ClinicCalendar() {
   // Handle event drop (drag & reschedule)
   const handleEventDrop = async (info: any) => {
     try {
-      const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
+      const response = await fetch(`http://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +156,7 @@ export default function ClinicCalendar() {
   // Handle event resize
   const handleEventResize = async (info: any) => {
     try {
-      const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
+      const response = await fetch(`http://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

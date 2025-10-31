@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'clinicians',
     'xero_integration',
     'sms_integration',
+    'gmail_integration',
     'documents',
     'ai_services',  # S3 document storage
 ]

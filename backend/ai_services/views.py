@@ -2,7 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.http import HttpResponse
+import os
 from .services import OpenAIService
+from .pdf_generator import generate_at_report_pdf
+from .email_service import get_email_service
+from .at_report_email import send_at_report_email_via_gmail
 
 
 class RewriteClinicalNotesView(APIView):
@@ -111,6 +116,241 @@ class ExtractATReportView(APIView):
             return Response(
                 {'error': str(e), 'message': 'OpenAI API key not configured'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GenerateATPDFView(APIView):
+    """
+    API endpoint to generate PDF from completed AT Report data
+    
+    POST /api/ai/generate-at-pdf/
+    {
+        "data": {
+            "participant": {...},
+            "assessor": {...},
+            ...all form data...
+        }
+    }
+    
+    Returns: PDF file download
+    """
+    
+    def post(self, request):
+        form_data = request.data.get('data')
+        
+        if not form_data:
+            return Response(
+                {'error': 'Form data is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Find NDIS logo
+            logo_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                '../docs/AT Report/NDIS_Menu_Large.jpg'
+            )
+            
+            if not os.path.exists(logo_path):
+                # Try alternative path
+                logo_path = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                    'docs/AT Report/NDIS_Menu_Large.jpg'
+                )
+            
+            if not os.path.exists(logo_path):
+                logo_path = None  # Generate without logo
+            
+            # Generate PDF
+            pdf_buffer = generate_at_report_pdf(form_data, logo_path=logo_path)
+            
+            # Prepare response
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            
+            # Generate filename: ParticipantName_NDISNumber.pdf
+            participant_name = form_data.get('participant', {}).get('name', 'Report')
+            ndis_number = form_data.get('participant', {}).get('ndisNumber', '')
+            
+            # Clean filename (remove special characters)
+            safe_name = ''.join(c for c in participant_name if c.isalnum() or c in (' ', '-', '_'))
+            safe_name = safe_name.replace(' ', '_')
+            safe_ndis = ''.join(c for c in ndis_number if c.isalnum())
+            
+            if safe_ndis:
+                filename = f'{safe_name}_{safe_ndis}.pdf'
+            else:
+                filename = f'{safe_name}.pdf'
+            
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e), 'details': 'Failed to generate PDF'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class EmailATReportView(APIView):
+    """
+    API endpoint to email AT Report PDF
+    
+    POST /api/ai/email-at-report/
+    {
+        "data": {...complete form data...},
+        "to_emails": ["recipient@example.com"],
+        "cc_emails": ["cc@example.com"],  // optional
+        "custom_message": "Custom message text"  // optional
+    }
+    
+    Returns: Success/error message
+    """
+    
+    def post(self, request):
+        form_data = request.data.get('data')
+        to_emails = request.data.get('to_emails', [])
+        cc_emails = request.data.get('cc_emails', [])
+        custom_message = request.data.get('custom_message', '')
+        from_address = request.data.get('from_address', None)
+        connection_email = request.data.get('connection_email', None)
+        
+        # Validation
+        if not form_data:
+            return Response(
+                {'error': 'Form data is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not to_emails or not isinstance(to_emails, list):
+            return Response(
+                {'error': 'At least one recipient email address is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Try Gmail integration first
+            try:
+                result = send_at_report_email_via_gmail(
+                    form_data=form_data,
+                    to_emails=to_emails,
+                    cc_emails=cc_emails if cc_emails else None,
+                    custom_message=custom_message if custom_message else None,
+                    from_address=from_address if from_address else None,
+                    connection_email=connection_email if connection_email else None
+                )
+                
+                return Response({
+                    'success': True,
+                    'message': result['message'],
+                    'recipients': result['recipients'],
+                    'method': 'gmail_api'
+                })
+                
+            except Exception as gmail_error:
+                # Gmail failed, fall back to SMTP
+                print(f"Gmail API failed: {gmail_error}, falling back to SMTP")
+                
+                # Generate PDF for SMTP fallback
+                logo_path = os.path.join(
+                    os.path.dirname(os.path.dirname(__file__)),
+                    '../docs/AT Report/NDIS_Menu_Large.jpg'
+                )
+                
+                if not os.path.exists(logo_path):
+                    logo_path = os.path.join(
+                        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                        'docs/AT Report/NDIS_Menu_Large.jpg'
+                    )
+                
+                if not os.path.exists(logo_path):
+                    logo_path = None
+                
+                pdf_buffer = generate_at_report_pdf(form_data, logo_path=logo_path)
+                pdf_content = pdf_buffer.getvalue()
+                
+                # Generate filename
+                participant_name = form_data.get('participant', {}).get('name', 'Report')
+                ndis_number = form_data.get('participant', {}).get('ndisNumber', '')
+                
+                safe_name = ''.join(c for c in participant_name if c.isalnum() or c in (' ', '-', '_'))
+                safe_name = safe_name.replace(' ', '_')
+                safe_ndis = ''.join(c for c in ndis_number if c.isalnum())
+                
+                if safe_ndis:
+                    pdf_filename = f'{safe_name}_{safe_ndis}.pdf'
+                else:
+                    pdf_filename = f'{safe_name}.pdf'
+                
+                # Send via SMTP
+                email_service = get_email_service()
+                result = email_service.send_at_report_email(
+                    to_emails=to_emails,
+                    participant_name=participant_name,
+                    ndis_number=ndis_number or 'N/A',
+                    pdf_content=pdf_content,
+                    pdf_filename=pdf_filename,
+                    cc_emails=cc_emails if cc_emails else None,
+                    custom_message=custom_message if custom_message else None
+                )
+                
+                if result['success']:
+                    return Response({
+                        'success': True,
+                        'message': result['message'],
+                        'recipients': len(to_emails) + len(cc_emails),
+                        'method': 'smtp_fallback'
+                    })
+                else:
+                    return Response(
+                        {'error': result['message']},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e), 'details': 'Failed to send email'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class TestEmailView(APIView):
+    """
+    API endpoint to test email configuration
+    
+    POST /api/ai/test-email/
+    {
+        "to_email": "test@example.com"
+    }
+    """
+    
+    def post(self, request):
+        to_email = request.data.get('to_email')
+        
+        if not to_email:
+            return Response(
+                {'error': 'Email address is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            email_service = get_email_service()
+            result = email_service.send_test_email(to_email)
+            
+            if result['success']:
+                return Response({
+                    'success': True,
+                    'message': result['message']
+                })
+            else:
+                return Response(
+                    {'error': result['message']},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         except Exception as e:
             return Response(

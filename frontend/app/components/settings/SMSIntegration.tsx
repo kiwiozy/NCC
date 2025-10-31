@@ -51,7 +51,7 @@ export default function SMSIntegration() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/sms/templates/');
+      const response = await fetch('http://localhost:8000/api/sms/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.results || data || []);
@@ -65,7 +65,7 @@ export default function SMSIntegration() {
   const fetchMessages = async () => {
     setLoadingMessages(true);
     try {
-      const response = await fetch('https://localhost:8000/api/sms/messages/?ordering=-created_at');
+      const response = await fetch('http://localhost:8000/api/sms/messages/?ordering=-created_at');
       if (response.ok) {
         const data = await response.json();
         setMessages(data.results || data);
@@ -80,7 +80,7 @@ export default function SMSIntegration() {
   const fetchBalance = async () => {
     setLoadingBalance(true);
     try {
-      const response = await fetch('https://localhost:8000/api/sms/balance/');
+      const response = await fetch('http://localhost:8000/api/sms/balance/');
       if (response.ok) {
         const data = await response.json();
         setBalance(data);
@@ -105,7 +105,7 @@ export default function SMSIntegration() {
 
     setSending(true);
     try {
-      const response = await fetch('https://localhost:8000/api/sms/messages/send/', {
+      const response = await fetch('http://localhost:8000/api/sms/messages/send/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

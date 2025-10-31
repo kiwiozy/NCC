@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Title,
@@ -15,6 +15,9 @@ import {
   Modal,
   Loader,
   Progress,
+  TextInput,
+  Textarea,
+  Select,
 } from '@mantine/core';
 import { Dropzone, PDF_MIME_TYPE } from '@mantine/dropzone';
 import {
@@ -31,7 +34,10 @@ import {
   IconX,
   IconFileTypePdf,
   IconSparkles,
+  IconFileDownload,
+  IconMail,
 } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { ATReportData, createEmptyATReportData } from './at-report/types';
 import ATReportPart1 from './at-report/ATReportPart1';
 import ATReportPart2 from './at-report/ATReportPart2';
@@ -50,6 +56,43 @@ export default function ATReport() {
   const [pdfProgress, setPdfProgress] = useState(0);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
+  
+  // PDF Generation state
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  
+  // Email state
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailCc, setEmailCc] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [emailFromAddress, setEmailFromAddress] = useState('');
+  const [emailConnectionEmail, setEmailConnectionEmail] = useState('');
+  const [connectedAccounts, setConnectedAccounts] = useState<Array<{email: string, display_name: string, is_primary: boolean}>>([]);
+
+  useEffect(() => {
+    // Fetch connected Gmail accounts when component mounts
+    fetch('http://localhost:8000/gmail/connected-accounts/')
+      .then(res => res.json())
+      .then(data => {
+        const accounts = data.accounts || [];
+        setConnectedAccounts(accounts);
+        
+        // Set default connection from localStorage or primary account
+        const savedConnection = localStorage.getItem('gmail_default_connection');
+        if (savedConnection && accounts.find((a: any) => a.email === savedConnection)) {
+          setEmailConnectionEmail(savedConnection);
+        } else {
+          const primaryAccount = accounts.find((a: any) => a.is_primary);
+          if (primaryAccount) {
+            setEmailConnectionEmail(primaryAccount.email);
+          } else if (accounts.length > 0) {
+            setEmailConnectionEmail(accounts[0].email);
+          }
+        }
+      })
+      .catch(err => console.error('Error fetching connected accounts:', err));
+  }, []);
 
   const nextStep = () => setActive((current) => (current < 5 ? current + 1 : current));
   const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
@@ -74,6 +117,132 @@ export default function ATReport() {
     // TODO: Submit to backend API
     console.log('Submitting AT Report:', formData);
     alert('AT Report submitted! (Backend integration coming soon)');
+  };
+  
+  // PDF Generation Function
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true);
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/ai/generate-at-pdf/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: formData
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'PDF generation failed');
+      }
+      
+      // Download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Create filename with participant name and date
+      const participantName = formData.participant.name || 'Report';
+      const safeName = participantName.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
+      const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+      a.download = `AT_Report_${safeName}_${dateStr}.pdf`;
+      
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Success!',
+        message: 'PDF generated and downloaded successfully',
+        color: 'green',
+        icon: <IconCheck size={16} />,
+      });
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to generate PDF',
+        color: 'red',
+        icon: <IconAlertCircle size={16} />,
+      });
+      console.error('PDF generation error:', error);
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+  
+  // Email AT Report Function
+  const handleEmailReport = async () => {
+    // Validate email fields
+    if (!emailTo || !emailTo.trim()) {
+      notifications.show({
+        title: 'Error',
+        message: 'Please enter at least one recipient email address',
+        color: 'red',
+        icon: <IconAlertCircle size={16} />,
+      });
+      return;
+    }
+    
+    setSendingEmail(true);
+    
+    try {
+      // Parse email addresses (comma or semicolon separated)
+      const toEmails = emailTo.split(/[,;]/).map(e => e.trim()).filter(e => e);
+      const ccEmails = emailCc ? emailCc.split(/[,;]/).map(e => e.trim()).filter(e => e) : [];
+      
+      const response = await fetch('http://localhost:8000/api/ai/email-at-report/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: formData,
+          to_emails: toEmails,
+          cc_emails: ccEmails,
+          custom_message: emailMessage || undefined,
+          from_address: emailFromAddress || undefined,
+          connection_email: emailConnectionEmail || undefined
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send email');
+      }
+      
+      const result = await response.json();
+      
+      notifications.show({
+        title: 'Email Sent!',
+        message: `AT Report emailed successfully to ${result.recipients} recipient(s)`,
+        color: 'green',
+        icon: <IconCheck size={16} />,
+        autoClose: 5000,
+      });
+      
+      // Close modal and reset fields
+      setEmailModalOpen(false);
+      setEmailTo('');
+      setEmailCc('');
+      setEmailMessage('');
+      
+    } catch (error: any) {
+      notifications.show({
+        title: 'Email Failed',
+        message: error.message || 'Failed to send email. Please check your email configuration.',
+        color: 'red',
+        icon: <IconAlertCircle size={16} />,
+        autoClose: 7000,
+      });
+      console.error('Email error:', error);
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   // PDF Import Functions
@@ -101,7 +270,7 @@ export default function ATReport() {
       setPdfProgress(40);
 
       // Call the new backend API endpoint
-      const response = await fetch('https://localhost:8000/api/ai/extract-at-report/', {
+      const response = await fetch('http://localhost:8000/api/ai/extract-at-report/', {
         method: 'POST',
         body: formDataUpload,
       });
@@ -279,6 +448,25 @@ export default function ATReport() {
                 >
                   Import from PDF
                 </Button>
+                <Button 
+                  size="xs" 
+                  variant="gradient"
+                  gradient={{ from: 'green', to: 'teal' }}
+                  leftSection={<IconFileDownload size={16} />}
+                  onClick={handleGeneratePDF}
+                  loading={generatingPDF}
+                >
+                  Generate PDF
+                </Button>
+                <Button 
+                  size="xs" 
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'indigo' }}
+                  leftSection={<IconMail size={16} />}
+                  onClick={() => setEmailModalOpen(true)}
+                >
+                  Email Report
+                </Button>
               </Group>
             </Stack>
           </Alert>
@@ -330,19 +518,37 @@ export default function ATReport() {
                   <IconCheck size={48} color="green" />
                   <Title order={3}>Assessment Complete!</Title>
                   <Text c="dimmed" ta="center">
-                    Review and submit your AT assessment. You can save a draft or submit to the NDIS.
+                    Your AT assessment is ready. Generate a professional PDF report or submit to NDIS.
                   </Text>
                   <Group>
-                    <Button variant="outline" onClick={handleSaveDraft}>
+                    <Button 
+                      variant="gradient"
+                      gradient={{ from: 'green', to: 'teal' }}
+                      leftSection={<IconFileDownload size={20} />}
+                      onClick={handleGeneratePDF}
+                      loading={generatingPDF}
+                      size="lg"
+                    >
+                      Generate PDF Report
+                    </Button>
+                    <Button 
+                      variant="gradient"
+                      gradient={{ from: 'blue', to: 'indigo' }}
+                      leftSection={<IconMail size={20} />}
+                      onClick={() => setEmailModalOpen(true)}
+                      size="lg"
+                    >
+                      Email Report
+                    </Button>
+                    <Button variant="outline" onClick={handleSaveDraft} size="lg">
                       Save Draft
                     </Button>
-                    <Button onClick={handleSubmit} size="lg">
+                    <Button onClick={handleSubmit} size="lg" variant="light">
                       Submit Assessment
                     </Button>
                   </Group>
                   <Text size="xs" c="dimmed" ta="center" mt="xs">
-                    Note: Backend API integration for submission is coming soon.
-                    Currently saves to localStorage only.
+                    PDF Report will be downloaded with NDIS branding and formatting.
                   </Text>
                 </Stack>
               </Paper>
@@ -540,6 +746,115 @@ export default function ATReport() {
                   Apply to Form
                 </Button>
               )}
+            </Group>
+          </Stack>
+        </Modal>
+        
+        {/* Email AT Report Modal */}
+        <Modal
+          opened={emailModalOpen}
+          onClose={() => {
+            if (!sendingEmail) {
+              setEmailModalOpen(false);
+              setEmailTo('');
+              setEmailCc('');
+              setEmailMessage('');
+            }
+          }}
+          title={<Text fw={600} size="lg">Email AT Report</Text>}
+          size="lg"
+        >
+          <Stack gap="md">
+            <Alert icon={<IconMail size={16} />} color="blue">
+              <Text size="sm">
+                Send the completed AT Report PDF to recipients via email. The PDF will be attached with a professional email template.
+              </Text>
+            </Alert>
+            
+            {connectedAccounts.length > 1 && (
+              <Select
+                label="Send Using Account"
+                description="Select which Gmail account to send from (emails will appear in this account's Sent folder)"
+                placeholder="Choose connected account"
+                data={connectedAccounts.map(account => ({
+                  value: account.email,
+                  label: `${account.display_name || account.email}${account.is_primary ? ' (Primary)' : ''}`,
+                }))}
+                value={emailConnectionEmail}
+                onChange={(value) => {
+                  setEmailConnectionEmail(value || '');
+                  // Save as default
+                  if (value) {
+                    localStorage.setItem('gmail_default_connection', value);
+                  }
+                }}
+                required
+                disabled={sendingEmail}
+              />
+            )}
+            
+            <TextInput
+              label="To (Recipients)"
+              placeholder="recipient@example.com, another@example.com"
+              description="Enter one or more email addresses (comma or semicolon separated)"
+              required
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.currentTarget.value)}
+              leftSection={<IconMail size={16} />}
+              disabled={sendingEmail}
+            />
+            
+            <TextInput
+              label="CC (Optional)"
+              placeholder="cc@example.com"
+              description="Carbon copy recipients (optional)"
+              value={emailCc}
+              onChange={(e) => setEmailCc(e.currentTarget.value)}
+              disabled={sendingEmail}
+            />
+            
+            <Textarea
+              label="Custom Message (Optional)"
+              placeholder="Add a personal message to include in the email..."
+              description="This message will be included in the email body"
+              rows={4}
+              value={emailMessage}
+              onChange={(e) => setEmailMessage(e.currentTarget.value)}
+              disabled={sendingEmail}
+            />
+            
+            <Alert color="gray" icon={<IconFileTypePdf size={16} />}>
+              <Stack gap="xs">
+                <Text size="sm" fw={500}>Attachment:</Text>
+                <Text size="sm">
+                  {formData.participant.name || 'Report'}_{formData.participant.ndisNumber || 'N/A'}.pdf
+                </Text>
+              </Stack>
+            </Alert>
+            
+            <Group justify="flex-end" mt="md">
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  setEmailModalOpen(false);
+                  setEmailTo('');
+                  setEmailCc('');
+                  setEmailMessage('');
+                }}
+                disabled={sendingEmail}
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                leftSection={<IconMail size={18} />}
+                onClick={handleEmailReport}
+                loading={sendingEmail}
+                gradient={{ from: 'blue', to: 'indigo' }}
+                variant="gradient"
+              >
+                Send Email
+              </Button>
             </Group>
           </Stack>
         </Modal>

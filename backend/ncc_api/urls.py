@@ -35,6 +35,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('xero/', include('xero_integration.urls')),
     path('api/sms/', include('sms_integration.urls')),
+    path('gmail/', include('gmail_integration.urls')),
     path('api/', include('documents.urls')),  # S3 document management
     path('api/ai/', include('ai_services.urls')),  # AI services
 ]

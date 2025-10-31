@@ -111,7 +111,7 @@ export default function S3Integration() {
 
   const checkBucketStatus = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/documents/bucket_status/');
+      const response = await fetch('http://localhost:8000/api/documents/bucket_status/');
       const data = await response.json();
       setBucketStatus(data);
     } catch (err) {
@@ -128,7 +128,7 @@ export default function S3Integration() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://localhost:8000/api/documents/');
+      const response = await fetch('http://localhost:8000/api/documents/');
       const data = await response.json();
       setDocuments(data.results || []);
     } catch (err) {
@@ -162,7 +162,7 @@ export default function S3Integration() {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      const response = await fetch('https://localhost:8000/api/documents/upload/', {
+      const response = await fetch('http://localhost:8000/api/documents/upload/', {
         method: 'POST',
         body: formData,
       });
@@ -196,7 +196,7 @@ export default function S3Integration() {
 
   const handleDownload = async (doc: Document) => {
     try {
-      const response = await fetch(`https://localhost:8000/api/documents/${doc.id}/download_url/`);
+      const response = await fetch(`http://localhost:8000/api/documents/${doc.id}/download_url/`);
       const data = await response.json();
       
       // Use window.location.href for direct download (bypasses popup blocker)
@@ -213,7 +213,7 @@ export default function S3Integration() {
     }
 
     try {
-      const response = await fetch(`https://localhost:8000/api/documents/${docId}/`, {
+      const response = await fetch(`http://localhost:8000/api/documents/${docId}/`, {
         method: 'DELETE',
       });
 
