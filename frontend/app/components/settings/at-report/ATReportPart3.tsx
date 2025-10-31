@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Paper,
   Title,
@@ -13,8 +14,12 @@ import {
   TextInput,
   Radio,
   Text,
+  Modal,
+  Loader,
+  Alert,
+  Checkbox,
 } from '@mantine/core';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconSparkles, IconCheck, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { ATReportData } from './types';
 
 interface ATReportPart3Props {
@@ -22,7 +27,193 @@ interface ATReportPart3Props {
   setFormData: (data: ATReportData) => void;
 }
 
+interface EnhancedField {
+  field: string;
+  label: string;
+  original: string;
+  enhanced: string;
+  selected: boolean;
+  refinementPrompt?: string;
+}
+
 export default function ATReportPart3({ formData, setFormData }: ATReportPart3Props) {
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [enhancedFields, setEnhancedFields] = useState<EnhancedField[]>([]);
+  const [currentSection, setCurrentSection] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleEnhanceSection = async (sectionName: string, fields: Array<{ field: string; label: string; value: string }>) => {
+    // Filter out empty fields
+    const nonEmptyFields = fields.filter(f => f.value.trim());
+    
+    if (nonEmptyFields.length === 0) {
+      setError('Please fill in at least one field before enhancing this section.');
+      setAiModalOpen(true);
+      return;
+    }
+
+    setCurrentSection(sectionName);
+    setAiModalOpen(true);
+    setError(null);
+    setAiProcessing(true);
+
+    try {
+      // Process each field with AI
+      const enhancementPromises = nonEmptyFields.map(async ({ field, label, value }) => {
+        const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: value,
+            custom_prompt: `Rewrite this for an NDIS AT Assessment report section: "${label}". Make it professional, detailed, and suitable for NDIS submission.`,
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Failed to process ${label}`);
+
+        const data = await response.json();
+        return {
+          field,
+          label,
+          original: value,
+          enhanced: data.result,
+          selected: true, // Default to checked
+        };
+      });
+
+      const results = await Promise.all(enhancementPromises);
+      setEnhancedFields(results);
+    } catch (err: any) {
+      setError(err.message || 'Failed to process with AI');
+      setEnhancedFields([]);
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  const toggleFieldSelection = (index: number) => {
+    setEnhancedFields(prev =>
+      prev.map((field, i) =>
+        i === index ? { ...field, selected: !field.selected } : field
+      )
+    );
+  };
+
+  const updateRefinementPrompt = (index: number, prompt: string) => {
+    setEnhancedFields(prev =>
+      prev.map((field, i) =>
+        i === index ? { ...field, refinementPrompt: prompt } : field
+      )
+    );
+  };
+
+  const rerunSingleField = async (index: number) => {
+    const field = enhancedFields[index];
+    if (!field) return;
+
+    // Update the field to show processing state
+    setEnhancedFields(prev =>
+      prev.map((f, i) =>
+        i === index ? { ...f, enhanced: 'Processing...' } : f
+      )
+    );
+
+    try {
+      const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: field.original,
+          custom_prompt: field.refinementPrompt
+            ? `${field.refinementPrompt}\n\nRewrite this for an NDIS AT Assessment report section: "${field.label}". Make it professional, detailed, and suitable for NDIS submission.`
+            : `Rewrite this for an NDIS AT Assessment report section: "${field.label}". Make it professional, detailed, and suitable for NDIS submission.`,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`Failed to process ${field.label}`);
+      const data = await response.json();
+
+      // Update with new result
+      setEnhancedFields(prev =>
+        prev.map((f, i) =>
+          i === index ? { ...f, enhanced: data.result, refinementPrompt: '' } : f
+        )
+      );
+    } catch (err: any) {
+      setError(err.message || `Failed to reprocess ${field.label}`);
+      // Restore original enhanced text on error
+      setEnhancedFields(prev =>
+        prev.map((f, i) =>
+          i === index ? { ...f, enhanced: field.enhanced } : f
+        )
+      );
+    }
+  };
+
+  const applySelectedEnhancements = () => {
+    const updatedData = { ...formData };
+
+    enhancedFields.forEach(({ field, enhanced, selected }) => {
+      if (selected) {
+        // Apply the enhancement based on field name
+        switch (field) {
+          case 'previousExperience':
+            updatedData.previousExperience = enhanced;
+            break;
+          case 'evidence':
+            updatedData.evidence = enhanced;
+            break;
+          case 'supportChanges':
+            updatedData.supportChanges = enhanced;
+            break;
+          case 'implementationPlan':
+            updatedData.implementationPlan = enhanced;
+            break;
+          case 'bestPracticeEvidence':
+            updatedData.bestPracticeEvidence = enhanced;
+            break;
+          case 'longTermBenefit':
+            updatedData.longTermBenefit = enhanced;
+            break;
+          case 'longTermImpact':
+            updatedData.longTermImpact = enhanced;
+            break;
+          case 'lowerRiskOptions':
+            updatedData.lowerRiskOptions = enhanced;
+            break;
+          case 'risksWithoutAT':
+            updatedData.risksWithoutAT = enhanced;
+            break;
+          case 'complianceStandards':
+            updatedData.complianceStandards = enhanced;
+            break;
+          case 'behavioursOfConcern':
+            updatedData.behavioursOfConcern = enhanced;
+            break;
+          case 'restrictivePractice':
+            updatedData.restrictivePractice = enhanced;
+            break;
+          case 'careExpectations':
+            updatedData.careExpectations = enhanced;
+            break;
+          case 'otherFunding':
+            updatedData.otherFunding = enhanced;
+            break;
+          case 'mainstreamEssential':
+            updatedData.mainstreamEssential = enhanced;
+            break;
+          case 'mainstreamValueMoney':
+            updatedData.mainstreamValueMoney = enhanced;
+            break;
+        }
+      }
+    });
+
+    setFormData(updatedData);
+    setAiModalOpen(false);
+    setEnhancedFields([]);
+  };
   // Helper functions for AT Items
   const addATItem = () => {
     setFormData({
@@ -701,6 +892,158 @@ export default function ATReportPart3({ formData, setFormData }: ATReportPart3Pr
           autosize
         />
       </Paper>
+
+      {/* Master AI Enhancement Button - Bottom of Part 3 */}
+      <Group justify="center" mt="xl">
+        <Button
+          leftSection={<IconSparkles size={18} />}
+          onClick={() => handleEnhanceSection('Part 3 - Recommendations and Evidence', [
+            // Mainstream Items
+            { field: 'mainstreamEssential', label: 'Mainstream Items Essential', value: formData.mainstreamEssential },
+            { field: 'mainstreamValueMoney', label: 'Mainstream Value for Money', value: formData.mainstreamValueMoney },
+            // AT Experience
+            { field: 'previousExperience', label: 'Previous Experience with AT', value: formData.previousExperience },
+            // Evidence
+            { field: 'evidence', label: 'Evidence for Recommendation', value: formData.evidence },
+            { field: 'supportChanges', label: 'Changes to Other Supports', value: formData.supportChanges },
+            { field: 'implementationPlan', label: 'Detailed Implementation Plan', value: formData.implementationPlan },
+            { field: 'bestPracticeEvidence', label: 'Best Practice Evidence', value: formData.bestPracticeEvidence },
+            // Long Term Benefit
+            { field: 'longTermBenefit', label: 'Long Term Benefits', value: formData.longTermBenefit },
+            { field: 'longTermImpact', label: 'Long Term Impact', value: formData.longTermImpact },
+            // Risk Assessment
+            { field: 'lowerRiskOptions', label: 'Lower Risk Options Considered', value: formData.lowerRiskOptions },
+            { field: 'risksWithoutAT', label: 'Potential Risks Without AT', value: formData.risksWithoutAT },
+            { field: 'complianceStandards', label: 'Compliance with Australian Standards', value: formData.complianceStandards },
+            // Behaviours of Concern
+            { field: 'behavioursOfConcern', label: 'Behaviours of Concern', value: formData.behavioursOfConcern },
+            { field: 'restrictivePractice', label: 'Restrictive Practice', value: formData.restrictivePractice },
+            // Reasonable Expectations
+            { field: 'careExpectations', label: 'Reasonable Expectations of Care', value: formData.careExpectations },
+            // Other Funding
+            { field: 'otherFunding', label: 'Other Potential Funding Sources', value: formData.otherFunding },
+          ])}
+          variant="gradient"
+          gradient={{ from: 'blue', to: 'cyan' }}
+          size="lg"
+        >
+          Enhance All Fields with AI
+        </Button>
+      </Group>
+
+      {/* AI Enhancement Modal */}
+      <Modal
+        opened={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        title={<Text fw={600} size="lg">AI Enhancement - {currentSection}</Text>}
+        size="xl"
+      >
+        <Stack gap="md">
+          {error && (
+            <Alert icon={<IconAlertCircle size={16} />} color="red">
+              {error}
+            </Alert>
+          )}
+
+          {aiProcessing && (
+            <Stack gap="sm" align="center" py="xl">
+              <Loader size="lg" />
+              <Text size="sm" c="dimmed">
+                AI is enhancing {enhancedFields.length > 0 ? enhancedFields.length : 'your'} field(s)...
+              </Text>
+            </Stack>
+          )}
+
+          {!aiProcessing && enhancedFields.length > 0 && (
+            <>
+              <Alert icon={<IconSparkles size={16} />} color="blue">
+                <Text size="sm">
+                  Review the AI-enhanced content below. Uncheck any fields you don't want to apply.
+                </Text>
+              </Alert>
+
+              <Stack gap="lg">
+                {enhancedFields.map((field, index) => (
+                  <Paper key={field.field} p="md" withBorder>
+                    <Stack gap="md">
+                      <Checkbox
+                        checked={field.selected}
+                        onChange={() => toggleFieldSelection(index)}
+                        label={<Text fw={600} size="lg">{field.label}</Text>}
+                        size="md"
+                      />
+
+                      <Stack gap="sm">
+                        <div>
+                          <Text size="sm" fw={600} mb={4}>Original:</Text>
+                          <Paper p="md" withBorder style={{ whiteSpace: 'pre-wrap', backgroundColor: 'var(--mantine-color-dark-6)' }}>
+                            <Text size="sm" c="white">{field.original}</Text>
+                          </Paper>
+                        </div>
+
+                        <div>
+                          <Text size="sm" fw={600} c="blue" mb={4}>AI Enhanced:</Text>
+                          <Paper p="md" withBorder style={{ whiteSpace: 'pre-wrap', backgroundColor: 'var(--mantine-color-blue-9)' }}>
+                            <Text size="sm" c="white">{field.enhanced}</Text>
+                          </Paper>
+                        </div>
+
+                        {/* Refinement Input */}
+                        <div>
+                          <Textarea
+                            placeholder="Optional: Add refinement instructions (e.g., 'Make it more concise', 'Add more detail about mobility')"
+                            value={field.refinementPrompt || ''}
+                            onChange={(e) => updateRefinementPrompt(index, e.target.value)}
+                            minRows={2}
+                            size="sm"
+                          />
+                          <Group justify="flex-end" mt="xs">
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="blue"
+                              leftSection={<IconRefresh size={14} />}
+                              onClick={() => rerunSingleField(index)}
+                              disabled={field.enhanced === 'Processing...'}
+                            >
+                              {field.enhanced === 'Processing...' ? 'Processing...' : 'Rerun with Instructions'}
+                            </Button>
+                          </Group>
+                        </div>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+
+              <Group justify="space-between" mt="md">
+                <Button
+                  variant="subtle"
+                  onClick={() => {
+                    const allSelected = enhancedFields.every(f => f.selected);
+                    setEnhancedFields(prev => prev.map(f => ({ ...f, selected: !allSelected })));
+                  }}
+                >
+                  {enhancedFields.every(f => f.selected) ? 'Deselect All' : 'Select All'}
+                </Button>
+                <Group>
+                  <Button variant="default" onClick={() => setAiModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    leftSection={<IconCheck size={16} />}
+                    onClick={applySelectedEnhancements}
+                    color="green"
+                    disabled={!enhancedFields.some(f => f.selected)}
+                  >
+                    Apply Selected ({enhancedFields.filter(f => f.selected).length})
+                  </Button>
+                </Group>
+              </Group>
+            </>
+          )}
+        </Stack>
+      </Modal>
     </Stack>
   );
 }

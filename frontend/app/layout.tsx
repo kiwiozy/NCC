@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -51,7 +51,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <MantineProvider theme={theme} defaultColorScheme="auto">
           <ModalsProvider>
             <Notifications />

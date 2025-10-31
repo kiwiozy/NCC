@@ -29,7 +29,7 @@ import {
   IconDeviceFloppy,
   IconUpload,
   IconX,
-  IconFilePdf,
+  IconFileTypePdf,
   IconSparkles,
 } from '@tabler/icons-react';
 import { ATReportData, createEmptyATReportData } from './at-report/types';
@@ -92,68 +92,34 @@ export default function ATReport() {
     setPdfError(null);
 
     try {
-      // Step 1: Upload PDF and extract text (20%)
+      // Step 1: Upload PDF to backend for extraction and AI processing
       setPdfProgress(20);
       const formDataUpload = new FormData();
-      formDataUpload.append('pdf', pdfFile);
+      formDataUpload.append('pdf_file', pdfFile);
+      formDataUpload.append('report_type', 'prosthetics_orthotics'); // Can make this selectable later
 
-      // TODO: Create backend endpoint for PDF text extraction
-      // For now, simulate the process
-      await new Promise(resolve => setTimeout(resolve, 1000));
       setPdfProgress(40);
 
-      // Step 2: Send to OpenAI for structured extraction (60%)
-      const mockPdfText = `
-        Participant: John Doe
-        NDIS Number: 123456789
-        Date of Birth: 15/05/1985
-        
-        Background: John has cerebral palsy affecting mobility. He requires assistance with daily living activities...
-        
-        Goals: To increase independence in mobility, access community facilities, and participate in social activities...
-        
-        Physical Assessment: Limited range of motion in lower limbs, reduced muscle strength bilaterally...
-      `;
-
-      const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
+      // Call the new backend API endpoint
+      const response = await fetch('https://localhost:8000/api/ai/extract-at-report/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: mockPdfText,
-          custom_prompt: `Extract the following information from this NDIS AT report and format it as JSON with these exact fields:
-{
-  "participant_name": "",
-  "ndis_number": "",
-  "date_of_birth": "",
-  "background": "",
-  "participant_goals": "",
-  "physical_limitations": "",
-  "sensory_limitations": "",
-  "communication_limitations": "",
-  "cognitive_limitations": "",
-  "behavioural_limitations": ""
-}
-Only extract information that is explicitly stated in the document. Leave fields empty if not found.`,
-        }),
+        body: formDataUpload,
       });
 
       setPdfProgress(80);
 
       if (!response.ok) {
-        throw new Error('Failed to process PDF with AI');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process PDF with AI');
       }
 
       const data = await response.json();
       
-      // Step 3: Parse and populate form (100%)
-      try {
-        // Try to parse as JSON, otherwise use as text
-        const parsed = JSON.parse(data.result.replace(/```json\n?|\n?```/g, ''));
-        setExtractedData(parsed);
-      } catch {
-        setExtractedData({ raw: data.result });
+      // Step 2: Store the extracted data
+      if (data.success && data.data) {
+        setExtractedData(data.data);
+      } else {
+        throw new Error('Invalid response from server');
       }
 
       setPdfProgress(100);
@@ -168,71 +134,98 @@ Only extract information that is explicitly stated in the document. Leave fields
   const applyExtractedData = () => {
     if (!extractedData) return;
 
-    // Map extracted data to form fields
+    // Map extracted data to form fields (comprehensive P&O mapping)
     const updatedData: Partial<ATReportData> = { ...formData };
 
-    if (extractedData.participant_name) {
+    // Part 1 - Participant Details
+    if (extractedData.participant_name || extractedData.address || extractedData.contact_telephone || 
+        extractedData.email || extractedData.ndis_number || extractedData.date_of_birth ||
+        extractedData.preferred_contact || extractedData.nominee_name || extractedData.nominee_phone ||
+        extractedData.coordinator_name || extractedData.coordinator_phone || extractedData.coordinator_email) {
       updatedData.participant = {
         ...formData.participant,
-        name: extractedData.participant_name,
+        name: extractedData.participant_name || formData.participant.name,
+        address: extractedData.address || formData.participant.address,
+        contactTelephone: extractedData.contact_telephone || formData.participant.contactTelephone,
+        email: extractedData.email || formData.participant.email,
+        ndisNumber: extractedData.ndis_number || formData.participant.ndisNumber,
+        dateOfBirth: extractedData.date_of_birth || formData.participant.dateOfBirth,
+        preferredContact: extractedData.preferred_contact || formData.participant.preferredContact,
+        nomineeName: extractedData.nominee_name || formData.participant.nomineeName,
+        nomineePhone: extractedData.nominee_phone || formData.participant.nomineePhone,
+        coordinatorName: extractedData.coordinator_name || formData.participant.coordinatorName,
+        coordinatorPhone: extractedData.coordinator_phone || formData.participant.coordinatorPhone,
+        coordinatorEmail: extractedData.coordinator_email || formData.participant.coordinatorEmail,
       };
     }
 
-    if (extractedData.ndis_number) {
-      updatedData.participant = {
-        ...updatedData.participant!,
-        ndisNumber: extractedData.ndis_number,
+    // Part 1 - Assessor Details
+    if (extractedData.assessor_name || extractedData.assessor_qualifications || extractedData.assessor_telephone ||
+        extractedData.assessor_email || extractedData.assessor_registration_number || 
+        extractedData.assessment_date || extractedData.report_date) {
+      updatedData.assessor = {
+        ...formData.assessor,
+        name: extractedData.assessor_name || formData.assessor.name,
+        qualifications: extractedData.assessor_qualifications || formData.assessor.qualifications,
+        telephone: extractedData.assessor_telephone || formData.assessor.telephone,
+        email: extractedData.assessor_email || formData.assessor.email,
+        registrationNumber: extractedData.assessor_registration_number || formData.assessor.registrationNumber,
+        assessmentDate: extractedData.assessment_date || formData.assessor.assessmentDate,
+        reportDate: extractedData.report_date || formData.assessor.reportDate,
       };
     }
 
-    if (extractedData.date_of_birth) {
-      updatedData.participant = {
-        ...updatedData.participant!,
-        dateOfBirth: extractedData.date_of_birth,
+    // Part 1 - Plan Management
+    if (extractedData.plan_managed_agency !== undefined || extractedData.plan_managed_self !== undefined || 
+        extractedData.plan_managed_plan_manager !== undefined) {
+      updatedData.planManagement = {
+        agencyManaged: extractedData.plan_managed_agency || formData.planManagement.agencyManaged,
+        selfManaged: extractedData.plan_managed_self || formData.planManagement.selfManaged,
+        planManager: extractedData.plan_managed_plan_manager || formData.planManagement.planManager,
+        planManagerContact: formData.planManagement.planManagerContact,
       };
     }
 
+    // Part 2 - Background and Goals
     if (extractedData.background) {
       updatedData.background = extractedData.background;
     }
-
     if (extractedData.participant_goals) {
       updatedData.participantGoals = extractedData.participant_goals;
     }
 
-    if (extractedData.physical_limitations) {
+    // Part 3 - Assessment
+    if (extractedData.height) {
+      updatedData.height = extractedData.height;
+    }
+    if (extractedData.weight) {
+      updatedData.weight = extractedData.weight;
+    }
+
+    // Part 3 - Functional Limitations
+    if (extractedData.physical_limitations || extractedData.sensory_limitations || 
+        extractedData.communication_limitations || extractedData.cognitive_limitations || 
+        extractedData.behavioural_limitations || extractedData.other_limitations) {
       updatedData.functionalLimitations = {
         ...formData.functionalLimitations,
-        physical: extractedData.physical_limitations,
+        physical: extractedData.physical_limitations || formData.functionalLimitations.physical,
+        sensory: extractedData.sensory_limitations || formData.functionalLimitations.sensory,
+        communication: extractedData.communication_limitations || formData.functionalLimitations.communication,
+        cognitive: extractedData.cognitive_limitations || formData.functionalLimitations.cognitive,
+        behavioural: extractedData.behavioural_limitations || formData.functionalLimitations.behavioural,
+        other: extractedData.other_limitations || formData.functionalLimitations.other,
       };
     }
 
-    if (extractedData.sensory_limitations) {
-      updatedData.functionalLimitations = {
-        ...updatedData.functionalLimitations!,
-        sensory: extractedData.sensory_limitations,
-      };
+    // Part 5 - Additional P&O Fields
+    if (extractedData.provision_timeframe) {
+      updatedData.provisionTimeframe = extractedData.provision_timeframe;
     }
-
-    if (extractedData.communication_limitations) {
-      updatedData.functionalLimitations = {
-        ...updatedData.functionalLimitations!,
-        communication: extractedData.communication_limitations,
-      };
+    if (extractedData.review_frequency) {
+      updatedData.reviewFrequency = extractedData.review_frequency;
     }
-
-    if (extractedData.cognitive_limitations) {
-      updatedData.functionalLimitations = {
-        ...updatedData.functionalLimitations!,
-        cognitive: extractedData.cognitive_limitations,
-      };
-    }
-
-    if (extractedData.behavioural_limitations) {
-      updatedData.functionalLimitations = {
-        ...updatedData.functionalLimitations!,
-        behavioural: extractedData.behavioural_limitations,
-      };
+    if (extractedData.maintenance_info) {
+      updatedData.maintenanceInfo = extractedData.maintenance_info;
     }
 
     setFormData(updatedData as ATReportData);
@@ -413,7 +406,7 @@ Only extract information that is explicitly stated in the document. Leave fields
                     <IconX size={52} stroke={1.5} />
                   </Dropzone.Reject>
                   <Dropzone.Idle>
-                    <IconFilePdf size={52} stroke={1.5} />
+                    <IconFileTypePdf size={52} stroke={1.5} />
                   </Dropzone.Idle>
 
                   <div>
@@ -432,7 +425,7 @@ Only extract information that is explicitly stated in the document. Leave fields
               <Paper p="md" withBorder>
                 <Group justify="space-between">
                   <Group>
-                    <IconFilePdf size={32} />
+                    <IconFileTypePdf size={32} />
                     <div>
                       <Text size="sm" fw={500}>{pdfFile.name}</Text>
                       <Text size="xs" c="dimmed">
