@@ -33,6 +33,56 @@ import TableHeader from '@tiptap/extension-table-header';
 import FontFamily from '@tiptap/extension-font-family';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
+import { Extension } from '@tiptap/core';
+
+// Custom Font Size Extension
+const FontSize = Extension.create({
+  name: 'fontSize',
+
+  addOptions() {
+    return {
+      types: ['textStyle'],
+    };
+  },
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: element => element.style.fontSize || null,
+            renderHTML: attributes => {
+              if (!attributes.fontSize) {
+                return {};
+              }
+              return {
+                style: `font-size: ${attributes.fontSize}`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+
+  addCommands() {
+    return {
+      setFontSize: fontSize => ({ chain }) => {
+        return chain()
+          .setMark('textStyle', { fontSize: fontSize })
+          .run();
+      },
+      unsetFontSize: () => ({ chain }) => {
+        return chain()
+          .setMark('textStyle', { fontSize: null })
+          .removeEmptyTextStyle()
+          .run();
+      },
+    };
+  },
+});
 import { 
   IconBold, 
   IconItalic, 
@@ -79,10 +129,13 @@ export default function LetterComposer() {
       Underline,
       TextStyle,
       Color,
+      FontFamily.configure({
+        types: ['textStyle'],
+      }),
+      FontSize,
       Highlight.configure({
         multicolor: true,
       }),
-      FontFamily,
       Subscript,
       Superscript,
       TextAlign.configure({
@@ -216,7 +269,84 @@ export default function LetterComposer() {
           </Button>
         </Group>
 
-        {/* Row 2: Headings & Styles */}
+        {/* Row 2: Font Family & Size */}
+        <Group gap="xs" wrap="nowrap">
+          <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Font:</Text>
+          <Select
+            size="xs"
+            placeholder="Font Family"
+            value={editor.getAttributes('textStyle').fontFamily || ''}
+            onChange={(value) => {
+              if (value) {
+                editor.chain().focus().setFontFamily(value).run();
+              } else {
+                editor.chain().focus().unsetFontFamily().run();
+              }
+            }}
+            data={[
+              { value: '', label: 'Default (Georgia)' },
+              { value: 'Arial', label: 'Arial' },
+              { value: 'Helvetica', label: 'Helvetica' },
+              { value: 'Times New Roman', label: 'Times New Roman' },
+              { value: 'Georgia', label: 'Georgia' },
+              { value: 'Courier New', label: 'Courier New' },
+              { value: 'Verdana', label: 'Verdana' },
+              { value: 'Tahoma', label: 'Tahoma' },
+              { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+              { value: 'Impact', label: 'Impact' },
+              { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+              { value: 'Palatino', label: 'Palatino' },
+              { value: 'Garamond', label: 'Garamond' },
+              { value: 'Bookman', label: 'Bookman' },
+              { value: 'Arial Black', label: 'Arial Black' },
+            ]}
+            style={{ width: '180px' }}
+            clearable
+          />
+          <Select
+            size="xs"
+            placeholder="Font Size"
+            value={editor.getAttributes('textStyle').fontSize || ''}
+            onChange={(value) => {
+              if (value) {
+                editor.chain().focus().setFontSize(value).run();
+              } else {
+                editor.chain().focus().unsetFontSize().run();
+              }
+            }}
+            data={[
+              { value: '', label: 'Default (14px)' },
+              { value: '8px', label: '8px (Tiny)' },
+              { value: '10px', label: '10px (Small)' },
+              { value: '12px', label: '12px' },
+              { value: '14px', label: '14px (Normal)' },
+              { value: '16px', label: '16px' },
+              { value: '18px', label: '18px' },
+              { value: '20px', label: '20px (Large)' },
+              { value: '24px', label: '24px' },
+              { value: '28px', label: '28px' },
+              { value: '32px', label: '32px (Huge)' },
+              { value: '36px', label: '36px' },
+              { value: '48px', label: '48px' },
+              { value: '72px', label: '72px' },
+            ]}
+            style={{ width: '160px' }}
+            clearable
+          />
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => {
+              editor.chain().focus().unsetFontFamily().run();
+              editor.chain().focus().unsetFontSize().run();
+            }}
+            title="Reset Font"
+          >
+            Reset
+          </Button>
+        </Group>
+
+        {/* Row 3: Headings & Styles */}
         <Group gap="xs" wrap="nowrap">
           <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Style:</Text>
           <Button
@@ -269,7 +399,7 @@ export default function LetterComposer() {
           </Button>
         </Group>
 
-        {/* Row 3: Alignment & Lists */}
+        {/* Row 4: Alignment & Lists */}
         <Group gap="xs" wrap="nowrap">
           <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Align:</Text>
           <Button
@@ -323,7 +453,7 @@ export default function LetterComposer() {
           </Button>
         </Group>
 
-        {/* Row 4: Insert & Colors */}
+        {/* Row 5: Insert & Colors */}
         <Group gap="xs" wrap="nowrap">
           <Text size="xs" fw={600} c="dimmed" style={{ minWidth: '60px' }}>Insert:</Text>
           <Button
