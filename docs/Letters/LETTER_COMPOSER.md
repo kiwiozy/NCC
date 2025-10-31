@@ -27,9 +27,11 @@ The Letter Composer allows you to:
 
 ### **PDF Generation**
 - Converts HTML letter to professional PDF
+- **Walk Easy letterhead background** on every page
 - Maintains formatting and styling
 - Automatic filename from subject
 - Backend processing with ReportLab
+- Full-page letterhead with company branding
 
 ### **Email Integration**
 - Sends via Gmail API (OAuth2)
@@ -109,7 +111,30 @@ const editor = useEditor({
   - `GenerateLetterPDFView` - Converts HTML to PDF
   - `EmailLetterView` - Sends email with PDF attachment
 - **PDF Generation:** ReportLab (converts HTML to PDF)
+- **Letterhead Integration:** Custom `LetterheadCanvas` class
+  - Automatically adds letterhead background to every page
+  - Uses `Walk-Easy_Letterhead-Pad-Final.png`
+  - Full-page background with preserved aspect ratio
 - **Email Service:** Reuses `send_at_report_email_via_gmail` from `ai_services`
+
+**Custom Canvas for Letterhead:**
+```python
+class LetterheadCanvas(canvas.Canvas):
+    """Custom canvas that draws letterhead background on each page"""
+    
+    def _draw_letterhead(self):
+        """Draw the letterhead background image"""
+        if os.path.exists(self.letterhead_path):
+            page_width, page_height = letter
+            self.drawImage(
+                self.letterhead_path,
+                0, 0,  # Bottom-left corner
+                width=page_width,
+                height=page_height,
+                preserveAspectRatio=True,
+                mask='auto'
+            )
+```
 
 **API Endpoints:**
 ```
@@ -134,9 +159,7 @@ POST /api/letters/email/
 
 ### **Default Template Structure**
 ```
-Walk Easy Pedorthics
-123 Main Street
-City, State, ZIP
+[Letterhead Background - Walk Easy Logo & Contact Info]
 
 [Current Date]
 
@@ -149,9 +172,15 @@ Sincerely,
 Walk Easy Pedorthics
 ```
 
+- **Letterhead Background:** Full-page Walk Easy letterhead on every page
+  - Company logo and branding
+  - Address: 43 Harrison St, Cardiff, NSW 2285
+  - Phone: 02 6766 3153
+  - Email: info@walkeasy.com.au
 - **Automatic Date:** Inserted in Australian format (e.g., "31 October 2025")
 - **Professional Layout:** Serif font, proper spacing
 - **Customizable:** Replace all placeholders with actual content
+- **Multi-Page Support:** Letterhead appears on every page automatically
 
 ---
 
@@ -262,6 +291,12 @@ Pillow>=11.0.0
 ---
 
 ## 🎉 Version History
+
+### **v1.1.0** (October 31, 2025)
+- ✅ **Added Walk Easy letterhead background** to all PDF pages
+- ✅ Custom `LetterheadCanvas` for automatic letterhead rendering
+- ✅ Updated template to work with letterhead
+- ✅ Full-page professional branding on every page
 
 ### **v1.0.0** (October 31, 2025)
 - ✅ Initial implementation

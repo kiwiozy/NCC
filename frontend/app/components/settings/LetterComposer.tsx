@@ -59,9 +59,8 @@ export default function LetterComposer() {
       }),
     ],
     content: `
-      <p><strong>Walk Easy Pedorthics</strong></p>
-      <p>123 Main Street</p>
-      <p>City, State, ZIP</p>
+      <p><br></p>
+      <p><br></p>
       <p><br></p>
       <p>${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
       <p><br></p>

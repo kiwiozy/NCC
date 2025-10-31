@@ -1,15 +1,64 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
 import json
+import os
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageTemplate, Frame
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
+from reportlab.pdfgen import canvas
 from html.parser import HTMLParser
 import re
+
+
+class LetterheadCanvas(canvas.Canvas):
+    """Custom canvas that draws letterhead background on each page"""
+    
+    def __init__(self, *args, **kwargs):
+        canvas.Canvas.__init__(self, *args, **kwargs)
+        self.pages = []
+        
+        # Path to letterhead image
+        self.letterhead_path = os.path.join(
+            settings.BASE_DIR.parent,
+            'docs',
+            'Letters',
+            'Walk-Easy_Letterhead-Pad-Final.png'
+        )
+        
+    def showPage(self):
+        """Override to add letterhead to each page before showing"""
+        self.pages.append(dict(self.__dict__))
+        self._startPage()
+        
+    def save(self):
+        """Override to add letterhead to all pages"""
+        num_pages = len(self.pages)
+        for page in self.pages:
+            self.__dict__.update(page)
+            self._draw_letterhead()
+            canvas.Canvas.showPage(self)
+        canvas.Canvas.save(self)
+        
+    def _draw_letterhead(self):
+        """Draw the letterhead background image"""
+        if os.path.exists(self.letterhead_path):
+            # Get page dimensions
+            page_width, page_height = letter
+            
+            # Draw letterhead as background (full page)
+            self.drawImage(
+                self.letterhead_path,
+                0, 0,  # x, y position (bottom-left corner)
+                width=page_width,
+                height=page_height,
+                preserveAspectRatio=True,
+                mask='auto'
+            )
 
 
 class HTML2ReportLabConverter:
@@ -123,13 +172,13 @@ def generate_pdf(request):
         # Create PDF buffer
         buffer = BytesIO()
         
-        # Create PDF document
+        # Create PDF document with custom canvas
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
             rightMargin=72,
             leftMargin=72,
-            topMargin=72,
+            topMargin=100,  # More top margin to avoid letterhead header
             bottomMargin=72,
         )
         
@@ -137,8 +186,8 @@ def generate_pdf(request):
         converter = HTML2ReportLabConverter()
         story = converter.html_to_pdf_elements(html_content)
         
-        # Build PDF
-        doc.build(story)
+        # Build PDF with letterhead canvas
+        doc.build(story, canvasmaker=LetterheadCanvas)
         
         # Get PDF data
         pdf_data = buffer.getvalue()
@@ -170,20 +219,20 @@ def email_letter(request):
         if not all([html_content, recipient_email, recipient_name, subject]):
             return JsonResponse({'error': 'Missing required fields'}, status=400)
         
-        # Generate PDF
+        # Generate PDF with letterhead
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
             rightMargin=72,
             leftMargin=72,
-            topMargin=72,
+            topMargin=100,  # More top margin to avoid letterhead header
             bottomMargin=72,
         )
         
         converter = HTML2ReportLabConverter()
         story = converter.html_to_pdf_elements(html_content)
-        doc.build(story)
+        doc.build(story, canvasmaker=LetterheadCanvas)
         
         pdf_data = buffer.getvalue()
         buffer.close()
