@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'gmail_integration',
     'documents',
     'ai_services',  # S3 document storage
-    'letters',  # Letter composer with PDF generation
 ]
 
 MIDDLEWARE = [

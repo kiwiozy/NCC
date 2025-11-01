@@ -32,8 +32,6 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'gmail':
         return <GmailIntegration />;
-      case 'letters':
-        return <LetterComposer />;
       case 'xero':
         return <XeroIntegration />;
       case 'sms':
