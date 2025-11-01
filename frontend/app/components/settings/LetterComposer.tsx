@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { generateLetterPDF, generateLetterPDFPreview } from '../../utils/pdfmaker';
 import { 
   Container, 
   Paper, 
@@ -84,6 +85,7 @@ const FontSize = Extension.create({
     };
   },
 });
+
 import { 
   IconBold, 
   IconItalic, 
@@ -122,6 +124,13 @@ export default function LetterComposer() {
   const [subject, setSubject] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailModalOpened, setEmailModalOpened] = useState(false);
+  const [pdfPreviewOpened, setPdfPreviewOpened] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+
+  // A4 page dimensions for page break indicators
+  // Top margin: 190px, usable content height per page: ~683px
+  const PAGE_BREAK_HEIGHT = 683; // Approximate usable height per A4 page
+  const TOP_MARGIN = 190; // Top padding for letterhead
 
   const editor = useEditor({
     immediatelyRender: false, // Fix for Next.js SSR
@@ -474,44 +483,44 @@ export default function LetterComposer() {
     );
   };
 
-  const handleGeneratePDF = async () => {
+  const handlePreviewPDF = async () => {
     if (!editor) return;
 
     const html = editor.getHTML();
     
-    // Debug: Log the HTML being sent
-    console.log('='.repeat(80));
-    console.log('HTML being sent to PDF generator:');
-    console.log(html);
-    console.log('='.repeat(80));
-
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/letters/generate-pdf/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          html_content: html,
-          subject: subject || 'Letter',
-        }),
+      
+      // Generate PDF preview
+      const blobUrl = await generateLetterPDFPreview(html);
+      setPdfBlobUrl(blobUrl);
+      setPdfPreviewOpened(true);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      setLoading(false);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to generate PDF preview',
+        color: 'red',
       });
+    }
+  };
 
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
-      }
+  const handleDownloadPDFFromPreview = async () => {
+    if (!editor) return;
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${subject || 'letter'}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
+    const html = editor.getHTML();
+    const filename = `${subject || 'letter'}.pdf`;
+    
+    try {
+      // Generate PDF client-side using pdfmake
+      await generateLetterPDF(html, filename);
+      
+      // Close preview modal
+      setPdfPreviewOpened(false);
+      
       notifications.show({
         title: 'Success',
         message: 'PDF downloaded successfully',
@@ -524,10 +533,21 @@ export default function LetterComposer() {
         message: 'Failed to generate PDF',
         color: 'red',
       });
-    } finally {
-      setLoading(false);
     }
   };
+
+  const handleGeneratePDF = async () => {
+    // Open preview modal instead of direct download
+    await handlePreviewPDF();
+  };
+
+  // Cleanup blob URL when modal closes
+  useEffect(() => {
+    if (!pdfPreviewOpened && pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(null);
+    }
+  }, [pdfPreviewOpened, pdfBlobUrl]);
 
 
   const handleSendEmail = async () => {
@@ -640,7 +660,7 @@ export default function LetterComposer() {
           </Box>
           <div style={{ 
             backgroundColor: '#fff',
-            minHeight: '500px',
+            minHeight: '2500px', // Increased to show multiple page breaks
             fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, Verdana, sans-serif',
             fontSize: '14px',
             lineHeight: '1.6',
@@ -731,6 +751,23 @@ export default function LetterComposer() {
             `}} />
             
             <EditorContent editor={editor} />
+            
+            {/* Page Break Indicators */}
+            {[1, 2, 3, 4, 5].map((pageNum) => (
+              <div
+                key={pageNum}
+                style={{
+                  position: 'absolute',
+                  top: `${TOP_MARGIN + (PAGE_BREAK_HEIGHT * pageNum)}px`,
+                  left: 0,
+                  right: 0,
+                  height: '1px',
+                  backgroundColor: 'rgba(255, 0, 0, 0.3)',
+                  pointerEvents: 'none',
+                  zIndex: 10,
+                }}
+              />
+            ))}
           </div>
         </Paper>
       </Stack>
@@ -782,6 +819,56 @@ export default function LetterComposer() {
               loading={loading}
             >
               Send Email
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        opened={pdfPreviewOpened}
+        onClose={() => setPdfPreviewOpened(false)}
+        title="PDF Preview"
+        size="lg"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Review your PDF before downloading. Check page breaks and formatting.
+          </Text>
+
+          {pdfBlobUrl && (
+            <Box style={{ 
+              height: '600px',
+              border: '1px solid var(--mantine-color-default-border)',
+              borderRadius: '8px',
+              overflow: 'hidden',
+            }}>
+              <iframe
+                src={pdfBlobUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+                title="PDF Preview"
+              />
+            </Box>
+          )}
+
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              onClick={() => setPdfPreviewOpened(false)}
+            >
+              Close
+            </Button>
+            <Button
+              leftSection={<IconFileTypePdf size={16} />}
+              onClick={handleDownloadPDFFromPreview}
+              color="blue"
+            >
+              Download PDF
             </Button>
           </Group>
         </Stack>

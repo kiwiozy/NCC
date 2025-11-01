@@ -7,7 +7,7 @@ import os
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageTemplate, Frame
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageTemplate, Frame, BaseDocTemplate
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
 from reportlab.lib.colors import HexColor, black
@@ -15,6 +15,15 @@ from reportlab.pdfgen import canvas
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
 import re
+
+
+# Page margins (in points)
+TOP_MARGIN = 190
+BOTTOM_MARGIN = 140
+LEFT_MARGIN = 105
+RIGHT_MARGIN = 105
+PAGE_WIDTH, PAGE_HEIGHT = A4
+CONTENT_HEIGHT = PAGE_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN
 
 
 class LetterheadCanvas(canvas.Canvas):
@@ -98,6 +107,9 @@ class HTML2ReportLabConverter:
             # Skip paragraphs that are inside lists (they'll be handled by list processing)
             if tag.name == 'p' and id(tag) in paragraphs_in_lists:
                 continue
+            
+            # Extract data-we ID from tag
+            we_id = tag.get('data-we', None)
                 
             # Handle lists
             if tag.name in ['ul', 'ol']:
@@ -120,7 +132,7 @@ class HTML2ReportLabConverter:
                             p = Paragraph(text, style)
                             list_items.append(ListItem(p))
                         except Exception as e:
-                            print(f"Error creating list item: {e}, text: {text}")
+                            print(f"❌ Error creating list item: {e}, text: {text[:50]}")
                             continue
                 
                 if list_items:
@@ -132,13 +144,20 @@ class HTML2ReportLabConverter:
                         bulletFontSize=10,  # Fixed size (was: int(10 * self.font_scale))
                         bulletColor=black,
                     )
+                    # Transfer data-we ID to list flowable
+                    if we_id:
+                        list_flowable._we_id = we_id
                     elements.append(list_flowable)
                     elements.append(Spacer(1, 0.08 * inch))
                 continue
             
             # Check if paragraph is empty or just whitespace
             if not tag.get_text(strip=True):
-                elements.append(Spacer(1, 0.15 * inch))
+                spacer = Spacer(1, 0.15 * inch)
+                # Transfer data-we ID even to spacers (empty paragraphs)
+                if we_id:
+                    spacer._we_id = we_id
+                elements.append(spacer)
                 continue
             
             # Get paragraph-level alignment from style
@@ -179,7 +198,7 @@ class HTML2ReportLabConverter:
                     elements.append(p)
                     elements.append(Spacer(1, 0.06 * inch))  # Reduced spacing between paragraphs
                 except Exception as e:
-                    print(f"Error creating paragraph: {e}, text: {text}")
+                    print(f"❌ Error creating paragraph: {e}, text: {text[:50]}")
                     continue
                 
         return elements
@@ -470,3 +489,4 @@ def email_letter(request):
     except Exception as e:
         print(f"Error sending email: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
