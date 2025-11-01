@@ -13,6 +13,7 @@ import {
   Divider,
   Modal,
   Text,
+  Box,
   LoadingOverlay,
   Select,
   NumberInput,
@@ -21,8 +22,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import TextStyle from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
@@ -69,9 +70,9 @@ const FontSize = Extension.create({
 
   addCommands() {
     return {
-      setFontSize: fontSize => ({ chain }) => {
+      setFontSize: (fontSize: string) => ({ chain }) => {
         return chain()
-          .setMark('textStyle', { fontSize: fontSize })
+          .setMark('textStyle', { fontSize })
           .run();
       },
       unsetFontSize: () => ({ chain }) => {
@@ -159,22 +160,19 @@ export default function LetterComposer() {
       TableCell,
     ],
     content: `
-      <p><br></p>
-      <p><br></p>
-      <p><br></p>
-      <p>${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      <p><br></p>
-      <p>Dear [Recipient],</p>
-      <p><br></p>
-      <p>Start writing your letter here...</p>
-      <p><br></p>
-      <p>Sincerely,</p>
-      <p><br></p>
-      <p>Walk Easy Pedorthics</p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;">${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;"><br></span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;">Dear [Recipient],</span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;"><br></span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;">Start writing your letter here...</span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;"><br></span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;">Sincerely,</span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;"><br></span></p>
+      <p><span style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, Verdana, sans-serif;">Walk Easy Pedorthics</span></p>
     `,
     editorProps: {
       attributes: {
-        style: 'min-height: 500px; padding: 16px; outline: none;',
+        style: 'min-height: 500px; outline: none;',
       },
     },
   });
@@ -185,6 +183,22 @@ export default function LetterComposer() {
     }
 
     const [expandedSection, setExpandedSection] = useState<string | null>(null);
+    const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = (section: string) => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        setCloseTimeout(null);
+      }
+      setExpandedSection(section);
+    };
+
+    const handleMouseLeave = () => {
+      const timeout = setTimeout(() => {
+        setExpandedSection(null);
+      }, 300); // 300ms delay before closing
+      setCloseTimeout(timeout);
+    };
 
     const addLink = () => {
       const url = prompt('Enter URL');
@@ -201,12 +215,12 @@ export default function LetterComposer() {
     };
 
     return (
-      <Group gap="xs" p="sm" style={{ borderBottom: '1px solid #dee2e6' }}>
+      <Group gap="xs" p="sm">
         {/* Format Section */}
         <div
           style={{ position: 'relative' }}
-          onMouseEnter={() => setExpandedSection('format')}
-          onMouseLeave={() => setExpandedSection(null)}
+          onMouseEnter={() => handleMouseEnter('format')}
+          onMouseLeave={handleMouseLeave}
         >
           <Button
             size="sm"
@@ -220,12 +234,14 @@ export default function LetterComposer() {
             <Paper
               shadow="md"
               p="xs"
+              onMouseEnter={() => handleMouseEnter('format')}
+              onMouseLeave={handleMouseLeave}
               style={{
                 position: 'absolute',
                 top: '100%',
                 left: 0,
                 marginTop: '4px',
-                zIndex: 1000,
+                zIndex: 100000,
                 minWidth: '400px',
               }}
             >
@@ -246,8 +262,8 @@ export default function LetterComposer() {
         {/* Font Section */}
         <div
           style={{ position: 'relative' }}
-          onMouseEnter={() => setExpandedSection('font')}
-          onMouseLeave={() => setExpandedSection(null)}
+          onMouseEnter={() => handleMouseEnter('font')}
+          onMouseLeave={handleMouseLeave}
         >
           <Button
             size="sm"
@@ -260,12 +276,14 @@ export default function LetterComposer() {
             <Paper
               shadow="md"
               p="xs"
+              onMouseEnter={() => handleMouseEnter('font')}
+              onMouseLeave={handleMouseLeave}
               style={{
                 position: 'absolute',
                 top: '100%',
                 left: 0,
                 marginTop: '4px',
-                zIndex: 1000,
+                zIndex: 100000,
                 minWidth: '400px',
               }}
             >
@@ -274,9 +292,18 @@ export default function LetterComposer() {
                   size="xs"
                   placeholder="Font Family"
                   value={editor.getAttributes('textStyle').fontFamily || ''}
-                  onChange={(value) => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
+                  onChange={(value) => {
+                    if (value) {
+                      editor.chain().focus().setMark('textStyle', { fontFamily: value }).run();
+                    } else {
+                      editor.chain().focus().unsetMark('textStyle').run();
+                    }
+                  }}
                   data={[
-                    { value: '', label: 'Default (Georgia)' },
+                    { value: '', label: 'Default (SF Pro)' },
+                    { value: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif', label: 'SF Pro (System)' },
+                    { value: 'ui-rounded, "SF Compact Rounded", system-ui, sans-serif', label: 'SF Compact Rounded' },
+                    { value: 'ui-monospace, "SF Mono", Menlo, Monaco, monospace', label: 'SF Mono' },
                     { value: 'Arial', label: 'Arial' },
                     { value: 'Helvetica', label: 'Helvetica' },
                     { value: 'Times New Roman', label: 'Times New Roman' },
@@ -286,12 +313,19 @@ export default function LetterComposer() {
                   ]}
                   style={{ width: '180px' }}
                   clearable
+                  comboboxProps={{ zIndex: 999999 }}
                 />
                 <Select
                   size="xs"
                   placeholder="Size"
                   value={editor.getAttributes('textStyle').fontSize || ''}
-                  onChange={(value) => value ? editor.chain().focus().setFontSize(value).run() : editor.chain().focus().unsetFontSize().run()}
+                  onChange={(value) => {
+                    if (value) {
+                      editor.chain().focus().setMark('textStyle', { fontSize: value }).run();
+                    } else {
+                      editor.chain().focus().unsetMark('textStyle').run();
+                    }
+                  }}
                   data={[
                     { value: '', label: 'Default' },
                     { value: '10px', label: '10px' },
@@ -304,7 +338,11 @@ export default function LetterComposer() {
                   ]}
                   style={{ width: '120px' }}
                   clearable
+                  comboboxProps={{ zIndex: 999999 }}
                 />
+                <Divider orientation="vertical" />
+                <input type="color" onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes('textStyle').color || '#000000'} style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Text Color" />
+                <input type="color" onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()} value="#ffff00" style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Highlight" />
               </Group>
             </Paper>
           )}
@@ -313,8 +351,8 @@ export default function LetterComposer() {
         {/* Style Section */}
         <div
           style={{ position: 'relative' }}
-          onMouseEnter={() => setExpandedSection('style')}
-          onMouseLeave={() => setExpandedSection(null)}
+          onMouseEnter={() => handleMouseEnter('style')}
+          onMouseLeave={handleMouseLeave}
         >
           <Button
             size="sm"
@@ -328,12 +366,14 @@ export default function LetterComposer() {
             <Paper
               shadow="md"
               p="xs"
+              onMouseEnter={() => handleMouseEnter('style')}
+              onMouseLeave={handleMouseLeave}
               style={{
                 position: 'absolute',
                 top: '100%',
                 left: 0,
                 marginTop: '4px',
-                zIndex: 1000,
+                zIndex: 100000,
                 minWidth: '350px',
               }}
             >
@@ -352,8 +392,8 @@ export default function LetterComposer() {
         {/* Align Section */}
         <div
           style={{ position: 'relative' }}
-          onMouseEnter={() => setExpandedSection('align')}
-          onMouseLeave={() => setExpandedSection(null)}
+          onMouseEnter={() => handleMouseEnter('align')}
+          onMouseLeave={handleMouseLeave}
         >
           <Button
             size="sm"
@@ -367,12 +407,14 @@ export default function LetterComposer() {
             <Paper
               shadow="md"
               p="xs"
+              onMouseEnter={() => handleMouseEnter('align')}
+              onMouseLeave={handleMouseLeave}
               style={{
                 position: 'absolute',
                 top: '100%',
                 left: 0,
                 marginTop: '4px',
-                zIndex: 1000,
+                zIndex: 100000,
                 minWidth: '350px',
               }}
             >
@@ -392,8 +434,8 @@ export default function LetterComposer() {
         {/* Insert Section */}
         <div
           style={{ position: 'relative' }}
-          onMouseEnter={() => setExpandedSection('insert')}
-          onMouseLeave={() => setExpandedSection(null)}
+          onMouseEnter={() => handleMouseEnter('insert')}
+          onMouseLeave={handleMouseLeave}
         >
           <Button
             size="sm"
@@ -407,12 +449,14 @@ export default function LetterComposer() {
             <Paper
               shadow="md"
               p="xs"
+              onMouseEnter={() => handleMouseEnter('insert')}
+              onMouseLeave={handleMouseLeave}
               style={{
                 position: 'absolute',
                 top: '100%',
                 left: 0,
                 marginTop: '4px',
-                zIndex: 1000,
+                zIndex: 100000,
                 minWidth: '400px',
               }}
             >
@@ -422,9 +466,6 @@ export default function LetterComposer() {
                 <Button size="sm" variant="default" onClick={addImage} title="Image"><IconPhoto size={16} /></Button>
                 <Button size="sm" variant="default" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Table"><IconTable size={16} /></Button>
                 <Button size="sm" variant="default" onClick={() => editor.chain().focus().setHorizontalRule().run()} title="HR"><IconSeparator size={16} /></Button>
-                <Divider orientation="vertical" />
-                <input type="color" onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()} value={editor.getAttributes('textStyle').color || '#000000'} style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Text Color" />
-                <input type="color" onInput={(e) => editor.chain().focus().toggleHighlight({ color: (e.target as HTMLInputElement).value }).run()} value="#ffff00" style={{ width: '40px', height: '32px', border: '1px solid #dee2e6', borderRadius: '4px', cursor: 'pointer' }} title="Highlight" />
               </Group>
             </Paper>
           )}
@@ -437,6 +478,12 @@ export default function LetterComposer() {
     if (!editor) return;
 
     const html = editor.getHTML();
+    
+    // Debug: Log the HTML being sent
+    console.log('='.repeat(80));
+    console.log('HTML being sent to PDF generator:');
+    console.log(html);
+    console.log('='.repeat(80));
 
     try {
       setLoading(true);
@@ -481,6 +528,7 @@ export default function LetterComposer() {
       setLoading(false);
     }
   };
+
 
   const handleSendEmail = async () => {
     if (!editor) return;
@@ -587,16 +635,41 @@ export default function LetterComposer() {
 
         {/* Editor */}
         <Paper shadow="sm" withBorder style={{ overflow: 'hidden' }}>
-          <MenuBar />
+          <Box style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+            <MenuBar />
+          </Box>
           <div style={{ 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',
             minHeight: '500px',
-            fontFamily: 'Georgia, serif',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, Verdana, sans-serif',
             fontSize: '14px',
             lineHeight: '1.6',
             color: '#000',
+            padding: '190px 105px 140px 105px', // Top, Right, Bottom, Left - matching letterhead beige frame
+            position: 'relative',
           }}>
             <style dangerouslySetInnerHTML={{__html: `
+              .ProseMirror {
+                outline: none;
+                position: relative;
+              }
+              .ProseMirror ul,
+              .ProseMirror ol {
+                padding-left: 30px;
+                margin: 1em 0;
+              }
+              .ProseMirror ul {
+                list-style-type: disc;
+              }
+              .ProseMirror ol {
+                list-style-type: decimal;
+              }
+              .ProseMirror li {
+                margin: 0.25em 0;
+              }
+              .ProseMirror li > p {
+                margin: 0;
+              }
               .ProseMirror table {
                 border-collapse: collapse;
                 margin: 1em 0;
@@ -656,6 +729,7 @@ export default function LetterComposer() {
                 margin: 2em 0;
               }
             `}} />
+            
             <EditorContent editor={editor} />
           </div>
         </Paper>
