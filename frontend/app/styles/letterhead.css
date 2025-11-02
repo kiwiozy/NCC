@@ -74,8 +74,24 @@
 /* Override any dark mode styling for content */
 .we-page-content *,
 .we-page-content .ProseMirror,
-.we-page-content .ProseMirror * {
+.we-page-content .ProseMirror *,
+.we-page-content p,
+.we-page-content .ProseMirror p,
+.we-page-content div,
+.we-page-content span,
+.we-page-content strong,
+.we-page-content em,
+.we-page-content u {
   color: #000000 !important;
+}
+
+/* Force placeholder text to be visible but lighter */
+.we-page-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: "Click here to start typing...";
+  color: rgba(0, 0, 0, 0.4) !important;
+  pointer-events: none;
+  height: 0;
+  float: left;
 }
 
 /* Hover state - show subtle background */
@@ -109,15 +125,6 @@
   height: 100%;
   overflow: auto;
   min-height: 100%;
-}
-
-/* Empty editor placeholder */
-.we-page-content .ProseMirror p.is-editor-empty:first-child::before {
-  content: "Click here to start typing...";
-  color: rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-  height: 0;
-  float: left;
 }
 
 .we-page-content .ProseMirror p,
