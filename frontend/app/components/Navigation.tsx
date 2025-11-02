@@ -218,7 +218,9 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          position: 'relative',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
           overflow: 'visible',
         }}
       >
@@ -427,6 +429,7 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
           padding: 0,
+          paddingTop: 0,
         }}
       >
         {children}
