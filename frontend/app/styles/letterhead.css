@@ -60,6 +60,19 @@
   font-size: 14px;
   line-height: 1.6;
   z-index: 1;
+  cursor: text; /* Show text cursor to indicate editable area */
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hover state - show subtle background */
+.we-page-content:hover {
+  background-color: rgba(59, 130, 246, 0.02); /* Very subtle blue tint */
+}
+
+/* When editor is focused - highlight the editable area */
+.we-page-content:has(.ProseMirror:focus) {
+  background-color: rgba(59, 130, 246, 0.04); /* Slightly stronger blue tint */
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.15); /* Subtle blue border */
 }
 
 /* Page break indicator (only in editor, not in PDF) */
@@ -78,6 +91,21 @@
 }
 
 /* TipTap editor styling within page content */
+.we-page-content .ProseMirror {
+  height: 100%;
+  overflow: auto;
+  min-height: 100%;
+}
+
+/* Empty editor placeholder */
+.we-page-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: "Click here to start typing...";
+  color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+
 .we-page-content .ProseMirror p,
 .we-page-content p {
   margin: 0 0 8px 0;

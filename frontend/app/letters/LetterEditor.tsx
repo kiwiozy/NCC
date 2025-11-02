@@ -2,6 +2,7 @@ import { Paper, Button, Group, ActionIcon, Modal, Stack } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
 import { 
   IconBold, 
   IconItalic, 
@@ -25,8 +26,16 @@ function LetterPage({
   onContentChange: (content: string) => void;
 }) {
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
-    content: initialContent || `<p>Page ${pageNumber} content...</p>`,
+    extensions: [
+      StarterKit,
+      Underline,
+      Placeholder.configure({
+        placeholder: pageNumber === 1 
+          ? 'Start typing your letter here...'
+          : `Page ${pageNumber} content...`,
+      }),
+    ],
+    content: initialContent || `<p></p>`,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
