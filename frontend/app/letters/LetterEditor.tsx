@@ -187,11 +187,17 @@ export default function LetterEditor() {
         title="Letter Preview"
         size="xl"
         padding="md"
+        styles={{
+          body: {
+            maxHeight: '85vh',
+            overflow: 'auto',
+          },
+        }}
       >
         {pdfUrl ? (
           isSafari ? (
             // Safari: Use object tag + download button
-            <Stack gap="md" style={{ height: '80vh' }}>
+            <Stack gap="md">
               <Button
                 component="a"
                 href={pdfUrl}
@@ -206,12 +212,13 @@ export default function LetterEditor() {
                 type="application/pdf"
                 style={{
                   width: '100%',
-                  flex: 1,
+                  minHeight: '80vh',
+                  height: 'auto',
                   border: 'none',
                   backgroundColor: '#525659',
                 }}
               >
-                <Stack align="center" justify="center" style={{ height: '100%', padding: '40px' }}>
+                <Stack align="center" justify="center" style={{ height: '80vh', padding: '40px' }}>
                   <Text c="white" size="lg" mb="md">
                     Unable to display PDF preview.
                   </Text>
@@ -228,13 +235,14 @@ export default function LetterEditor() {
               </object>
             </Stack>
           ) : (
-            // Chrome/Edge: Use native iframe viewer
+            // Chrome/Edge: Use native iframe viewer with scrollable content
             <iframe
               key={pdfUrl}
               src={pdfUrl}
               style={{
                 width: '100%',
-                height: '80vh',
+                minHeight: '80vh',
+                height: 'auto',
                 border: 'none',
               }}
               title="PDF Preview"
