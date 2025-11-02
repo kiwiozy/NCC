@@ -20,11 +20,11 @@ export default function LettersPage() {
 
   return (
     <Navigation>
-      {/* Fixed Letters Title Section - Outside Container */}
+      {/* Fixed Letters Title Section */}
       <Box
         style={{
           position: 'sticky',
-          top: 80, // Below the 80px navigation
+          top: 0, // Stick to top of scrolling container
           zIndex: 90,
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
