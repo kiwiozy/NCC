@@ -158,8 +158,19 @@ export default function LetterEditor() {
 
   return (
     <>
-      {/* Toolbar */}
-      <Paper shadow="sm" p="md" mb="xl" withBorder>
+      {/* Fixed Toolbar */}
+      <Paper 
+        shadow="sm" 
+        p="md" 
+        mb="xl" 
+        withBorder
+        style={{
+          position: 'sticky',
+          top: 'calc(80px + 57px)', // Below navigation (80px) + Letters title (57px)
+          zIndex: 80,
+          backgroundColor: 'var(--mantine-color-body)',
+        }}
+      >
         <Group gap="xs">
           <Button
             leftSection={<IconPageBreak size={18} />}
@@ -181,7 +192,7 @@ export default function LetterEditor() {
         </Group>
       </Paper>
 
-      {/* Multi-page editor */}
+      {/* Scrollable Multi-page editor */}
       <div className="letter-editor-shell">
         <Stack gap="xl">
           {pages.map((pageContent, index) => (
