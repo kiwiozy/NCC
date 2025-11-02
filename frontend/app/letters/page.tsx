@@ -150,13 +150,9 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Sticky Letters Title */}
+        {/* Letters Title - NOT sticky, just a regular header */}
         <Box
           style={{
-            position: 'sticky',
-            position: '-webkit-sticky',
-            top: 0,
-            zIndex: 150,
             backgroundColor: isDark ? '#25262b' : '#ffffff',
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
             padding: `${rem(8)} 0`,
@@ -176,13 +172,9 @@ export default function LettersPage() {
           </Title>
         </Box>
 
-        {/* Sticky Toolbar - Stacks directly below title */}
+        {/* Toolbar - NOT sticky, scrolls with content */}
         <Box
           style={{
-            position: 'sticky',
-            position: '-webkit-sticky',
-            top: 0, // Changed to 0 so it stacks with title
-            zIndex: 140,
             backgroundColor: isDark ? '#25262b' : '#ffffff',
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
             padding: '1rem',
