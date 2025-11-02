@@ -157,6 +157,7 @@ export default function LettersPage() {
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
             padding: `${rem(8)} 0`,
             margin: 0,
+            marginBottom: 0, // No gap
           }}
         >
           <Title 
@@ -179,6 +180,7 @@ export default function LettersPage() {
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
             padding: '1rem',
             margin: 0,
+            marginTop: 0, // No gap
           }}
         >
           <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
