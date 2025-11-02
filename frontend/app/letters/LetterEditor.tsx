@@ -104,9 +104,15 @@ export default function LetterEditor() {
 
       if (response.ok) {
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
-        setModalOpen(true);
+        
+        // Convert blob to base64 data URL for better Safari compatibility
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          setPdfUrl(base64data);
+          setModalOpen(true);
+        };
+        reader.readAsDataURL(blob);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
@@ -122,10 +128,7 @@ export default function LetterEditor() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
-    }
+    setPdfUrl(null);
   };
 
   return (
