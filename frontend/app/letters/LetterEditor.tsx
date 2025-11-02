@@ -8,6 +8,7 @@ import {
   IconUnderline,
   IconFileTypePdf
 } from '@tabler/icons-react';
+import '../styles/letterhead.css';
 
 export default function LetterEditor() {
   const editor = useEditor({
@@ -23,11 +24,6 @@ export default function LetterEditor() {
       <p>Sincerely,</p>
       <p>Walk Easy Pedorthics</p>
     `,
-    editorProps: {
-      attributes: {
-        class: 'editor-content',
-      },
-    },
     immediatelyRender: false, // Required to avoid SSR hydration issues
   });
 
@@ -92,7 +88,9 @@ export default function LetterEditor() {
       <div className="letter-editor-shell">
         <div className="a4-page">
           <div className="letterhead-overlay" />
-          <EditorContent editor={editor} />
+          <div className="editor-content">
+            <EditorContent editor={editor} />
+          </div>
         </div>
       </div>
     </>
