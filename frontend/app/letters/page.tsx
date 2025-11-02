@@ -162,10 +162,9 @@ export default function LettersPage() {
           <div
             style={{
               padding: `${rem(8)} 0`,
-              paddingBottom: 0, // No bottom padding
+              paddingBottom: 0,
               textAlign: 'center',
               margin: 0,
-              border: 'none',
             }}
           >
             <Title 
@@ -174,19 +173,21 @@ export default function LettersPage() {
                 fontSize: rem(24),
                 fontWeight: 500,
                 margin: 0,
+                marginBottom: 0,
               }}
             >
               Letters
             </Title>
           </div>
 
-          {/* Toolbar - Only border at bottom */}
+          {/* Toolbar - Border only at bottom */}
           <div
             style={{
               borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
               padding: '1rem',
-              paddingTop: 0, // No top padding - flush with title
+              paddingTop: 0,
               margin: 0,
+              marginTop: 0,
             }}
           >
             <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
