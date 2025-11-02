@@ -42,7 +42,9 @@ function LetterPage({
     },
   });
 
-  // Update editor content when initialContent changes
+  // CRITICAL: Sync editor content with initialContent prop changes
+  // This ensures the editor always reflects the latest state
+  // emitUpdate: false prevents infinite loops
   useEffect(() => {
     if (editor && initialContent && editor.getHTML() !== initialContent) {
       editor.commands.setContent(initialContent, { emitUpdate: false });
@@ -79,6 +81,7 @@ function LetterPage({
 export default function LetterEditor() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfKey, setPdfKey] = useState<string>(''); // Unique key to force iframe/object remount
   const [modalOpen, setModalOpen] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
   const [pages, setPages] = useState<string[]>([
@@ -107,11 +110,34 @@ export default function LetterEditor() {
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     
-    // Combine all pages into a single HTML string with page markers
-    const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
+    // CRITICAL: Clear PDF URL and key FIRST to force unmount
+    setPdfUrl(null);
+    setPdfKey('');
     
-    console.log('Generating PDF with content:', combinedHTML.substring(0, 200) + '...');
-    console.log('Pages state:', pages);
+    // CRITICAL: Get content directly from DOM (TipTap's ProseMirror structure)
+    // This ensures we ALWAYS have the latest content, even if React state hasn't updated yet
+    // The DOM is the source of truth, not React state
+    const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+    let combinedHTML: string;
+    
+    if (editorElements.length > 0) {
+      // Get HTML directly from DOM - this is the most reliable method
+      const domContent = Array.from(editorElements).map(el => {
+        const html = (el as HTMLElement).innerHTML || '';
+        console.log('Got HTML from DOM:', html.substring(0, 50) + '...');
+        return html;
+      });
+      combinedHTML = domContent.join('<hr class="page-break">');
+      console.log('✅ Using DOM content directly, length:', combinedHTML.length);
+    } else {
+      // Fallback to state if DOM query fails
+      await new Promise(resolve => setTimeout(resolve, 100));
+      combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
+      console.warn('⚠️ DOM query failed, using state (may be stale)');
+    }
+    
+    console.log('Generating PDF with final content:', combinedHTML.substring(0, 200) + '...');
+    console.log('Content length:', combinedHTML.length);
     
     try {
       // Generate PDF and get URL
@@ -124,18 +150,28 @@ export default function LetterEditor() {
       if (response.ok) {
         const { pdfId, pdfUrl } = await response.json();
         
-        // Add timestamp AND random string to URL to prevent aggressive caching
-        const cacheBustedUrl = `${pdfUrl}?t=${Date.now()}&r=${Math.random()}`;
+        // CRITICAL: Add timestamp AND random string to URL to prevent aggressive caching
+        // This ensures each preview gets a fresh PDF, even if content appears similar
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 15);
+        const cacheBustedUrl = `${pdfUrl}?t=${timestamp}&r=${random}`;
         
-        console.log('New PDF URL:', cacheBustedUrl);
+        // Generate unique key that includes timestamp and random to force remount
+        const uniqueKey = `pdf-${timestamp}-${random}`;
+        
+        console.log('New PDF URL with cache-busting:', cacheBustedUrl);
+        console.log('Unique key:', uniqueKey);
         
         // Open modal FIRST (ChatGPT recommendation to avoid Safari hidden iframe bug)
         setModalOpen(true);
         
-        // Then set the PDF URL after next animation frame
+        // Then set the PDF URL and key after next animation frame to force fresh load
         requestAnimationFrame(() => {
-          setPdfUrl(cacheBustedUrl);
-          setPdfLoading(false);
+          setPdfKey(uniqueKey);
+          requestAnimationFrame(() => {
+            setPdfUrl(cacheBustedUrl);
+            setPdfLoading(false);
+          });
         });
       } else {
         const errorData = await response.json();
@@ -152,8 +188,9 @@ export default function LetterEditor() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    // Clear PDF URL to force fresh load on next preview
+    // Clear PDF URL and key to force fresh load on next preview
     setPdfUrl(null);
+    setPdfKey('');
   };
 
   return (
@@ -221,7 +258,7 @@ export default function LetterEditor() {
           },
         }}
       >
-        {pdfUrl ? (
+        {pdfUrl && pdfKey ? (
           isSafari ? (
             // Safari: Use object tag + download button
             <Stack gap="md">
@@ -235,7 +272,7 @@ export default function LetterEditor() {
                 Download PDF
               </Button>
               <object
-                key={pdfUrl}
+                key={pdfKey}
                 data={pdfUrl}
                 type="application/pdf"
                 style={{
@@ -265,7 +302,7 @@ export default function LetterEditor() {
           ) : (
             // Chrome/Edge: Use native iframe viewer with scrollable content
             <iframe
-              key={pdfUrl}
+              key={pdfKey}
               src={pdfUrl}
               style={{
                 width: '100%',
