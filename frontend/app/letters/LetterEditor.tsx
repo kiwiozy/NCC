@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Modal } from '@mantine/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -8,9 +8,14 @@ import {
   IconUnderline,
   IconFileTypePdf
 } from '@tabler/icons-react';
+import { useState } from 'react';
 import '../styles/letterhead.css';
 
 export default function LetterEditor() {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -30,7 +35,9 @@ export default function LetterEditor() {
   const handlePreviewPDF = async () => {
     if (!editor) return;
     
+    setPdfLoading(true);
     const html = editor.getHTML();
+    
     try {
       const response = await fetch('/api/letters/pdf', {
         method: 'POST',
@@ -41,7 +48,8 @@ export default function LetterEditor() {
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        setPdfUrl(url);
+        setModalOpen(true);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
@@ -50,6 +58,16 @@ export default function LetterEditor() {
     } catch (error) {
       console.error('Error calling PDF API:', error);
       alert('Error generating PDF. Check console for details.');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
     }
   };
 
@@ -86,6 +104,7 @@ export default function LetterEditor() {
           <Button
             leftSection={<IconFileTypePdf size={18} />}
             onClick={handlePreviewPDF}
+            loading={pdfLoading}
             ml="auto"
           >
             Preview PDF
@@ -102,6 +121,27 @@ export default function LetterEditor() {
           </div>
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        opened={modalOpen}
+        onClose={handleCloseModal}
+        title="Letter Preview"
+        size="xl"
+        padding="md"
+      >
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            style={{
+              width: '100%',
+              height: '80vh',
+              border: 'none',
+            }}
+            title="PDF Preview"
+          />
+        )}
+      </Modal>
     </>
   );
 }
