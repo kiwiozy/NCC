@@ -1,0 +1,102 @@
+/* Walk Easy Letterhead - Safe Zone CSS
+   Based on ChatGPT's recommendations
+*/
+
+:root {
+  --we-page-width: 210mm;
+  --we-page-height: 297mm;
+  
+  /* Safe zones from Illustrator letterhead */
+  --we-pad-top: 60mm;
+  --we-pad-right: 18mm;
+  --we-pad-bottom: 45mm;
+  --we-pad-left: 22mm;
+  
+  /* Content area height */
+  --we-content-height: calc(var(--we-page-height) - var(--we-pad-top) - var(--we-pad-bottom)); /* 192mm */
+}
+
+/* Editor shell - gray background */
+.letter-editor-shell {
+  background: #f3f3f3;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+/* A4 page container */
+.a4-page {
+  position: relative;
+  width: var(--we-page-width);
+  min-height: var(--we-page-height);
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0,0,0,.1);
+}
+
+/* Letterhead overlay (25% opacity for editing) */
+.letterhead-overlay {
+  position: absolute;
+  inset: 0;
+  background: url('/letterhead.png') no-repeat 0 0 / 210mm 297mm;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Editor content with padding for safe zones */
+.editor-content {
+  position: relative;
+  z-index: 1;
+  padding: var(--we-pad-top) var(--we-pad-right) var(--we-pad-bottom) var(--we-pad-left);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: var(--we-page-height);
+}
+
+/* Page break indicator at 192mm */
+.editor-content::after {
+  content: "— Page Break (192mm) —";
+  position: absolute;
+  left: var(--we-pad-left);
+  right: var(--we-pad-right);
+  top: calc(var(--we-pad-top) + var(--we-content-height));
+  border-top: 2px dashed rgba(210, 40, 40, 0.45);
+  font-size: 10px;
+  text-align: center;
+  color: rgba(210, 40, 40, 0.7);
+  pointer-events: none;
+  padding-top: 4px;
+}
+
+/* TipTap editor styling */
+.editor-content p {
+  margin: 0 0 8px 0;
+}
+
+.editor-content ul,
+.editor-content ol {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
+.editor-content li {
+  margin: 4px 0;
+}
+
+.editor-content h1,
+.editor-content h2,
+.editor-content h3 {
+  margin: 16px 0 8px 0;
+  font-weight: bold;
+}
+
+/* Focus styles for TipTap */
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror {
+  min-height: 400px;
+}
+
