@@ -174,7 +174,7 @@ export default function LettersPage() {
           </h2>
         </div>
 
-        {/* Toolbar - Plain HTML div, centered */}
+        {/* Toolbar - Full width, buttons centered */}
         <div
           className="letters-toolbar-wrapper"
           style={{
@@ -184,13 +184,11 @@ export default function LettersPage() {
             paddingTop: 0,
             margin: 0,
             marginTop: 0,
+            width: '100%',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             gap: '0.75rem',
-            maxWidth: '1200px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
           }}
         >
           <Button
