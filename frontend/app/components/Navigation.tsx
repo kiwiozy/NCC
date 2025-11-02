@@ -429,9 +429,9 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
           padding: 0,
-          paddingTop: 0,
           overflow: 'auto',
-          height: 'calc(100vh - 80px)', // Full height minus header
+          height: '100vh',
+          paddingTop: '80px', // Account for fixed header
         }}
       >
         {children}
