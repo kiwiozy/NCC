@@ -49,7 +49,10 @@
 - ✅ Single-page PDF working
 - ✅ Letterhead renders correctly
 - ✅ Content positioned in safe zones
-- ✅ PDF opens in new browser tab
+- ✅ **PDF Preview Modal** (Safari-compatible, no popup blockers!)
+  - Modal dialog with embedded iframe PDF viewer
+  - Native browser PDF controls (zoom, download, print)
+  - Proper cleanup on close (URL.revokeObjectURL)
 - ✅ **READY FOR USE!**
 
 ### ⏸️ Step 6: Multi-page support (later)
