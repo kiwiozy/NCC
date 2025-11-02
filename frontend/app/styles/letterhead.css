@@ -22,7 +22,7 @@
   padding: 0 !important;
 }
 
-/* Letters Title Wrapper - Force zero margins */
+/* Letters Title Wrapper - Force zero margins AND remove all padding */
 .letters-title-wrapper {
   margin: 0 !important;
   margin-top: 0 !important;
@@ -31,6 +31,11 @@
   padding-bottom: 0 !important;
   padding-top: 8px !important;
   border: none !important;
+  /* Ensure no visual gap by making height exactly match content */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: auto !important;
 }
 
 /* Mantine Title component (h2) - Force zero margins on all possible selectors */
@@ -48,11 +53,11 @@ h2.letters-title-text {
   line-height: 1.2 !important;
 }
 
-/* Toolbar Wrapper - Force zero top margin/padding */
+/* Toolbar Wrapper - Force zero top margin/padding AND negative margin to pull it up */
 .letters-toolbar-wrapper {
   margin: 0 !important;
-  margin-top: 0 !important;
-  margin-block-start: 0 !important;
+  margin-top: -1px !important; /* Negative margin to pull toolbar up flush */
+  margin-block-start: -1px !important;
   padding: 1rem !important;
   padding-top: 0 !important;
   padding-block-start: 0 !important;
