@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
     // Generate unique PDF ID
     const pdfId = crypto.randomBytes(16).toString('hex');
     const pdfPath = path.join(TEMP_PDF_DIR, `${pdfId}.pdf`);
+    
+    console.log('Generating new PDF with ID:', pdfId);
+    console.log('PDF will be saved to:', pdfPath);
 
     // Read the clean letterhead base64 string
     const letterheadPath = path.join(process.cwd(), 'public', 'Walk-Easy_Letterhead-base64.txt');
@@ -223,7 +226,7 @@ export async function POST(request: NextRequest) {
 
     // Save PDF to temporary file
     fs.writeFileSync(pdfPath, pdfBuffer);
-    console.log(`PDF saved: ${pdfId}.pdf`);
+    console.log(`PDF saved successfully: ${pdfId}.pdf (${pdfBuffer.length} bytes)`);
 
     // Return PDF ID and URL
     return NextResponse.json({
