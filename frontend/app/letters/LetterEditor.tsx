@@ -190,22 +190,42 @@ export default function LetterEditor() {
       >
         {pdfUrl ? (
           isSafari ? (
-            // Safari: Simple download option (no embedded preview)
-            <Stack align="center" justify="center" style={{ height: '80vh', padding: '40px' }}>
-              <Text size="lg" mb="xl" ta="center">
-                Safari doesn't support embedded PDF preview.
-                <br />
-                Click below to download your letter:
-              </Text>
+            // Safari: Use object tag + download button
+            <Stack gap="md" style={{ height: '80vh' }}>
               <Button
                 component="a"
                 href={pdfUrl}
                 download={`letter-${Date.now()}.pdf`}
-                size="lg"
-                leftSection={<IconFileTypePdf size={20} />}
+                leftSection={<IconFileTypePdf size={18} />}
+                style={{ alignSelf: 'flex-end' }}
               >
                 Download PDF
               </Button>
+              <object
+                data={pdfUrl}
+                type="application/pdf"
+                style={{
+                  width: '100%',
+                  flex: 1,
+                  border: 'none',
+                  backgroundColor: '#525659',
+                }}
+              >
+                <Stack align="center" justify="center" style={{ height: '100%', padding: '40px' }}>
+                  <Text c="white" size="lg" mb="md">
+                    Unable to display PDF preview.
+                  </Text>
+                  <Button
+                    component="a"
+                    href={pdfUrl}
+                    download={`letter-${Date.now()}.pdf`}
+                    size="lg"
+                    leftSection={<IconFileTypePdf size={20} />}
+                  >
+                    Download PDF
+                  </Button>
+                </Stack>
+              </object>
             </Stack>
           ) : (
             // Chrome/Edge: Use native iframe viewer
