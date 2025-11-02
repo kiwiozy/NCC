@@ -174,7 +174,7 @@ export default function LettersPage() {
           </h2>
         </div>
 
-        {/* Toolbar - Plain HTML div, NO Mantine Group */}
+        {/* Toolbar - Plain HTML div, centered */}
         <div
           className="letters-toolbar-wrapper"
           style={{
@@ -185,8 +185,9 @@ export default function LettersPage() {
             margin: 0,
             marginTop: 0,
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             alignItems: 'center',
+            gap: '0.75rem',
             maxWidth: '1200px',
             marginLeft: 'auto',
             marginRight: 'auto',
