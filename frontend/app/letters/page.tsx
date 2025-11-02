@@ -1,149 +1,47 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Button, Group, Stack, Modal, Text, Box, Title, rem, useMantineColorScheme } from '@mantine/core';
+import { useState } from 'react';
+import { Button, Stack, Modal, Container, Title } from '@mantine/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
-import { IconFileTypePdf, IconPageBreak } from '@tabler/icons-react';
+import { IconFileTypePdf } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
-import { useStickyFix } from '../utils/useStickyFix';
 import '../styles/letterhead.css';
 
-// Single page component
-function LetterPage({ 
-  pageNumber, 
-  totalPages,
-  initialContent,
-  onContentChange 
-}: { 
-  pageNumber: number;
-  totalPages: number;
-  initialContent?: string;
-  onContentChange: (content: string) => void;
-}) {
+export default function LettersPage() {
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
       Placeholder.configure({
-        placeholder: pageNumber === 1 
-          ? 'Start typing your letter here...'
-          : `Page ${pageNumber} content...`,
+        placeholder: 'Start typing your letter here...',
       }),
     ],
-    content: initialContent || `<p></p>`,
-    immediatelyRender: false,
-    onUpdate: ({ editor }) => {
-      onContentChange(editor.getHTML());
-    },
+    content: '<p></p>',
   });
-
-  useEffect(() => {
-    if (editor && initialContent && editor.getHTML() !== initialContent) {
-      editor.commands.setContent(initialContent, { emitUpdate: false });
-    }
-  }, [editor, initialContent]);
-
-  if (!editor) {
-    return <div>Loading editor...</div>;
-  }
-
-  return (
-    <div className="we-page">
-      <div className="letterhead-overlay" />
-      <div className="we-page-content">
-        <EditorContent editor={editor} />
-      </div>
-      <div style={{
-        position: 'absolute',
-        bottom: '20mm',
-        right: '20mm',
-        background: 'rgba(0,0,0,0.7)',
-        color: 'white',
-        padding: '4px 12px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        fontWeight: 600,
-      }}>
-        Page {pageNumber} of {totalPages}
-      </div>
-    </div>
-  );
-}
-
-export default function LettersPage() {
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  // Refs for sticky fix
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const [containerReady, setContainerReady] = useState(false);
-  
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [isSafari, setIsSafari] = useState(false);
-  const [pages, setPages] = useState<string[]>([
-    `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
-  ]);
-
-  useEffect(() => {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(userAgent);
-    setIsSafari(isSafariBrowser);
-  }, []);
-
-  // Track when scroll container is ready
-  useEffect(() => {
-    if (scrollContainerRef.current && titleRef.current && toolbarRef.current) {
-      setContainerReady(true);
-    }
-  }, []);
-
-  // Apply JavaScript sticky fix for Safari (only when container is ready)
-  useStickyFix(titleRef, {
-    top: 80, // Below navigation header
-    scrollContainer: containerReady ? scrollContainerRef.current : null,
-    enabled: containerReady,
-  });
-
-  useStickyFix(toolbarRef, {
-    top: 121, // Below navigation (80px) + title (~41px)
-    scrollContainer: containerReady ? scrollContainerRef.current : null,
-    enabled: containerReady,
-  });
-
-  const handlePageContentChange = (pageIndex: number, content: string) => {
-    setPages(prev => {
-      const updated = [...prev];
-      updated[pageIndex] = content;
-      return updated;
-    });
-  };
-
-  const handleAddPage = () => {
-    setPages(prev => [...prev, '<p></p>']);
-  };
 
   const handlePreviewPDF = async () => {
+    if (!editor) return;
+    
     setPdfLoading(true);
-    const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
+    const html = editor.getHTML();
     
     try {
       const response = await fetch('/api/letters/pdf-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: combinedHTML }),
+        body: JSON.stringify({ html }),
       });
 
       if (response.ok) {
-        const { pdfId, pdfUrl } = await response.json();
-        const cacheBustedUrl = `${pdfUrl}?t=${Date.now()}&r=${Math.random()}`;
-        
+        const { pdfUrl: url } = await response.json();
+        const cacheBustedUrl = `${url}?t=${Date.now()}&r=${Math.random()}`;
         setModalOpen(true);
         requestAnimationFrame(() => {
           setPdfUrl(cacheBustedUrl);
@@ -166,112 +64,35 @@ export default function LettersPage() {
     setPdfUrl(null);
   };
 
+  if (!editor) {
+    return <Navigation><div>Loading editor...</div></Navigation>;
+  }
+
   return (
     <Navigation>
-      {/* Inner scroll container */}
-      <div
-        ref={scrollContainerRef}
-        style={{
-          height: 'calc(100vh - 80px)',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {/* Letters Title - Plain HTML, full width, centered content */}
-        <div
-          ref={titleRef}
-          className="letters-title-wrapper"
-          style={{
-            backgroundColor: isDark ? '#25262b' : '#ffffff',
-            padding: 0,
-            textAlign: 'center',
-            margin: 0,
-            width: '100%',
-            position: '-webkit-sticky' as any, // Safari prefix (JavaScript fix handles Safari)
-            top: 0,
-            zIndex: 100,
-          }}
-        >
-          <h2
-            className="letters-title-text"
-            style={{ 
-              fontSize: '1.5rem',
-              fontWeight: 500,
-              margin: 0,
-              padding: 0,
-              lineHeight: 1,
-            }}
+      <Container size="xl" py="xl">
+        <Title order={2} mb="md">Letters</Title>
+        
+        <Stack gap="md">
+          <Button
+            leftSection={<IconFileTypePdf size={18} />}
+            onClick={handlePreviewPDF}
+            loading={pdfLoading}
           >
-            Letters
-          </h2>
-        </div>
+            Preview PDF
+          </Button>
 
-        {/* Toolbar - Centered with max-width */}
-        <div
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            ref={toolbarRef}
-            className="letters-toolbar-wrapper"
-            style={{
-              backgroundColor: isDark ? '#25262b' : '#ffffff',
-              borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-              padding: '1rem',
-              paddingTop: 0,
-              margin: 0,
-              marginTop: 0,
-              width: '100%',
-              maxWidth: '1200px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '0.75rem',
-              position: '-webkit-sticky' as any, // Safari prefix (JavaScript fix handles Safari)
-              top: 41, // Below title (~41px)
-              zIndex: 90,
-            }}
-          >
-            <Button
-              leftSection={<IconPageBreak size={18} />}
-              onClick={handleAddPage}
-              variant="light"
-              size="compact-sm"
-            >
-              New Page
-            </Button>
-
-            <Button
-              leftSection={<IconFileTypePdf size={18} />}
-              onClick={handlePreviewPDF}
-              loading={pdfLoading}
-            >
-              Preview PDF
-            </Button>
+          <div style={{ 
+            border: '1px solid #dee2e6',
+            borderRadius: '8px',
+            padding: '1rem',
+            minHeight: '400px',
+            backgroundColor: '#fff',
+          }}>
+            <EditorContent editor={editor} />
           </div>
-        </div>
-
-        {/* Editor Content - Centered with same max-width */}
-        <div className="letter-editor-shell" style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ width: '100%', padding: '1.5rem' }}>
-            <Stack gap="xl">
-              {pages.map((pageContent, index) => (
-                <LetterPage
-                  key={`page-${index}`}
-                  pageNumber={index + 1}
-                  totalPages={pages.length}
-                  initialContent={pageContent}
-                  onContentChange={(content) => handlePageContentChange(index, content)}
-                />
-              ))}
-            </Stack>
-          </div>
-        </div>
-      </div>
+        </Stack>
+      </Container>
 
       {/* PDF Preview Modal */}
       <Modal
@@ -284,72 +105,45 @@ export default function LettersPage() {
           body: {
             maxHeight: '85vh',
             overflow: 'auto',
+            padding: 0,
           },
         }}
       >
-        {pdfUrl ? (
-          isSafari ? (
-            <Stack gap="md">
-              <Button
-                component="a"
-                href={pdfUrl}
-                download={`letter-${Date.now()}.pdf`}
-                leftSection={<IconFileTypePdf size={18} />}
-                style={{ alignSelf: 'flex-end' }}
-              >
-                Download PDF
-              </Button>
-              <object
+        {pdfUrl && (
+          <div style={{ width: '100%', height: '80vh' }}>
+            {typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent) ? (
+              // Safari: Use object tag with download fallback
+              <>
+                <object
+                  data={pdfUrl}
+                  type="application/pdf"
+                  width="100%"
+                  height="100%"
+                  style={{ minHeight: '600px' }}
+                >
+                  <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <p>PDF preview not available in Safari.</p>
+                    <Button
+                      component="a"
+                      href={pdfUrl}
+                      download
+                      leftSection={<IconFileTypePdf size={18} />}
+                    >
+                      Download PDF
+                    </Button>
+                  </div>
+                </object>
+              </>
+            ) : (
+              // Chrome/Other browsers: Use iframe
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="100%"
+                style={{ minHeight: '600px', border: 'none' }}
                 key={pdfUrl}
-                data={pdfUrl}
-                type="application/pdf"
-                style={{
-                  width: '100%',
-                  minHeight: '80vh',
-                  height: 'auto',
-                  border: 'none',
-                  backgroundColor: '#525659',
-                }}
-              >
-                <Stack align="center" justify="center" style={{ height: '80vh', padding: '40px' }}>
-                  <Text c="white" size="lg" mb="md">
-                    Unable to display PDF preview.
-                  </Text>
-                  <Button
-                    component="a"
-                    href={pdfUrl}
-                    download={`letter-${Date.now()}.pdf`}
-                    size="lg"
-                    leftSection={<IconFileTypePdf size={20} />}
-                  >
-                    Download PDF
-                  </Button>
-                </Stack>
-              </object>
-            </Stack>
-          ) : (
-            <iframe
-              key={pdfUrl}
-              src={pdfUrl}
-              style={{
-                width: '100%',
-                minHeight: '80vh',
-                height: 'auto',
-                border: 'none',
-              }}
-              title="PDF Preview"
-            />
-          )
-        ) : (
-          <div style={{ 
-            height: '80vh', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '16px',
-            color: '#666'
-          }}>
-            Generating preview…
+              />
+            )}
           </div>
         )}
       </Modal>
