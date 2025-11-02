@@ -77,6 +77,12 @@ export default function LettersPage() {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
+  // Refs for sticky fix
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [containerReady, setContainerReady] = useState(false);
+  
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -90,6 +96,26 @@ export default function LettersPage() {
     const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(userAgent);
     setIsSafari(isSafariBrowser);
   }, []);
+
+  // Track when scroll container is ready
+  useEffect(() => {
+    if (scrollContainerRef.current && titleRef.current && toolbarRef.current) {
+      setContainerReady(true);
+    }
+  }, []);
+
+  // Apply JavaScript sticky fix for Safari (only when container is ready)
+  useStickyFix(titleRef, {
+    top: 80, // Below navigation header
+    scrollContainer: containerReady ? scrollContainerRef.current : null,
+    enabled: containerReady,
+  });
+
+  useStickyFix(toolbarRef, {
+    top: 121, // Below navigation (80px) + title (~41px)
+    scrollContainer: containerReady ? scrollContainerRef.current : null,
+    enabled: containerReady,
+  });
 
   const handlePageContentChange = (pageIndex: number, content: string) => {
     setPages(prev => {
@@ -144,6 +170,7 @@ export default function LettersPage() {
     <Navigation>
       {/* Inner scroll container */}
       <div
+        ref={scrollContainerRef}
         style={{
           height: 'calc(100vh - 80px)',
           overflowY: 'auto',
@@ -153,6 +180,7 @@ export default function LettersPage() {
       >
         {/* Letters Title - Plain HTML, full width, centered content */}
         <div
+          ref={titleRef}
           className="letters-title-wrapper"
           style={{
             backgroundColor: isDark ? '#25262b' : '#ffffff',
@@ -160,6 +188,9 @@ export default function LettersPage() {
             textAlign: 'center',
             margin: 0,
             width: '100%',
+            position: '-webkit-sticky' as any, // Safari prefix (JavaScript fix handles Safari)
+            top: 0,
+            zIndex: 100,
           }}
         >
           <h2
@@ -185,6 +216,7 @@ export default function LettersPage() {
           }}
         >
           <div
+            ref={toolbarRef}
             className="letters-toolbar-wrapper"
             style={{
               backgroundColor: isDark ? '#25262b' : '#ffffff',
@@ -199,6 +231,9 @@ export default function LettersPage() {
               justifyContent: 'center',
               alignItems: 'center',
               gap: '0.75rem',
+              position: '-webkit-sticky' as any, // Safari prefix (JavaScript fix handles Safari)
+              top: 41, // Below title (~41px)
+              zIndex: 90,
             }}
           >
             <Button

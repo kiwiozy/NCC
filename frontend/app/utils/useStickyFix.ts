@@ -36,11 +36,25 @@ export function useStickyFix<T extends HTMLElement>(
     if (!enabled || !ref.current) return;
 
     const element = ref.current;
+    // Get container - try provided one or parent element
+    const container = scrollContainer || (element.parentElement as HTMLElement);
     
+    // Wait for container to be available
+    if (!container) {
+      // Wait for next frame and try again
+      requestAnimationFrame(() => {
+        const containerRetry = scrollContainer || (ref.current?.parentElement as HTMLElement);
+        if (containerRetry && ref.current && enabled) {
+          // Container now available, setup will happen on next effect run
+        }
+      });
+      return;
+    }
+
     // Detect if we're in Safari
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     
-    // Only apply fix in Safari
+    // Only apply fix in Safari (other browsers use native CSS sticky)
     if (!isSafari) return;
 
     // Get initial position and store it
@@ -73,11 +87,13 @@ export function useStickyFix<T extends HTMLElement>(
     sentinelRef.current = sentinel;
     
     // Insert sentinel right before element in the scroll container
-    const container = scrollContainer || (element.parentElement as HTMLElement);
-    if (container && container.firstChild !== element) {
+    if (container.firstChild !== element) {
       container.insertBefore(sentinel, element);
-    } else if (container && element.previousElementSibling) {
+    } else if (element.previousElementSibling) {
       container.insertBefore(sentinel, element);
+    } else if (element.parentElement) {
+      // Fallback: insert before element in parent
+      element.parentElement.insertBefore(sentinel, element);
     }
 
     // IntersectionObserver to detect when element should be sticky
@@ -86,27 +102,29 @@ export function useStickyFix<T extends HTMLElement>(
         entries.forEach((entry) => {
           const shouldBeSticky = !entry.isIntersecting;
           
-          if (shouldBeSticky && !isStickyRef.current && initialRectRef.current) {
+          if (shouldBeSticky && !isStickyRef.current && initialRectRef.current && ref.current) {
             // Switch to fixed positioning
-            element.style.position = 'fixed';
-            element.style.top = `${top}px`;
-            element.style.left = `${initialRectRef.current.left}px`;
-            element.style.width = `${initialRectRef.current.width}px`;
-            element.style.zIndex = originalStylesRef.current?.zIndex || '100';
+            const elem = ref.current;
+            elem.style.position = 'fixed';
+            elem.style.top = `${top}px`;
+            elem.style.left = `${initialRectRef.current.left}px`;
+            elem.style.width = `${initialRectRef.current.width}px`;
+            elem.style.zIndex = originalStylesRef.current?.zIndex || '100';
             isStickyRef.current = true;
-          } else if (!shouldBeSticky && isStickyRef.current && originalStylesRef.current) {
+          } else if (!shouldBeSticky && isStickyRef.current && originalStylesRef.current && ref.current) {
             // Switch back to relative positioning
-            element.style.position = originalStylesRef.current.position || 'relative';
-            element.style.top = originalStylesRef.current.top;
-            element.style.left = originalStylesRef.current.left;
-            element.style.width = originalStylesRef.current.width;
-            element.style.zIndex = originalStylesRef.current.zIndex;
+            const elem = ref.current;
+            elem.style.position = originalStylesRef.current.position || 'relative';
+            elem.style.top = originalStylesRef.current.top;
+            elem.style.left = originalStylesRef.current.left;
+            elem.style.width = originalStylesRef.current.width;
+            elem.style.zIndex = originalStylesRef.current.zIndex;
             isStickyRef.current = false;
           }
         });
       },
       {
-        root: scrollContainer || null,
+        root: container,
         rootMargin: `-${top}px 0px 0px 0px`,
         threshold: [0, 1],
       }
@@ -119,21 +137,23 @@ export function useStickyFix<T extends HTMLElement>(
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
+        observerRef.current = null;
       }
       if (sentinelRef.current && sentinelRef.current.parentElement) {
         sentinelRef.current.parentElement.removeChild(sentinelRef.current);
+        sentinelRef.current = null;
       }
       // Restore original styles
-      if (originalStylesRef.current) {
-        element.style.position = originalStylesRef.current.position;
-        element.style.top = originalStylesRef.current.top;
-        element.style.left = originalStylesRef.current.left;
-        element.style.width = originalStylesRef.current.width;
-        element.style.zIndex = originalStylesRef.current.zIndex;
+      if (originalStylesRef.current && ref.current) {
+        const elem = ref.current;
+        elem.style.position = originalStylesRef.current.position;
+        elem.style.top = originalStylesRef.current.top;
+        elem.style.left = originalStylesRef.current.left;
+        elem.style.width = originalStylesRef.current.width;
+        elem.style.zIndex = originalStylesRef.current.zIndex;
       }
     };
   }, [ref, top, enabled, scrollContainer]);
 
   return isStickyRef;
 }
-
