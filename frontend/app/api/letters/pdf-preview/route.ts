@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
     // Build page HTML for each page
     const pageElements = pages.map((pageHTML) => `
     <div class="we-page">
+      <div class="letterhead-overlay"></div>
       <div class="we-page-content">
         ${pageHTML}
       </div>
@@ -121,16 +122,14 @@ export async function POST(request: NextRequest) {
         page-break-after: auto;
       }
       
-      /* Fixed letterhead background (appears on ALL pages) */
-      .letterhead-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 210mm;
-        height: 297mm;
+      /* Letterhead overlay on each page */
+      .letterhead-overlay {
+        position: absolute;
+        inset: 0;
         background-image: url('data:image/png;base64,${letterheadBase64}');
         background-size: 210mm 297mm;
         background-repeat: no-repeat;
+        background-position: 0 0;
         z-index: 0;
         pointer-events: none;
         print-color-adjust: exact;
@@ -198,7 +197,6 @@ export async function POST(request: NextRequest) {
     </style>
   </head>
   <body>
-    <div class="letterhead-bg"></div>
     ${pageElements}
   </body>
 </html>
