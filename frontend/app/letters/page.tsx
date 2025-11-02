@@ -150,58 +150,61 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Letters Title - NOT sticky, just a regular header */}
+        {/* Combined Header: Letters Title + Toolbar (no gap) */}
         <Box
           style={{
             backgroundColor: isDark ? '#25262b' : '#ffffff',
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-            padding: `${rem(8)} 0`,
             margin: 0,
-            marginBottom: 0, // No gap
+            padding: 0,
           }}
         >
-          <Title 
-            order={2} 
-            style={{ 
-              textAlign: 'center',
-              fontSize: rem(24),
-              fontWeight: 500,
-              margin: 0,
+          {/* Letters Title */}
+          <Box
+            style={{
+              borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+              padding: `${rem(8)} 0`,
             }}
           >
-            Letters
-          </Title>
-        </Box>
-
-        {/* Toolbar - NOT sticky, scrolls with content */}
-        <Box
-          style={{
-            backgroundColor: isDark ? '#25262b' : '#ffffff',
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-            padding: '1rem',
-            margin: 0,
-            marginTop: 0, // No gap
-          }}
-        >
-          <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <Button
-              leftSection={<IconPageBreak size={18} />}
-              onClick={handleAddPage}
-              variant="light"
-              size="compact-sm"
+            <Title 
+              order={2} 
+              style={{ 
+                textAlign: 'center',
+                fontSize: rem(24),
+                fontWeight: 500,
+                margin: 0,
+              }}
             >
-              New Page
-            </Button>
+              Letters
+            </Title>
+          </Box>
 
-            <Button
-              leftSection={<IconFileTypePdf size={18} />}
-              onClick={handlePreviewPDF}
-              loading={pdfLoading}
-              ml="auto"
-            >
-              Preview PDF
-            </Button>
-          </Group>
+          {/* Toolbar */}
+          <Box
+            style={{
+              borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+              padding: '1rem',
+            }}
+          >
+            <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              <Button
+                leftSection={<IconPageBreak size={18} />}
+                onClick={handleAddPage}
+                variant="light"
+                size="compact-sm"
+              >
+                New Page
+              </Button>
+
+              <Button
+                leftSection={<IconFileTypePdf size={18} />}
+                onClick={handlePreviewPDF}
+                loading={pdfLoading}
+                ml="auto"
+              >
+                Preview PDF
+              </Button>
+            </Group>
+          </Box>
         </Box>
 
         {/* Editor Content */}
