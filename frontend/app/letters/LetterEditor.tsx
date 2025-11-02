@@ -90,6 +90,17 @@ export default function LetterEditor() {
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     
+    // Open window IMMEDIATELY (before async call) to avoid Safari popup blocker
+    const previewWindow = window.open('', '_blank');
+    if (!previewWindow) {
+      alert('Please allow popups for this site to preview PDFs');
+      setPdfLoading(false);
+      return;
+    }
+    
+    // Show loading message in the new window
+    previewWindow.document.write('<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;"><div>Generating PDF...</div></body></html>');
+    
     // Combine all pages into a single HTML string with page markers
     const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
     
@@ -103,21 +114,23 @@ export default function LetterEditor() {
       if (response.ok) {
         const blob = await response.blob();
         
-        // For Safari compatibility, use object URL with type
+        // Create object URL with proper MIME type
         const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
         
-        // Open in new window for consistent cross-browser experience
-        window.open(url, '_blank');
+        // Load PDF into the already-open window
+        previewWindow.location.href = url;
         
         // Clean up after a delay
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
+        previewWindow.close();
         alert(`PDF generation failed: ${errorData.details || errorData.error}`);
       }
     } catch (error) {
       console.error('Error calling PDF API:', error);
+      previewWindow.close();
       alert('Error generating PDF. Check console for details.');
     } finally {
       setPdfLoading(false);
