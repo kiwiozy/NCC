@@ -17,6 +17,14 @@
 }
 
 /* LETTERS PAGE HEADER - Remove all gaps with !important overrides */
+
+/* Override Mantine Container padding that's wrapping our content */
+.mantine-Container-root[data-size="xl"] {
+  padding-block: 0 !important; /* Remove Container padding */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 .letters-header-container {
   margin: 0 !important;
   padding: 0 !important;
