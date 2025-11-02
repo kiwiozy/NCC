@@ -162,7 +162,7 @@ export default function LetterEditor() {
       <Box
         style={{
           position: 'sticky',
-          top: '57px', // Below Letters title (approximately 57px)
+          top: '41px', // Below Letters title (approx 8px padding top/bottom + 24px title = 40px)
           zIndex: 80,
           backgroundColor: 'var(--mantine-color-body)',
           borderBottom: '1px solid var(--mantine-color-default-border)',

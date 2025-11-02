@@ -28,7 +28,7 @@ export default function LettersPage() {
           zIndex: 90,
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          padding: `${rem(16)} 0`,
+          padding: `${rem(8)} 0`,
           margin: 0,
         }}
       >
