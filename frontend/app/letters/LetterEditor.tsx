@@ -96,32 +96,33 @@ export default function LetterEditor() {
     const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
     
     try {
-      const response = await fetch('/api/letters/pdf', {
+      // Generate PDF and get URL
+      const response = await fetch('/api/letters/pdf-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: combinedHTML }),
       });
 
       if (response.ok) {
-        const blob = await response.blob();
+        const { pdfId, pdfUrl } = await response.json();
         
-        // Convert blob to base64 data URL for better Safari compatibility
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64data = reader.result as string;
-          setPdfUrl(base64data);
-          setModalOpen(true);
-        };
-        reader.readAsDataURL(blob);
+        // Open modal FIRST (ChatGPT recommendation to avoid Safari hidden iframe bug)
+        setModalOpen(true);
+        
+        // Then set the PDF URL after next animation frame
+        requestAnimationFrame(() => {
+          setPdfUrl(pdfUrl);
+          setPdfLoading(false);
+        });
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
         alert(`PDF generation failed: ${errorData.details || errorData.error}`);
+        setPdfLoading(false);
       }
     } catch (error) {
       console.error('Error calling PDF API:', error);
       alert('Error generating PDF. Check console for details.');
-    } finally {
       setPdfLoading(false);
     }
   };
@@ -179,8 +180,9 @@ export default function LetterEditor() {
         size="xl"
         padding="md"
       >
-        {pdfUrl && (
+        {pdfUrl ? (
           <iframe
+            key={pdfUrl}
             src={pdfUrl}
             style={{
               width: '100%',
@@ -189,6 +191,17 @@ export default function LetterEditor() {
             }}
             title="PDF Preview"
           />
+        ) : (
+          <div style={{ 
+            height: '80vh', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            fontSize: '16px',
+            color: '#666'
+          }}>
+            Generating preview…
+          </div>
         )}
       </Modal>
     </>
