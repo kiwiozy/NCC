@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Read and encode letterhead as base64
-    const letterheadPath = path.join(process.cwd(), 'public', 'letterhead-base64.txt');
+    // Read the clean letterhead (without red box) base64 string
+    const letterheadPath = path.join(process.cwd(), 'public', 'Walk-Easy_Letterhead-base64.txt');
     const letterheadBase64 = fs.readFileSync(letterheadPath, 'utf-8').trim();
 
     // Build complete HTML with embedded letterhead
@@ -54,19 +55,18 @@ export async function POST(request: NextRequest) {
         pointer-events: none;
       }
       
-      /* Content with safe zone padding - positioned inside the red box */
+      /* Content with safe zone padding - text constrained to red box */
       .pdf-content {
         position: relative;
         z-index: 1;
-        padding-top: 60mm;     /* 60mm from top (where red box starts) */
-        padding-left: 22mm;    /* 22mm from left */
-        padding-right: 18mm;   /* 18mm from right */
-        padding-bottom: 45mm;  /* 45mm from bottom */
+        padding: 60mm 18mm 45mm 22mm; /* top, right, bottom, left */
         font-family: 'Helvetica Neue', Arial, sans-serif;
         font-size: 14px;
         line-height: 1.6;
         color: #000;
-        min-height: 297mm;     /* Full A4 height */
+        min-height: 297mm;
+        max-height: 297mm;  /* Prevent content from exceeding one page */
+        overflow: hidden;    /* Hide text that exceeds the red box */
         box-sizing: border-box;
       }
       
