@@ -150,7 +150,7 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Letters Title - Plain HTML, NO Mantine components */}
+        {/* Letters Title - Plain HTML, full width, centered content */}
         <div
           className="letters-title-wrapper"
           style={{
@@ -158,6 +158,7 @@ export default function LettersPage() {
             padding: 0,
             textAlign: 'center',
             margin: 0,
+            width: '100%',
           }}
         >
           <h2
@@ -209,8 +210,8 @@ export default function LettersPage() {
           </Button>
         </div>
 
-        {/* Editor Content - NO Container wrapper, just max-width div */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+        {/* Editor Content - Centered with max-width */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 1rem' }}>
           <div className="letter-editor-shell">
             <Stack gap="xl">
               {pages.map((pageContent, index) => (
