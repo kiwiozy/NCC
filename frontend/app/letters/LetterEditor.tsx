@@ -117,8 +117,10 @@ export default function LetterEditor() {
       if (response.ok) {
         const { pdfId, pdfUrl } = await response.json();
         
-        // Add timestamp to URL to prevent caching
-        const cacheBustedUrl = `${pdfUrl}?t=${Date.now()}`;
+        // Add timestamp AND random string to URL to prevent aggressive caching
+        const cacheBustedUrl = `${pdfUrl}?t=${Date.now()}&r=${Math.random()}`;
+        
+        console.log('New PDF URL:', cacheBustedUrl);
         
         // Open modal FIRST (ChatGPT recommendation to avoid Safari hidden iframe bug)
         setModalOpen(true);
