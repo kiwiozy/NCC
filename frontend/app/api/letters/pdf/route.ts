@@ -54,15 +54,28 @@ export async function POST(request: NextRequest) {
         pointer-events: none;
       }
       
-      /* Content with safe zone padding */
+      /* Content with safe zone padding - positioned inside the red box */
       .pdf-content {
         position: relative;
         z-index: 1;
-        padding: 60mm 18mm 45mm 22mm; /* top, right, bottom, left */
+        padding-top: 60mm;     /* 60mm from top (where red box starts) */
+        padding-left: 22mm;    /* 22mm from left */
+        padding-right: 18mm;   /* 18mm from right */
+        padding-bottom: 45mm;  /* 45mm from bottom */
         font-family: 'Helvetica Neue', Arial, sans-serif;
         font-size: 14px;
         line-height: 1.6;
         color: #000;
+        min-height: 297mm;     /* Full A4 height */
+        box-sizing: border-box;
+      }
+      
+      /* Remove any borders from all elements */
+      .pdf-content *,
+      .pdf-content *::before,
+      .pdf-content *::after {
+        border: none !important;
+        outline: none !important;
       }
       
       /* Typography */
