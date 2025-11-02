@@ -150,7 +150,7 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Letters Title - Direct child of scroll div, NO Container */}
+        {/* Letters Title - Plain HTML, NO Mantine components */}
         <div
           className="letters-title-wrapper"
           style={{
@@ -160,21 +160,21 @@ export default function LettersPage() {
             margin: 0,
           }}
         >
-          <Title 
-            order={2}
+          <h2
             className="letters-title-text"
             style={{ 
-              fontSize: rem(24),
+              fontSize: '1.5rem',
               fontWeight: 500,
               margin: 0,
-              marginBottom: 0,
+              padding: 0,
+              lineHeight: 1,
             }}
           >
             Letters
-          </Title>
+          </h2>
         </div>
 
-        {/* Toolbar - Direct child of scroll div, NO Container */}
+        {/* Toolbar - Plain HTML div, NO Mantine Group */}
         <div
           className="letters-toolbar-wrapper"
           style={{
@@ -184,27 +184,30 @@ export default function LettersPage() {
             paddingTop: 0,
             margin: 0,
             marginTop: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            maxWidth: '1200px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
           }}
         >
-          <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <Button
-              leftSection={<IconPageBreak size={18} />}
-              onClick={handleAddPage}
-              variant="light"
-              size="compact-sm"
-            >
-              New Page
-            </Button>
+          <Button
+            leftSection={<IconPageBreak size={18} />}
+            onClick={handleAddPage}
+            variant="light"
+            size="compact-sm"
+          >
+            New Page
+          </Button>
 
-            <Button
-              leftSection={<IconFileTypePdf size={18} />}
-              onClick={handlePreviewPDF}
-              loading={pdfLoading}
-              ml="auto"
-            >
-              Preview PDF
-            </Button>
-          </Group>
+          <Button
+            leftSection={<IconFileTypePdf size={18} />}
+            onClick={handlePreviewPDF}
+            loading={pdfLoading}
+          >
+            Preview PDF
+          </Button>
         </div>
 
         {/* Editor Content - NO Container wrapper, just max-width div */}
