@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -71,6 +71,8 @@ function LetterPage({
 
 export default function LetterEditor() {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [pages, setPages] = useState<string[]>([
     `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
   ]);
@@ -90,17 +92,6 @@ export default function LetterEditor() {
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     
-    // Open window IMMEDIATELY (before async call) to avoid Safari popup blocker
-    const previewWindow = window.open('', '_blank');
-    if (!previewWindow) {
-      alert('Please allow popups for this site to preview PDFs');
-      setPdfLoading(false);
-      return;
-    }
-    
-    // Show loading message in the new window
-    previewWindow.document.write('<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;"><div>Generating PDF...</div></body></html>');
-    
     // Combine all pages into a single HTML string with page markers
     const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
     
@@ -113,27 +104,27 @@ export default function LetterEditor() {
 
       if (response.ok) {
         const blob = await response.blob();
-        
-        // Create object URL with proper MIME type
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        
-        // Load PDF into the already-open window
-        previewWindow.location.href = url;
-        
-        // Clean up after a delay
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+        setModalOpen(true);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
-        previewWindow.close();
         alert(`PDF generation failed: ${errorData.details || errorData.error}`);
       }
     } catch (error) {
       console.error('Error calling PDF API:', error);
-      previewWindow.close();
       alert('Error generating PDF. Check console for details.');
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
     }
   };
 
@@ -176,6 +167,27 @@ export default function LetterEditor() {
           ))}
         </Stack>
       </div>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        opened={modalOpen}
+        onClose={handleCloseModal}
+        title="Letter Preview"
+        size="xl"
+        padding="md"
+      >
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            style={{
+              width: '100%',
+              height: '80vh',
+              border: 'none',
+            }}
+            title="PDF Preview"
+          />
+        )}
+      </Modal>
     </>
   );
 }
