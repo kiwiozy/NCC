@@ -2,9 +2,28 @@
 
 ## Problem
 
-We have a React/Next.js application with a letter composer that generates PDFs using Puppeteer on the backend. We're trying to show a PDF preview in a Mantine Modal dialog using an iframe, but **Safari is not rendering the PDF properly** - it just shows a blank white page.
+We have a React/Next.js application with a letter composer that generates PDFs using Puppeteer on the backend. We're trying to show a PDF preview in a Mantine Modal dialog using an iframe, but **Safari is not rendering the PDF properly**.
 
-Chrome works perfectly and shows the full PDF with native controls (page navigation, zoom, etc.), but Safari does not.
+### Visual Comparison:
+
+**Chrome (Working) - Shows native PDF viewer:**
+![Chrome PDF Preview](images/chrome-pdf-preview.png)
+- ✅ Full PDF viewer UI
+- ✅ Page navigation (1/2)
+- ✅ Zoom controls
+- ✅ Download button
+- ✅ Print button
+- ✅ Proper PDF rendering with letterhead
+
+**Safari (Not Working) - Shows plain text or blank:**
+![Safari PDF Preview](images/safari-pdf-preview.png)
+- ❌ No PDF viewer UI
+- ❌ Just plain text content (or blank white page)
+- ❌ No controls
+- ❌ No letterhead
+- ❌ Looks like raw HTML, not a rendered PDF
+
+**What we need:** Safari to display the **same native PDF viewer** that Chrome shows, with all the controls.
 
 ## Current Implementation
 
@@ -143,25 +162,35 @@ const handlePreviewPDF = async () => {
 - API returns PDF as binary blob with `Content-Type: application/pdf`
 - PDF generation works correctly (downloads work fine in Safari)
 
+## What We've Tried Based on Your Previous Advice
+
+We implemented your recommended solution:
+
+1. ✅ **Backend serves real URL** - POST returns `{ pdfId, pdfUrl }`, GET `/api/letters/pdf-preview/[id]` serves the PDF
+2. ✅ **Proper headers** - `Content-Type: application/pdf` and `Content-Disposition: inline`
+3. ✅ **Open modal first** - Using `setModalOpen(true)` then `requestAnimationFrame(() => setPdfUrl(url))`
+4. ✅ **Real HTTP URL** - No blob or data URLs
+5. ✅ **Conditional rendering** - Show loading state until PDF URL is set
+
+**Result:** Still shows plain text in Safari instead of native PDF viewer! 😞
+
+The PDF file itself is valid (downloads work fine). Chrome displays it perfectly in the iframe. But Safari just renders it as plain text or shows nothing.
+
 ## Questions for ChatGPT
 
-1. **Why does Safari show a blank page when displaying PDFs in iframes?** Is this a known Safari limitation?
+1. **Why is Safari showing plain text instead of the native PDF viewer?** The PDF is valid, headers are correct, URL is real - what's missing?
 
-2. **What's the most reliable way to display a PDF preview in a modal dialog that works in both Safari and Chrome?** We need native PDF controls (page navigation, zoom, etc.).
+2. **Does Safari need something specific to trigger the native PDF viewer in iframes?** Is there a special header, attribute, or technique?
 
-3. **If Safari has fundamental limitations with PDF iframes, what are the alternative approaches?** Should we:
-   - Use a PDF.js viewer library?
-   - Use an `<object>` or `<embed>` tag instead of `<iframe>`?
-   - Try a different modal/overlay approach?
-   - Something else?
+3. **Should we use `<embed>` or `<object>` instead of `<iframe>` for Safari?** Would that make a difference?
 
-4. **The user says this exact approach worked in "old code" - what could have changed?** Could this be:
-   - Safari version updates?
-   - Browser security policy changes?
-   - Mantine Modal changes?
-   - Something in our implementation?
+4. **Is there a Safari-specific CSS or attribute we need?** Something like `type="application/pdf"` on the iframe?
 
-5. **Is there a way to detect if the iframe loaded successfully** so we can fall back to a download or new tab if needed?
+5. **Could this be a Mantine Modal issue?** Does the modal's DOM structure prevent Safari from loading the PDF viewer?
+
+6. **Should we use PDF.js as a universal solution?** Would that give consistent rendering across browsers?
+
+7. **Is there a way to force Safari to use its native PDF viewer?** Any Safari-specific tricks or workarounds?
 
 ## Ideal Solution
 
