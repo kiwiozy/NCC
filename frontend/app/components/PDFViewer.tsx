@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Button, Group, Stack, Text, ActionIcon, Box } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconDownload, IconExternalLink } from '@tabler/icons-react';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -125,8 +123,8 @@ export default function PDFViewer({ url, onError }: PDFViewerProps) {
         >
           <Page
             pageNumber={pageNumber}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
             scale={1.2}
           />
         </Document>
