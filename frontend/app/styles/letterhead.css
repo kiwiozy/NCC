@@ -18,30 +18,24 @@
 
 /* LETTERS PAGE HEADER - Remove all gaps with !important overrides */
 
-/* Override Mantine Container padding that's wrapping our content */
+/* Override Mantine Container padding if it somehow wraps our content */
 .mantine-Container-root[data-size="xl"] {
   padding-block: 0 !important; /* Remove Container padding */
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
-.letters-header-container {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Letters Title Wrapper - Force zero margins AND remove ALL padding */
+/* Letters Title Wrapper - Direct child of scroll div, NO Container */
 .letters-title-wrapper {
   margin: 0 !important;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
-  padding: 0 !important; /* REMOVE ALL PADDING */
+  padding: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   padding-block-start: 0 !important;
   padding-block-end: 0 !important;
   border: none !important;
-  /* Ensure no visual gap by making height exactly match content */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

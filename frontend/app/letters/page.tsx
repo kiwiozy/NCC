@@ -150,72 +150,64 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Combined Header: Letters Title + Toolbar (no gap) - using plain div */}
+        {/* Letters Title - Direct child of scroll div, NO Container */}
         <div
-          className="letters-header-container"
+          className="letters-title-wrapper"
           style={{
             backgroundColor: isDark ? '#25262b' : '#ffffff',
-            margin: 0,
             padding: 0,
+            textAlign: 'center',
+            margin: 0,
           }}
         >
-          {/* Letters Title - No border, flush with toolbar */}
-          <div
-            className="letters-title-wrapper"
-            style={{
-              padding: 0, // No padding - CSS will handle it
-              textAlign: 'center',
+          <Title 
+            order={2}
+            className="letters-title-text"
+            style={{ 
+              fontSize: rem(24),
+              fontWeight: 500,
               margin: 0,
+              marginBottom: 0,
             }}
           >
-            <Title 
-              order={2}
-              className="letters-title-text"
-              style={{ 
-                fontSize: rem(24),
-                fontWeight: 500,
-                margin: 0,
-                marginBottom: 0,
-              }}
-            >
-              Letters
-            </Title>
-          </div>
-
-          {/* Toolbar - Border only at bottom */}
-          <div
-            className="letters-toolbar-wrapper"
-            style={{
-              borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-              padding: '1rem',
-              paddingTop: 0,
-              margin: 0,
-              marginTop: 0,
-            }}
-          >
-            <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-              <Button
-                leftSection={<IconPageBreak size={18} />}
-                onClick={handleAddPage}
-                variant="light"
-                size="compact-sm"
-              >
-                New Page
-              </Button>
-
-              <Button
-                leftSection={<IconFileTypePdf size={18} />}
-                onClick={handlePreviewPDF}
-                loading={pdfLoading}
-                ml="auto"
-              >
-                Preview PDF
-              </Button>
-            </Group>
-          </div>
+            Letters
+          </Title>
         </div>
 
-        {/* Editor Content */}
+        {/* Toolbar - Direct child of scroll div, NO Container */}
+        <div
+          className="letters-toolbar-wrapper"
+          style={{
+            backgroundColor: isDark ? '#25262b' : '#ffffff',
+            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+            padding: '1rem',
+            paddingTop: 0,
+            margin: 0,
+            marginTop: 0,
+          }}
+        >
+          <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <Button
+              leftSection={<IconPageBreak size={18} />}
+              onClick={handleAddPage}
+              variant="light"
+              size="compact-sm"
+            >
+              New Page
+            </Button>
+
+            <Button
+              leftSection={<IconFileTypePdf size={18} />}
+              onClick={handlePreviewPDF}
+              loading={pdfLoading}
+              ml="auto"
+            >
+              Preview PDF
+            </Button>
+          </Group>
+        </div>
+
+        {/* Editor Content - NO Container wrapper, just max-width div */}
         <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
           <div className="letter-editor-shell">
             <Stack gap="xl">
