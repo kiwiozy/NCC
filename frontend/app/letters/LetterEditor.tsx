@@ -10,8 +10,15 @@ import {
   IconFileTypePdf,
   IconPageBreak,
 } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import '../styles/letterhead.css';
+
+// Dynamically import PDFViewer to avoid SSR issues
+const PDFViewer = dynamic(() => import('../components/PDFViewer'), {
+  ssr: false,
+  loading: () => <div>Loading PDF viewer...</div>,
+});
 
 // Single page component with its own editor
 function LetterPage({ 
@@ -73,9 +80,17 @@ export default function LetterEditor() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
   const [pages, setPages] = useState<string[]>([
     `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
   ]);
+
+  // Detect Safari browser
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(userAgent);
+    setIsSafari(isSafariBrowser);
+  }, []);
 
   const handlePageContentChange = (pageIndex: number, content: string) => {
     setPages(prev => {
@@ -181,16 +196,22 @@ export default function LetterEditor() {
         padding="md"
       >
         {pdfUrl ? (
-          <iframe
-            key={pdfUrl}
-            src={pdfUrl}
-            style={{
-              width: '100%',
-              height: '80vh',
-              border: 'none',
-            }}
-            title="PDF Preview"
-          />
+          isSafari ? (
+            // Use PDF.js viewer for Safari (has full controls)
+            <PDFViewer url={pdfUrl} />
+          ) : (
+            // Use native iframe viewer for Chrome/Edge
+            <iframe
+              key={pdfUrl}
+              src={pdfUrl}
+              style={{
+                width: '100%',
+                height: '80vh',
+                border: 'none',
+              }}
+              title="PDF Preview"
+            />
+          )
         ) : (
           <div style={{ 
             height: '80vh', 
