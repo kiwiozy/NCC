@@ -176,18 +176,17 @@ export default function LettersPage() {
           </Title>
         </Box>
 
-        {/* Sticky Toolbar */}
+        {/* Sticky Toolbar - Stacks directly below title */}
         <Box
           style={{
             position: 'sticky',
             position: '-webkit-sticky',
-            top: 41, // Directly below title (8px + 24px + 8px + 1px border = 41px)
+            top: 0, // Changed to 0 so it stacks with title
             zIndex: 140,
             backgroundColor: isDark ? '#25262b' : '#ffffff',
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
             padding: '1rem',
             margin: 0,
-            marginTop: 0, // No gap
           }}
         >
           <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
