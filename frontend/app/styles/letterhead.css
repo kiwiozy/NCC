@@ -16,6 +16,48 @@
   --we-content-height: calc(var(--we-page-height) - var(--we-pad-top) - var(--we-pad-bottom)); /* 192mm */
 }
 
+/* LETTERS PAGE HEADER - Remove all gaps with !important overrides */
+.letters-header-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Letters Title Wrapper - Force zero margins */
+.letters-title-wrapper {
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: 8px 0 !important;
+  padding-bottom: 0 !important;
+  padding-top: 8px !important;
+  border: none !important;
+}
+
+/* Mantine Title component (h2) - Force zero margins on all possible selectors */
+.letters-title-text,
+.letters-title-wrapper h2,
+.letters-title-wrapper [data-heading],
+.letters-title-wrapper [class*="Title"],
+h2.letters-title-text {
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+}
+
+/* Toolbar Wrapper - Force zero top margin/padding */
+.letters-toolbar-wrapper {
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-block-start: 0 !important;
+  padding: 1rem !important;
+  padding-top: 0 !important;
+  padding-block-start: 0 !important;
+}
+
 /* Editor shell - gray background */
 .letter-editor-shell {
   background: #f3f3f3 !important;

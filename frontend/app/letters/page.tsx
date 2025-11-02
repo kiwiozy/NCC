@@ -152,6 +152,7 @@ export default function LettersPage() {
       >
         {/* Combined Header: Letters Title + Toolbar (no gap) - using plain div */}
         <div
+          className="letters-header-container"
           style={{
             backgroundColor: isDark ? '#25262b' : '#ffffff',
             margin: 0,
@@ -160,6 +161,7 @@ export default function LettersPage() {
         >
           {/* Letters Title - No border, flush with toolbar */}
           <div
+            className="letters-title-wrapper"
             style={{
               padding: `${rem(8)} 0`,
               paddingBottom: 0,
@@ -168,7 +170,8 @@ export default function LettersPage() {
             }}
           >
             <Title 
-              order={2} 
+              order={2}
+              className="letters-title-text"
               style={{ 
                 fontSize: rem(24),
                 fontWeight: 500,
@@ -182,6 +185,7 @@ export default function LettersPage() {
 
           {/* Toolbar - Border only at bottom */}
           <div
+            className="letters-toolbar-wrapper"
             style={{
               borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
               padding: '1rem',
