@@ -1,16 +1,15 @@
 'use client';
 
-import { Container, Title, Text, Paper, rem } from '@mantine/core';
+import dynamic from 'next/dynamic';
+import { Container } from '@mantine/core';
+
+// Dynamically import LetterEditor to prevent SSR issues with TipTap
+const LetterEditor = dynamic(() => import('../../letters/LetterEditor'), { ssr: false });
 
 export default function LetterComposer() {
   return (
     <Container size="xl" py="xl">
-      <Paper shadow="sm" p="xl" withBorder>
-        <Title order={2} mb="md">Letter Composer</Title>
-        <Text c="dimmed">
-          Coming soon...
-        </Text>
-      </Paper>
+      <LetterEditor />
     </Container>
   );
 }

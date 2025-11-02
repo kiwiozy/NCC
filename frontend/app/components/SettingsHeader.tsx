@@ -23,6 +23,7 @@ export default function SettingsHeader({
   const menuItems = [
     { icon: <IconSettingsIcon size={20} />, label: 'General', value: 'general' },
     { icon: <IconMail size={20} />, label: 'Gmail', value: 'gmail' },
+    { icon: <IconFileText size={20} />, label: 'Letters', value: 'letters' },
     { icon: <IconBrandXing size={20} />, label: 'Xero Integration', value: 'xero' },
     { icon: <IconMessage size={20} />, label: 'SMS', value: 'sms' },
     { icon: <IconCloud size={20} />, label: 'S3 Storage', value: 's3' },

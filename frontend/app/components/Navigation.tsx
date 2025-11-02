@@ -151,6 +151,7 @@ export default function Navigation({ children }: NavigationProps) {
   const settingsSubItems = [
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'General', href: '/settings?tab=general' },
     { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Gmail', href: '/settings?tab=gmail' },
+    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Letters', href: '/settings?tab=letters' },
     { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/settings?tab=xero' },
     { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/settings?tab=sms' },
     { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/settings?tab=s3' },
