@@ -220,8 +220,8 @@ export default function LettersPage() {
         </div>
 
         {/* Editor Content - Centered with same max-width */}
-        <div className="letter-editor-shell" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <div style={{ width: '100%', maxWidth: '1200px', padding: '1.5rem' }}>
+        <div className="letter-editor-shell" style={{ display: 'flex', justifyContent: 'center', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ width: '100%', padding: '1.5rem' }}>
             <Stack gap="xl">
               {pages.map((pageContent, index) => (
                 <LetterPage
