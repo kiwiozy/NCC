@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button, Group, Stack, Modal, Text, Box, Title, rem, useMantineColorScheme } from '@mantine/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { IconFileTypePdf, IconPageBreak } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
+import { useStickyFix } from '../utils/useStickyFix';
 import '../styles/letterhead.css';
 
 // Single page component
