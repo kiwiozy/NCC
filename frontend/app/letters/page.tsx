@@ -163,8 +163,7 @@ export default function LettersPage() {
           <div
             className="letters-title-wrapper"
             style={{
-              padding: `${rem(8)} 0`,
-              paddingBottom: 0,
+              padding: 0, // No padding - CSS will handle it
               textAlign: 'center',
               margin: 0,
             }}
