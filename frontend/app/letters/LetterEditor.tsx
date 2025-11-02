@@ -42,6 +42,13 @@ function LetterPage({
     },
   });
 
+  // Update editor content when initialContent changes
+  useEffect(() => {
+    if (editor && initialContent && editor.getHTML() !== initialContent) {
+      editor.commands.setContent(initialContent, { emitUpdate: false });
+    }
+  }, [editor, initialContent]);
+
   if (!editor) {
     return <div>Loading editor...</div>;
   }
@@ -179,7 +186,7 @@ export default function LetterEditor() {
         <Stack gap="xl">
           {pages.map((pageContent, index) => (
             <LetterPage
-              key={index}
+              key={`page-${index}`}
               pageNumber={index + 1}
               totalPages={pages.length}
               initialContent={pageContent}
