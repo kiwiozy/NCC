@@ -158,12 +158,13 @@ export default function LetterEditor() {
 
   return (
     <>
-      {/* Fixed Toolbar - No margin, flush to edges */}
+      {/* Fixed Toolbar - Safari compatible */}
       <Box
         style={{
           position: 'sticky',
-          top: '41px', // Below Letters title (approx 8px padding top/bottom + 24px title = 40px)
-          zIndex: 80,
+          position: '-webkit-sticky', // Safari support
+          top: 41, // Below Letters title (41px fixed)
+          zIndex: 140,
           backgroundColor: 'var(--mantine-color-body)',
           borderBottom: '1px solid var(--mantine-color-default-border)',
           padding: '1rem',

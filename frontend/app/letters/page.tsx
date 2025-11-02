@@ -20,35 +20,46 @@ export default function LettersPage() {
 
   return (
     <Navigation>
-      {/* Fixed Letters Title Section */}
-      <Box
+      {/* Inner scroll container - THIS is where Safari expects the sticky elements */}
+      <div
         style={{
-          position: 'sticky',
-          top: 0, // Stick to top of scrolling container
-          zIndex: 90,
-          backgroundColor: isDark ? '#25262b' : '#ffffff',
-          borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          padding: `${rem(8)} 0`,
-          margin: 0,
+          height: 'calc(100vh - 80px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
-        <Title 
-          order={2} 
-          style={{ 
-            textAlign: 'center',
-            fontSize: rem(24),
-            fontWeight: 500,
+        {/* Fixed Letters Title Section - Direct child of scroll container */}
+        <Box
+          style={{
+            position: 'sticky',
+            position: '-webkit-sticky', // Safari support
+            top: 0,
+            zIndex: 150,
+            backgroundColor: isDark ? '#25262b' : '#ffffff',
+            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+            padding: `${rem(8)} 0`,
             margin: 0,
           }}
         >
-          Letters
-        </Title>
-      </Box>
+          <Title 
+            order={2} 
+            style={{ 
+              textAlign: 'center',
+              fontSize: rem(24),
+              fontWeight: 500,
+              margin: 0,
+            }}
+          >
+            Letters
+          </Title>
+        </Box>
 
-      {/* Scrollable Content Area */}
-      <Container size="xl" p={0}>
-        <LetterEditor />
-      </Container>
+        {/* Scrollable Content Area */}
+        <Container size="xl" p={0}>
+          <LetterEditor />
+        </Container>
+      </div>
     </Navigation>
   );
 }
