@@ -218,9 +218,11 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          position: 'sticky',
+          position: 'fixed',
           top: 0,
-          zIndex: 100,
+          left: 0,
+          right: 0,
+          zIndex: 200,
           overflow: 'visible',
         }}
       >
@@ -429,8 +431,9 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
           padding: 0,
-          overflow: 'hidden', // No overflow on Main - moved to inner div
-          height: '100vh',
+          paddingTop: '80px',
+          overflow: 'hidden',
+          minHeight: '100vh',
         }}
       >
         {children}
