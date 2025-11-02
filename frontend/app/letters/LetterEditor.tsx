@@ -11,14 +11,8 @@ import {
   IconPageBreak,
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import PDFViewer from '../components/PDFViewer';
 import '../styles/letterhead.css';
-
-// Dynamically import PDFViewer to avoid SSR issues
-const PDFViewer = dynamic(() => import('../components/PDFViewer'), {
-  ssr: false,
-  loading: () => <div>Loading PDF viewer...</div>,
-});
 
 // Single page component with its own editor
 function LetterPage({ 

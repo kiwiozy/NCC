@@ -1,135 +1,88 @@
 'use client';
 
-import { useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import { Button, Group, Stack, Text, ActionIcon, Box } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight, IconDownload, IconExternalLink } from '@tabler/icons-react';
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+import { Button, Group, Stack, Box } from '@mantine/core';
+import { IconDownload, IconExternalLink } from '@tabler/icons-react';
 
 interface PDFViewerProps {
   url: string;
-  onError?: (error: Error) => void;
 }
 
-export default function PDFViewer({ url, onError }: PDFViewerProps) {
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages);
-    setLoading(false);
-  }
-
-  function onDocumentLoadError(error: Error) {
-    console.error('PDF load error:', error);
-    setLoading(false);
-    onError?.(error);
-  }
-
-  const goToPrevPage = () => setPageNumber(prev => Math.max(prev - 1, 1));
-  const goToNextPage = () => setPageNumber(prev => Math.min(prev + 1, numPages));
-
+export default function PDFViewer({ url }: PDFViewerProps) {
   return (
     <Stack gap="md" style={{ height: '80vh' }}>
       {/* Controls */}
-      <Group justify="space-between" wrap="nowrap">
-        <Group gap="xs">
-          <ActionIcon
-            onClick={goToPrevPage}
-            disabled={pageNumber <= 1}
-            variant="light"
-            size="lg"
-          >
-            <IconChevronLeft size={18} />
-          </ActionIcon>
-          
-          <Text size="sm" style={{ minWidth: '80px', textAlign: 'center' }}>
-            Page {pageNumber} of {numPages || '?'}
-          </Text>
-          
-          <ActionIcon
-            onClick={goToNextPage}
-            disabled={pageNumber >= numPages}
-            variant="light"
-            size="lg"
-          >
-            <IconChevronRight size={18} />
-          </ActionIcon>
-        </Group>
-
-        <Group gap="xs">
-          <Button
-            component="a"
-            href={url}
-            download
-            leftSection={<IconDownload size={16} />}
-            variant="light"
-            size="compact-sm"
-          >
-            Download
-          </Button>
-          
-          <Button
-            component="a"
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            leftSection={<IconExternalLink size={16} />}
-            variant="light"
-            size="compact-sm"
-          >
-            Open in Tab
-          </Button>
-        </Group>
+      <Group justify="flex-end" wrap="nowrap">
+        <Button
+          component="a"
+          href={url}
+          download
+          leftSection={<IconDownload size={16} />}
+          variant="light"
+          size="compact-sm"
+        >
+          Download
+        </Button>
+        
+        <Button
+          component="a"
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          leftSection={<IconExternalLink size={16} />}
+          variant="light"
+          size="compact-sm"
+        >
+          Open in New Tab
+        </Button>
       </Group>
 
-      {/* PDF Document */}
+      {/* PDF Display using object tag (better Safari support than iframe) */}
       <Box
         style={{
           flex: 1,
-          overflow: 'auto',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
+          overflow: 'hidden',
           backgroundColor: '#525659',
           borderRadius: '4px',
-          padding: '20px',
         }}
       >
-        {loading && <Text c="white">Loading PDF...</Text>}
-        
-        <Document
-          file={url}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-          loading={<Text c="white">Loading document...</Text>}
-          error={
-            <Stack align="center" gap="md" p="xl">
-              <Text c="white">Failed to load PDF</Text>
+        <object
+          data={url}
+          type="application/pdf"
+          width="100%"
+          height="100%"
+          style={{
+            border: 'none',
+            display: 'block',
+          }}
+        >
+          {/* Fallback for browsers that can't display PDFs */}
+          <Stack align="center" justify="center" style={{ height: '100%', padding: '40px' }}>
+            <p style={{ color: 'white', marginBottom: '20px' }}>
+              PDF preview not available in this browser.
+            </p>
+            <Group>
+              <Button
+                component="a"
+                href={url}
+                download
+                leftSection={<IconDownload size={16} />}
+              >
+                Download PDF
+              </Button>
               <Button
                 component="a"
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 leftSection={<IconExternalLink size={16} />}
+                variant="light"
               >
                 Open in New Tab
               </Button>
-            </Stack>
-          }
-        >
-          <Page
-            pageNumber={pageNumber}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-            scale={1.2}
-          />
-        </Document>
+            </Group>
+          </Stack>
+        </object>
       </Box>
     </Stack>
   );
 }
-
