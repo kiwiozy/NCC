@@ -114,10 +114,10 @@ The Gmail integration is fully integrated with the AT Report feature:
 
 ```bash
 # Gmail API OAuth2 Configuration
-GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GMAIL_CLIENT_SECRET=your-client-secret
-GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
-```
+   GMAIL_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GMAIL_CLIENT_SECRET=your-client-secret
+   GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
+   ```
 
 ### Google Cloud Console Setup
 
