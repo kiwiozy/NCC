@@ -22,14 +22,18 @@
 - ✅ Dynamic import with `ssr: false` to avoid hydration issues
 - ✅ `LetterEditor.tsx` component with TipTap
 - ✅ Minimal toolbar (Bold, Italic, Underline)
-- ✅ Letterhead overlay visible
-- ✅ Page break line showing at 192mm
+- ✅ Letterhead overlay visible ✅
+- ✅ Page break line showing at 192mm ✅
 - ✅ **TESTED WITH REAL LETTER - WORKS PERFECTLY!**
 - ✅ **ADDED TO SETTINGS NAVIGATION!**
   - ✅ `SettingsHeader.tsx` - Added "Letters" menu item
   - ✅ `Navigation.tsx` - Added "Letters" to settings submenu
   - ✅ `settings/page.tsx` - Added "letters" case
   - ✅ `LetterComposer.tsx` - Dynamic import of LetterEditor
+- ✅ **CSS FIX:** Corrected import path and HTML structure
+  - Fixed: `import '../styles/letterhead.css'` (was `../../`)
+  - Fixed: Wrapped `EditorContent` in `.editor-content` div
+  - Result: Letterhead overlay + page break indicator now visible!
 
 ### ✅ Step 4: Create PDF API route
 - ✅ Path: `frontend/app/api/letters/pdf/route.ts`
