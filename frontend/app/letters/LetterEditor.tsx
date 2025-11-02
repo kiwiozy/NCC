@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack, Modal } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal, Text } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -11,7 +11,6 @@ import {
   IconPageBreak,
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
-import PDFViewer from '../components/PDFViewer';
 import '../styles/letterhead.css';
 
 // Single page component with its own editor
@@ -191,10 +190,38 @@ export default function LetterEditor() {
       >
         {pdfUrl ? (
           isSafari ? (
-            // Use PDF.js viewer for Safari (has full controls)
-            <PDFViewer url={pdfUrl} />
+            // Safari: Simple download/open options (no embedded preview)
+            <Stack align="center" justify="center" style={{ height: '80vh', padding: '40px' }}>
+              <Text size="lg" mb="xl" ta="center">
+                Safari doesn't support embedded PDF preview.
+                <br />
+                Please choose an option below:
+              </Text>
+              <Group>
+                <Button
+                  component="a"
+                  href={pdfUrl}
+                  download={`letter-${Date.now()}.pdf`}
+                  size="lg"
+                  leftSection={<IconFileTypePdf size={20} />}
+                >
+                  Download PDF
+                </Button>
+                <Button
+                  component="a"
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="light"
+                  onClick={() => window.open(pdfUrl, '_blank')}
+                >
+                  Open in New Tab
+                </Button>
+              </Group>
+            </Stack>
           ) : (
-            // Use native iframe viewer for Chrome/Edge
+            // Chrome/Edge: Use native iframe viewer
             <iframe
               key={pdfUrl}
               src={pdfUrl}
