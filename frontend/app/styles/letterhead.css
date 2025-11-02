@@ -21,6 +21,7 @@
   background: #f3f3f3 !important;
   min-height: 100vh;
   padding: 1.5rem;
+  padding-top: 0; /* No padding at top - removes gap after toolbar */
   /* Force light mode styling */
   color-scheme: light;
 }
