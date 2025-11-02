@@ -1,11 +1,29 @@
 // PDF Generation API Route - Walk Easy Letterhead System
 // Based on ChatGPT's recommendations
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser, Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Split HTML content into multiple pages based on manual page break markers
+ * User inserts <hr class="page-break" /> elements in the editor
+ */
+function splitContentIntoPages(html: string): string[] {
+  // Split content by page break markers
+  // The page break marker is: <hr class="page-break">
+  const pageBreakRegex = /<hr\s+class="page-break"[^>]*>/gi;
+  
+  // Split the HTML by page breaks
+  const pages = html.split(pageBreakRegex).map(page => page.trim()).filter(page => page.length > 0);
+  
+  // If no page breaks found, return the original HTML as a single page
+  return pages.length > 0 ? pages : [html];
+}
+
 export async function POST(request: NextRequest) {
+  let browser: Browser | null = null;
+  
   try {
     const { html } = await request.json();
 
@@ -13,12 +31,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No HTML content provided' }, { status: 400 });
     }
 
-    // Read and encode letterhead as base64
     // Read the clean letterhead (without red box) base64 string
     const letterheadPath = path.join(process.cwd(), 'public', 'Walk-Easy_Letterhead-base64.txt');
     const letterheadBase64 = fs.readFileSync(letterheadPath, 'utf-8').trim();
 
-    // Build complete HTML with embedded letterhead (multi-page support)
+    // Launch Puppeteer with recommended settings
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--font-render-hinting=medium',
+        '--disable-dev-shm-usage',
+      ],
+    });
+
+    const page = await browser.newPage();
+    
+    // Split content into pages based on manual page break markers
+    console.log('Splitting content into pages...');
+    const pages = splitContentIntoPages(html);
+    console.log(`Content split into ${pages.length} page(s)`);
+    
+    // Build page HTML for each page
+    const pageElements = pages.map((pageHTML, index) => `
+    <div class="we-page">
+      <div class="we-page-content">
+        ${pageHTML}
+      </div>
+    </div>`).join('\n');
+
+    // Build complete HTML with embedded letterhead (multi-page support per ChatGPT Approach A)
     const fullHTML = `
 <!DOCTYPE html>
 <html>
@@ -132,29 +175,11 @@ export async function POST(request: NextRequest) {
   </head>
   <body>
     <div class="letterhead-bg"></div>
-    <!-- For now, single page - multi-page logic will be added later -->
-    <div class="we-page">
-      <div class="we-page-content">
-        ${html}
-      </div>
-    </div>
+    ${pageElements}
   </body>
 </html>
     `;
 
-    // Launch Puppeteer with recommended settings
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--font-render-hinting=medium',
-        '--disable-dev-shm-usage',
-      ],
-    });
-
-    const page = await browser.newPage();
-    
     // Set content and wait for network idle
     await page.setContent(fullHTML, { 
       waitUntil: 'networkidle0',
@@ -186,6 +211,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('PDF generation error:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Make sure browser is closed on error
+    if (browser) {
+      await browser.close();
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to generate PDF', 

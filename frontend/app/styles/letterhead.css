@@ -116,3 +116,28 @@
   overflow: auto;
 }
 
+/* Page break styling in editor (visible) */
+.we-page-content hr.page-break {
+  display: block;
+  margin: 20px 0;
+  border: none;
+  border-top: 2px dashed #d32f2f;
+  position: relative;
+  height: 2px;
+}
+
+.we-page-content hr.page-break::before {
+  content: "━━━ Page Break ━━━";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #d32f2f;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+

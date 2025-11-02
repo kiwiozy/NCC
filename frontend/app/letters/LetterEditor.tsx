@@ -2,11 +2,13 @@ import { Paper, Button, Group, ActionIcon, Modal } from '@mantine/core';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import { PageBreak } from './PageBreakExtension';
 import { 
   IconBold, 
   IconItalic, 
   IconUnderline,
-  IconFileTypePdf
+  IconFileTypePdf,
+  IconPageBreak,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import '../styles/letterhead.css';
@@ -20,6 +22,7 @@ export default function LetterEditor() {
     extensions: [
       StarterKit,
       Underline,
+      PageBreak, // Add page break extension
     ],
     content: `
       <p>Dear [Name],</p>
@@ -100,6 +103,15 @@ export default function LetterEditor() {
           >
             <IconUnderline size={18} />
           </ActionIcon>
+
+          <Button
+            leftSection={<IconPageBreak size={18} />}
+            onClick={() => editor.chain().focus().setPageBreak().run()}
+            variant="light"
+            size="compact-sm"
+          >
+            New Page
+          </Button>
 
           <Button
             leftSection={<IconFileTypePdf size={18} />}
