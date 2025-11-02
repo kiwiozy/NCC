@@ -31,16 +31,25 @@ export default function LetterEditor() {
     if (!editor) return;
     
     const html = editor.getHTML();
-    const response = await fetch('/api/letters/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html }),
-    });
+    try {
+      const response = await fetch('/api/letters/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html }),
+      });
 
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        const errorData = await response.json();
+        console.error('PDF generation failed:', errorData);
+        alert(`PDF generation failed: ${errorData.details || errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error calling PDF API:', error);
+      alert('Error generating PDF. Check console for details.');
     }
   };
 

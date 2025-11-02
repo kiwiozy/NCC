@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Small delay for font rendering
-    await page.waitForTimeout(300);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Generate PDF
     const pdfBuffer = await page.pdf({
@@ -156,8 +156,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('PDF generation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to generate PDF', details: String(error) },
+      { 
+        error: 'Failed to generate PDF', 
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
