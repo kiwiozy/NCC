@@ -159,7 +159,7 @@ export default function LetterEditor() {
   return (
     <>
       {/* Toolbar */}
-      <Paper shadow="sm" p="md" mb="md" withBorder>
+      <Paper shadow="sm" p="md" mb="xl" withBorder>
         <Group gap="xs">
           <Button
             leftSection={<IconPageBreak size={18} />}

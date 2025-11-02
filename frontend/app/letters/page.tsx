@@ -17,7 +17,7 @@ const LetterEditor = dynamic(() => import('./LetterEditor'), { ssr: false });
 export default function LettersPage() {
   return (
     <Navigation>
-      <Container size="xl" py="xl">
+      <Container size="xl" pt={0} pb="xl">
         <LetterEditor />
       </Container>
     </Navigation>
