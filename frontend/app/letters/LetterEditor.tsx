@@ -114,12 +114,15 @@ export default function LetterEditor() {
       if (response.ok) {
         const { pdfId, pdfUrl } = await response.json();
         
+        // Add timestamp to URL to prevent caching
+        const cacheBustedUrl = `${pdfUrl}?t=${Date.now()}`;
+        
         // Open modal FIRST (ChatGPT recommendation to avoid Safari hidden iframe bug)
         setModalOpen(true);
         
         // Then set the PDF URL after next animation frame
         requestAnimationFrame(() => {
-          setPdfUrl(pdfUrl);
+          setPdfUrl(cacheBustedUrl);
           setPdfLoading(false);
         });
       } else {
