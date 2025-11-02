@@ -19,12 +19,21 @@
 /* LETTERS PAGE HEADER - Remove all gaps with !important overrides */
 
 /* Override Mantine Container padding that's wrapping toolbar - NUCLEAR OPTION */
+/* This Container has padding-block: 32px (from --mantine-spacing-xl) */
 .mantine-Container-root[data-size="xl"] {
   padding-block: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  padding: 0 !important; /* Remove ALL padding */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding: 0 !important; /* Remove ALL padding - override inline styles */
   margin: 0 !important; /* Remove ALL margin */
+}
+
+/* Also target any nested Containers */
+.mantine-Container-root[data-size="xl"] .mantine-Container-root[data-size="xl"] {
+  padding: 0 !important;
+  padding-block: 0 !important;
 }
 
 /* Target Container that wraps toolbar specifically */
@@ -68,11 +77,11 @@ h2.letters-title-text {
   display: block !important;
 }
 
-/* Toolbar Wrapper - Negative margin to pull up past Container padding */
+/* Toolbar Wrapper - Negative margin to pull up past Container padding-block (32px) */
 .letters-toolbar-wrapper {
   margin: 0 !important;
-  margin-top: calc(-1 * var(--mantine-spacing-xl, 1.5rem)) !important; /* Negative margin = Container padding-block */
-  margin-block-start: calc(-1 * var(--mantine-spacing-xl, 1.5rem)) !important;
+  margin-top: -32px !important; /* Negative margin = Container padding-block (32px from --mantine-spacing-xl) */
+  margin-block-start: -32px !important;
   padding: 1rem !important;
   padding-top: 0 !important;
   padding-block-start: 0 !important;
