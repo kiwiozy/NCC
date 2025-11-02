@@ -23,44 +23,52 @@
   padding: 1.5rem;
 }
 
-/* A4 page container */
-.a4-page {
+/* A4 page container (for multi-page support) */
+.we-page {
   position: relative;
   width: var(--we-page-width);
-  min-height: var(--we-page-height);
-  margin: 0 auto;
+  height: var(--we-page-height);
+  margin: 0 auto 20px auto;
   background: #fff;
   box-shadow: 0 0 8px rgba(0,0,0,.1);
+  page-break-after: always;
 }
 
-/* Letterhead overlay (25% opacity for editing) */
+.we-page:last-child {
+  margin-bottom: 0;
+}
+
+/* Letterhead overlay (25% opacity for editing, full opacity in PDF) */
 .letterhead-overlay {
   position: absolute;
   inset: 0;
-  background: url('/letterhead.png') no-repeat 0 0 / 210mm 297mm;
+  background: url('/Walk-Easy_Letterhead.png') no-repeat 0 0 / 210mm 297mm;
   opacity: 0.25;
   pointer-events: none;
   z-index: 0;
 }
 
-/* Editor content with padding for safe zones */
-.editor-content {
-  position: relative;
-  z-index: 1;
-  padding: var(--we-pad-top) var(--we-pad-right) var(--we-pad-bottom) var(--we-pad-left);
+/* Content area with safe zones (absolute positioning per ChatGPT recommendation) */
+.we-page-content {
+  position: absolute;
+  top: var(--we-pad-top);
+  left: var(--we-pad-left);
+  right: var(--we-pad-right);
+  bottom: var(--we-pad-bottom);
+  overflow: hidden; /* Hide content that exceeds safe zone */
   font-family: 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
-  min-height: var(--we-page-height);
+  z-index: 1;
 }
 
-/* Page break indicator at 192mm */
-.editor-content::after {
+/* Page break indicator (only in editor, not in PDF) */
+.we-page-content::after {
   content: "— Page Break (192mm) —";
   position: absolute;
-  left: var(--we-pad-left);
-  right: var(--we-pad-right);
-  top: calc(var(--we-pad-top) + var(--we-content-height));
+  left: 0;
+  right: 0;
+  bottom: 0;
   border-top: 2px dashed rgba(210, 40, 40, 0.45);
   font-size: 10px;
   text-align: center;
@@ -69,34 +77,42 @@
   padding-top: 4px;
 }
 
-/* TipTap editor styling */
-.editor-content p {
+/* TipTap editor styling within page content */
+.we-page-content .ProseMirror p,
+.we-page-content p {
   margin: 0 0 8px 0;
 }
 
-.editor-content ul,
-.editor-content ol {
+.we-page-content .ProseMirror ul,
+.we-page-content .ProseMirror ol,
+.we-page-content ul,
+.we-page-content ol {
   padding-left: 24px;
   margin: 8px 0;
 }
 
-.editor-content li {
+.we-page-content .ProseMirror li,
+.we-page-content li {
   margin: 4px 0;
 }
 
-.editor-content h1,
-.editor-content h2,
-.editor-content h3 {
+.we-page-content .ProseMirror h1,
+.we-page-content .ProseMirror h2,
+.we-page-content .ProseMirror h3,
+.we-page-content h1,
+.we-page-content h2,
+.we-page-content h3 {
   margin: 16px 0 8px 0;
   font-weight: bold;
 }
 
 /* Focus styles for TipTap */
-.ProseMirror:focus {
+.we-page-content .ProseMirror:focus {
   outline: none;
 }
 
-.ProseMirror {
-  min-height: 400px;
+.we-page-content .ProseMirror {
+  height: 100%;
+  overflow: auto;
 }
 

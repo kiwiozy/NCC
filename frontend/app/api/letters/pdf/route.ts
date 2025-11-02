@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const letterheadPath = path.join(process.cwd(), 'public', 'Walk-Easy_Letterhead-base64.txt');
     const letterheadBase64 = fs.readFileSync(letterheadPath, 'utf-8').trim();
 
-    // Build complete HTML with embedded letterhead
+    // Build complete HTML with embedded letterhead (multi-page support)
     const fullHTML = `
 <!DOCTYPE html>
 <html>
@@ -41,7 +41,20 @@ export async function POST(request: NextRequest) {
         padding: 0;
       }
       
-      /* Fixed letterhead background (z-index: 0 per ChatGPT recommendation) */
+      /* Page container (multi-page support per ChatGPT Approach A) */
+      .we-page {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        background: #fff;
+        page-break-after: always;
+      }
+      
+      .we-page:last-child {
+        page-break-after: auto;
+      }
+      
+      /* Fixed letterhead background (appears on ALL pages per ChatGPT) */
       .letterhead-bg {
         position: fixed;
         top: 0;
@@ -53,64 +66,64 @@ export async function POST(request: NextRequest) {
         background-repeat: no-repeat;
         z-index: 0;
         pointer-events: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
       
-      /* Content with safe zone padding - text constrained to red box */
-      .pdf-content {
-        position: relative;
-        z-index: 1;
-        padding: 60mm 18mm 45mm 22mm; /* top, right, bottom, left */
+      /* Content area with safe zones (absolute positioning per ChatGPT) */
+      .we-page-content {
+        position: absolute;
+        top: 60mm;
+        left: 22mm;
+        right: 18mm;
+        bottom: 45mm;
+        overflow: hidden;
         font-family: 'Helvetica Neue', Arial, sans-serif;
         font-size: 14px;
         line-height: 1.6;
         color: #000;
-        min-height: 297mm;
-        max-height: 297mm;  /* Prevent content from exceeding one page */
-        overflow: hidden;    /* Hide text that exceeds the red box */
-        box-sizing: border-box;
+        z-index: 1;
       }
       
-      /* Remove any borders from all elements */
-      .pdf-content *,
-      .pdf-content *::before,
-      .pdf-content *::after {
+      /* Remove borders/outlines */
+      * {
         border: none !important;
         outline: none !important;
       }
       
       /* Typography */
-      .pdf-content p {
+      .we-page-content p {
         margin: 0 0 8px 0;
       }
       
-      .pdf-content ul,
-      .pdf-content ol {
+      .we-page-content ul,
+      .we-page-content ol {
         padding-left: 24px;
         margin: 8px 0;
       }
       
-      .pdf-content li {
+      .we-page-content li {
         margin: 4px 0;
       }
       
-      .pdf-content h1,
-      .pdf-content h2,
-      .pdf-content h3 {
+      .we-page-content h1,
+      .we-page-content h2,
+      .we-page-content h3 {
         margin: 16px 0 8px 0;
         font-weight: bold;
       }
       
-      .pdf-content h1 { font-size: 18px; }
-      .pdf-content h2 { font-size: 16px; }
-      .pdf-content h3 { font-size: 14px; }
+      .we-page-content h1 { font-size: 18px; }
+      .we-page-content h2 { font-size: 16px; }
+      .we-page-content h3 { font-size: 14px; }
       
       /* Prevent orphans and widows */
-      .pdf-content p,
-      .pdf-content ul,
-      .pdf-content ol,
-      .pdf-content h1,
-      .pdf-content h2,
-      .pdf-content h3 {
+      .we-page-content p,
+      .we-page-content ul,
+      .we-page-content ol,
+      .we-page-content h1,
+      .we-page-content h2,
+      .we-page-content h3 {
         break-inside: avoid;
         orphans: 3;
         widows: 3;
@@ -119,8 +132,11 @@ export async function POST(request: NextRequest) {
   </head>
   <body>
     <div class="letterhead-bg"></div>
-    <div class="pdf-content">
-      ${html}
+    <!-- For now, single page - multi-page logic will be added later -->
+    <div class="we-page">
+      <div class="we-page-content">
+        ${html}
+      </div>
     </div>
   </body>
 </html>

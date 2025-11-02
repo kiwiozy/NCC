@@ -114,9 +114,9 @@ export default function LetterEditor() {
 
       {/* Editor */}
       <div className="letter-editor-shell">
-        <div className="a4-page">
+        <div className="we-page">
           <div className="letterhead-overlay" />
-          <div className="editor-content">
+          <div className="we-page-content">
             <EditorContent editor={editor} />
           </div>
         </div>
