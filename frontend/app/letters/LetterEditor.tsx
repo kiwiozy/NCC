@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Modal, Stack } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -70,9 +70,7 @@ function LetterPage({
 }
 
 export default function LetterEditor() {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const [pages, setPages] = useState<string[]>([
     `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
   ]);
@@ -104,9 +102,15 @@ export default function LetterEditor() {
 
       if (response.ok) {
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
-        setModalOpen(true);
+        
+        // For Safari compatibility, use object URL with type
+        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        
+        // Open in new window for consistent cross-browser experience
+        window.open(url, '_blank');
+        
+        // Clean up after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 100);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
@@ -117,14 +121,6 @@ export default function LetterEditor() {
       alert('Error generating PDF. Check console for details.');
     } finally {
       setPdfLoading(false);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
     }
   };
 
@@ -167,27 +163,6 @@ export default function LetterEditor() {
           ))}
         </Stack>
       </div>
-
-      {/* PDF Preview Modal */}
-      <Modal
-        opened={modalOpen}
-        onClose={handleCloseModal}
-        title="Letter Preview"
-        size="xl"
-        padding="md"
-      >
-        {pdfUrl && (
-          <iframe
-            src={pdfUrl}
-            style={{
-              width: '100%',
-              height: '80vh',
-              border: 'none',
-            }}
-            title="PDF Preview"
-          />
-        )}
-      </Modal>
     </>
   );
 }
