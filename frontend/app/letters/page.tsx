@@ -20,7 +20,7 @@ export default function LettersPage() {
 
   return (
     <Navigation>
-      {/* Fixed Letters Title Section */}
+      {/* Fixed Letters Title Section - Outside Container */}
       <Box
         style={{
           position: 'sticky',
@@ -29,6 +29,7 @@ export default function LettersPage() {
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
           padding: `${rem(16)} 0`,
+          margin: 0,
         }}
       >
         <Title 
@@ -44,8 +45,8 @@ export default function LettersPage() {
         </Title>
       </Box>
 
-      {/* Main Content Area */}
-      <Container size="xl" pt={0} pb="xl">
+      {/* Scrollable Content Area */}
+      <Container size="xl" p={0}>
         <LetterEditor />
       </Container>
     </Navigation>

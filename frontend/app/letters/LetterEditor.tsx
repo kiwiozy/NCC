@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack, Modal, Text } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal, Text, Box } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -158,20 +158,19 @@ export default function LetterEditor() {
 
   return (
     <>
-      {/* Fixed Toolbar */}
-      <Paper 
-        shadow="sm" 
-        p="md" 
-        mb="xl" 
-        withBorder
+      {/* Fixed Toolbar - No margin, flush to edges */}
+      <Box
         style={{
           position: 'sticky',
           top: 'calc(80px + 57px)', // Below navigation (80px) + Letters title (57px)
           zIndex: 80,
           backgroundColor: 'var(--mantine-color-body)',
+          borderBottom: '1px solid var(--mantine-color-default-border)',
+          padding: '1rem',
+          margin: 0,
         }}
       >
-        <Group gap="xs">
+        <Group gap="xs" style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Button
             leftSection={<IconPageBreak size={18} />}
             onClick={handleAddPage}
@@ -190,7 +189,7 @@ export default function LetterEditor() {
             Preview PDF
           </Button>
         </Group>
-      </Paper>
+      </Box>
 
       {/* Scrollable Multi-page editor */}
       <div className="letter-editor-shell">
