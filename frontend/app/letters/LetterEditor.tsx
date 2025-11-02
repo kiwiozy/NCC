@@ -140,6 +140,7 @@ export default function LetterEditor() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
+    // Clear PDF URL to force fresh load on next preview
     setPdfUrl(null);
   };
 
@@ -211,6 +212,7 @@ export default function LetterEditor() {
                 Download PDF
               </Button>
               <object
+                key={pdfUrl}
                 data={pdfUrl}
                 type="application/pdf"
                 style={{
