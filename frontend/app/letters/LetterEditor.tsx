@@ -103,6 +103,9 @@ export default function LetterEditor() {
     // Combine all pages into a single HTML string with page markers
     const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
     
+    console.log('Generating PDF with content:', combinedHTML.substring(0, 200) + '...');
+    console.log('Pages state:', pages);
+    
     try {
       // Generate PDF and get URL
       const response = await fetch('/api/letters/pdf-preview', {
