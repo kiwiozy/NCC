@@ -27,6 +27,8 @@ export const PageBreak = Node.create<PageBreakOptions>({
 
   group: 'block',
 
+  atom: true, // Self-closing node like <hr>
+
   parseHTML() {
     return [
       {
@@ -45,8 +47,8 @@ export const PageBreak = Node.create<PageBreakOptions>({
         () =>
         ({ chain }) => {
           return chain()
-            .insertContent('<hr class="page-break" />')
-            .insertContent('<p></p>') // Add empty paragraph after page break
+            .insertContent({ type: this.name })
+            .insertContent({ type: 'paragraph' })
             .run();
         },
     };

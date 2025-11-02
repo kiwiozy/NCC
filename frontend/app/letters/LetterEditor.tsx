@@ -1,8 +1,7 @@
-import { Paper, Button, Group, ActionIcon, Modal } from '@mantine/core';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { Paper, Button, Group, ActionIcon, Modal, Stack } from '@mantine/core';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import { PageBreak } from './PageBreakExtension';
 import { 
   IconBold, 
   IconItalic, 
@@ -13,39 +12,85 @@ import {
 import { useState } from 'react';
 import '../styles/letterhead.css';
 
+// Single page component with its own editor
+function LetterPage({ 
+  pageNumber, 
+  totalPages,
+  initialContent,
+  onContentChange 
+}: { 
+  pageNumber: number;
+  totalPages: number;
+  initialContent?: string;
+  onContentChange: (content: string) => void;
+}) {
+  const editor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: initialContent || `<p>Page ${pageNumber} content...</p>`,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      onContentChange(editor.getHTML());
+    },
+  });
+
+  if (!editor) {
+    return <div>Loading editor...</div>;
+  }
+
+  return (
+    <div className="we-page">
+      <div className="letterhead-overlay" />
+      <div className="we-page-content">
+        <EditorContent editor={editor} />
+      </div>
+      <div style={{
+        position: 'absolute',
+        bottom: '20mm',
+        right: '20mm',
+        background: 'rgba(0,0,0,0.7)',
+        color: 'white',
+        padding: '4px 12px',
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 600,
+      }}>
+        Page {pageNumber} of {totalPages}
+      </div>
+    </div>
+  );
+}
+
 export default function LetterEditor() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [pages, setPages] = useState<string[]>([
+    `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
+  ]);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      PageBreak, // Add page break extension
-    ],
-    content: `
-      <p>Dear [Name],</p>
-      <p></p>
-      <p>Write your letter here...</p>
-      <p></p>
-      <p>Sincerely,</p>
-      <p>Walk Easy Pedorthics</p>
-    `,
-    immediatelyRender: false, // Required to avoid SSR hydration issues
-  });
+  const handlePageContentChange = (pageIndex: number, content: string) => {
+    setPages(prev => {
+      const updated = [...prev];
+      updated[pageIndex] = content;
+      return updated;
+    });
+  };
+
+  const handleAddPage = () => {
+    setPages(prev => [...prev, '<p></p>']);
+  };
 
   const handlePreviewPDF = async () => {
-    if (!editor) return;
-    
     setPdfLoading(true);
-    const html = editor.getHTML();
+    
+    // Combine all pages into a single HTML string with page markers
+    const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
     
     try {
       const response = await fetch('/api/letters/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
+        body: JSON.stringify({ html: combinedHTML }),
       });
 
       if (response.ok) {
@@ -74,39 +119,14 @@ export default function LetterEditor() {
     }
   };
 
-  if (!editor) {
-    return <div>Loading editor...</div>;
-  }
-
   return (
     <>
       {/* Toolbar */}
       <Paper shadow="sm" p="md" mb="md" withBorder>
         <Group gap="xs">
-          <ActionIcon
-            variant={editor.isActive('bold') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <IconBold size={18} />
-          </ActionIcon>
-          
-          <ActionIcon
-            variant={editor.isActive('italic') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
-            <IconItalic size={18} />
-          </ActionIcon>
-          
-          <ActionIcon
-            variant={editor.isActive('underline') ? 'filled' : 'default'}
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-          >
-            <IconUnderline size={18} />
-          </ActionIcon>
-
           <Button
             leftSection={<IconPageBreak size={18} />}
-            onClick={() => editor.chain().focus().setPageBreak().run()}
+            onClick={handleAddPage}
             variant="light"
             size="compact-sm"
           >
@@ -124,14 +144,19 @@ export default function LetterEditor() {
         </Group>
       </Paper>
 
-      {/* Editor */}
+      {/* Multi-page editor */}
       <div className="letter-editor-shell">
-        <div className="we-page">
-          <div className="letterhead-overlay" />
-          <div className="we-page-content">
-            <EditorContent editor={editor} />
-          </div>
-        </div>
+        <Stack gap="xl">
+          {pages.map((pageContent, index) => (
+            <LetterPage
+              key={index}
+              pageNumber={index + 1}
+              totalPages={pages.length}
+              initialContent={pageContent}
+              onContentChange={(content) => handlePageContentChange(index, content)}
+            />
+          ))}
+        </Stack>
       </div>
 
       {/* PDF Preview Modal */}
