@@ -87,11 +87,12 @@ h2.letters-title-text {
   padding-block-start: 0 !important;
 }
 
-/* Editor shell - gray background */
+/* Editor shell - gray background, centered content */
 .letter-editor-shell {
   background: #f3f3f3 !important;
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: 0 !important;
+  margin: 0 !important;
   /* Force light mode styling */
   color-scheme: light;
 }

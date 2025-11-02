@@ -175,44 +175,53 @@ export default function LettersPage() {
           </h2>
         </div>
 
-        {/* Toolbar - Full width, buttons centered */}
+        {/* Toolbar - Centered with max-width */}
         <div
-          className="letters-toolbar-wrapper"
           style={{
-            backgroundColor: isDark ? '#25262b' : '#ffffff',
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-            padding: '1rem',
-            paddingTop: 0,
-            margin: 0,
-            marginTop: 0,
             width: '100%',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center',
-            gap: '0.75rem',
           }}
         >
-          <Button
-            leftSection={<IconPageBreak size={18} />}
-            onClick={handleAddPage}
-            variant="light"
-            size="compact-sm"
+          <div
+            className="letters-toolbar-wrapper"
+            style={{
+              backgroundColor: isDark ? '#25262b' : '#ffffff',
+              borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+              padding: '1rem',
+              paddingTop: 0,
+              margin: 0,
+              marginTop: 0,
+              width: '100%',
+              maxWidth: '1200px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.75rem',
+            }}
           >
-            New Page
-          </Button>
+            <Button
+              leftSection={<IconPageBreak size={18} />}
+              onClick={handleAddPage}
+              variant="light"
+              size="compact-sm"
+            >
+              New Page
+            </Button>
 
-          <Button
-            leftSection={<IconFileTypePdf size={18} />}
-            onClick={handlePreviewPDF}
-            loading={pdfLoading}
-          >
-            Preview PDF
-          </Button>
+            <Button
+              leftSection={<IconFileTypePdf size={18} />}
+              onClick={handlePreviewPDF}
+              loading={pdfLoading}
+            >
+              Preview PDF
+            </Button>
+          </div>
         </div>
 
-        {/* Editor Content - Centered with max-width */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 1rem' }}>
-          <div className="letter-editor-shell">
+        {/* Editor Content - Centered with same max-width */}
+        <div className="letter-editor-shell" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <div style={{ width: '100%', maxWidth: '1200px', padding: '1.5rem' }}>
             <Stack gap="xl">
               {pages.map((pageContent, index) => (
                 <LetterPage
