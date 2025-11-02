@@ -18,11 +18,19 @@
 
 /* LETTERS PAGE HEADER - Remove all gaps with !important overrides */
 
-/* Override Mantine Container padding if it somehow wraps our content */
+/* Override Mantine Container padding that's wrapping toolbar - NUCLEAR OPTION */
 .mantine-Container-root[data-size="xl"] {
-  padding-block: 0 !important; /* Remove Container padding */
+  padding-block: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  padding: 0 !important; /* Remove ALL padding */
+  margin: 0 !important; /* Remove ALL margin */
+}
+
+/* Target Container that wraps toolbar specifically */
+.mantine-Container-root[data-size="xl"] > div[class*="letters-toolbar-wrapper"],
+.mantine-Container-root[data-size="xl"] > div:has(.letters-toolbar-wrapper) {
+  margin-top: 0 !important;
 }
 
 /* Letters Title Wrapper - Direct child of scroll div, NO Container */
@@ -60,11 +68,11 @@ h2.letters-title-text {
   display: block !important;
 }
 
-/* Toolbar Wrapper - Force zero top margin/padding AND negative margin to pull it up */
+/* Toolbar Wrapper - Negative margin to pull up past Container padding */
 .letters-toolbar-wrapper {
   margin: 0 !important;
-  margin-top: -1px !important; /* Negative margin to pull toolbar up flush */
-  margin-block-start: -1px !important;
+  margin-top: calc(-1 * var(--mantine-spacing-xl, 1.5rem)) !important; /* Negative margin = Container padding-block */
+  margin-block-start: calc(-1 * var(--mantine-spacing-xl, 1.5rem)) !important;
   padding: 1rem !important;
   padding-top: 0 !important;
   padding-block-start: 0 !important;
