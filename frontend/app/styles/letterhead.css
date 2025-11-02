@@ -18,9 +18,11 @@
 
 /* Editor shell - gray background */
 .letter-editor-shell {
-  background: #f3f3f3;
+  background: #f3f3f3 !important;
   min-height: 100vh;
   padding: 1.5rem;
+  /* Force light mode styling */
+  color-scheme: light;
 }
 
 /* A4 page container (for multi-page support) */
@@ -29,9 +31,12 @@
   width: var(--we-page-width);
   height: var(--we-page-height);
   margin: 0 auto 20px auto;
-  background: #fff;
+  background: #fff !important;
   box-shadow: 0 0 8px rgba(0,0,0,.1);
   page-break-after: always;
+  /* Force light mode styling - always white paper */
+  color-scheme: light;
+  color: #000000 !important;
 }
 
 .we-page:last-child {
@@ -62,6 +67,15 @@
   z-index: 1;
   cursor: text; /* Show text cursor to indicate editable area */
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  /* Force black text color for readability */
+  color: #000000 !important;
+}
+
+/* Override any dark mode styling for content */
+.we-page-content *,
+.we-page-content .ProseMirror,
+.we-page-content .ProseMirror * {
+  color: #000000 !important;
 }
 
 /* Hover state - show subtle background */
