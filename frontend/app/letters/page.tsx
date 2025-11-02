@@ -150,8 +150,8 @@ export default function LettersPage() {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Combined Header: Letters Title + Toolbar (no gap) */}
-        <Box
+        {/* Combined Header: Letters Title + Toolbar (no gap) - using plain div */}
+        <div
           style={{
             backgroundColor: isDark ? '#25262b' : '#ffffff',
             margin: 0,
@@ -159,16 +159,16 @@ export default function LettersPage() {
           }}
         >
           {/* Letters Title */}
-          <Box
+          <div
             style={{
               borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
               padding: `${rem(8)} 0`,
+              textAlign: 'center',
             }}
           >
             <Title 
               order={2} 
               style={{ 
-                textAlign: 'center',
                 fontSize: rem(24),
                 fontWeight: 500,
                 margin: 0,
@@ -176,10 +176,10 @@ export default function LettersPage() {
             >
               Letters
             </Title>
-          </Box>
+          </div>
 
           {/* Toolbar */}
-          <Box
+          <div
             style={{
               borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
               padding: '1rem',
@@ -204,8 +204,8 @@ export default function LettersPage() {
                 Preview PDF
               </Button>
             </Group>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
         {/* Editor Content */}
         <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
