@@ -58,19 +58,45 @@ class XeroService:
         )
         return api_client
     
-    def _get_stored_token(self) -> Optional[OAuth2Token]:
+    def get_active_connection(self) -> Optional[XeroConnection]:
         """
-        Retrieve stored OAuth2 token from database
+        Get active Xero connection and auto-refresh if expired or about to expire
+        
+        Returns:
+            XeroConnection or None if no active connection
         """
         try:
             connection = XeroConnection.objects.filter(is_active=True).first()
             if not connection:
                 return None
             
-            # Check if token needs refresh
-            if connection.is_token_expired():
-                self.refresh_token(connection)
-                connection.refresh_from_db()
+            # Check if token is expired or expires within the next 5 minutes (300 seconds)
+            # Refresh proactively to avoid API call failures
+            expires_in_seconds = (connection.expires_at - timezone.now()).total_seconds()
+            
+            if connection.is_token_expired() or expires_in_seconds < 300:
+                try:
+                    connection = self.refresh_token(connection)
+                    print(f"✓ Xero token auto-refreshed for {connection.tenant_name}")
+                except Exception as e:
+                    print(f"✗ Failed to auto-refresh Xero token: {str(e)}")
+                    # Still return the connection - user can manually refresh
+                    return connection
+            
+            return connection
+        except Exception as e:
+            print(f"Error getting active Xero connection: {e}")
+            return None
+    
+    def _get_stored_token(self) -> Optional[OAuth2Token]:
+        """
+        Retrieve stored OAuth2 token from database
+        Auto-refreshes if expired or about to expire
+        """
+        try:
+            connection = self.get_active_connection()
+            if not connection:
+                return None
             
             token = OAuth2Token(
                 client_id=self.client_id,
@@ -215,30 +241,41 @@ class XeroService:
     
     def refresh_token(self, connection: XeroConnection) -> XeroConnection:
         """
-        Refresh expired access token
+        Refresh expired access token using direct HTTP request
         """
         self._check_credentials()
         start_time = time.time()
         
         try:
-            api_client = ApiClient(
-                Configuration(),
-                oauth2_token=OAuth2Token(
-                    client_id=self.client_id,
-                    client_secret=self.client_secret,
-                    token={
-                        'refresh_token': connection.refresh_token
-                    }
-                )
-            )
+            import requests
+            import base64
             
-            # Refresh the token
-            new_token = api_client.refresh_oauth2_token()
+            # Prepare Basic Auth header
+            auth_string = f"{self.client_id}:{self.client_secret}"
+            auth_bytes = auth_string.encode('ascii')
+            base64_bytes = base64.b64encode(auth_bytes)
+            base64_auth = base64_bytes.decode('ascii')
             
-            # Update connection
-            connection.access_token = new_token.access_token
-            connection.refresh_token = new_token.refresh_token
-            connection.expires_at = timezone.now() + timedelta(seconds=new_token.expires_in)
+            # Refresh token via direct HTTP request
+            token_url = "https://identity.xero.com/connect/token"
+            headers = {
+                "Authorization": f"Basic {base64_auth}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            data = {
+                "grant_type": "refresh_token",
+                "refresh_token": connection.refresh_token
+            }
+            
+            response = requests.post(token_url, headers=headers, data=data, timeout=30)
+            response.raise_for_status()
+            token_data = response.json()
+            
+            # Update connection with new tokens
+            expires_at = timezone.now() + timedelta(seconds=token_data.get('expires_in', 1800))
+            connection.access_token = token_data['access_token']
+            connection.refresh_token = token_data.get('refresh_token', connection.refresh_token)  # Xero may provide new refresh token
+            connection.expires_at = expires_at
             connection.last_refresh_at = timezone.now()
             connection.save()
             
@@ -249,14 +286,17 @@ class XeroService:
                 duration_ms=int((time.time() - start_time) * 1000)
             )
             
+            print(f"✓ Xero token refreshed for {connection.tenant_name}")
             return connection
             
         except Exception as e:
             # Log error
+            error_msg = str(e)
+            print(f"✗ Failed to refresh Xero token: {error_msg}")
             XeroSyncLog.objects.create(
                 operation_type='token_refresh',
                 status='failed',
-                error_message=str(e),
+                error_message=error_msg,
                 duration_ms=int((time.time() - start_time) * 1000)
             )
             raise

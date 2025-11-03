@@ -38,9 +38,61 @@ export default function XeroIntegration() {
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  const handleAutoRefreshToken = async () => {
+    // Silent auto-refresh - don't show notification unless it fails
+    if (refreshing) return; // Don't trigger multiple refreshes
+    
+    setRefreshing(true);
+    try {
+      const response = await fetch('http://localhost:8000/xero/oauth/refresh/', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) throw new Error('Failed to refresh token');
+      
+      // Refresh status after successful token refresh
+      await fetchStatus();
+      
+      // Only log to console, don't show notification for auto-refresh
+      console.log('✓ Xero token auto-refreshed');
+    } catch (error) {
+      console.error('Failed to auto-refresh Xero token:', error);
+      // Show notification only on failure
+      notifications.show({
+        title: 'Auto-Refresh Failed',
+        message: 'Xero token auto-refresh failed. Please refresh manually.',
+        color: 'orange',
+        icon: <IconAlertCircle />,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  // Auto-refresh token if expired or about to expire (check every minute)
+  useEffect(() => {
+    if (!status?.connection) return;
+    
+    const autoRefreshInterval = setInterval(() => {
+      if (status.connection?.is_token_expired) {
+        handleAutoRefreshToken();
+      } else if (status.connection?.expires_at) {
+        // Check if token expires in the next 5 minutes
+        const expiresAt = new Date(status.connection.expires_at);
+        const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+        if (expiresAt <= fiveMinutesFromNow) {
+          handleAutoRefreshToken();
+        }
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(autoRefreshInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.connection, refreshing]);
 
   const fetchStatus = async () => {
     try {
@@ -49,6 +101,21 @@ export default function XeroIntegration() {
       
       const data = await response.json();
       setStatus(data);
+      
+      // Auto-refresh if expired or about to expire (within 5 minutes)
+      if (data.connection) {
+        if (data.connection.is_token_expired) {
+          // Token already expired - refresh immediately
+          handleAutoRefreshToken();
+        } else if (data.connection.expires_at) {
+          const expiresAt = new Date(data.connection.expires_at);
+          const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+          if (expiresAt <= fiveMinutesFromNow) {
+            // Token expires soon - refresh proactively
+            handleAutoRefreshToken();
+          }
+        }
+      }
     } catch (error) {
       console.error('Error fetching Xero status:', error);
       notifications.show({
