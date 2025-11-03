@@ -84,6 +84,20 @@ This file tracks all git commits and pushes for easy reference.
   - No dependency on browser timezone settings
   - Created TIMEZONE_CONFIGURATION.md documentation
 
+#### 🐛 Fix import paths for dateFormatting utility - use relative paths
+- **Time**: 12:25 PM
+- **Commit**: `2ab7cd8`
+- **Changes**:
+  - Fixed module resolution errors - changed from `@/app/utils/dateFormatting` to `../../utils/dateFormatting`
+  - Updated all 5 components using dateFormatting utility:
+    * XeroIntegration.tsx
+    * GmailIntegration.tsx
+    * SMSIntegration.tsx
+    * NotesTest.tsx
+    * S3Integration.tsx
+  - Now matches existing import pattern used in codebase (e.g., browserDetection)
+  - Resolves "Module not found" errors in Next.js
+
 ---
 
 ## Previous Commits (from main branch)
