@@ -126,7 +126,6 @@ coordinator_name = models.CharField(max_length=200, blank=True, null=True)
 coordinator_date = models.DateField(blank=True, null=True)
 plan_start_date = models.DateField(blank=True, null=True)
 plan_end_date = models.DateField(blank=True, null=True)
-ndis_date = models.DateField(blank=True, null=True)
 notes = models.TextField(blank=True)
 ```
 
