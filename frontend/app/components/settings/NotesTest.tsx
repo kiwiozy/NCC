@@ -30,7 +30,7 @@ import {
   IconSparkles,
   IconRefresh,
 } from '@tabler/icons-react';
-import { formatDateTimeAU } from '@/app/utils/dateFormatting';
+import { formatDateTimeAU } from '../../utils/dateFormatting';
 
 interface Note {
   id: string;

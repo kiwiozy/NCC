@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs } from '@mantine/core';
 import { IconAlertCircle, IconCheck, IconRefresh, IconPlugConnected, IconX, IconFileInvoice, IconUsers, IconClipboardList } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { formatDateTimeAU } from '@/app/utils/dateFormatting';
+import { formatDateTimeAU } from '../../utils/dateFormatting';
 
 interface XeroConnection {
   id: string;

@@ -36,7 +36,7 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { formatDateTimeAU } from '@/app/utils/dateFormatting';
+import { formatDateTimeAU } from '../../utils/dateFormatting';
 
 interface GmailConnection {
   id: string;

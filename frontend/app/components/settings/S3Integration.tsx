@@ -35,7 +35,7 @@ import {
   IconFiles,
 } from '@tabler/icons-react';
 import BatchUpload from './BatchUpload';
-import { formatDateOnlyAU } from '@/app/utils/dateFormatting';
+import { formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface Document {
   id: string;

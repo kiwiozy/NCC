@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, TextInput, Textarea, Table, Tabs, Select, Loader, Code } from '@mantine/core';
 import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { formatDateTimeAU } from '@/app/utils/dateFormatting';
+import { formatDateTimeAU } from '../../utils/dateFormatting';
 
 interface SMSTemplate {
   id: string;
