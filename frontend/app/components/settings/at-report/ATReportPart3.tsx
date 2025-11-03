@@ -61,7 +61,7 @@ export default function ATReportPart3({ formData, setFormData }: ATReportPart3Pr
     try {
       // Process each field with AI
       const enhancementPromises = nonEmptyFields.map(async ({ field, label, value }) => {
-        const response = await fetch('http://localhost:8000/api/ai/rewrite-clinical-notes/', {
+        const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -120,7 +120,7 @@ export default function ATReportPart3({ formData, setFormData }: ATReportPart3Pr
     );
 
     try {
-      const response = await fetch('http://localhost:8000/api/ai/rewrite-clinical-notes/', {
+      const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

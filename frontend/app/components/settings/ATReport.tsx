@@ -124,7 +124,7 @@ export default function ATReport() {
     setGeneratingPDF(true);
     
     try {
-      const response = await fetch('http://localhost:8000/api/ai/generate-at-pdf/', {
+      const response = await fetch('https://localhost:8000/api/ai/generate-at-pdf/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ export default function ATReport() {
       const toEmails = emailTo.split(/[,;]/).map(e => e.trim()).filter(e => e);
       const ccEmails = emailCc ? emailCc.split(/[,;]/).map(e => e.trim()).filter(e => e) : [];
       
-      const response = await fetch('http://localhost:8000/api/ai/email-at-report/', {
+      const response = await fetch('https://localhost:8000/api/ai/email-at-report/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,7 +233,7 @@ export default function ATReport() {
       setEmailMessage('');
       
       // Refresh connected accounts (to update last_used_at)
-      fetch('http://localhost:8000/gmail/connected-accounts/')
+      fetch('https://localhost:8000/gmail/connected-accounts/')
         .then(res => res.json())
         .then(data => {
           const accounts = data.accounts || [];
@@ -280,7 +280,7 @@ export default function ATReport() {
       setPdfProgress(40);
 
       // Call the new backend API endpoint
-      const response = await fetch('http://localhost:8000/api/ai/extract-at-report/', {
+      const response = await fetch('https://localhost:8000/api/ai/extract-at-report/', {
         method: 'POST',
         body: formDataUpload,
       });
