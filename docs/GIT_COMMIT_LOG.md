@@ -93,6 +93,15 @@ This file tracks all git commits and pushes for easy reference.
     - xero_integration/services.py: Updated default redirect URI to HTTPS
     - gmail_integration/services.py: Updated default redirect URI to HTTPS
   - **Result:** ✅ All HTTP URLs in entire codebase now use HTTPS consistently
+
+## 2025-11-03 - Letter Canvas Light Mode Fix
+  - Fixed letter editor canvas to always display in light mode
+  - Added aggressive CSS overrides to force black text (#000000) regardless of app theme
+  - Override Mantine CSS variables (--mantine-color-text) for dark mode compatibility
+  - Added dark mode specific selectors with !important flags
+  - Added inline styles with CSS variables on React components
+  - Letter canvas text now stays black in both light and dark modes
+  - Canvas unaffected by app theme toggle
   - **⚠️ Important:** OAuth redirect URIs must be updated in:
     - Backend .env file (XERO_REDIRECT_URI and GMAIL_REDIRECT_URI)
     - Xero Developer Portal (add HTTPS redirect URI)
