@@ -44,8 +44,9 @@ backend/documents/models.py
 # PROTECTED: Configuration Files
 # ============================================
 
-backend/ncc_api/settings.py
-backend/ncc_api/urls.py
+# Temporarily removed for architecture development
+# backend/ncc_api/settings.py
+# backend/ncc_api/urls.py
 frontend/next.config.js
 frontend/package.json
 

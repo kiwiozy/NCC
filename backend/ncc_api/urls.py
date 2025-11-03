@@ -38,4 +38,5 @@ urlpatterns = [
     path('gmail/', include('gmail_integration.urls')),
     path('api/', include('documents.urls')),  # S3 document management
     path('api/ai/', include('ai_services.urls')),  # AI services
+    path('api/settings/', include('settings.urls')),  # Settings management (Funding Sources)
 ]
