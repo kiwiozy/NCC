@@ -67,6 +67,23 @@ This file tracks all git commits and pushes for easy reference.
   - Token refresh now works automatically without user intervention
   - Manual refresh button still available for user-triggered refresh
 
+#### ✅ Configure timezone for Australia - backend and frontend
+- **Time**: 12:19 PM
+- **Commit**: `222e39a`
+- **Changes**:
+  - **Backend**: Updated Django TIME_ZONE from UTC to Australia/Sydney, LANGUAGE_CODE to en-au
+  - **Frontend**: Created `dateFormatting.ts` utility using Luxon for consistent Australian timezone formatting
+  - Updated all date displays to use Australian timezone:
+    * XeroIntegration - connection dates, token expiry, sync logs
+    * GmailIntegration - account connection, email sent times
+    * SMSIntegration - message timestamps
+    * NotesTest - note created/updated times
+    * S3Integration - document upload dates
+  - All dates now display in DD/MM/YYYY format with Australian Eastern Time (AEST/AEDT)
+  - Automatic daylight saving time handling
+  - No dependency on browser timezone settings
+  - Created TIMEZONE_CONFIGURATION.md documentation
+
 ---
 
 ## Previous Commits (from main branch)
