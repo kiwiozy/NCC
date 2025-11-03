@@ -305,15 +305,6 @@ export default function ContactsPage() {
                           />
                         </Box>
 
-                        <Box>
-                          <TextInput
-                            label="id_ndis_date"
-                            styles={{ 
-                              label: { fontSize: rem(14), color: 'var(--mantine-color-dimmed)' },
-                              input: { fontWeight: 400 } 
-                            }}
-                          />
-                        </Box>
                       </Stack>
                     </Grid.Col>
 
@@ -371,13 +362,6 @@ export default function ContactsPage() {
                           ) : (
                             <Text size="sm" c="dimmed" fs="italic">No plan dates set</Text>
                           )}
-                          <TextInput
-                            label="id_ndis_date"
-                            mt="md"
-                            styles={{ 
-                              label: { fontSize: rem(14), color: 'var(--mantine-color-dimmed)' }
-                            }}
-                          />
                         </Box>
                       </Stack>
                     </Grid.Col>

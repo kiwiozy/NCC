@@ -25,7 +25,7 @@ Each page/dialog gets its own markdown file documenting:
 | Page | Route | Status | Doc | Data Needs |
 |------|-------|--------|-----|------------|
 | Dashboard | `/` | ✅ Built | [Dashboard.md](pages/Dashboard.md) | Appointments, Patients, Orders ❌ |
-| Patients List | `/patients` | ✅ Built | [PatientsList.md](pages/PatientsList.md) | Patients ✅ |
+| Patients List | `/patients` | ✅ Built (UI) | [PatientsPage.md](pages/PatientsPage.md) | Patients ⚠️ (needs fields) |
 | Calendar | `/calendar` | ✅ Built | [Calendar.md](pages/Calendar.md) | Appointments ✅ |
 | Settings | `/settings` | ✅ Built | [Settings.md](pages/Settings.md) | Integrations ✅ |
 
