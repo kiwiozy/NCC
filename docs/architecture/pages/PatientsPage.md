@@ -1,7 +1,7 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Needs API Connection)  
+**Status:** ✅ Built (UI Complete, Filter Working, Needs Patient API Connection)  
 **Last Updated:** November 4, 2025
 
 ---
@@ -29,16 +29,19 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ✅ Selected state highlighting
 - ✅ Hover effects
 
-### **Filter Component** 🔍
+### **Filter Component** 🔍 ✅ **IMPLEMENTED**
 - ✅ **Filter Icon Button** - Funnel icon, opens popover
 - ✅ **Filter Popover** - Contains filter dropdowns:
-  - Funding Source dropdown (loaded from Settings)
-  - Clinic dropdown (loaded from Settings)
-  - Status dropdown (Active, Inactive, Archived)
-- ✅ **Apply Filters** button
-- ✅ **Clear Filters** button
-- ⚠️ **Currently:** Filter options are hardcoded
-- 🔧 **Needs:** Connect to Settings API for Funding Sources and Clinics
+  - **Funding Source dropdown** - Currently hardcoded (NDIS, Private, DVA, Workers Comp, Medicare)
+    - **TODO:** Load from `/api/settings/funding-sources/` when endpoint exists
+  - **Clinic dropdown** - ✅ **Loads from API** (`/api/clinics/`)
+    - Falls back to hardcoded list if API fails
+    - Extracts clinic names from API response
+  - **Status dropdown** - Active, Inactive, Archived
+- ✅ **Apply Filters** button - Filters patient list
+- ✅ **Clear Filters** button - Resets all filters
+- ✅ **Filter Logic** - Filters by clinic, funding, and search query
+- ✅ **Search Integration** - Search works together with active filters
 
 ### **Right Panel - Patient Detail Form**
 
@@ -239,27 +242,33 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ## 🎯 **User Actions**
 
 ### **Available Actions**
-1. **Search Patients**
-   - Search by name, health number, MRN
-   - Real-time filtering
+1. **Search Patients** ✅ **IMPLEMENTED**
+   - Search by name (real-time filtering) ✅
+   - Works together with active filters ✅
+   - **TODO:** Search by health number, MRN (when fields exist)
 
-2. **Filter Patients** 🔍
-   - **Filter Icon Button** - Opens filter popover
-   - **Funding Source Filter** - Dropdown to filter by funding type
-     - Options: NDIS, Private, DVA, Workers Comp, Medicare
+2. **Filter Patients** 🔍 ✅ **IMPLEMENTED**
+   - **Filter Icon Button** - Opens filter popover ✅
+   - **Funding Source Filter** - Dropdown to filter by funding type ✅
+     - Options: NDIS, Private, DVA, Workers Comp, Medicare (hardcoded)
+     - **Status:** Working with hardcoded list
+     - **TODO:** Load from `/api/settings/funding-sources/` when endpoint exists
      - **Settings Requirement:** Funding sources must be managed in Settings page
-     - Users can add/edit/remove funding sources
-   - **Clinic Filter** - Dropdown to filter by clinic
-     - Options: Currently hardcoded (Newcastle, Tamworth, Port Macquarie, Armidale)
-     - **Settings Requirement:** Clinics must be managed in Settings page
+   - **Clinic Filter** - Dropdown to filter by clinic ✅
+     - **Status:** ✅ **Loads from API** (`/api/clinics/`)
+     - Falls back to hardcoded list (Newcastle, Tamworth, Port Macquarie, Armidale) if API fails
+     - **Settings Requirement:** Clinics managed in Settings page (backend exists)
      - Clinics are linked to:
        - **Patients** (when assigning clinic to patient)
        - **Calendar** (for scheduling appointments)
        - **Users/Clinicians** (clinic assignment)
-   - **Status Filter** - Dropdown to filter by status
+   - **Status Filter** - Dropdown to filter by status ✅
      - Options: Active, Inactive, Archived
-   - **Apply Filters** - Button to apply selected filters
-   - **Clear Filters** - Button to reset all filters
+   - **Apply Filters** - Button to apply selected filters ✅ **Working**
+     - Filters patient list based on selected criteria
+     - Combines multiple filters (clinic + funding + search)
+   - **Clear Filters** - Button to reset all filters ✅ **Working**
+   - **Filter Count** - Shows filtered count vs total count in header ✅
 
 3. **Select Patient**
    - Click patient in list
@@ -287,13 +296,16 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - [x] **Design** - UI mockup created
 - [x] **Component Structure** - Components identified
 - [x] **Frontend Built** - Page component created
-- [ ] **API Design** - Endpoints defined
-- [ ] **Database Design** - Tables/fields identified
-- [ ] **Backend Built** - API endpoints implemented
-- [ ] **Database Created** - Missing fields added
-- [ ] **Connected** - Frontend connected to backend
+- [x] **Filter Functionality** - Filter popover implemented ✅
+- [x] **Clinic API Integration** - Loads clinics from `/api/clinics/` ✅
+- [ ] **Funding Sources API** - Endpoint needed for `/api/settings/funding-sources/`
+- [ ] **API Design** - Patient endpoints defined
+- [ ] **Database Design** - Patient model fields identified
+- [ ] **Backend Built** - Patient API endpoints implemented
+- [ ] **Database Created** - Missing fields added to Patient model
+- [ ] **Connected** - Frontend connected to Patient API
 - [ ] **Tested** - Functionality verified
-- [ ] **Documented** - This doc completed
+- [x] **Documented** - Filter implementation documented ✅
 
 ---
 
