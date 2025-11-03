@@ -1,34 +1,40 @@
 'use client';
 
 import { useState } from 'react';
-import { Group, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Text, Box } from '@mantine/core';
-import { IconMenu2, IconSettings as IconSettingsIcon, IconCurrencyDollar } from '@tabler/icons-react';
+import { Group, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Box } from '@mantine/core';
+import { IconMenu2, IconMail, IconBrandXing, IconMessage, IconCloud, IconNote, IconFileText, IconBell } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-interface SettingsHeaderProps {
+interface TestingHeaderProps {
   title?: string;
 }
 
-export default function SettingsHeader({ 
-  title = 'Settings',
-}: SettingsHeaderProps) {
+export default function TestingHeader({ 
+  title = 'Testing',
+}: TestingHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const [menuOpened, setMenuOpened] = useState(false);
 
-  const activeTab = searchParams.get('tab') || 'general';
+  const activeTab = searchParams.get('tab') || 'gmail';
 
   const menuItems = [
-    { icon: <IconSettingsIcon size={20} />, label: 'General', value: 'general' },
-    { icon: <IconCurrencyDollar size={20} />, label: 'Funding Sources', value: 'funding-sources' },
+    { icon: <IconMail size={20} />, label: 'Gmail', value: 'gmail' },
+    { icon: <IconFileText size={20} />, label: 'Letters', value: 'letters' },
+    { icon: <IconBrandXing size={20} />, label: 'Xero Integration', value: 'xero' },
+    { icon: <IconMessage size={20} />, label: 'SMS', value: 'sms' },
+    { icon: <IconCloud size={20} />, label: 'S3 Storage', value: 's3' },
+    { icon: <IconNote size={20} />, label: 'Notes Test', value: 'notes' },
+    { icon: <IconFileText size={20} />, label: 'AT Report', value: 'at-report' },
+    { icon: <IconBell size={20} />, label: 'Notifications', value: 'notifications' },
   ];
 
   const activeMenuItem = menuItems.find(item => item.value === activeTab);
 
   const handleTabChange = (value: string) => {
-    router.push(`/settings?tab=${value}`);
+    router.push(`/testing?tab=${value}`);
     setMenuOpened(false);
   };
 
@@ -55,10 +61,10 @@ export default function SettingsHeader({
             fontWeight: 500,
           }}
         >
-          {activeMenuItem?.label || 'General'}
+          {activeMenuItem?.label || 'Testing'}
         </Title>
 
-        {/* Right: Settings Menu */}
+        {/* Right: Testing Menu */}
         <Popover
           opened={menuOpened}
           onChange={setMenuOpened}
@@ -71,7 +77,7 @@ export default function SettingsHeader({
               variant="default"
               size="lg"
               onClick={() => setMenuOpened((o) => !o)}
-              title="Settings Menu"
+              title="Testing Menu"
             >
               <IconMenu2 size={20} stroke={1.5} />
             </ActionIcon>

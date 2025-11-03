@@ -7,16 +7,9 @@ import Navigation from '../components/Navigation';
 import SettingsHeader from '../components/SettingsHeader';
 
 // We'll import these as separate components
-import XeroIntegration from '../components/settings/XeroIntegration';
-import SMSIntegration from '../components/settings/SMSIntegration';
-import S3Integration from '../components/settings/S3Integration';
-import NotesTest from '../components/settings/NotesTest';
-import ATReport from '../components/settings/ATReport';
-import GmailIntegration from '../components/settings/GmailIntegration';
-import LetterComposer from '../components/settings/LetterComposer';
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 
-type SettingsTab = 'general' | 'funding-sources' | 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
+type SettingsTab = 'general' | 'funding-sources';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -31,27 +24,6 @@ export default function SettingsPage() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'gmail':
-        return <GmailIntegration />;
-      case 'letters':
-        return <LetterComposer />;
-      case 'xero':
-        return <XeroIntegration />;
-      case 'sms':
-        return <SMSIntegration />;
-      case 's3':
-        return <S3Integration />;
-      case 'notes':
-        return <NotesTest />;
-      case 'at-report':
-        return <ATReport />;
-      case 'notifications':
-        return (
-          <div>
-            <h3 style={{ marginBottom: rem(16) }}>Notification Settings</h3>
-            <p>Coming soon...</p>
-          </div>
-        );
       case 'funding-sources':
         return <FundingSourcesSettings />;
       case 'general':

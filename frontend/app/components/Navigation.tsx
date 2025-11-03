@@ -24,7 +24,8 @@ import {
   IconCloud,
   IconNote,
   IconBell,
-  IconPencil
+  IconPencil,
+  IconFlask
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -125,6 +126,7 @@ export default function Navigation({ children }: NavigationProps) {
   const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showTestingMenu, setShowTestingMenu] = useState(false);
   const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const iconSize = 28;
@@ -137,6 +139,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/accounts' },
     { icon: <IconCheckupList size={iconSize} stroke={1.5} />, label: 'Orders', href: '/orders' },
     { icon: <IconFileText size={iconSize} stroke={1.5} />, label: 'Inventory', href: '/inventory' },
+    { icon: <IconFlask size={iconSize} stroke={1.5} />, label: 'Testing', href: '/testing', hasSubmenu: true, submenuType: 'testing' },
     { icon: <IconSettings size={iconSize} stroke={1.5} />, label: 'Settings', href: '/settings', hasSubmenu: true, submenuType: 'settings' },
   ];
 
@@ -150,22 +153,27 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconBuildingHospital size={subIconSize} stroke={1.5} />, label: 'Clinics', href: '/patients?type=clinics' },
   ];
 
+  const testingSubItems = [
+    { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Gmail', href: '/testing?tab=gmail' },
+    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Letters', href: '/testing?tab=letters' },
+    { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/testing?tab=xero' },
+    { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/testing?tab=sms' },
+    { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/testing?tab=s3' },
+    { icon: <IconNote size={subIconSize} stroke={1.5} />, label: 'Notes Test', href: '/testing?tab=notes' },
+    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'AT Report', href: '/testing?tab=at-report' },
+    { icon: <IconBell size={subIconSize} stroke={1.5} />, label: 'Notifications', href: '/testing?tab=notifications' },
+  ];
+
   const settingsSubItems = [
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'General', href: '/settings?tab=general' },
-    { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Gmail', href: '/settings?tab=gmail' },
-    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Letters', href: '/settings?tab=letters' },
-    { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/settings?tab=xero' },
-    { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/settings?tab=sms' },
-    { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/settings?tab=s3' },
-    { icon: <IconNote size={subIconSize} stroke={1.5} />, label: 'Notes Test', href: '/settings?tab=notes' },
-    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'AT Report', href: '/settings?tab=at-report' },
-    { icon: <IconBell size={subIconSize} stroke={1.5} />, label: 'Notifications', href: '/settings?tab=notifications' },
+    { icon: <IconPencil size={subIconSize} stroke={1.5} />, label: 'Funding Sources', href: '/settings?tab=funding-sources' },
   ];
 
   const handleNavClick = (href: string, hasSubmenu?: boolean) => {
     if (!hasSubmenu) {
       setShowContactsMenu(false);
       setShowSettingsMenu(false);
+      setShowTestingMenu(false);
       router.push(href);
     }
   };
@@ -177,10 +185,16 @@ export default function Navigation({ children }: NavigationProps) {
     }
     if (menuType === 'contacts') {
       setShowSettingsMenu(false);
+      setShowTestingMenu(false);
       setShowContactsMenu(true);
     } else if (menuType === 'settings') {
       setShowContactsMenu(false);
+      setShowTestingMenu(false);
       setShowSettingsMenu(true);
+    } else if (menuType === 'testing') {
+      setShowContactsMenu(false);
+      setShowSettingsMenu(false);
+      setShowTestingMenu(true);
     }
   };
 

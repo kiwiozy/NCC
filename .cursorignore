@@ -61,8 +61,8 @@ frontend/app/components/settings/SMSIntegration.tsx
 frontend/app/components/settings/S3Integration.tsx
 frontend/app/components/settings/ATReport.tsx
 
-# Core Components
-frontend/app/components/Navigation.tsx
+# Core Components (temporarily unprotected for architecture development)
+# frontend/app/components/Navigation.tsx
 frontend/app/components/ClinicCalendar.tsx
 frontend/app/layout.tsx
 
