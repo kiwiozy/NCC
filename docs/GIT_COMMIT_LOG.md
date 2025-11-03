@@ -20,6 +20,18 @@ This file tracks all git commits and pushes for easy reference.
 
 ### Branch: APP-Interface
 
+#### ✅ Fix PDF preview: Add modal dialog with DOM query for latest content, hide toolbar when modal open
+- **Time**: Afternoon
+- **Commit**: `de8f2a6`
+- **Changes**:
+  - Added PDF preview modal dialog using Mantine Modal component
+  - Implemented DOM query (`.we-page-content .ProseMirror`) to get latest editor content
+  - Ensures PDF preview always shows latest changes, not stale React state
+  - Modal hides sticky toolbar when open to prevent overlap
+  - Modal z-index set to 300 (above toolbar's 210)
+  - Uses iframe to display PDF within modal
+  - Properly cleans up blob URLs when modal closes
+
 #### ✅ Implement sticky toolbar for letters page - sticks below nav header on scroll (Safari + Chrome compatible)
 - **Time**: Afternoon
 - **Commit**: `b94c2d8`
