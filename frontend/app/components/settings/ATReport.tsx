@@ -188,6 +188,17 @@ export default function ATReport() {
       return;
     }
     
+    // Validate account selection
+    if (connectedAccounts.length > 0 && !emailConnectionEmail) {
+      notifications.show({
+        title: 'Error',
+        message: 'Please select a Gmail account to send from',
+        color: 'red',
+        icon: <IconAlertCircle size={16} />,
+      });
+      return;
+    }
+    
     setSendingEmail(true);
     
     try {
@@ -781,10 +792,12 @@ export default function ATReport() {
               </Text>
             </Alert>
             
-            {connectedAccounts.length > 1 && (
+            {connectedAccounts.length > 0 && (
               <Select
                 label="Send Using Account"
-                description="Select which Gmail account to send from (emails will appear in this account's Sent folder)"
+                description={connectedAccounts.length > 1 
+                  ? "Select which Gmail account to send from (emails will appear in this account's Sent folder)"
+                  : "Gmail account to send from (emails will appear in this account's Sent folder)"}
                 placeholder="Choose connected account"
                 data={connectedAccounts.map(account => ({
                   value: account.email,
