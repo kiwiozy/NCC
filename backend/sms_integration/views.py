@@ -254,12 +254,58 @@ def sms_inbound(request):
             print(f"[SMS Webhook] ✗ Unauthorized inbound request - invalid secret")
             return HttpResponseForbidden('Unauthorized')
     
-    to_number = request.GET.get('to', '')
-    from_number = request.GET.get('from', '')
-    message_text = request.GET.get('message', '')
-    ref = request.GET.get('ref', '')  # Optional reference from original message
+    # Handle both GET (URL params) and POST (JSON body or form data)
+    from urllib.parse import unquote
     
-    print(f"[SMS Webhook] Inbound message - from={from_number}, to={to_number}, message={message_text[:50]}...")
+    if request.method == 'POST':
+        # Try JSON body first
+        try:
+            import json
+            body_data = json.loads(request.body.decode('utf-8'))
+            data_source = body_data
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            # Fall back to form data
+            data_source = request.POST
+    else:
+        # GET request - use query parameters
+        data_source = request.GET
+    
+    # Extract data from appropriate source (SMS Broadcast sends URL-encoded values even in JSON)
+    to_number = unquote(str(data_source.get('to', '')))
+    from_number = unquote(str(data_source.get('from', '')))
+    message_text = unquote(str(data_source.get('message', '')))
+    ref = unquote(str(data_source.get('ref', '')))  # Optional reference from original message
+    msgref = unquote(str(data_source.get('msgref') or data_source.get('smsref', '')))  # Provider message ref
+    
+    # Clean up phone numbers (remove any parentheses or other characters)
+    from_number = from_number.lstrip('+()').replace(' ', '').replace('-', '')
+    to_number = to_number.lstrip('+()').replace(' ', '').replace('-', '')
+    
+    # Log ALL webhook calls for debugging
+    print(f"\n{'='*60}")
+    print(f"[SMS Webhook] Inbound webhook called")
+    print(f"  Method: {request.method}")
+    print(f"  Query Params: {dict(request.GET)}")
+    if request.method == 'POST':
+        if request.body:
+            try:
+                import json
+                body_data = json.loads(request.body.decode('utf-8'))
+                print(f"  POST Body (JSON): {body_data}")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                print(f"  POST Body (form/raw): {request.body.decode('utf-8', errors='ignore')[:200]}")
+                print(f"  POST Data (form): {dict(request.POST)}")
+        else:
+            print(f"  POST Data (form): {dict(request.POST)}")
+    print(f"{'='*60}\n")
+    
+    # Validate required fields - don't process empty webhooks
+    if not from_number or not message_text:
+        print(f"[SMS Webhook] ⚠️ Invalid inbound request - missing required fields: from={from_number}, message={message_text[:50]}")
+        print(f"[SMS Webhook] All params: {dict(request.GET)}")
+        return HttpResponse('OK')  # Still return OK to prevent retries, but don't save
+    
+    print(f"[SMS Webhook] ✓ Valid inbound message - from={from_number}, to={to_number}, message={message_text[:50]}...")
     
     try:
         # Format phone number for matching (remove + if present)
@@ -311,7 +357,7 @@ def sms_inbound(request):
             from_number=formatted_from,
             to_number=to_number,
             message=message_text,
-            external_message_id=request.GET.get('smsref', ''),
+            external_message_id=msgref or ref or '',
             patient=patient,
             received_at=timezone.now()
         )

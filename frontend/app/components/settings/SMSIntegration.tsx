@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, TextInput, Textarea, Table, Tabs, Select, Loader, Code, Modal, Divider } from '@mantine/core';
-import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle, IconArrowBack } from '@tabler/icons-react';
+import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle, IconArrowBack, IconRefresh } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { formatDateTimeAU } from '../../utils/dateFormatting';
 
@@ -59,6 +59,7 @@ export default function SMSIntegration() {
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [replyCounts, setReplyCounts] = useState<{[key: string]: number}>({});
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
   useEffect(() => {
     fetchTemplates();
@@ -76,7 +77,7 @@ export default function SMSIntegration() {
   const fetchReplyCounts = async () => {
     try {
       // Fetch all inbound messages
-      const response = await fetch('http://localhost:8000/api/sms/inbound/?ordering=-received_at');
+      const response = await fetch('https://localhost:8000/api/sms/inbound/?ordering=-received_at');
       if (response.ok) {
         const data = await response.json();
         const allReplies = data.results || data || [];
@@ -117,7 +118,7 @@ export default function SMSIntegration() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/sms/templates/');
+      const response = await fetch('https://localhost:8000/api/sms/templates/');
       if (response.ok) {
         const data = await response.json();
         setTemplates(data.results || data || []);
@@ -131,7 +132,7 @@ export default function SMSIntegration() {
   const fetchMessages = async () => {
     setLoadingMessages(true);
     try {
-      const response = await fetch('http://localhost:8000/api/sms/messages/?ordering=-created_at');
+      const response = await fetch('https://localhost:8000/api/sms/messages/?ordering=-created_at');
       if (response.ok) {
         const data = await response.json();
         setMessages(data.results || data);
@@ -147,7 +148,7 @@ export default function SMSIntegration() {
   const fetchBalance = async () => {
     setLoadingBalance(true);
     try {
-      const response = await fetch('http://localhost:8000/api/sms/balance/');
+      const response = await fetch('https://localhost:8000/api/sms/balance/');
       if (response.ok) {
         const data = await response.json();
         setBalance(data);
@@ -172,7 +173,7 @@ export default function SMSIntegration() {
 
     setSending(true);
     try {
-      const response = await fetch('http://localhost:8000/api/sms/messages/send/', {
+      const response = await fetch('https://localhost:8000/api/sms/messages/send/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -202,9 +203,24 @@ export default function SMSIntegration() {
         throw new Error(error.error || 'Failed to send SMS');
       }
     } catch (error: any) {
+      console.error('SMS Send Error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
+      // Extract more detailed error message
+      let errorMessage = 'Failed to send SMS';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'Network error - check if backend is running and certificate is trusted';
+      }
+      
       notifications.show({
         title: 'Send Failed',
-        message: error.message || 'Failed to send SMS',
+        message: errorMessage,
         color: 'red',
         icon: <IconX />,
       });
@@ -256,7 +272,7 @@ export default function SMSIntegration() {
       for (const variant of searchVariants) {
         try {
           const response = await fetch(
-            `http://localhost:8000/api/sms/inbound/?from_number=${encodeURIComponent(variant)}&ordering=-received_at`
+            `https://localhost:8000/api/sms/inbound/?from_number=${encodeURIComponent(variant)}&ordering=-received_at`
           );
           if (response.ok) {
             const data = await response.json();
@@ -270,16 +286,22 @@ export default function SMSIntegration() {
       
       // Remove duplicates and filter to replies received after message was sent
       const messageTime = new Date(msg.sent_at || msg.created_at);
+      console.log('Message time:', messageTime);
+      console.log('All replies fetched:', allReplies.length);
+      
       const uniqueReplies = Array.from(
         new Map(allReplies.map(reply => [reply.id, reply])).values()
       ).filter((reply: SMSInbound) => {
         const replyTime = new Date(reply.received_at);
-        return replyTime >= messageTime;
+        const isAfter = replyTime >= messageTime;
+        console.log(`Reply "${reply.message}" at ${reply.received_at} - ${isAfter ? 'INCLUDED' : 'FILTERED OUT'}`);
+        return isAfter;
       }).sort((a, b) => {
         // Sort by received time, newest first
         return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
       });
       
+      console.log('Filtered replies:', uniqueReplies.length);
       setReplies(uniqueReplies);
     } catch (error) {
       console.error('Error fetching replies:', error);
@@ -288,6 +310,94 @@ export default function SMSIntegration() {
       setLoadingReplies(false);
     }
   };
+
+  // Auto-refresh replies when modal is open
+  useEffect(() => {
+    if (!replyModalOpen || !selectedMessage || !autoRefreshEnabled) {
+      console.log('Auto-refresh disabled:', { replyModalOpen, selectedMessage: !!selectedMessage, autoRefreshEnabled });
+      return;
+    }
+
+    console.log('Auto-refresh enabled - starting interval');
+
+    // Fetch replies function (reusable) - captures selectedMessage from closure
+    const fetchReplies = async () => {
+      const currentMessage = selectedMessage; // Capture from closure
+      if (!currentMessage) {
+        console.log('No message selected for auto-refresh');
+        return;
+      }
+      
+      console.log('Auto-refreshing replies for:', currentMessage.phone_number);
+      
+      // Silent refresh - don't show loading indicator
+      const phoneNumber = currentMessage.phone_number.replace(/[^\d]/g, '');
+      const searchVariants = [
+        phoneNumber,
+        phoneNumber.startsWith('61') ? '0' + phoneNumber.slice(2) : phoneNumber,
+        phoneNumber.startsWith('0') ? '61' + phoneNumber.slice(1) : phoneNumber,
+      ];
+      
+      let allReplies: SMSInbound[] = [];
+      for (const variant of searchVariants) {
+        try {
+          const response = await fetch(
+            `https://localhost:8000/api/sms/inbound/?from_number=${encodeURIComponent(variant)}&ordering=-received_at`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const replies = data.results || data || [];
+            allReplies = [...allReplies, ...replies];
+          }
+        } catch (err) {
+          console.error('Error fetching replies variant:', variant, err);
+        }
+      }
+      
+      const messageTime = new Date(currentMessage.sent_at || currentMessage.created_at);
+      console.log('Message time:', messageTime);
+      console.log(`All replies fetched: ${allReplies.length}`);
+      
+      const uniqueReplies = Array.from(
+        new Map(allReplies.map(reply => [reply.id, reply])).values()
+      ).filter((reply: SMSInbound) => {
+        if (!reply.received_at) {
+          console.log('Reply missing received_at:', reply);
+          return false;
+        }
+        const replyTime = new Date(reply.received_at);
+        const isAfter = replyTime >= messageTime;
+        if (!isAfter) {
+          console.log(`Reply "${reply.message}" at ${reply.received_at} - FILTERED OUT (before message)`);
+        }
+        return isAfter;
+      }).sort((a, b) => {
+        return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
+      });
+      
+      console.log(`Filtered replies: ${uniqueReplies.length}`);
+      if (uniqueReplies.length > 0) {
+        console.log('New replies found:', uniqueReplies.map(r => `"${r.message}" at ${r.received_at}`));
+      }
+      setReplies(uniqueReplies);
+    };
+
+    // Fetch immediately
+    fetchReplies();
+
+    // Set up interval to refresh every 5 seconds
+    const interval = setInterval(() => {
+      console.log('Auto-refresh tick');
+      fetchReplies();
+    }, 5000);
+
+    return () => {
+      console.log('Cleaning up auto-refresh interval');
+      clearInterval(interval);
+    };
+    // Dependencies: only track modal state and auto-refresh toggle
+    // selectedMessage is stable - we use it inside the closure
+  }, [replyModalOpen, autoRefreshEnabled]);
 
   return (
     <Stack gap="xl">
@@ -605,20 +715,38 @@ export default function SMSIntegration() {
             {/* Replies Section */}
             <Paper p="md" withBorder>
               <Group justify="space-between" mb="sm">
-                <Text fw={600} size="sm">Replies ({replies.length})</Text>
-                <Button
-                  size="xs"
-                  variant="light"
-                  onClick={async () => {
-                    if (selectedMessage) {
-                      setLoadingReplies(true);
-                      await handleMessageClick(selectedMessage);
-                    }
-                  }}
-                  loading={loadingReplies}
-                >
-                  Refresh
-                </Button>
+                <Group gap="xs">
+                  <Text fw={600} size="sm">Replies ({replies.length})</Text>
+                  {autoRefreshEnabled && (
+                    <Badge size="xs" color="green" variant="light">
+                      Auto-refreshing
+                    </Badge>
+                  )}
+                </Group>
+                <Group gap="xs">
+                  <Button
+                    size="xs"
+                    variant={autoRefreshEnabled ? "filled" : "light"}
+                    color={autoRefreshEnabled ? "green" : "blue"}
+                    onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                  >
+                    {autoRefreshEnabled ? 'Auto: ON' : 'Auto: OFF'}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="light"
+                    onClick={async () => {
+                      if (selectedMessage) {
+                        setLoadingReplies(true);
+                        await handleMessageClick(selectedMessage);
+                      }
+                    }}
+                    loading={loadingReplies}
+                    leftSection={<IconRefresh size={14} />}
+                  >
+                    Refresh
+                  </Button>
+                </Group>
               </Group>
 
               {loadingReplies ? (

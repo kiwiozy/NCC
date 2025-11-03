@@ -43,11 +43,17 @@ This file tracks all git commits and pushes for easy reference.
 - **Commit**: `4e3e78f`
 - **Changes**:
   - Fixed connection status detection to use `connectedAccounts.length` instead of old status check
-  - Added individual account disconnect buttons (can disconnect specific accounts)
-  - Updated backend disconnect endpoint to properly handle POST requests with email parameter
-  - Improved email sending notifications to show which account was used
-  - Added account list refresh after connect/disconnect/send operations
-  - Updated AT Report email to refresh connected accounts after sending
+
+## 2025-11-03 - SMS Webhook Implementation
+  - Implemented inbound SMS webhook handler with support for GET and POST requests
+  - Added support for JSON POST body with URL-encoded values from SMS Broadcast
+  - Enhanced webhook logging for debugging
+  - Fixed phone number parsing and cleaning (removes parentheses, spaces, dashes)
+  - Implemented auto-refresh for SMS replies in frontend (5-second intervals)
+  - Added reply count badges and modal for viewing message replies
+  - Created comprehensive debugging guide for SMS webhook issues
+  - Webhook now successfully receives replies from SMS Broadcast (POST with JSON body)
+  - SMS replies now appearing automatically in the app within 5-10 seconds
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
@@ -97,6 +103,20 @@ This file tracks all git commits and pushes for easy reference.
     * S3Integration.tsx
   - Now matches existing import pattern used in codebase (e.g., browserDetection)
   - Resolves "Module not found" errors in Next.js
+
+#### ✅ Add SMS webhook support with security and Cloudflare Tunnel setup
+- **Time**: 2:52 PM
+- **Commit**: Latest
+- **Changes**:
+  - Added webhook secret authentication (SMSB_WEBHOOK_SECRET in .env)
+  - Updated ALLOWED_HOSTS to allow Cloudflare Tunnel domains for testing
+  - Implemented inbound message webhook endpoint (`/api/sms/webhook/inbound/`)
+  - Implemented delivery receipt (DLR) webhook endpoint (`/api/sms/webhook/dlr/`)
+  - Added reply tracking in frontend - click message row to see replies
+  - Added reply count badges on message history table
+  - All webhook endpoints secured with optional secret token validation
+  - Cloudflare Tunnel configured for local testing
+  - Webhook URL configured in SMS Broadcast dashboard
 
 ---
 
