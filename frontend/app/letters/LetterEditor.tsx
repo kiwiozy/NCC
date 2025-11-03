@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -84,6 +84,8 @@ function LetterPage({
 
 export default function LetterEditor() {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pages, setPages] = useState<string[]>([
     `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
   ]);
@@ -103,8 +105,27 @@ export default function LetterEditor() {
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     
-    // Combine all pages into a single HTML string with page markers
-    const combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
+    // CRITICAL: Get content directly from DOM (TipTap's ProseMirror structure)
+    // This ensures we ALWAYS have the latest content, even if React state hasn't updated yet
+    // The DOM is the source of truth, not React state
+    const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+    let combinedHTML: string;
+    
+    if (editorElements.length > 0) {
+      // Get HTML directly from DOM - this is the most reliable method
+      const domContent = Array.from(editorElements).map(el => {
+        const html = (el as HTMLElement).innerHTML || '';
+        console.log('Got HTML from DOM:', html.substring(0, 50) + '...');
+        return html;
+      });
+      combinedHTML = domContent.join('<hr class="page-break">');
+      console.log('✅ Using DOM content directly, length:', combinedHTML.length);
+    } else {
+      // Fallback to state if DOM query fails
+      await new Promise(resolve => setTimeout(resolve, 100));
+      combinedHTML = pages.map(pageHTML => pageHTML).join('<hr class="page-break">');
+      console.warn('⚠️ DOM query failed, using state (may be stale)');
+    }
     
     try {
       const response = await fetch('/api/letters/pdf', {
@@ -115,15 +136,11 @@ export default function LetterEditor() {
 
       if (response.ok) {
         const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
         
-        // For Safari compatibility, use object URL with type
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        
-        // Open in new window for consistent cross-browser experience
-        window.open(url, '_blank');
-        
-        // Clean up after a delay
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        // Set PDF URL and open modal for preview
+        setPdfUrl(url);
+        setPreviewModalOpen(true);
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
@@ -139,8 +156,13 @@ export default function LetterEditor() {
 
   return (
     <>
-      {/* Toolbar (now sticky) */}
-      <div className="letters-toolbar-sticky">
+      {/* Toolbar (now sticky) - hide when preview modal is open */}
+      <div 
+        className="letters-toolbar-sticky"
+        style={{ 
+          display: previewModalOpen ? 'none' : 'block',
+        }}
+      >
         <Paper shadow="sm" p="md" withBorder>
           <Group gap="xs">
             <Button
@@ -178,6 +200,43 @@ export default function LetterEditor() {
           ))}
         </Stack>
       </div>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        opened={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          // Clean up blob URL when modal closes
+          if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
+            setPdfUrl(null);
+          }
+        }}
+        title="PDF Preview"
+        size="xl"
+        zIndex={300}
+        styles={{
+          body: {
+            padding: 0,
+            height: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+      >
+        {pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              flex: 1,
+            }}
+            title="PDF Preview"
+          />
+        )}
+      </Modal>
     </>
   );
 }
