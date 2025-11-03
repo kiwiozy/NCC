@@ -14,6 +14,21 @@
   
   /* Content area height */
   --we-content-height: calc(var(--we-page-height) - var(--we-pad-top) - var(--we-pad-bottom)); /* 192mm */
+  
+  /* Keep this in sync with AppShell.Header height */
+  --app-header-height: 80px;
+}
+
+/* Sticky toolbar just under the sticky nav */
+.letters-toolbar-sticky {
+  position: sticky;
+  position: -webkit-sticky; /* Safari */
+  top: var(--app-header-height);
+  z-index: 210; /* Header is ~200; this keeps toolbar above page content */
+  background: var(--mantine-color-body, #fff);
+  /* Optional: subtle divider shadow when stuck */
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+  margin-bottom: 16px; /* replaces previous Paper mb if desired */
 }
 
 /* Editor shell - gray background - FORCE LIGHT MODE */

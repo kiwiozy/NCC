@@ -139,28 +139,30 @@ export default function LetterEditor() {
 
   return (
     <>
-      {/* Toolbar */}
-      <Paper shadow="sm" p="md" mb="md" withBorder>
-        <Group gap="xs">
-          <Button
-            leftSection={<IconPageBreak size={18} />}
-            onClick={handleAddPage}
-            variant="light"
-            size="compact-sm"
-          >
-            New Page
-          </Button>
+      {/* Toolbar (now sticky) */}
+      <div className="letters-toolbar-sticky">
+        <Paper shadow="sm" p="md" withBorder>
+          <Group gap="xs">
+            <Button
+              leftSection={<IconPageBreak size={18} />}
+              onClick={handleAddPage}
+              variant="light"
+              size="compact-sm"
+            >
+              New Page
+            </Button>
 
-          <Button
-            leftSection={<IconFileTypePdf size={18} />}
-            onClick={handlePreviewPDF}
-            loading={pdfLoading}
-            ml="auto"
-          >
-            Preview PDF
-          </Button>
-        </Group>
-      </Paper>
+            <Button
+              leftSection={<IconFileTypePdf size={18} />}
+              onClick={handlePreviewPDF}
+              loading={pdfLoading}
+              ml="auto"
+            >
+              Preview PDF
+            </Button>
+          </Group>
+        </Paper>
+      </div>
 
       {/* Multi-page editor */}
       <div className="letter-editor-shell">
