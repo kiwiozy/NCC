@@ -12,7 +12,7 @@ The S3 integration code is complete! We just need to create an S3 bucket.
 ### Step 2: Create S3 Bucket
 1. Search for "S3" in the top search bar
 2. Click "Create bucket"
-3. **Bucket name:** `nexus-core-clinic-documents` (must be globally unique)
+3. **Bucket name:** `walkeasy-nexus-documents` (must be globally unique)
 4. **Region:** `Asia Pacific (Sydney) - ap-southeast-2`
 5. **Block Public Access:** Leave all boxes CHECKED (keep it private)
 6. **Bucket Versioning:** Enable (recommended)
@@ -22,7 +22,7 @@ The S3 integration code is complete! We just need to create an S3 bucket.
 ### Step 3: Create IAM User for API Access
 1. Go to IAM service in AWS Console
 2. Click "Users" → "Create user"
-3. **Username:** `nexus-core-clinic-s3-user`
+3. **Username:** `walkeasy-nexus-s3-user`
 4. **Permissions:** Attach policies directly
 5. Search and select: `AmazonS3FullAccess` (or create custom policy below)
 6. Click "Create user"
@@ -43,7 +43,7 @@ Add these lines to `/Users/craig/Documents/nexus-core-clinic/backend/.env`:
 AWS_ACCESS_KEY_ID=your_access_key_id_from_step_4
 AWS_SECRET_ACCESS_KEY=your_secret_key_from_step_4
 AWS_REGION=ap-southeast-2
-AWS_S3_BUCKET_NAME=nexus-core-clinic-documents
+AWS_S3_BUCKET_NAME=walkeasy-nexus-documents
 ```
 
 ---
@@ -70,16 +70,16 @@ aws configure
 ### Step 3: Create S3 Bucket
 ```bash
 # Create bucket
-aws s3 mb s3://nexus-core-clinic-documents --region ap-southeast-2
+aws s3 mb s3://walkeasy-nexus-documents --region ap-southeast-2
 
 # Enable versioning
 aws s3api put-bucket-versioning \
-  --bucket nexus-core-clinic-documents \
+  --bucket walkeasy-nexus-documents \
   --versioning-configuration Status=Enabled
 
 # Enable encryption
 aws s3api put-bucket-encryption \
-  --bucket nexus-core-clinic-documents \
+  --bucket walkeasy-nexus-documents \
   --server-side-encryption-configuration '{
     "Rules": [{
       "ApplyServerSideEncryptionByDefault": {
@@ -90,7 +90,7 @@ aws s3api put-bucket-encryption \
 
 # Block public access (security)
 aws s3api put-public-access-block \
-  --bucket nexus-core-clinic-documents \
+  --bucket walkeasy-nexus-documents \
   --public-access-block-configuration \
     BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 ```
@@ -115,8 +115,8 @@ Instead of `AmazonS3FullAccess`, create a custom policy with minimal permissions
         "s3:GetBucketLocation"
       ],
       "Resource": [
-        "arn:aws:s3:::nexus-core-clinic-documents",
-        "arn:aws:s3:::nexus-core-clinic-documents/*"
+        "arn:aws:s3:::walkeasy-nexus-documents",
+        "arn:aws:s3:::walkeasy-nexus-documents/*"
       ]
     }
   ]
@@ -135,7 +135,7 @@ curl https://localhost:8000/api/documents/bucket_status/ -k
 Expected response:
 ```json
 {
-  "bucket_name": "nexus-core-clinic-documents",
+  "bucket_name": "walkeasy-nexus-documents",
   "region": "ap-southeast-2",
   "accessible": true
 }

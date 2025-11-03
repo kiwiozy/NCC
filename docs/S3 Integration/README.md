@@ -65,13 +65,13 @@ GET  /api/documents/bucket_status/    # Check S3 bucket accessibility
 ## 🪣 S3 Configuration
 
 ### **Bucket Details**
-- **Bucket Name:** `nexus-core-clinic-documents`
+- **Bucket Name:** `walkeasy-nexus-documents`
 - **Region:** `ap-southeast-2` (Sydney)
 - **Purpose:** Store patient documents, medical records, AT assessments
 
 ### **File Organization**
 ```
-nexus-core-clinic-documents/
+walkeasy-nexus-documents/
 ├── medical/
 │   └── patient_records/
 ├── images/
@@ -102,7 +102,7 @@ Create `.env` file in backend:
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID=your_access_key_here
 AWS_SECRET_ACCESS_KEY=your_secret_key_here
-AWS_STORAGE_BUCKET_NAME=nexus-core-clinic-documents
+AWS_STORAGE_BUCKET_NAME=walkeasy-nexus-documents
 AWS_S3_REGION_NAME=ap-southeast-2
 ```
 
@@ -146,7 +146,7 @@ curl https://localhost:8000/api/documents/bucket_status/ -k
 Expected response:
 ```json
 {
-  "bucket_name": "nexus-core-clinic-documents",
+  "bucket_name": "walkeasy-nexus-documents",
   "region": "ap-southeast-2",
   "accessible": true
 }

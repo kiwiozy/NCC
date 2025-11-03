@@ -15,7 +15,7 @@ curl https://localhost:8000/api/documents/bucket_status/ -k
 **Result:** 
 ```json
 {
-  "bucket_name": "nexus-core-clinic-documents",
+  "bucket_name": "walkeasy-nexus-documents",
   "region": "ap-southeast-2",
   "accessible": true
 }
@@ -77,7 +77,7 @@ curl https://localhost:8000/api/documents/{id}/download_url/ -k
 - ✅ Database migrations applied
 
 ### AWS S3
-- ✅ Bucket: `nexus-core-clinic-documents`
+- ✅ Bucket: `walkeasy-nexus-documents`
 - ✅ Region: `ap-southeast-2` (Sydney)
 - ✅ Private access (secure)
 - ✅ Credentials configured

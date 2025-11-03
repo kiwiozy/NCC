@@ -85,7 +85,7 @@ All detailed specs are in **`ChatGPT_Docs/`**:
 - ✅ Patient, Clinician, Appointment management
 - ✅ Multi-clinician calendar (http://localhost:3000)
 - ✅ Drag & drop appointment scheduling
-- ✅ GCP infrastructure (project: nexus-core-clinic-dev)
+- ✅ GCP infrastructure (project: walkeasy-nexus-dev)
 
 ## 🚀 Next Steps
 

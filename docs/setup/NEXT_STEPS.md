@@ -315,7 +315,7 @@ Choose your next goal based on priority:
 
 ### ☁️ **Prerequisites**
 
-- ✅ Google Cloud project exists (`nexus-core-clinic-dev`)
+- ✅ Google Cloud project exists (`walkeasy-nexus-dev`)
 - ✅ Service accounts created
 - ❌ Cloud SQL PostgreSQL (needs creation)
 - ❌ Docker images (need building)
@@ -340,7 +340,7 @@ Choose your next goal based on priority:
    DATABASES = {
        'default': {
            'ENGINE': 'django.db.backends.postgresql',
-           'HOST': '/cloudsql/nexus-core-clinic-dev:australia-southeast1:ncc-postgres',
+           'HOST': '/cloudsql/walkeasy-nexus-dev:australia-southeast1:ncc-postgres',
            'NAME': 'ncc_db',
            'USER': 'postgres',
            'PASSWORD': os.getenv('DB_PASSWORD'),

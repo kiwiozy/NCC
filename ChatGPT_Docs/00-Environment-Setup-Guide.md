@@ -231,7 +231,7 @@ If both applications are for **the same company** and you want **single sign-on 
 - **Suitable when:** Same team, similar security needs, simpler management, shared resources OK
 
 **More Secure Approach (Option 2): Separate GCP Project**
-- ✅ Create new project `nexus-core-clinic-dev`
+- ✅ Create new project `walkeasy-nexus-dev`
 - ✅ Complete isolation for compliance/audit
 - ✅ Separate billing and resource quotas
 - ✅ Better audit trails (know which app accessed what)
@@ -325,7 +325,7 @@ If creating a separate project:
 
 2. **Create New Project:**
    ```bash
-  gcloud projects create nexus-core-clinic-dev \
+  gcloud projects create walkeasy-nexus-dev \
     --name="WalkEasy Nexus - Dev" \
      --set-as-default
    ```
@@ -337,7 +337,7 @@ If creating a separate project:
 
 4. **Set Project ID:**
    ```bash
-   gcloud config set project nexus-core-clinic-dev
+   gcloud config set project walkeasy-nexus-dev
    ```
 
 ### 3.2 Enable Required APIs

@@ -115,7 +115,7 @@ echo "This is a test document for S3!" > test-file.txt
 ### Connection Status Section:
 ```
 ✅ Connected to AWS S3
-Bucket: nexus-core-clinic-documents
+Bucket: walkeasy-nexus-documents
 Region: ap-southeast-2
 ```
 

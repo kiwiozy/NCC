@@ -24,7 +24,7 @@
 
 ### 🚨 **Critical Blockers**
 1. **FileMaker Data API (502 Bad Gateway)** - Must enable WPE and Data API in FileMaker Server Admin Console before data migration can proceed
-2. ~~**Infrastructure Decision**~~ ✅ **COMPLETE** - Using new isolated project `nexus-core-clinic-dev`
+2. ~~**Infrastructure Decision**~~ ✅ **COMPLETE** - Using new isolated project `walkeasy-nexus-dev`
 
 ### ✅ **Recent Accomplishments**
 - ✅ Complete architecture documentation written
@@ -33,7 +33,7 @@
 - ✅ FileMaker test script created (`test_fm_api.py`)
 - ✅ Troubleshooting report generated
 - ✅ All prerequisites verified and installed
-- ✅ GCP project `nexus-core-clinic-dev` created
+- ✅ GCP project `walkeasy-nexus-dev` created
 - ✅ All required APIs enabled (Cloud Run, Cloud SQL, Secret Manager, etc.)
 - ✅ Service accounts created and configured (`ncc-api-sa`, `ncc-web-sa`, `ncc-worker-sa`)
 - ✅ IAM roles granted (CloudSQL client, Secret Manager, Storage, Cloud Tasks)
@@ -45,7 +45,7 @@
 ### 🎯 **Immediate Next Steps**
 1. ~~**Fix FileMaker API**~~ - ⚠️ Waiting (Enable Data API in FileMaker Cloud admin console)
 2. ~~**Verify Prerequisites**~~ - ✅ **COMPLETE** (All tools installed)
-3. ~~**Choose GCP Strategy**~~ - ✅ **COMPLETE** (New project `nexus-core-clinic-dev`)
+3. ~~**Choose GCP Strategy**~~ - ✅ **COMPLETE** (New project `walkeasy-nexus-dev`)
 4. ~~**Set Up GCP Infrastructure**~~ - ✅ **COMPLETE** (Project, APIs, service accounts ready)
 5. **Create Cloud SQL Database** - ⬅️ **NEXT STEP**
 6. **Set up AWS S3 buckets** - After database
@@ -77,12 +77,12 @@
 
 **Status:** ✅ COMPLETE (100%) - New isolated project created for healthcare data
 
-**✅ DECISION MADE:** Using new project `nexus-core-clinic-dev` for complete isolation and compliance
+**✅ DECISION MADE:** Using new project `walkeasy-nexus-dev` for complete isolation and compliance
 
 ### 1. Project Setup
 - [x] **DECIDED:** Option B - New project for better isolation
 - [x] List existing GCP projects
-- [x] Create new project: `nexus-core-clinic-dev`
+- [x] Create new project: `walkeasy-nexus-dev`
 - [x] Enable billing
 - [x] Project Number: `491969955535`
 - [x] Lifecycle State: ACTIVE
@@ -105,9 +105,9 @@
 **Status:** ✅ COMPLETE (100%)
 
 ### 3. Service Accounts
-- [x] Create `ncc-api-sa` service account *(ncc-api-sa@nexus-core-clinic-dev.iam.gserviceaccount.com)*
-- [x] Create `ncc-web-sa` service account *(ncc-web-sa@nexus-core-clinic-dev.iam.gserviceaccount.com)*
-- [x] Create `ncc-worker-sa` service account *(ncc-worker-sa@nexus-core-clinic-dev.iam.gserviceaccount.com)*
+- [x] Create `ncc-api-sa` service account *(ncc-api-sa@walkeasy-nexus-dev.iam.gserviceaccount.com)*
+- [x] Create `ncc-web-sa` service account *(ncc-web-sa@walkeasy-nexus-dev.iam.gserviceaccount.com)*
+- [x] Create `ncc-worker-sa` service account *(ncc-worker-sa@walkeasy-nexus-dev.iam.gserviceaccount.com)*
 - [x] Grant IAM roles to API service account (CloudSQL client, Secret Manager accessor, Storage admin)
 - [x] Grant IAM roles to Worker service account (Cloud Tasks enqueuer)
 
@@ -115,7 +115,7 @@
 
 ### 4. Authentication
 - [x] Authenticate: `gcloud auth application-default login`
-- [x] Project set as default: `nexus-core-clinic-dev`
+- [x] Project set as default: `walkeasy-nexus-dev`
 
 **Status:** ✅ COMPLETE (100%)
 
@@ -498,7 +498,7 @@
 ## 📝 Notes
 
 **Quick Reference:**
-- **GCP Project:** Existing `referrer-map` OR create new `nexus-core-clinic-dev` *(DECISION NEEDED)*
+- **GCP Project:** Existing `referrer-map` OR create new `walkeasy-nexus-dev` *(DECISION NEEDED)*
 - **AWS IAM:** Existing credentials available *(confirmed)*
 - **Database:** Cloud SQL PostgreSQL 15 in `australia-southeast1` *(not yet created)*
 - **Storage:** S3 buckets in `ap-southeast-2` *(not yet created)*
