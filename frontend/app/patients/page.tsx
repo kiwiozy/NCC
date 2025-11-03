@@ -112,7 +112,7 @@ export default function ContactsPage() {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
-  // Load clinics from API for filter dropdown
+  // Load clinics and funding sources from API for filter dropdown
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
   
@@ -133,22 +133,25 @@ export default function ContactsPage() {
       }
     };
     
-    loadClinics();
+    // Load funding sources from API
+    const loadFundingSources = async () => {
+      try {
+        const response = await fetch('https://localhost:8000/api/settings/funding-sources/?active=true');
+        if (response.ok) {
+          const data = await response.json();
+          // Extract funding source names from API response (handles paginated response)
+          const sources = data.results || data;
+          const sourceNames = sources.map((source: any) => source.name);
+          setFundingSources(sourceNames);
+        }
+      } catch (error) {
+        console.error('Failed to load funding sources:', error);
+        // Keep hardcoded defaults on error
+      }
+    };
     
-    // TODO: Load funding sources from API when endpoint exists
-    // const loadFundingSources = async () => {
-    //   try {
-    //     const response = await fetch('https://localhost:8000/api/settings/funding-sources/');
-    //     if (response.ok) {
-    //       const data = await response.json();
-    //       const sourceNames = data.map((source: any) => source.name);
-    //       setFundingSources(sourceNames);
-    //     }
-    //   } catch (error) {
-    //     console.error('Failed to load funding sources:', error);
-    //   }
-    // };
-    // loadFundingSources();
+    loadClinics();
+    loadFundingSources();
   }, []);
 
   useEffect(() => {
