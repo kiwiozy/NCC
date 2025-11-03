@@ -98,6 +98,7 @@ This file tracks all git commits and pushes for easy reference.
     - Xero Developer Portal (add HTTPS redirect URI)
     - Google Cloud Console (add HTTPS redirect URI)
     - Backend server must be restarted after .env changes
+  - **✅ Verified Working:** Gmail integration and AT Report emailing confirmed working after HTTPS migration
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
