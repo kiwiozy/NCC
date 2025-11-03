@@ -163,7 +163,7 @@ export default function GmailIntegration() {
 
   const fetchConnectedAccounts = async () => {
     try {
-      const response = await fetch('http://localhost:8000/gmail/connected-accounts/');
+      const response = await fetch('https://localhost:8000/gmail/connected-accounts/');
       if (!response.ok) throw new Error('Failed to fetch connected accounts');
       
       const data = await response.json();
@@ -192,7 +192,7 @@ export default function GmailIntegration() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/gmail/connections/status/');
+      const response = await fetch('https://localhost:8000/gmail/connections/status/');
       if (!response.ok) throw new Error('Failed to fetch status');
       
       const data = await response.json();
@@ -211,7 +211,7 @@ export default function GmailIntegration() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('http://localhost:8000/gmail/templates/');
+      const response = await fetch('https://localhost:8000/gmail/templates/');
       if (!response.ok) throw new Error('Failed to fetch templates');
       
       const data = await response.json();
@@ -223,7 +223,7 @@ export default function GmailIntegration() {
 
   const fetchSendAsAddresses = async () => {
     try {
-      const response = await fetch('http://localhost:8000/gmail/send-as-addresses/');
+      const response = await fetch('https://localhost:8000/gmail/send-as-addresses/');
       if (!response.ok) throw new Error('Failed to fetch Send As addresses');
       
       const data = await response.json();
@@ -257,7 +257,7 @@ export default function GmailIntegration() {
   const fetchSentEmails = async () => {
     setLogsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/gmail/sent/?page_size=20');
+      const response = await fetch('https://localhost:8000/gmail/sent/?page_size=20');
       if (!response.ok) throw new Error('Failed to fetch sent emails');
       
       const data = await response.json();
@@ -275,13 +275,13 @@ export default function GmailIntegration() {
   };
 
   const handleConnect = () => {
-    window.location.href = 'http://localhost:8000/gmail/oauth/connect/';
+    window.location.href = 'https://localhost:8000/gmail/oauth/connect/';
   };
 
   const handleRefreshToken = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('http://localhost:8000/gmail/oauth/refresh/', {
+      const response = await fetch('https://localhost:8000/gmail/oauth/refresh/', {
         method: 'POST',
       });
       
@@ -314,7 +314,7 @@ export default function GmailIntegration() {
     if (!confirm(`Are you sure you want to disconnect ${accountName || accountEmail}?`)) return;
     
     try {
-      const response = await fetch('http://localhost:8000/gmail/oauth/disconnect/', {
+      const response = await fetch('https://localhost:8000/gmail/oauth/disconnect/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: accountEmail }),
@@ -372,7 +372,7 @@ export default function GmailIntegration() {
       const ccEmailList = ccEmails ? ccEmails.split(/[,;]/).map(e => e.trim()).filter(e => e) : [];
       const bccEmailList = bccEmails ? bccEmails.split(/[,;]/).map(e => e.trim()).filter(e => e) : [];
 
-      const response = await fetch('http://localhost:8000/gmail/send/', {
+      const response = await fetch('https://localhost:8000/gmail/send/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -435,7 +435,7 @@ export default function GmailIntegration() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/gmail/test/', {
+      const response = await fetch('https://localhost:8000/gmail/test/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to_email: testEmail }),
@@ -517,7 +517,7 @@ export default function GmailIntegration() {
               size="sm"
               variant="light"
               leftSection={<IconPlugConnected size={16} />}
-              onClick={() => window.location.href = 'http://localhost:8000/gmail/oauth/connect/'}
+              onClick={() => window.location.href = 'https://localhost:8000/gmail/oauth/connect/'}
             >
               Connect Another Account
             </Button>
@@ -544,7 +544,7 @@ export default function GmailIntegration() {
                 size="sm"
                 variant="light"
                 leftSection={<IconPlugConnected size={16} />}
-                onClick={() => window.location.href = 'http://localhost:8000/gmail/oauth/connect/'}
+                onClick={() => window.location.href = 'https://localhost:8000/gmail/oauth/connect/'}
               >
                 Add Account
               </Button>
@@ -666,14 +666,14 @@ export default function GmailIntegration() {
               Create OAuth 2.0 credentials (OAuth Client ID) for "Web Application"
             </List.Item>
             <List.Item>
-              Add authorized redirect URI: <Code>http://localhost:8000/gmail/oauth/callback/</Code>
+              Add authorized redirect URI: <Code>https://localhost:8000/gmail/oauth/callback/</Code>
             </List.Item>
             <List.Item>Copy your Client ID and Client Secret</List.Item>
             <List.Item>Add them to your <Code>backend/.env</Code> file:
               <Code block mt="sm">
                 GMAIL_CLIENT_ID=your_client_id{'\n'}
                 GMAIL_CLIENT_SECRET=your_client_secret{'\n'}
-                GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
+                GMAIL_REDIRECT_URI=https://localhost:8000/gmail/oauth/callback/
               </Code>
             </List.Item>
             <List.Item>Restart your Django server</List.Item>
