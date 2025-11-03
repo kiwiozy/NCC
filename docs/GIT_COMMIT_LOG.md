@@ -83,6 +83,16 @@ This file tracks all git commits and pushes for easy reference.
   - Fixed email sending and test endpoints
   - Updated OAuth redirect URI documentation to HTTPS
   - All Gmail functionality now uses HTTPS consistently
+
+## 2025-11-03 - Complete HTTPS Migration (Deep Dive)
+  - **Frontend:**
+    - XeroIntegration.tsx: Updated 8 API endpoints (oauth/refresh, connections/status, logs, oauth/connect, oauth/disconnect, redirect URI docs)
+    - ClinicCalendar.tsx: Updated 3 API endpoints (calendar_data, appointments update/resize)
+    - BatchUpload.tsx: Updated document upload endpoint
+  - **Backend:**
+    - xero_integration/services.py: Updated default redirect URI to HTTPS
+    - gmail_integration/services.py: Updated default redirect URI to HTTPS
+  - **Result:** ✅ All HTTP URLs in entire codebase now use HTTPS consistently
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
