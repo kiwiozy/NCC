@@ -20,6 +20,18 @@ This file tracks all git commits and pushes for easy reference.
 
 ### Branch: APP-Interface
 
+#### ✅ Fix letterhead background in PDF + add download button + upgrade to 300 DPI letterhead
+- **Time**: Evening
+- **Commit**: `34f9be2`
+- **Changes**:
+  - Fixed PDF preview and download: letterhead background now appears correctly on all pages
+  - Changed letterhead positioning from `position:fixed` to `position:absolute` per page (works in Puppeteer)
+  - Added "Download PDF" button in preview modal header with download icon
+  - Upgraded letterhead image to X_Large version (2480×3508 pixels = 300 DPI print quality)
+  - Generated new base64 encoding for high-resolution letterhead
+  - Fixed duplicate Underline extension warning in TipTap by excluding from StarterKit
+  - DOM query for latest editor content ensures PDF always shows current changes
+
 #### ✅ Fix PDF preview: Add modal dialog with DOM query for latest content, hide toolbar when modal open
 - **Time**: Afternoon
 - **Commit**: `de8f2a6`
