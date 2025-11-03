@@ -52,7 +52,6 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ✅ Current Plan Dates display
   - Shows date range or "No plan dates set"
   - Add buttons for plan dates
-- ✅ NDIS Date field (`id_ndis_date`)
 
 #### **Full Width Sections**
 - ✅ Communication section
