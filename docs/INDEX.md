@@ -31,6 +31,9 @@ nexus-core-clinic/
 │   │   ├── COMPONENTS.md           # Component library (to be created)
 │   │   └── STYLING.md              # Mantine/Tailwind guide (to be created)
 │   └── setup/                      # Setup & deployment docs
+│       ├── CODE_ORGANIZATION_STRATEGY.md  # ⭐ Protect code from overwrites
+│       ├── CURSOR_SAFETY_GUIDE.md         # ⭐ Cursor AI safety tips
+│       ├── TIMEZONE_CONFIGURATION.md      # Timezone setup
 │       ├── DEVELOPMENT.md          # Local development setup (to be created)
 │       ├── DEPLOYMENT.md           # Production deployment (to be created)
 │       └── CLOUD_SQL.md            # Cloud SQL connection guide (to be created)

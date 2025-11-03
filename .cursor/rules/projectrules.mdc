@@ -1,0 +1,137 @@
+---
+alwaysApply: true
+---
+
+# Nexus Core Clinic - Project Rules
+
+## CRITICAL: Protected Files (NEVER modify without explicit permission)
+
+### Backend Protected Files:
+- `backend/gmail_integration/services.py` - Production ready, working OAuth & email
+- `backend/gmail_integration/models.py` - Database schema, critical
+- `backend/gmail_integration/views.py` - API endpoints, critical
+- `backend/xero_integration/services.py` - Production ready, working OAuth & sync
+- `backend/xero_integration/models.py` - Database schema, critical
+- `backend/xero_integration/views.py` - API endpoints, critical
+- `backend/sms_integration/services.py` - Production ready, working SMS sending
+- `backend/sms_integration/models.py` - Database schema, critical
+- `backend/sms_integration/views.py` - API endpoints, critical
+- `backend/documents/services.py` - Production ready, working S3 storage
+- `backend/documents/models.py` - Database schema, critical
+- `backend/documents/views.py` - API endpoints, critical
+- `backend/ai_services/services.py` - Production ready, working OpenAI integration
+- `backend/ai_services/pdf_generator.py` - PDF generation, critical
+- `backend/ai_services/at_report_email.py` - AT Report emailing, critical
+- `backend/patients/models.py` - Core data model, critical
+- `backend/appointments/models.py` - Core data model, critical
+- `backend/clinicians/models.py` - Core data model, critical
+- `backend/ncc_api/settings.py` - Django configuration, critical
+- `backend/ncc_api/urls.py` - URL routing, critical
+
+### Frontend Protected Files:
+- `frontend/app/components/settings/GmailIntegration.tsx` - Working integration
+- `frontend/app/components/settings/XeroIntegration.tsx` - Working integration
+- `frontend/app/components/settings/SMSIntegration.tsx` - Working integration
+- `frontend/app/components/settings/S3Integration.tsx` - Working integration
+- `frontend/app/components/settings/ATReport.tsx` - Working integration
+- `frontend/app/components/Navigation.tsx` - Core navigation component
+- `frontend/app/components/ClinicCalendar.tsx` - Working calendar component
+- `frontend/app/layout.tsx` - Root layout, critical
+- `frontend/next.config.js` - Next.js configuration, critical
+
+## Rules for Code Changes:
+
+1. **ALWAYS use file paths** - Never say "the email component", always say `frontend/app/components/settings/GmailIntegration.tsx`
+
+2. **ALWAYS specify what NOT to modify** - If modifying a file, explicitly list protected files that should NOT be touched
+
+3. **ALWAYS create new files for new features** - Don't modify existing working files unless absolutely necessary
+
+4. **ALWAYS check .cursorignore** - Files listed there are protected and should not be modified
+
+5. **ALWAYS be specific** - Instead of "fix the email system", say "fix the button styling on line 145 of GmailIntegration.tsx"
+
+6. **ALWAYS suggest Git branches** - Remind user to create a branch before making changes: `git checkout -b feature/description`
+
+7. **NEVER modify multiple protected files at once** - One protected file at a time, with explicit permission
+
+8. **NEVER make sweeping changes** - If asked to "update all integrations", suggest doing them one at a time
+
+9. **NEVER modify core models** (`patients/models.py`, `appointments/models.py`, `clinicians/models.py`) without explicit permission
+
+10. **ALWAYS suggest testing** - Before modifying any protected file, suggest testing current functionality first
+
+11. **ALWAYS ask for clarification** - If request is vague, ask for specific file path and line numbers
+
+12. **ALWAYS warn before modifying protected files** - If user asks to modify a protected file, warn them and suggest testing first
+
+## Code Organization:
+
+- New features go in new files/directories
+- Keep features isolated in separate directories
+- Use feature flags for experimental features
+- Document all changes in CHANGELOG.md
+- Follow existing patterns in the codebase
+
+## Testing Requirements:
+
+- Before modifying protected files: test current functionality
+- After modifications: run tests and manual verification
+- Integration changes: test end-to-end flow
+- Database changes: test migrations and data integrity
+- API changes: test all affected endpoints
+
+## Git Workflow:
+
+- Always work on feature branches (`git checkout -b feature/name`)
+- Never push directly to main
+- Commit frequently with clear messages (`feat:`, `fix:`, `refactor:`)
+- Review changes with `git diff` before committing
+- Test before merging to main
+
+## Integration Protection:
+
+The following integrations are **PRODUCTION READY** and **WORKING**:
+- ✅ Gmail Integration (OAuth2, email sending, multi-account)
+- ✅ Xero Integration (OAuth2, contact sync, invoice creation)
+- ✅ SMS Integration (SMS Broadcast API, message sending)
+- ✅ S3 Integration (document storage, file upload/download)
+- ✅ AI Services (OpenAI GPT-4o-mini, PDF extraction, clinical notes)
+
+**DO NOT modify these without:**
+1. Explicit user permission
+2. Testing current functionality
+3. Creating a Git branch
+4. Reviewing related files
+5. Testing after changes
+
+## Response Patterns:
+
+- **Vague requests** → Ask for specific file path and line numbers
+- **Protected file modification** → Warn and suggest testing first
+- **Multiple file changes** → Suggest doing one at a time
+- **New features** → Suggest creating new files/directories
+- **Refactoring** → Suggest feature flags and gradual rollout
+
+## Code Quality Standards:
+
+- Follow existing patterns in the codebase
+- Use TypeScript for frontend (strict type safety)
+- Use Django conventions for backend
+- Add comments for complex logic
+- Update documentation when making changes
+- Maintain consistent code style
+- Write meaningful commit messages
+
+## Safety Reminders:
+
+When user asks to modify code:
+1. Check if file is in protected list → Warn if protected
+2. Suggest Git branch → Remind to create branch first
+3. Ask for specificity → If vague, ask for file path and line numbers
+4. Suggest testing → Remind to test before and after changes
+5. Offer alternatives → Suggest creating new files instead of modifying existing
+
+---
+
+**Remember:** Safety first! Protect working code at all costs. When in doubt, create a new file or branch first.
