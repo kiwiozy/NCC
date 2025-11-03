@@ -24,10 +24,21 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ✅ Search bar with filter button
 - ✅ Patient list items showing:
   - Patient name (title + first + last)
-  - Clinic name (badge)
-  - Funding type (badge)
+  - Clinic name (badge) - Linked to Clinic settings
+  - Funding type (badge) - Linked to Funding Source settings
 - ✅ Selected state highlighting
 - ✅ Hover effects
+
+### **Filter Component** 🔍
+- ✅ **Filter Icon Button** - Funnel icon, opens popover
+- ✅ **Filter Popover** - Contains filter dropdowns:
+  - Funding Source dropdown (loaded from Settings)
+  - Clinic dropdown (loaded from Settings)
+  - Status dropdown (Active, Inactive, Archived)
+- ✅ **Apply Filters** button
+- ✅ **Clear Filters** button
+- ⚠️ **Currently:** Filter options are hardcoded
+- 🔧 **Needs:** Connect to Settings API for Funding Sources and Clinics
 
 ### **Right Panel - Patient Detail Form**
 
@@ -41,8 +52,26 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 
 #### **Column 2: Health & Clinic**
 - ✅ Health Number input
-- ✅ Clinic dropdown (Newcastle, Tamworth, Port Macquarie, Armidale)
-- ✅ Funding dropdown (NDIS, Private, DVA, Workers Comp, Medicare)
+- ✅ **Clinic dropdown** 
+  - Currently hardcoded: Newcastle, Tamworth, Port Macquarie, Armidale
+  - **Settings Requirement:** Clinics must be managed in Settings
+  - **Data Model:** Should be ForeignKey to `clinics` table
+  - **Usage:** Linked to patients, calendar, and clinicians
+  - **Clinic Details Needed:**
+    - Name (e.g., "Walk Easy Tamworth")
+    - ABN (Australian Business Number)
+    - Phone
+    - Email
+    - Address (JSON format)
+    - Used in calendar for location-based scheduling
+- ✅ **Funding dropdown**
+  - Currently hardcoded: NDIS, Private, DVA, Workers Comp, Medicare
+  - **Settings Requirement:** Funding sources must be managed in Settings
+  - Users should be able to:
+    - Add new funding sources
+    - Edit existing funding sources
+    - Remove/archive funding sources
+  - **Data Model:** Should be Enum or separate table for funding types
 
 #### **Column 3: Coordinator & Plans**
 - ✅ Coordinator selector (with add button)
@@ -80,8 +109,15 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **MRN** - Medical Record Number (exists in model, but not displayed)
 
 #### **Patient Clinic/Organization**
-- **Clinic** - String (currently hardcoded list) ⚠️ **SHOULD BE FK TO CLINIC**
-- **Funding Type** - Enum (NDIS, Private, DVA, Workers Comp, Medicare) ❌ **NOT IN CURRENT MODEL**
+- **Clinic** - ForeignKey to Clinic model ⚠️ **SHOULD BE FK TO CLINIC**
+  - Currently: Hardcoded string dropdown
+  - Should be: ForeignKey to `clinics` table
+  - **Settings:** Clinics managed in Settings → Clinics
+  - **Usage:** Linked to calendar, clinicians, patients
+- **Funding Type** - ForeignKey to FundingSource or Enum ❌ **NOT IN CURRENT MODEL**
+  - Currently: Hardcoded dropdown
+  - Should be: ForeignKey to `funding_sources` table or Enum
+  - **Settings:** Funding sources managed in Settings → Funding Sources
 
 #### **NDIS Specific**
 - **Coordinator** - Object with:
@@ -147,8 +183,12 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 **Missing Fields Needed:**
 - ❌ `title` - CharField (Mr., Mrs., Ms., Dr.) or Enum
 - ❌ `health_number` - CharField (optional) - Different from MRN
-- ❌ `funding_type` - CharField or Enum (NDIS, Private, DVA, Workers Comp, Medicare)
+- ❌ `funding_type` - ForeignKey to FundingSource or CharField/Enum
+  - **Settings Requirement:** Funding sources managed in Settings
+  - Options loaded from Settings API
 - ❌ `clinic_id` - ForeignKey to Clinic (currently clinic is just a string)
+  - **Settings Requirement:** Clinics managed in Settings
+  - Clinic details used in calendar, linked to patients and clinicians
 - ❌ `coordinator_name` - CharField (optional) - Coordinator name
 - ❌ `coordinator_date` - DateField (optional) - When coordinator was assigned
 - ❌ `plan_start_date` - DateField (optional) - NDIS plan start
@@ -203,10 +243,23 @@ The Patients page provides a comprehensive view for managing patient contacts. I
    - Search by name, health number, MRN
    - Real-time filtering
 
-2. **Filter Patients**
-   - By clinic
-   - By funding type
-   - By status (Active, Inactive, Archived)
+2. **Filter Patients** 🔍
+   - **Filter Icon Button** - Opens filter popover
+   - **Funding Source Filter** - Dropdown to filter by funding type
+     - Options: NDIS, Private, DVA, Workers Comp, Medicare
+     - **Settings Requirement:** Funding sources must be managed in Settings page
+     - Users can add/edit/remove funding sources
+   - **Clinic Filter** - Dropdown to filter by clinic
+     - Options: Currently hardcoded (Newcastle, Tamworth, Port Macquarie, Armidale)
+     - **Settings Requirement:** Clinics must be managed in Settings page
+     - Clinics are linked to:
+       - **Patients** (when assigning clinic to patient)
+       - **Calendar** (for scheduling appointments)
+       - **Users/Clinicians** (clinic assignment)
+   - **Status Filter** - Dropdown to filter by status
+     - Options: Active, Inactive, Archived
+   - **Apply Filters** - Button to apply selected filters
+   - **Clear Filters** - Button to reset all filters
 
 3. **Select Patient**
    - Click patient in list
