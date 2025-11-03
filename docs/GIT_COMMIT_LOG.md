@@ -93,6 +93,11 @@ This file tracks all git commits and pushes for easy reference.
     - xero_integration/services.py: Updated default redirect URI to HTTPS
     - gmail_integration/services.py: Updated default redirect URI to HTTPS
   - **Result:** ✅ All HTTP URLs in entire codebase now use HTTPS consistently
+  - **⚠️ Important:** OAuth redirect URIs must be updated in:
+    - Backend .env file (XERO_REDIRECT_URI and GMAIL_REDIRECT_URI)
+    - Xero Developer Portal (add HTTPS redirect URI)
+    - Google Cloud Console (add HTTPS redirect URI)
+    - Backend server must be restarted after .env changes
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
