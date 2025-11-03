@@ -2,6 +2,11 @@
    Based on ChatGPT's recommendations
 */
 
+/* SF Pro Font Support */
+@supports (font-family: -apple-system) {
+  /* SF Pro is automatically available on macOS/iOS via system fonts */
+}
+
 :root {
   --we-page-width: 210mm;
   --we-page-height: 297mm;
@@ -75,7 +80,8 @@
   right: var(--we-pad-right);
   bottom: var(--we-pad-bottom);
   overflow: hidden; /* Hide content that exceeds safe zone */
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  /* Default to SF Pro, but allow inline font-family from TipTap to override */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   z-index: 1;
@@ -127,6 +133,8 @@
   color: #000000 !important;
   background: transparent !important;
   color-scheme: light !important;
+  /* Default to SF Pro, but allow inline font-family from TipTap to override */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 /* Override any dark mode styles for ProseMirror */
@@ -137,6 +145,7 @@
 }
 
 /* Force light mode text color for all content - AGGRESSIVE OVERRIDES */
+/* Note: font-family is NOT forced here - let inline styles from TipTap take precedence */
 .we-page-content .ProseMirror,
 .we-page-content .ProseMirror *,
 .we-page-content .ProseMirror p,
@@ -161,12 +170,21 @@
   color: #000000 !important;
 }
 
+/* Allow TipTap's inline font-family styles to work - don't override them */
+.we-page-content .ProseMirror span[style*="font-family"],
+.we-page-content .ProseMirror p[style*="font-family"],
+.we-page-content .ProseMirror [style*="font-family"] {
+  /* Inline styles from TipTap should take precedence */
+}
+
 /* Override any Mantine theme colors - ULTRA AGGRESSIVE */
 [data-mantine-color-scheme="dark"] .we-page-content,
 [data-mantine-color-scheme="dark"] .we-page-content *,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror *,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror p,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ul,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ol,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror li,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h1,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h2,
@@ -206,6 +224,32 @@ html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror * {
   --mantine-color-dimmed: #000000 !important;
 }
 
+/* Ensure list markers are visible in dark mode */
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ul,
+[data-mantine-color-scheme="dark"] .we-page-content ul {
+  list-style-type: disc !important;
+}
+
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ol,
+[data-mantine-color-scheme="dark"] .we-page-content ol {
+  list-style-type: decimal !important;
+}
+
+/* Force black bullets in dark mode */
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ul li::before,
+[data-mantine-color-scheme="dark"] .we-page-content ul li::before {
+  content: "•" !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ul li::marker,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ol li::marker,
+[data-mantine-color-scheme="dark"] .we-page-content ul li::marker,
+[data-mantine-color-scheme="dark"] .we-page-content ol li::marker {
+  color: #000000 !important;
+}
+
 /* Empty editor placeholder */
 .we-page-content .ProseMirror p.is-editor-empty:first-child::before {
   content: "Click here to start typing...";
@@ -215,22 +259,121 @@ html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror * {
   float: left;
 }
 
+/* IMPORTANT: Don't apply placeholder styles to list items */
+.we-page-content .ProseMirror ul li.is-editor-empty::before,
+.we-page-content .ProseMirror ol li.is-editor-empty::before {
+  content: none !important;
+}
+
 .we-page-content .ProseMirror p,
 .we-page-content p {
   margin: 0 0 8px 0;
+  /* Default to SF Pro, but allow inline font-family from TipTap to override */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+/* BULLET LISTS - Force visible bullets */
+/* TipTap structure: <ul><li><p>content</p></li></ul> */
 .we-page-content .ProseMirror ul,
-.we-page-content .ProseMirror ol,
-.we-page-content ul,
-.we-page-content ol {
-  padding-left: 24px;
-  margin: 8px 0;
+.we-page-content ul {
+  padding-left: 0 !important;
+  margin: 8px 0 !important;
+  list-style: none !important;
+  list-style-type: none !important;
 }
 
-.we-page-content .ProseMirror li,
-.we-page-content li {
-  margin: 4px 0;
+.we-page-content .ProseMirror ul li,
+.we-page-content ul li {
+  position: relative !important;
+  padding-left: 20px !important;
+  margin: 4px 0 !important;
+  color: #000000 !important;
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+/* Add visible bullet using ::before pseudo-element */
+/* CRITICAL: TipTap creates <ul><li><p>content</p></li></ul> */
+.we-page-content ul li::before,
+.we-page-content .ProseMirror ul li::before {
+  content: "•" !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  position: absolute !important;
+  left: 0px !important;
+  display: inline-block !important;
+  width: 12px !important;
+  line-height: 1.6 !important;
+  z-index: 10 !important;
+}
+
+/* Fallback selectors for edge cases */
+div[class*="we-page"] ul li::before,
+div[class*="we-page"] .ProseMirror ul li::before {
+  content: "•" !important;
+  color: #000000 !important;
+  position: absolute !important;
+  left: 0px !important;
+  display: inline-block !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  width: 12px !important;
+  line-height: 1.6 !important;
+  z-index: 10 !important;
+}
+
+/* Ensure bullets work with nested <p> tags inside <li> */
+.we-page-content .ProseMirror ul li p {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline !important;
+}
+
+/* ORDERED LISTS - Use CSS counters for automatic numbering */
+.we-page-content .ProseMirror ol,
+.we-page-content ol {
+  counter-reset: list-item !important;
+  padding-left: 0 !important;
+  margin: 8px 0 !important;
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+.we-page-content .ProseMirror ol li,
+.we-page-content ol li {
+  counter-increment: list-item !important;
+  position: relative !important;
+  padding-left: 24px !important;
+  margin: 4px 0 !important;
+  color: #000000 !important;
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+/* Number display using ::before */
+.we-page-content .ProseMirror ol li::before,
+.we-page-content ol li::before {
+  content: counter(list-item) "." !important;
+  color: #000000 !important;
+  position: absolute !important;
+  left: 0px !important;
+  display: inline-block !important;
+  width: 20px !important;
+  font-weight: normal !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  z-index: 10 !important;
+  text-align: right !important;
+}
+
+/* Force list markers to be black */
+.we-page-content .ProseMirror ul li::marker,
+.we-page-content .ProseMirror ol li::marker,
+.we-page-content ul li::marker,
+.we-page-content ol li::marker {
+  color: #000000 !important;
+  content: "" !important;
 }
 
 .we-page-content .ProseMirror h1,
