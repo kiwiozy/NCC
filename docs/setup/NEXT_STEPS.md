@@ -315,8 +315,9 @@ Choose your next goal based on priority:
 
 ### ☁️ **Prerequisites**
 
-- ✅ Google Cloud project exists (`walkeasy-nexus-dev`)
-- ✅ Service accounts created
+- ✅ Google Cloud project exists (`walkeasy-nexus-dev`) - **COMPLETED Nov 4, 2025**
+- ✅ Service accounts created (API, Web, Worker) - **COMPLETED Nov 4, 2025**
+- ✅ S3 bucket created (`walkeasy-nexus-documents`) - **COMPLETED Nov 4, 2025**
 - ❌ Cloud SQL PostgreSQL (needs creation)
 - ❌ Docker images (need building)
 - ❌ Cloud Run services (need deploying)

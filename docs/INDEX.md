@@ -34,6 +34,8 @@ nexus-core-clinic/
 │       ├── CODE_ORGANIZATION_STRATEGY.md  # ⭐ Protect code from overwrites
 │       ├── CURSOR_SAFETY_GUIDE.md         # ⭐ Cursor AI safety tips
 │       ├── TIMEZONE_CONFIGURATION.md      # Timezone setup
+│       ├── INFRASTRUCTURE_MIGRATION_GUIDE.md  # ✅ Infrastructure migration (completed)
+│       ├── NEXT_STEPS.md           # Next steps for deployment
 │       ├── DEVELOPMENT.md          # Local development setup (to be created)
 │       ├── DEPLOYMENT.md           # Production deployment (to be created)
 │       └── CLOUD_SQL.md            # Cloud SQL connection guide (to be created)
@@ -67,9 +69,11 @@ nexus-core-clinic/
 3. Follow **[Calendar Guide](frontend/CALENDAR_GUIDE.md)** to understand the frontend
 
 ### **For Deployment:**
-1. Review **[Setup Checklist](../ChatGPT_Docs/Setup-Checklist.md)** for infrastructure
-2. Check **[Architecture](../ChatGPT_Docs/01-Architecture.md)** for system design
-3. Follow **[Hosting Decision Guide](../ChatGPT_Docs/Hosting_Decision_Guide.md)**
+1. Review **[Infrastructure Migration Guide](setup/INFRASTRUCTURE_MIGRATION_GUIDE.md)** ✅ **Completed**
+2. Check **[Setup Checklist](../ChatGPT_Docs/Setup-Checklist.md)** for infrastructure
+3. Review **[Next Steps](setup/NEXT_STEPS.md)** for deployment
+4. Check **[Architecture](../ChatGPT_Docs/01-Architecture.md)** for system design
+5. Follow **[Hosting Decision Guide](../ChatGPT_Docs/Hosting_Decision_Guide.md)**
 
 ### **For Integrations:**
 - **Xero:** See [Xero_Integration.md](../ChatGPT_Docs/Xero_Integration.md)
@@ -174,7 +178,8 @@ nexus-core-clinic/
 
 ---
 
-**Last Updated:** October 30, 2025  
+**Last Updated:** November 4, 2025  
 **Project:** WalkEasy Nexus - Patient Management System  
-**Version:** 0.1.0 (Development)
+**Version:** 0.1.0 (Development)  
+**Infrastructure:** ✅ Migrated to WalkEasy Nexus naming (GCP: walkeasy-nexus-dev, S3: walkeasy-nexus-documents)
 
