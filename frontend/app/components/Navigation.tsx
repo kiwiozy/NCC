@@ -28,6 +28,7 @@ import {
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
+import { useBrowserDetection } from '../utils/browserDetection';
 
 interface NavigationProps {
   children: React.ReactNode;
@@ -121,6 +122,7 @@ export default function Navigation({ children }: NavigationProps) {
   const pathname = usePathname();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -218,8 +220,18 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          position: 'relative',
+          // Sticky positioning with Safari-specific fixes
+          position: (browser.isSafari ? '-webkit-sticky' : 'sticky') as any,
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 200,
           overflow: 'visible',
+          // Safari-specific: ensure header has proper stacking context
+          ...(browser.isSafari && {
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden',
+          }),
         }}
       >
         <Group h="100%" px="lg" justify="space-between" wrap="nowrap">
@@ -427,6 +439,8 @@ export default function Navigation({ children }: NavigationProps) {
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
           padding: 0,
+          // Ensure content is scrollable and doesn't conflict with sticky header
+          minHeight: '100vh',
         }}
       >
         {children}
