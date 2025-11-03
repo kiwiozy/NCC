@@ -66,6 +66,13 @@ This file tracks all git commits and pushes for easy reference.
   - Changed OpenAI API endpoint from HTTP to HTTPS
   - AI rewrite functionality now working correctly
   - Consistent with other API endpoint HTTPS fixes
+
+## 2025-11-03 - AT Report API Endpoints Fix
+  - Fixed all API endpoints in AT Report components (HTTP → HTTPS)
+  - Updated generate-pdf, email-at-report, extract-at-report endpoints
+  - Fixed AI rewrite endpoints in ATReportPart2 and ATReportPart3
+  - Fixed Gmail connected-accounts endpoint in ATReport
+  - All AT Report functionality now uses HTTPS consistently
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
