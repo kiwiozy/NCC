@@ -16,21 +16,26 @@
   --we-content-height: calc(var(--we-page-height) - var(--we-pad-top) - var(--we-pad-bottom)); /* 192mm */
 }
 
-/* Editor shell - gray background */
+/* Editor shell - gray background - FORCE LIGHT MODE */
 .letter-editor-shell {
   background: #f3f3f3;
   padding: 1.5rem;
+  color-scheme: light !important;
+  /* Force light mode for canvas area */
+  --mantine-color-scheme: light;
 }
 
-/* A4 page container (for multi-page support) */
+/* A4 page container (for multi-page support) - FORCE LIGHT MODE */
 .we-page {
   position: relative;
   width: var(--we-page-width);
   height: var(--we-page-height);
   margin: 0 auto 20px auto;
-  background: #fff;
+  background: #fff !important;
+  color: #000 !important;
   box-shadow: 0 0 8px rgba(0,0,0,.1);
   page-break-after: always;
+  color-scheme: light !important;
 }
 
 .we-page:last-child {
@@ -47,7 +52,7 @@
   z-index: 0;
 }
 
-/* Content area with safe zones (absolute positioning per ChatGPT recommendation) */
+/* Content area with safe zones (absolute positioning per ChatGPT recommendation) - FORCE LIGHT MODE */
 .we-page-content {
   position: absolute;
   top: var(--we-pad-top);
@@ -61,6 +66,15 @@
   z-index: 1;
   cursor: text; /* Show text cursor to indicate editable area */
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  color: #000000 !important;
+  background: transparent !important;
+  color-scheme: light !important;
+}
+
+/* Override Mantine dark mode for content area */
+[data-mantine-color-scheme="dark"] .we-page-content {
+  color: #000000 !important;
+  background: transparent !important;
 }
 
 /* Hover state - show subtle background */
@@ -89,11 +103,92 @@
   padding-top: 4px;
 }
 
-/* TipTap editor styling within page content */
-.we-page-content .ProseMirror {
+/* TipTap editor styling within page content - FORCE LIGHT MODE */
+.we-page-content .ProseMirror,
+.we-page-content .ProseMirror[data-force-light-mode="true"] {
   height: 100%;
   overflow: auto;
   min-height: 100%;
+  color: #000000 !important;
+  background: transparent !important;
+  color-scheme: light !important;
+}
+
+/* Override any dark mode styles for ProseMirror */
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror[data-force-light-mode="true"] {
+  color: #000000 !important;
+  background: transparent !important;
+}
+
+/* Force light mode text color for all content - AGGRESSIVE OVERRIDES */
+.we-page-content .ProseMirror,
+.we-page-content .ProseMirror *,
+.we-page-content .ProseMirror p,
+.we-page-content .ProseMirror li,
+.we-page-content .ProseMirror h1,
+.we-page-content .ProseMirror h2,
+.we-page-content .ProseMirror h3,
+.we-page-content .ProseMirror h4,
+.we-page-content .ProseMirror h5,
+.we-page-content .ProseMirror h6,
+.we-page-content .ProseMirror span,
+.we-page-content .ProseMirror div,
+.we-page-content .ProseMirror strong,
+.we-page-content .ProseMirror em,
+.we-page-content .ProseMirror u,
+.we-page-content .ProseMirror b,
+.we-page-content .ProseMirror i,
+.we-page-content .ProseMirror a,
+.we-page-content .ProseMirror blockquote,
+.we-page-content .ProseMirror code,
+.we-page-content .ProseMirror pre {
+  color: #000000 !important;
+}
+
+/* Override any Mantine theme colors - ULTRA AGGRESSIVE */
+[data-mantine-color-scheme="dark"] .we-page-content,
+[data-mantine-color-scheme="dark"] .we-page-content *,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror *,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror p,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror li,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h1,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h2,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h3,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h4,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h5,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h6,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror span,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror div,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror strong,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror em,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror u,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror b,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror i,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror a,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror blockquote,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror code,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror pre,
+html[data-mantine-color-scheme="dark"] .we-page-content,
+html[data-mantine-color-scheme="dark"] .we-page-content *,
+html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
+html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror * {
+  color: #000000 !important;
+  --mantine-color-text: #000000 !important;
+}
+
+/* Override CSS variables that might affect text color */
+.we-page-content,
+.we-page-content .ProseMirror {
+  --mantine-color-text: #000000 !important;
+  --mantine-color-dimmed: #000000 !important;
+}
+
+[data-mantine-color-scheme="dark"] .we-page-content,
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror {
+  --mantine-color-text: #000000 !important;
+  --mantine-color-dimmed: #000000 !important;
 }
 
 /* Empty editor placeholder */

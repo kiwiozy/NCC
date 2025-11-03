@@ -37,6 +37,12 @@ function LetterPage({
     ],
     content: initialContent || `<p></p>`,
     immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        style: 'color: #000000 !important;',
+        'data-force-light-mode': 'true',
+      },
+    },
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
     },
@@ -47,9 +53,16 @@ function LetterPage({
   }
 
   return (
-    <div className="we-page">
+    <div className="we-page" data-force-light-mode="true">
       <div className="letterhead-overlay" />
-      <div className="we-page-content">
+      <div 
+        className="we-page-content" 
+        data-force-light-mode="true" 
+        style={{ 
+          color: '#000000',
+          '--mantine-color-text': '#000000',
+        } as React.CSSProperties}
+      >
         <EditorContent editor={editor} />
       </div>
       <div style={{

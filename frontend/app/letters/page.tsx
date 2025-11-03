@@ -13,7 +13,18 @@ export default function LettersPage() {
     <Navigation>
       <Container size="xl" py="xl">
         <Title order={2} mb="xl">Letters</Title>
-        <LetterEditor />
+        {/* Force light mode for letter canvas - not affected by app theme */}
+        <div 
+          style={{ 
+            colorScheme: 'light',
+            color: '#000000',
+            '--mantine-color-text': '#000000',
+          } as React.CSSProperties} 
+          data-mantine-color-scheme="light"
+          data-force-light-mode="true"
+        >
+          <LetterEditor />
+        </div>
       </Container>
     </Navigation>
   );
