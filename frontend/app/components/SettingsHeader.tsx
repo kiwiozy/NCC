@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Group, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Text, Box } from '@mantine/core';
-import { IconMenu2, IconMail, IconBrandXing, IconMessage, IconCloud, IconNote, IconFileText, IconBell, IconSettings as IconSettingsIcon, IconPencil } from '@tabler/icons-react';
+import { IconMenu2, IconMail, IconBrandXing, IconMessage, IconCloud, IconNote, IconFileText, IconBell, IconSettings as IconSettingsIcon, IconPencil, IconCurrencyDollar } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SettingsHeaderProps {
@@ -22,6 +22,7 @@ export default function SettingsHeader({
 
   const menuItems = [
     { icon: <IconSettingsIcon size={20} />, label: 'General', value: 'general' },
+    { icon: <IconCurrencyDollar size={20} />, label: 'Funding Sources', value: 'funding-sources' },
     { icon: <IconMail size={20} />, label: 'Gmail', value: 'gmail' },
     { icon: <IconFileText size={20} />, label: 'Letters', value: 'letters' },
     { icon: <IconBrandXing size={20} />, label: 'Xero Integration', value: 'xero' },

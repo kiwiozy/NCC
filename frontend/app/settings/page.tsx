@@ -14,8 +14,9 @@ import NotesTest from '../components/settings/NotesTest';
 import ATReport from '../components/settings/ATReport';
 import GmailIntegration from '../components/settings/GmailIntegration';
 import LetterComposer from '../components/settings/LetterComposer';
+import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 
-type SettingsTab = 'general' | 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
+type SettingsTab = 'general' | 'funding-sources' | 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -51,6 +52,8 @@ export default function SettingsPage() {
             <p>Coming soon...</p>
           </div>
         );
+      case 'funding-sources':
+        return <FundingSourcesSettings />;
       case 'general':
       default:
         return (
