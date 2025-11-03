@@ -39,7 +39,7 @@ class XeroService:
     def __init__(self):
         self.client_id = os.getenv('XERO_CLIENT_ID', '')
         self.client_secret = os.getenv('XERO_CLIENT_SECRET', '')
-        self.redirect_uri = os.getenv('XERO_REDIRECT_URI', 'http://localhost:8000/xero/oauth/callback')
+        self.redirect_uri = os.getenv('XERO_REDIRECT_URI', 'https://localhost:8000/xero/oauth/callback')
     
     def _check_credentials(self):
         """Check if Xero credentials are configured"""

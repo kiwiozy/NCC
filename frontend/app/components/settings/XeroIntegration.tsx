@@ -45,7 +45,7 @@ export default function XeroIntegration() {
     
     setRefreshing(true);
     try {
-      const response = await fetch('http://localhost:8000/xero/oauth/refresh/', {
+      const response = await fetch('https://localhost:8000/xero/oauth/refresh/', {
         method: 'POST',
       });
       
@@ -97,7 +97,7 @@ export default function XeroIntegration() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/xero/connections/status/');
+      const response = await fetch('https://localhost:8000/xero/connections/status/');
       if (!response.ok) throw new Error('Failed to fetch status');
       
       const data = await response.json();
@@ -132,7 +132,7 @@ export default function XeroIntegration() {
   const fetchLogs = async () => {
     setLogsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/xero/logs/?page_size=20');
+      const response = await fetch('https://localhost:8000/xero/logs/?page_size=20');
       if (!response.ok) throw new Error('Failed to fetch logs');
       
       const data = await response.json();
@@ -150,13 +150,13 @@ export default function XeroIntegration() {
   };
 
   const handleConnect = () => {
-    window.location.href = 'http://localhost:8000/xero/oauth/connect/';
+    window.location.href = 'https://localhost:8000/xero/oauth/connect/';
   };
 
   const handleRefreshToken = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch('http://localhost:8000/xero/oauth/refresh/', {
+      const response = await fetch('https://localhost:8000/xero/oauth/refresh/', {
         method: 'POST',
       });
       
@@ -186,7 +186,7 @@ export default function XeroIntegration() {
     if (!confirm('Are you sure you want to disconnect from Xero?')) return;
     
     try {
-      const response = await fetch('http://localhost:8000/xero/oauth/disconnect/', {
+      const response = await fetch('https://localhost:8000/xero/oauth/disconnect/', {
         method: 'POST',
       });
       
@@ -321,7 +321,7 @@ export default function XeroIntegration() {
             </List.Item>
             <List.Item>Create a new "Web App" or "Connected App"</List.Item>
             <List.Item>
-              Set redirect URI to: <Code>http://localhost:8000/xero/oauth/callback</Code>
+              Set redirect URI to: <Code>https://localhost:8000/xero/oauth/callback</Code>
             </List.Item>
             <List.Item>Copy your Client ID and Client Secret</List.Item>
             <List.Item>Add them to your <Code>backend/.env</Code> file:
@@ -329,7 +329,7 @@ export default function XeroIntegration() {
                 <Code block>
                   XERO_CLIENT_ID=your_client_id{'\n'}
                   XERO_CLIENT_SECRET=your_client_secret{'\n'}
-                  XERO_REDIRECT_URI=http://localhost:8000/xero/oauth/callback
+                  XERO_REDIRECT_URI=https://localhost:8000/xero/oauth/callback
                 </Code>
               </Box>
             </List.Item>

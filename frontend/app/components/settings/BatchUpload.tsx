@@ -133,7 +133,7 @@ export default function BatchUpload({ onUploadComplete }: { onUploadComplete?: (
         });
       }, 200);
 
-      const response = await fetch('http://localhost:8000/api/documents/upload/', {
+      const response = await fetch('https://localhost:8000/api/documents/upload/', {
         method: 'POST',
         body: formData,
       });

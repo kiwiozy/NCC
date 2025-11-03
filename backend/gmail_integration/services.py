@@ -30,7 +30,7 @@ class GmailService:
         """Initialize Gmail service with OAuth2 credentials"""
         self.client_id = os.getenv('GMAIL_CLIENT_ID', '')
         self.client_secret = os.getenv('GMAIL_CLIENT_SECRET', '')
-        self.redirect_uri = os.getenv('GMAIL_REDIRECT_URI', 'http://localhost:8000/gmail/oauth/callback/')
+        self.redirect_uri = os.getenv('GMAIL_REDIRECT_URI', 'https://localhost:8000/gmail/oauth/callback/')
         
         # Gmail API scopes
         self.scopes = [
