@@ -75,6 +75,14 @@ This file tracks all git commits and pushes for easy reference.
   - All AT Report functionality now uses HTTPS consistently
   - Verified multi-account email sending (info@walkeasy.com.au and craig@walkeasy.com.au)
   - Fixed account selector visibility - now always shows when accounts available (was only showing with multiple accounts)
+
+## 2025-11-03 - Gmail Integration HTTPS Fix
+  - Updated all Gmail API endpoints from HTTP to HTTPS (11 endpoints)
+  - Fixed connected-accounts, status, templates, send-as-addresses, sent emails
+  - Fixed OAuth endpoints: connect, refresh, disconnect
+  - Fixed email sending and test endpoints
+  - Updated OAuth redirect URI documentation to HTTPS
+  - All Gmail functionality now uses HTTPS consistently
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
