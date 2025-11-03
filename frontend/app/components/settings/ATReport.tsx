@@ -72,7 +72,7 @@ export default function ATReport() {
 
   useEffect(() => {
     // Fetch connected Gmail accounts when component mounts
-    fetch('http://localhost:8000/gmail/connected-accounts/')
+    fetch('https://localhost:8000/gmail/connected-accounts/')
       .then(res => res.json())
       .then(data => {
         const accounts = data.accounts || [];
