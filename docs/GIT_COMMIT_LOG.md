@@ -16,6 +16,25 @@ This file tracks all git commits and pushes for easy reference.
 
 ---
 
+## 2025-01-XX
+
+### Branch: APP-Interface
+
+#### ✅ Fix letter editor: bullet points, numbered lists, and SF Pro fonts
+- **Time**: Latest
+- **Commit**: `bc44d8d`
+- **Changes**:
+  - Fixed bullet points and numbered lists display using CSS ::before pseudo-elements with automatic style injection
+  - Added SF Pro fonts as default font with proper fallbacks (-apple-system, BlinkMacSystemFont)
+  - Fixed TextStyle import error that was preventing font family changes
+  - Removed !important CSS overrides to allow TipTap inline styles to work
+  - Enhanced font family dropdown with SF Pro Display and SF Pro Text options
+  - Added comprehensive debugging logs for font family changes
+  - Updated CSS to allow TipTap's font-family inline styles to take precedence
+  - Both bullet lists and numbered lists now display correctly with proper positioning
+
+---
+
 ## 2025-11-03
 
 ### Branch: APP-Interface
