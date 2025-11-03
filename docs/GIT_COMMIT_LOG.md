@@ -52,6 +52,21 @@ This file tracks all git commits and pushes for easy reference.
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
 
+#### ✅ Implement Xero automatic token refresh - backend and frontend
+- **Time**: 12:05 PM
+- **Commit**: `80fc023`
+- **Changes**:
+  - Fixed backend `refresh_token()` to use direct HTTP requests instead of SDK OAuth2Token (fixes token refresh error)
+  - Added `get_active_connection()` method that auto-refreshes tokens if expired or expiring within 5 minutes
+  - Updated `_get_stored_token()` to use `get_active_connection()` for automatic refresh before API calls
+  - Added frontend auto-refresh functionality:
+    * Auto-refresh on status fetch if token expired/expiring
+    * Periodic check every minute for tokens needing refresh
+    * Silent auto-refresh (only shows notification on failure)
+    * Prevents multiple simultaneous refresh attempts
+  - Token refresh now works automatically without user intervention
+  - Manual refresh button still available for user-triggered refresh
+
 ---
 
 ## Previous Commits (from main branch)
