@@ -54,6 +54,18 @@ This file tracks all git commits and pushes for easy reference.
   - Created comprehensive debugging guide for SMS webhook issues
   - Webhook now successfully receives replies from SMS Broadcast (POST with JSON body)
   - SMS replies now appearing automatically in the app within 5-10 seconds
+
+## 2025-11-03 - S3 Integration Connection Fix
+  - Fixed S3 Integration component to use HTTPS instead of HTTP
+  - Updated all API endpoints (bucket_status, documents, upload, download, delete)
+  - Added proper error handling with HTTP status code checks
+  - S3 Document Storage now successfully connects to backend
+
+## 2025-11-03 - AI Rewrite Button Fix
+  - Fixed AI Generate Clinical Notes button in Notes component
+  - Changed OpenAI API endpoint from HTTP to HTTPS
+  - AI rewrite functionality now working correctly
+  - Consistent with other API endpoint HTTPS fixes
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
