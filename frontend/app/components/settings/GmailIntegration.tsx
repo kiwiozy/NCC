@@ -36,6 +36,7 @@ import {
   IconClock,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { formatDateTimeAU } from '@/app/utils/dateFormatting';
 
 interface GmailConnection {
   id: string;
@@ -577,7 +578,7 @@ export default function GmailIntegration() {
                   </Group>
                   <Group>
                     <Text fw={500} size="sm" w={150}>Connected At:</Text>
-                    <Text size="sm">{new Date(account.connected_at).toLocaleString()}</Text>
+                    <Text size="sm">{formatDateTimeAU(account.connected_at)}</Text>
                   </Group>
                 </Stack>
               </Paper>
@@ -630,11 +631,11 @@ export default function GmailIntegration() {
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Connected:</Text>
-              <Text size="sm">{new Date(status.connection?.connected_at || '').toLocaleString()}</Text>
+              <Text size="sm">{formatDateTimeAU(status.connection?.connected_at)}</Text>
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Token Expires:</Text>
-              <Text size="sm">{new Date(status.connection?.expires_at || '').toLocaleString()}</Text>
+              <Text size="sm">{formatDateTimeAU(status.connection?.expires_at)}</Text>
               {status.connection?.is_token_expired && (
                 <Badge color="red" size="sm">Expired</Badge>
               )}
@@ -643,7 +644,7 @@ export default function GmailIntegration() {
               <Text fw={500} size="sm" w={150}>Last Used:</Text>
               <Text size="sm">
                 {status.connection?.last_used_at 
-                  ? new Date(status.connection.last_used_at).toLocaleString()
+                  ? formatDateTimeAU(status.connection.last_used_at)
                   : 'Never'}
               </Text>
             </Group>
@@ -838,7 +839,7 @@ export default function GmailIntegration() {
                       </Table.Td>
                       <Table.Td>
                         <Text size="sm" c="dimmed">
-                          {new Date(email.sent_at).toLocaleString()}
+                          {formatDateTimeAU(email.sent_at)}
                         </Text>
                       </Table.Td>
                     </Table.Tr>

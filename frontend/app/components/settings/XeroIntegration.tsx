@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs } from '@mantine/core';
 import { IconAlertCircle, IconCheck, IconRefresh, IconPlugConnected, IconX, IconFileInvoice, IconUsers, IconClipboardList } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { formatDateTimeAU } from '@/app/utils/dateFormatting';
 
 interface XeroConnection {
   id: string;
@@ -289,11 +290,11 @@ export default function XeroIntegration() {
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Connected:</Text>
-              <Text size="sm">{new Date(status.connection?.connected_at || '').toLocaleString()}</Text>
+              <Text size="sm">{formatDateTimeAU(status.connection?.connected_at)}</Text>
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Token Expires:</Text>
-              <Text size="sm">{new Date(status.connection?.expires_at || '').toLocaleString()}</Text>
+              <Text size="sm">{formatDateTimeAU(status.connection?.expires_at)}</Text>
               {status.connection?.is_token_expired && (
                 <Badge color="red" size="sm">Expired</Badge>
               )}
@@ -302,7 +303,7 @@ export default function XeroIntegration() {
               <Text fw={500} size="sm" w={150}>Last Refresh:</Text>
               <Text size="sm">
                 {status.connection?.last_refresh_at 
-                  ? new Date(status.connection.last_refresh_at).toLocaleString()
+                  ? formatDateTimeAU(status.connection.last_refresh_at)
                   : 'Never'}
               </Text>
             </Group>
@@ -456,7 +457,7 @@ export default function XeroIntegration() {
                       </Table.Td>
                       <Table.Td>
                         <Text size="sm" c="dimmed">
-                          {new Date(log.created_at).toLocaleString()}
+                          {formatDateTimeAU(log.created_at)}
                         </Text>
                       </Table.Td>
                     </Table.Tr>

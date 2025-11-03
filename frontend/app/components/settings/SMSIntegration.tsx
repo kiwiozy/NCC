@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, TextInput, Textarea, Table, Tabs, Select, Loader, Code } from '@mantine/core';
 import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { formatDateTimeAU } from '@/app/utils/dateFormatting';
 
 interface SMSTemplate {
   id: string;
@@ -318,8 +319,8 @@ export default function SMSIntegration() {
                       <Table.Td>
                         <Text size="sm">
                           {msg.sent_at
-                            ? new Date(msg.sent_at).toLocaleString()
-                            : new Date(msg.created_at).toLocaleString()}
+                            ? formatDateTimeAU(msg.sent_at)
+                            : formatDateTimeAU(msg.created_at)}
                         </Text>
                       </Table.Td>
                       <Table.Td>{msg.sms_count}</Table.Td>

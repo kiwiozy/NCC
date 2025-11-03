@@ -30,6 +30,7 @@ import {
   IconSparkles,
   IconRefresh,
 } from '@tabler/icons-react';
+import { formatDateTimeAU } from '@/app/utils/dateFormatting';
 
 interface Note {
   id: string;
@@ -339,9 +340,9 @@ export default function NotesTest() {
                         <Badge variant="light">{note.title}</Badge>
                       </Group>
                       <Text size="xs" c="dimmed" mb="sm">
-                        Created: {new Date(note.created_at).toLocaleString()}
+                        Created: {formatDateTimeAU(note.created_at)}
                         {note.updated_at !== note.created_at && (
-                          <> • Updated: {new Date(note.updated_at).toLocaleString()}</>
+                          <> • Updated: {formatDateTimeAU(note.updated_at)}</>
                         )}
                       </Text>
                     </Box>

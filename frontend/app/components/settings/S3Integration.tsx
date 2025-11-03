@@ -35,6 +35,7 @@ import {
   IconFiles,
 } from '@tabler/icons-react';
 import BatchUpload from './BatchUpload';
+import { formatDateOnlyAU } from '@/app/utils/dateFormatting';
 
 interface Document {
   id: string;
@@ -410,7 +411,7 @@ export default function S3Integration() {
                     </Table.Td>
                     <Table.Td>
                       <Text size="xs">
-                        {new Date(doc.uploaded_at).toLocaleDateString()}
+                        {formatDateOnlyAU(doc.uploaded_at)}
                       </Text>
                     </Table.Td>
                     <Table.Td>
