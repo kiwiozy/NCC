@@ -79,13 +79,14 @@ def gmail_callback(request):
         return redirect(f'http://localhost:3000/settings?tab=gmail&status=error&message={error_message}')
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def gmail_disconnect(request):
     """
     Disconnect Gmail integration
     Marks connection as inactive
+    Supports disconnecting specific account by email, or primary account if no email provided
     """
-    email = request.data.get('email') if request.method == 'POST' else None
+    email = request.data.get('email')
     
     try:
         if email:

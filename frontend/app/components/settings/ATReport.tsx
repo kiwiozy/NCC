@@ -217,9 +217,10 @@ export default function ATReport() {
       
       const result = await response.json();
       
+      const accountName = connectedAccounts.find(a => a.email === emailConnectionEmail)?.display_name || emailConnectionEmail;
       notifications.show({
         title: 'Email Sent!',
-        message: `AT Report emailed successfully to ${result.recipients} recipient(s)`,
+        message: `AT Report emailed successfully to ${result.recipients} recipient(s)${emailConnectionEmail ? ` from ${accountName || emailConnectionEmail}` : ''}`,
         color: 'green',
         icon: <IconCheck size={16} />,
         autoClose: 5000,
@@ -230,6 +231,15 @@ export default function ATReport() {
       setEmailTo('');
       setEmailCc('');
       setEmailMessage('');
+      
+      // Refresh connected accounts (to update last_used_at)
+      fetch('http://localhost:8000/gmail/connected-accounts/')
+        .then(res => res.json())
+        .then(data => {
+          const accounts = data.accounts || [];
+          setConnectedAccounts(accounts);
+        })
+        .catch(err => console.error('Error refreshing connected accounts:', err));
       
     } catch (error: any) {
       notifications.show({

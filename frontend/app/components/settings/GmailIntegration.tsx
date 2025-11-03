@@ -151,17 +151,14 @@ export default function GmailIntegration() {
     fetchStatus();
     fetchTemplates();
     fetchConnectedAccounts();
-    if (status?.connected) {
-      fetchSendAsAddresses();
-    }
   }, []);
 
   useEffect(() => {
-    // Fetch Send As addresses when connection status changes
-    if (status?.connected) {
+    // Fetch Send As addresses when connected accounts change
+    if (connectedAccounts.length > 0) {
       fetchSendAsAddresses();
     }
-  }, [status?.connected]);
+  }, [connectedAccounts.length]);
 
   const fetchConnectedAccounts = async () => {
     try {
@@ -309,27 +306,50 @@ export default function GmailIntegration() {
     }
   };
 
-  const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect from Gmail?')) return;
+  const handleDisconnect = async (email?: string) => {
+    const accountEmail = email || connectedAccounts.find(a => a.is_primary)?.email || connectedAccounts[0]?.email;
+    const accountName = connectedAccounts.find(a => a.email === accountEmail)?.display_name || accountEmail;
+    
+    if (!confirm(`Are you sure you want to disconnect ${accountName || accountEmail}?`)) return;
     
     try {
       const response = await fetch('http://localhost:8000/gmail/oauth/disconnect/', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accountEmail }),
       });
       
       if (!response.ok) throw new Error('Failed to disconnect');
       
       notifications.show({
         title: 'Disconnected',
-        message: 'Successfully disconnected from Gmail',
+        message: `Successfully disconnected ${accountName || accountEmail}`,
         color: 'blue',
       });
       
+      // Refresh connected accounts list
+      await fetchConnectedAccounts();
       fetchStatus();
+      
+      // Clear default connection if it was disconnected
+      const savedConnection = localStorage.getItem('gmail_default_connection');
+      if (savedConnection === accountEmail) {
+        localStorage.removeItem('gmail_default_connection');
+        // Set new default from remaining accounts
+        const updatedAccounts = connectedAccounts.filter(a => a.email !== accountEmail);
+        if (updatedAccounts.length > 0) {
+          const primary = updatedAccounts.find(a => a.is_primary);
+          setDefaultConnectionEmail(primary?.email || updatedAccounts[0].email);
+          setConnectionEmail(primary?.email || updatedAccounts[0].email);
+        } else {
+          setDefaultConnectionEmail('');
+          setConnectionEmail('');
+        }
+      }
     } catch (error) {
       notifications.show({
         title: 'Error',
-        message: 'Failed to disconnect from Gmail',
+        message: 'Failed to disconnect Gmail account',
         color: 'red',
       });
     }
@@ -374,7 +394,7 @@ export default function GmailIntegration() {
 
       notifications.show({
         title: 'Email Sent!',
-        message: `Email sent successfully to ${toEmailList.length} recipient(s)`,
+        message: `Email sent successfully to ${toEmailList.length} recipient(s)${connectionEmail ? ` from ${connectedAccounts.find(a => a.email === connectionEmail)?.display_name || connectionEmail}` : ''}`,
         color: 'green',
         icon: <IconCheck />,
       });
@@ -388,8 +408,9 @@ export default function GmailIntegration() {
       setBodyHtml('');
       setSelectedTemplate(null);
       
-      // Refresh sent emails
+      // Refresh sent emails and connected accounts (to update last_used_at)
       fetchSentEmails();
+      fetchConnectedAccounts();
     } catch (error: any) {
       notifications.show({
         title: 'Send Failed',
@@ -462,7 +483,8 @@ export default function GmailIntegration() {
     );
   }
 
-  const isConnected = status?.connected && status?.connection;
+  // Use connectedAccounts array for multi-account support
+  const isConnected = connectedAccounts.length > 0;
 
   return (
     <Stack gap="xl">
@@ -516,18 +538,38 @@ export default function GmailIntegration() {
         <Paper shadow="sm" p="xl" withBorder>
           <Group justify="space-between" mb="md">
             <Title order={3} size="h4">Connected Accounts</Title>
+            {connectedAccounts.length > 1 && (
+              <Button
+                size="sm"
+                variant="light"
+                leftSection={<IconPlugConnected size={16} />}
+                onClick={() => window.location.href = 'http://localhost:8000/gmail/oauth/connect/'}
+              >
+                Add Account
+              </Button>
+            )}
           </Group>
           
           <Stack gap="lg">
             {connectedAccounts.map((account) => (
               <Paper key={account.email} p="md" withBorder>
                 <Stack gap="sm">
-                  <Group>
-                    <Text fw={500} size="sm" w={150}>Email Address:</Text>
-                    <Text size="sm">{account.email}</Text>
-                    {account.is_primary && (
-                      <Badge color="blue" size="sm">Primary</Badge>
-                    )}
+                  <Group justify="space-between" align="flex-start">
+                    <Group>
+                      <Text fw={500} size="sm" w={150}>Email Address:</Text>
+                      <Text size="sm">{account.email}</Text>
+                      {account.is_primary && (
+                        <Badge color="blue" size="sm">Primary</Badge>
+                      )}
+                    </Group>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color="red"
+                      onClick={() => handleDisconnect(account.email)}
+                    >
+                      Disconnect
+                    </Button>
                   </Group>
                   <Group>
                     <Text fw={500} size="sm" w={150}>Display Name:</Text>
