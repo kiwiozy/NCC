@@ -111,6 +111,45 @@ export default function ContactsPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(mockContacts[0]);
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  
+  // Load clinics from API for filter dropdown
+  const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
+  const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
+  
+  useEffect(() => {
+    // Load clinics from API
+    const loadClinics = async () => {
+      try {
+        const response = await fetch('https://localhost:8000/api/clinics/');
+        if (response.ok) {
+          const data = await response.json();
+          // Extract clinic names from API response
+          const clinicNames = data.map((clinic: any) => clinic.name);
+          setClinics(clinicNames);
+        }
+      } catch (error) {
+        console.error('Failed to load clinics:', error);
+        // Keep hardcoded defaults on error
+      }
+    };
+    
+    loadClinics();
+    
+    // TODO: Load funding sources from API when endpoint exists
+    // const loadFundingSources = async () => {
+    //   try {
+    //     const response = await fetch('https://localhost:8000/api/settings/funding-sources/');
+    //     if (response.ok) {
+    //       const data = await response.json();
+    //       const sourceNames = data.map((source: any) => source.name);
+    //       setFundingSources(sourceNames);
+    //     }
+    //   } catch (error) {
+    //     console.error('Failed to load funding sources:', error);
+    //   }
+    // };
+    // loadFundingSources();
+  }, []);
 
   useEffect(() => {
     const type = searchParams.get('type') as ContactType;
@@ -121,17 +160,56 @@ export default function ContactsPage() {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    // Filter contacts based on search
-    const filtered = mockContacts.filter(contact =>
-      contact.name.toLowerCase().includes(value.toLowerCase())
-    );
+    
+    // Apply search along with active filters
+    let filtered = mockContacts;
+    
+    // Filter by search query
+    if (value) {
+      filtered = filtered.filter(contact =>
+        contact.name.toLowerCase().includes(value.toLowerCase())
+      );
+    }
+    
+    // Re-apply active filters
+    if (activeFilters.clinic) {
+      filtered = filtered.filter(contact => contact.clinic === activeFilters.clinic);
+    }
+    
+    if (activeFilters.funding) {
+      filtered = filtered.filter(contact => contact.funding === activeFilters.funding);
+    }
+    
     setContacts(filtered);
   };
 
   const handleFilterApply = (filters: Record<string, string>) => {
     setActiveFilters(filters);
-    console.log('Applying filters:', filters);
-    // TODO: Implement filter functionality
+    
+    // Apply filters to patient list
+    let filtered = mockContacts;
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(contact =>
+        contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by clinic
+    if (filters.clinic) {
+      filtered = filtered.filter(contact => contact.clinic === filters.clinic);
+    }
+    
+    // Filter by funding
+    if (filters.funding) {
+      filtered = filtered.filter(contact => contact.funding === filters.funding);
+    }
+    
+    // Filter by status (if status field exists)
+    // TODO: Add status field to Contact interface when implemented
+    
+    setContacts(filtered);
   };
 
   const handleAddNew = () => {
@@ -166,6 +244,11 @@ export default function ContactsPage() {
         onArchive={handleArchive}
         onFilterApply={handleFilterApply}
         showFilters={true}
+        filterOptions={{
+          funding: fundingSources,
+          clinic: clinics,
+          status: ['Active', 'Inactive', 'Archived'],
+        }}
         contactCount={mockContacts.length}
         filteredCount={contacts.length !== mockContacts.length ? contacts.length : undefined}
       />
