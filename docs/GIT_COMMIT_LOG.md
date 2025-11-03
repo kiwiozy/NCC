@@ -73,6 +73,7 @@ This file tracks all git commits and pushes for easy reference.
   - Fixed AI rewrite endpoints in ATReportPart2 and ATReportPart3
   - Fixed Gmail connected-accounts endpoint in ATReport
   - All AT Report functionality now uses HTTPS consistently
+  - Verified multi-account email sending (info@walkeasy.com.au and craig@walkeasy.com.au)
   - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
   - Fixed useEffect dependencies for Send As addresses fetching
   - All multi-account features now working per documentation
