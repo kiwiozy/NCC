@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-jnxev3%%fdaf&1_x2vn63gt(8yv4o8uqw0g3wzx_=asrpn)8t!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Allow all hosts for webhook testing (Cloudflare Tunnel domains)
 
 
 # Application definition

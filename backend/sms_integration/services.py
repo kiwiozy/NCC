@@ -19,7 +19,18 @@ class SMSService:
     def __init__(self):
         self.username = os.getenv('SMSB_USERNAME', '')
         self.password = os.getenv('SMSB_PASSWORD', '')
-        self.sender_id = os.getenv('SMSB_SENDER_ID', 'Walk Easy')
+        # Sender ID must be approved in SMS Broadcast
+        # FileMaker uses: 0488868772 (formatted as 61488868772 for SMS Broadcast)
+        # If not set, will use the verified number from FileMaker config
+        sender_id_env = os.getenv('SMSB_SENDER_ID', '').strip()
+        
+        if sender_id_env:
+            self.sender_id = sender_id_env
+        else:
+            # Use the verified number from FileMaker config (0488868772 -> 61488868772)
+            # This is the approved sender ID that works in FileMaker
+            self.sender_id = '61488868772'
+        
         self.api_url = 'https://api.smsbroadcast.com.au/api-adv.php'
     
     def _check_credentials(self):
@@ -72,24 +83,44 @@ class SMSService:
                 'username': self.username,
                 'password': self.password,
                 'to': phone_number,
-                'from': self.sender_id,
                 'message': message,
                 'maxsplit': '10',  # Allow up to 10 SMS segments
                 'ref': str(sms_message.id)  # Our internal reference
             }
             
+            # Only include 'from' parameter if sender_id is set and approved
+            # If sender_id is None or empty, SMS Broadcast will use account default
+            if self.sender_id:
+                params['from'] = self.sender_id[:11]  # SMS Broadcast limits to 11 chars
+            
+            print(f"[SMS Service] Request params: username={self.username}, to={phone_number}, from={params.get('from', 'DEFAULT')}, message_len={len(message)}")
+            if not self.sender_id:
+                print(f"[SMS Service] ⚠️ No sender ID set - using SMS Broadcast default (may be rejected if no default configured)")
+            
             response = requests.get(self.api_url, params=params, timeout=30)
             response.raise_for_status()
             
             # Parse response
-            # SMS Broadcast returns: OK: 0: {message_id}
+            # SMS Broadcast returns: OK: {phone_number}: {message_id}
             # or ERROR: {error_code}: {error_message}
+            # or BAD: {error_code}: {error_message}
             result = response.text.strip()
             
+            # Log the raw response for debugging
+            print(f"[SMS Service] API Response: {result}")
+            print(f"[SMS Service] Phone: {phone_number}, Message: {message[:50]}...")
+            
             if result.startswith('OK'):
-                # Success
+                # Success - Format: OK: {phone}: {message_id} or OK: {message_id}
                 parts = result.split(':')
-                message_id = parts[2].strip() if len(parts) >= 3 else ''
+                if len(parts) >= 3:
+                    message_id = parts[2].strip()
+                elif len(parts) == 2:
+                    message_id = parts[1].strip()
+                else:
+                    message_id = ''
+                
+                print(f"[SMS Service] ✓ Message accepted. External ID: {message_id}")
                 
                 sms_message.status = 'sent'
                 sms_message.external_message_id = message_id
@@ -97,19 +128,24 @@ class SMSService:
                 sms_message.error_message = ''
             
             elif result.startswith('BAD'):
-                # Bad credentials
+                # Bad credentials or invalid request
+                error_msg = result
+                print(f"[SMS Service] ✗ Authentication failed: {error_msg}")
                 sms_message.status = 'failed'
-                sms_message.error_message = result
-                raise ValueError(f"SMS Broadcast authentication failed: {result}")
+                sms_message.error_message = error_msg
+                raise ValueError(f"SMS Broadcast authentication failed: {error_msg}")
             
             elif result.startswith('ERROR'):
-                # Other error
+                # Other error (insufficient credits, invalid number, etc.)
+                error_msg = result
+                print(f"[SMS Service] ✗ Send failed: {error_msg}")
                 sms_message.status = 'failed'
-                sms_message.error_message = result
-                raise ValueError(f"SMS sending failed: {result}")
+                sms_message.error_message = error_msg
+                raise ValueError(f"SMS sending failed: {error_msg}")
             
             else:
                 # Unknown response
+                print(f"[SMS Service] ⚠ Unexpected response: {result}")
                 sms_message.status = 'failed'
                 sms_message.error_message = f"Unknown response: {result}"
                 raise ValueError(f"Unexpected response from SMS Broadcast: {result}")
@@ -198,6 +234,7 @@ class SMSService:
         Format phone number for SMS Broadcast
         Expects: 61412345678 (country code + number, no +)
         """
+        original = phone
         # Remove all non-digit characters
         phone = ''.join(filter(str.isdigit, phone))
         
@@ -206,13 +243,23 @@ class SMSService:
             phone = '61' + phone[1:]
         
         # If starts with +61, remove the +
-        if phone.startswith('+61'):
-            phone = phone[1:]
-        
+        if phone.startswith('61') and original.startswith('+61'):
+            pass  # Already correct
+        elif phone.startswith('61'):
+            pass  # Already correct
         # If doesn't start with 61, assume Australian and prepend
-        if not phone.startswith('61'):
-            phone = '61' + phone
+        elif not phone.startswith('61'):
+            # Check if it's a valid 9 or 10 digit Australian number
+            if len(phone) == 9:  # Mobile without leading 0
+                phone = '61' + phone
+            elif len(phone) == 10:  # Mobile with leading 0
+                phone = '61' + phone[1:]
+            elif len(phone) == 8:  # Landline format
+                phone = '61' + phone
+            else:
+                phone = '61' + phone
         
+        print(f"[SMS Service] Phone formatting: {original} -> {phone}")
         return phone
     
     def get_balance(self) -> Dict[str, any]:

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, TextInput, Textarea, Table, Tabs, Select, Loader, Code } from '@mantine/core';
-import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle } from '@tabler/icons-react';
+import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, TextInput, Textarea, Table, Tabs, Select, Loader, Code, Modal, Divider } from '@mantine/core';
+import { IconAlertCircle, IconSend, IconCheck, IconX, IconMessage, IconTemplate, IconHistory, IconInfoCircle, IconArrowBack } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { formatDateTimeAU } from '../../utils/dateFormatting';
 
@@ -33,6 +33,17 @@ interface BalanceInfo {
   error?: string;
 }
 
+interface SMSInbound {
+  id: string;
+  from_number: string;
+  to_number: string;
+  message: string;
+  received_at: string;
+  patient_name?: string;
+  is_processed: boolean;
+  notes?: string;
+}
+
 export default function SMSIntegration() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
@@ -43,12 +54,66 @@ export default function SMSIntegration() {
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
+  const [replies, setReplies] = useState<SMSInbound[]>([]);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [replyCounts, setReplyCounts] = useState<{[key: string]: number}>({});
 
   useEffect(() => {
     fetchTemplates();
     fetchMessages();
     fetchBalance();
   }, []);
+
+  // Fetch reply counts for all messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      fetchReplyCounts();
+    }
+  }, [messages]);
+
+  const fetchReplyCounts = async () => {
+    try {
+      // Fetch all inbound messages
+      const response = await fetch('http://localhost:8000/api/sms/inbound/?ordering=-received_at');
+      if (response.ok) {
+        const data = await response.json();
+        const allReplies = data.results || data || [];
+        
+        // Count replies per phone number (group by phone number)
+        const counts: {[key: string]: number} = {};
+        messages.forEach(msg => {
+          const phoneNumber = msg.phone_number.replace(/[^\d]/g, '');
+          const searchVariants = [
+            phoneNumber,
+            phoneNumber.startsWith('61') ? '0' + phoneNumber.slice(2) : phoneNumber,
+            phoneNumber.startsWith('0') ? '61' + phoneNumber.slice(1) : phoneNumber,
+          ];
+          
+          const messageTime = new Date(msg.sent_at || msg.created_at);
+          const replyCount = allReplies.filter((reply: SMSInbound) => {
+            const replyPhone = reply.from_number.replace(/[^\d]/g, '');
+            const matches = searchVariants.some(variant => 
+              replyPhone === variant || replyPhone === variant.replace(/^61/, '0') || replyPhone === variant.replace(/^0/, '61')
+            );
+            if (!matches) return false;
+            
+            const replyTime = new Date(reply.received_at);
+            return replyTime >= messageTime;
+          }).length;
+          
+          if (replyCount > 0) {
+            counts[msg.id] = replyCount;
+          }
+        });
+        
+        setReplyCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error fetching reply counts:', error);
+    }
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -70,6 +135,7 @@ export default function SMSIntegration() {
       if (response.ok) {
         const data = await response.json();
         setMessages(data.results || data);
+        // Reply counts will be fetched automatically via useEffect
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -166,6 +232,61 @@ export default function SMSIntegration() {
       'cancelled': 'gray',
     };
     return <Badge color={colors[status] || 'gray'}>{status.toUpperCase()}</Badge>;
+  };
+
+  const handleMessageClick = async (msg: SMSMessage) => {
+    setSelectedMessage(msg);
+    setReplyModalOpen(true);
+    setLoadingReplies(true);
+    
+    try {
+      // Normalize phone number for searching (remove +, try different formats)
+      const phoneNumber = msg.phone_number.replace(/[^\d]/g, ''); // Remove non-digits
+      let searchNumber = phoneNumber;
+      
+      // Try different formats - SMS Broadcast may store in different formats
+      const searchVariants = [
+        phoneNumber, // Original format
+        phoneNumber.startsWith('61') ? '0' + phoneNumber.slice(2) : phoneNumber, // Remove 61, add 0
+        phoneNumber.startsWith('0') ? '61' + phoneNumber.slice(1) : phoneNumber, // Add 61, remove 0
+      ];
+      
+      // Try each variant
+      let allReplies: SMSInbound[] = [];
+      for (const variant of searchVariants) {
+        try {
+          const response = await fetch(
+            `http://localhost:8000/api/sms/inbound/?from_number=${encodeURIComponent(variant)}&ordering=-received_at`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            const replies = data.results || data || [];
+            allReplies = [...allReplies, ...replies];
+          }
+        } catch (err) {
+          // Continue to next variant
+        }
+      }
+      
+      // Remove duplicates and filter to replies received after message was sent
+      const messageTime = new Date(msg.sent_at || msg.created_at);
+      const uniqueReplies = Array.from(
+        new Map(allReplies.map(reply => [reply.id, reply])).values()
+      ).filter((reply: SMSInbound) => {
+        const replyTime = new Date(reply.received_at);
+        return replyTime >= messageTime;
+      }).sort((a, b) => {
+        // Sort by received time, newest first
+        return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
+      });
+      
+      setReplies(uniqueReplies);
+    } catch (error) {
+      console.error('Error fetching replies:', error);
+      setReplies([]);
+    } finally {
+      setLoadingReplies(false);
+    }
   };
 
   return (
@@ -305,12 +426,29 @@ export default function SMSIntegration() {
                 </Table.Thead>
                 <Table.Tbody>
                   {messages.slice(0, 20).map((msg) => (
-                    <Table.Tr key={msg.id}>
+                    <Table.Tr 
+                      key={msg.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleMessageClick(msg)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
                       <Table.Td>{msg.phone_number}</Table.Td>
                       <Table.Td style={{ maxWidth: '300px' }}>
-                        <Text size="sm" truncate="end">
-                          {msg.message}
-                        </Text>
+                        <Group gap="xs" wrap="nowrap">
+                          <Text size="sm" truncate="end" style={{ flex: 1 }}>
+                            {msg.message}
+                          </Text>
+                          {replyCounts[msg.id] > 0 && (
+                            <Badge size="sm" color="green" variant="filled">
+                              {replyCounts[msg.id]}
+                            </Badge>
+                          )}
+                        </Group>
                         {msg.error_message && (
                           <Text size="xs" c="red">{msg.error_message}</Text>
                         )}
@@ -408,6 +546,120 @@ export default function SMSIntegration() {
           </Stack>
         </Tabs.Panel>
       </Tabs>
+
+      {/* Reply Modal */}
+      <Modal
+        opened={replyModalOpen}
+        onClose={() => {
+          setReplyModalOpen(false);
+          setSelectedMessage(null);
+          setReplies([]);
+        }}
+        title={
+          <Group gap="xs">
+            <IconMessage size={20} />
+            <Text fw={600}>Message Details & Replies</Text>
+          </Group>
+        }
+        size="lg"
+      >
+        {selectedMessage && (
+          <Stack gap="md">
+            {/* Original Message */}
+            <Paper p="md" withBorder>
+              <Group justify="space-between" mb="sm">
+                <Text fw={600} size="sm">Sent Message</Text>
+                {getStatusBadge(selectedMessage.status)}
+              </Group>
+              <Stack gap="xs">
+                <Group gap="md">
+                  <Text size="sm" c="dimmed">To:</Text>
+                  <Text size="sm">{selectedMessage.phone_number}</Text>
+                </Group>
+                <Group gap="md">
+                  <Text size="sm" c="dimmed">Sent:</Text>
+                  <Text size="sm">
+                    {selectedMessage.sent_at
+                      ? formatDateTimeAU(selectedMessage.sent_at)
+                      : formatDateTimeAU(selectedMessage.created_at)}
+                  </Text>
+                </Group>
+                {selectedMessage.patient_name && (
+                  <Group gap="md">
+                    <Text size="sm" c="dimmed">Patient:</Text>
+                    <Text size="sm">{selectedMessage.patient_name}</Text>
+                  </Group>
+                )}
+                <Divider my="xs" />
+                <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                  {selectedMessage.message}
+                </Text>
+                {selectedMessage.error_message && (
+                  <Alert color="red" size="sm" mt="xs">
+                    <Text size="xs">{selectedMessage.error_message}</Text>
+                  </Alert>
+                )}
+              </Stack>
+            </Paper>
+
+            {/* Replies Section */}
+            <Paper p="md" withBorder>
+              <Group justify="space-between" mb="sm">
+                <Text fw={600} size="sm">Replies ({replies.length})</Text>
+                <Button
+                  size="xs"
+                  variant="light"
+                  onClick={async () => {
+                    if (selectedMessage) {
+                      setLoadingReplies(true);
+                      await handleMessageClick(selectedMessage);
+                    }
+                  }}
+                  loading={loadingReplies}
+                >
+                  Refresh
+                </Button>
+              </Group>
+
+              {loadingReplies ? (
+                <Group justify="center" py="xl">
+                  <Loader size="sm" />
+                </Group>
+              ) : replies.length === 0 ? (
+                <Alert icon={<IconInfoCircle size={16} />} color="blue" size="sm">
+                  <Text size="sm">No replies received yet</Text>
+                </Alert>
+              ) : (
+                <Stack gap="sm">
+                  {replies.map((reply) => (
+                    <Paper key={reply.id} p="sm" withBorder style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                      <Group justify="space-between" mb="xs">
+                        <Group gap="xs">
+                          <IconArrowBack size={16} />
+                          <Text size="sm" fw={500}>
+                            {reply.patient_name || reply.from_number}
+                          </Text>
+                        </Group>
+                        <Text size="xs" c="dimmed">
+                          {formatDateTimeAU(reply.received_at)}
+                        </Text>
+                      </Group>
+                      <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                        {reply.message}
+                      </Text>
+                      {reply.notes && (
+                        <Text size="xs" c="dimmed" mt="xs" style={{ fontStyle: 'italic' }}>
+                          {reply.notes}
+                        </Text>
+                      )}
+                    </Paper>
+                  ))}
+                </Stack>
+              )}
+            </Paper>
+          </Stack>
+        )}
+      </Modal>
     </Stack>
   );
 }

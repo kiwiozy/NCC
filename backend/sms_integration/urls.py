@@ -14,5 +14,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path('balance/', views.sms_balance, name='sms-balance'),
     path('appointment/<uuid:appointment_id>/reminder/', views.send_appointment_reminder, name='send-appointment-reminder'),
+    # Webhook endpoints (CSRF exempt - called by SMS Broadcast)
+    path('webhook/dlr/', views.sms_delivery_receipt, name='sms-delivery-receipt'),
+    path('webhook/inbound/', views.sms_inbound, name='sms-inbound'),
 ]
 
