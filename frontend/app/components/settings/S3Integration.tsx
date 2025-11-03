@@ -112,16 +112,24 @@ export default function S3Integration() {
 
   const checkBucketStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/documents/bucket_status/');
+      const response = await fetch('https://localhost:8000/api/documents/bucket_status/', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       const data = await response.json();
       setBucketStatus(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error checking bucket status:', err);
       setBucketStatus({
         bucket_name: 'Unknown',
         region: 'Unknown',
         accessible: false,
-        error: 'Failed to connect',
+        error: err.message || 'Failed to connect',
       });
     }
   };
@@ -129,12 +137,20 @@ export default function S3Integration() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/documents/');
+      const response = await fetch('https://localhost:8000/api/documents/', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       const data = await response.json();
-      setDocuments(data.results || []);
-    } catch (err) {
+      setDocuments(data.results || data || []);
+    } catch (err: any) {
       console.error('Error fetching documents:', err);
-      setError('Failed to load documents');
+      setError(err.message || 'Failed to load documents');
     } finally {
       setLoading(false);
     }
@@ -163,7 +179,7 @@ export default function S3Integration() {
         setUploadProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
 
-      const response = await fetch('http://localhost:8000/api/documents/upload/', {
+      const response = await fetch('https://localhost:8000/api/documents/upload/', {
         method: 'POST',
         body: formData,
       });
@@ -197,7 +213,7 @@ export default function S3Integration() {
 
   const handleDownload = async (doc: Document) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/documents/${doc.id}/download_url/`);
+      const response = await fetch(`https://localhost:8000/api/documents/${doc.id}/download_url/`);
       const data = await response.json();
       
       // Use window.location.href for direct download (bypasses popup blocker)
@@ -214,7 +230,7 @@ export default function S3Integration() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/documents/${docId}/`, {
+      const response = await fetch(`https://localhost:8000/api/documents/${docId}/`, {
         method: 'DELETE',
       });
 
