@@ -128,14 +128,13 @@ frontend/
 
 **Top-Level Navigation:**
 - Dashboard (Home)
+- Contacts (submenu: Patients, Referrers, Coordinator, NDIS LAC, Contacts, Companies, Clinics)
 - Calendar
-- Patients
-- Appointments
-- Clinicians
-- Clinics
-- Reports
-- Integrations (Xero, SMS)
-- Settings
+- Accounts
+- Orders
+- Inventory
+- Testing (submenu: Gmail, Letters, Xero Integration, SMS, S3 Storage, Notes Test, AT Report, Notifications)
+- Settings (submenu: General, Funding Sources)
 
 ### 2.2 Layout Patterns
 
