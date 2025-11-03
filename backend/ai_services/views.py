@@ -22,18 +22,36 @@ class RewriteClinicalNotesView(APIView):
     """
     
     def post(self, request):
+        import time
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        start_time = time.time()
         content = request.data.get('content')
         custom_prompt = request.data.get('custom_prompt')
         
+        logger.info(f'🤖 OpenAI Request Received - Content length: {len(content) if content else 0}, Custom prompt: {bool(custom_prompt)}')
+        
         if not content:
+            logger.warning('❌ OpenAI Request Rejected - No content provided')
             return Response(
                 {'error': 'Content is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
+            logger.info('🔧 Initializing OpenAI service...')
             ai_service = OpenAIService()
+            logger.info(f'📝 Calling OpenAI API with model: {ai_service.model}')
+            
+            api_start_time = time.time()
             result = ai_service.rewrite_clinical_notes(content, custom_prompt)
+            api_duration = time.time() - api_start_time
+            
+            logger.info(f'✅ OpenAI API Success - Duration: {api_duration:.2f}s, Result length: {len(result) if result else 0}')
+            
+            total_duration = time.time() - start_time
+            logger.info(f'✨ Total request duration: {total_duration:.2f}s')
             
             return Response({
                 'success': True,
@@ -42,11 +60,13 @@ class RewriteClinicalNotesView(APIView):
             })
             
         except ValueError as e:
+            logger.error(f'❌ OpenAI Configuration Error: {str(e)}')
             return Response(
                 {'error': str(e), 'message': 'OpenAI API key not configured'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         except Exception as e:
+            logger.error(f'❌ OpenAI Request Failed: {str(e)}', exc_info=True)
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

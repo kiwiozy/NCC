@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack, Modal, Text, Select, Divider, ColorPicker, Popover, Menu } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal, Text, Select, Divider, ColorPicker, Popover, Menu, Textarea, Code, Loader, Alert, Box } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -33,6 +33,10 @@ import {
   IconLinkOff,
   IconList,
   IconListNumbers,
+  IconSparkles,
+  IconCheck,
+  IconRefresh,
+  IconAlertCircle,
 } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import '../styles/letterhead.css';
@@ -225,6 +229,14 @@ export default function LetterEditor() {
   const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
   const [highlightPickerOpened, setHighlightPickerOpened] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiResult, setAiResult] = useState<string>('');
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [aiProcessingAllPages, setAiProcessingAllPages] = useState(false);
+  const [originalContentForAI, setOriginalContentForAI] = useState<string>('');
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<string>('');
   
   // Font families available for selection
   const fontFamilies = [
@@ -411,6 +423,306 @@ export default function LetterEditor() {
     document.body.removeChild(link);
   };
 
+  // Handle OpenAI processing
+  const handleOpenAI = () => {
+    console.log('🔵 OpenAI button clicked');
+    console.log('📄 Total pages:', pages.length);
+    console.log('✏️ Active editor:', activeEditor ? 'Yes' : 'No');
+    
+    if (pages.length === 0) {
+      console.warn('⚠️ No pages available');
+      setAiError('Please add content to the editor first');
+      setAiModalOpen(true);
+      return;
+    }
+    
+    // Get selected text from active editor if available
+    let selectedText = '';
+    if (activeEditor) {
+      const { from, to } = activeEditor.state.selection;
+      selectedText = activeEditor.state.doc.textBetween(from, to);
+      console.log('📋 Selection:', {
+        from,
+        to,
+        hasSelection: from !== to,
+        selectedLength: selectedText.length,
+      });
+    }
+    
+    // If text is selected, show modal with prompt option
+    if (selectedText.trim()) {
+      console.log('✅ Text selected - opening modal for selected text');
+      setOriginalContentForAI(selectedText.trim());
+      setAiProcessingAllPages(false);
+      setAiModalOpen(true);
+      setAiError(null);
+      setAiResult('');
+      setAiPrompt('');
+      setAiInitialPrompt('');
+      // Don't auto-process - let user add instructions first
+      return;
+    }
+    
+    // If multiple pages exist, show options
+    if (pages.length > 1) {
+      console.log('📚 Multiple pages detected - showing page selection options');
+      setAiModalOpen(true);
+      setAiError(null);
+      setAiResult('');
+      setAiPrompt('');
+      setAiProcessingAllPages(false);
+      setOriginalContentForAI('');
+      setAiInitialPrompt('');
+      // User will choose in modal
+      return;
+    }
+    
+    // Single page - show modal with prompt option
+    if (activeEditor) {
+      const currentPageText = activeEditor.state.doc.textContent.trim();
+      console.log('📄 Single page - current page text length:', currentPageText.length);
+      if (!currentPageText) {
+        console.warn('⚠️ Current page has no content');
+        setAiError('Please add content to the editor first');
+        setAiModalOpen(true);
+        return;
+      }
+      console.log('✅ Opening modal for single page');
+      setOriginalContentForAI(currentPageText);
+      setAiProcessingAllPages(false);
+      setAiModalOpen(true);
+      setAiError(null);
+      setAiResult('');
+      setAiPrompt('');
+      setAiInitialPrompt('');
+      // Don't auto-process - let user add instructions first
+    } else {
+      console.warn('⚠️ No active editor - user needs to select a page');
+      setAiError('Please click on a page to select it first');
+      setAiModalOpen(true);
+    }
+  };
+
+  const callOpenAI = async (content: string, customPrompt?: string) => {
+    setAiProcessing(true);
+    setAiError(null);
+
+    // Log OpenAI request
+    console.log('🤖 OpenAI Request Started');
+    console.log('📝 Content length:', content.length, 'characters');
+    console.log('📝 Content preview (first 200 chars):', content.substring(0, 200));
+    console.log('💬 Custom prompt:', customPrompt || '(none)');
+    console.log('🌐 Endpoint: https://localhost:8000/api/ai/rewrite-clinical-notes/');
+    console.log('📊 Processing mode:', aiProcessingAllPages ? `All ${pages.length} pages` : 'Current page');
+
+    const requestPayload = {
+      content: content,
+      custom_prompt: customPrompt || null,
+    };
+    console.log('📤 Request payload:', {
+      contentLength: content.length,
+      hasCustomPrompt: !!customPrompt,
+      customPromptLength: customPrompt?.length || 0,
+    });
+
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload),
+      });
+
+      const requestDuration = Date.now() - startTime;
+      console.log('⏱️ Request duration:', requestDuration, 'ms');
+      console.log('📥 Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ OpenAI Error Response:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Failed to process with OpenAI');
+      }
+
+      const data = await response.json();
+      console.log('✅ OpenAI Success Response');
+      console.log('📊 Response data:', {
+        hasResult: !!data.result,
+        resultLength: data.result?.length || 0,
+        model: data.model || 'unknown',
+      });
+      console.log('📝 Result preview (first 200 chars):', data.result?.substring(0, 200) || 'No result');
+      
+      setAiResult(data.result);
+      
+      const totalDuration = Date.now() - startTime;
+      console.log('✨ Total processing time:', totalDuration, 'ms');
+      
+    } catch (err: any) {
+      const errorDuration = Date.now() - startTime;
+      console.error('❌ OpenAI Request Failed');
+      console.error('⏱️ Error occurred after:', errorDuration, 'ms');
+      console.error('🚨 Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+      });
+      setAiError('Failed to process with OpenAI: ' + err.message);
+    } finally {
+      setAiProcessing(false);
+      console.log('🏁 OpenAI request completed');
+    }
+  };
+
+  const acceptAIResult = () => {
+    if (!aiResult) return;
+    
+    if (aiProcessingAllPages && pages.length > 1) {
+      // For multi-page results, we need to split and apply to each page
+      // For now, just apply to the active editor or first page
+      // TODO: Could implement smarter page splitting based on page markers
+      if (activeEditor) {
+        activeEditor.chain()
+          .focus()
+          .setContent(aiResult)
+          .run();
+      } else if (pages.length > 0) {
+        // Update first page
+        handlePageContentChange(0, `<p>${aiResult.replace(/\n/g, '</p><p>')}</p>`);
+      }
+    } else if (activeEditor) {
+      // Single page or selection - replace content
+      const { from, to } = activeEditor.state.selection;
+      
+      if (from !== to) {
+        // Has selection - replace selection
+        activeEditor.chain()
+          .focus()
+          .deleteRange({ from, to })
+          .insertContent(aiResult)
+          .run();
+      } else {
+        // No selection - replace all content
+        activeEditor.chain()
+          .focus()
+          .setContent(aiResult)
+          .run();
+      }
+    }
+    
+    setAiModalOpen(false);
+    setAiResult('');
+    setAiProcessingAllPages(false);
+    setOriginalContentForAI('');
+  };
+
+  const requestAIRefinement = () => {
+    if (!aiPrompt.trim()) {
+      setAiError('Please enter refinement instructions');
+      return;
+    }
+    
+    // Use the original content that was processed, not current editor state
+    if (originalContentForAI) {
+      callOpenAI(originalContentForAI, aiPrompt);
+    } else if (activeEditor) {
+      // Fallback to current editor content
+      const content = activeEditor.state.doc.textContent;
+      callOpenAI(content, aiPrompt);
+    }
+  };
+  
+  // Get text from all pages
+  const getAllPagesText = (): string => {
+    const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+    const allTexts = Array.from(editorElements).map((el, index) => {
+      const text = (el as HTMLElement).textContent || '';
+      // Only include page separator if there's content
+      return text.trim() ? `[Page ${index + 1}]\n${text.trim()}` : '';
+    }).filter(text => text.length > 0);
+    
+    return allTexts.join('\n\n---\n\n');
+  };
+  
+  // Process all pages
+  const handleProcessAllPages = () => {
+    console.log('📚 Process All Pages button clicked');
+    const allPagesText = getAllPagesText();
+    
+    console.log('📄 All pages text:', {
+      length: allPagesText.length,
+      pagesProcessed: pages.length,
+    });
+    
+    if (!allPagesText) {
+      console.error('❌ No content found in any pages');
+      setAiError('No content found in any pages');
+      return;
+    }
+    
+    console.log('✅ All pages text prepared, opening prompt input');
+    setOriginalContentForAI(allPagesText);
+    setAiProcessingAllPages(true);
+    setAiError(null);
+    setAiResult('');
+    setAiPrompt('');
+    // Don't auto-process - let user add instructions first
+  };
+  
+  // Process current page only
+  const handleProcessCurrentPage = () => {
+    console.log('📄 Process Current Page button clicked');
+    
+    if (!activeEditor) {
+      console.warn('⚠️ No active editor');
+      setAiError('No active page selected');
+      return;
+    }
+    
+    const text = activeEditor.state.doc.textContent.trim();
+    console.log('📝 Current page text:', {
+      length: text.length,
+      preview: text.substring(0, 100),
+    });
+    
+    if (!text) {
+      console.warn('⚠️ Current page has no content');
+      setAiError('Current page has no content');
+      return;
+    }
+    
+    console.log('✅ Current page text prepared, opening prompt input');
+    setOriginalContentForAI(text);
+    setAiProcessingAllPages(false);
+    setAiError(null);
+    setAiResult('');
+    setAiPrompt('');
+    // Don't auto-process - let user add instructions first
+  };
+  
+  // Process with initial prompt
+  const handleProcessWithPrompt = () => {
+    console.log('🚀 Process with AI button clicked');
+    
+    if (!originalContentForAI) {
+      console.error('❌ No content to process');
+      setAiError('No content to process');
+      return;
+    }
+    
+    const prompt = aiInitialPrompt.trim();
+    console.log('💬 Initial prompt provided:', prompt || '(none - will use default)');
+    console.log('📝 Content to process:', {
+      length: originalContentForAI.length,
+      pages: aiProcessingAllPages ? pages.length : 1,
+    });
+    
+    // Process with initial prompt if provided
+    callOpenAI(originalContentForAI, prompt || undefined);
+  };
+
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     
@@ -547,6 +859,19 @@ export default function LetterEditor() {
               size="lg"
             >
               <IconUnderline size={18} />
+            </ActionIcon>
+
+            <Divider orientation="vertical" />
+
+            {/* OpenAI Button */}
+            <ActionIcon
+              variant="default"
+              onClick={handleOpenAI}
+              disabled={!activeEditor}
+              size="lg"
+              title="Send to OpenAI for rewriting"
+            >
+              <IconSparkles size={18} />
             </ActionIcon>
 
             <Divider orientation="vertical" />
@@ -891,6 +1216,167 @@ export default function LetterEditor() {
             title="PDF Preview"
           />
         )}
+      </Modal>
+
+      {/* OpenAI Modal */}
+      <Modal
+        opened={aiModalOpen}
+        onClose={() => {
+          setAiModalOpen(false);
+          setAiResult('');
+          setAiError(null);
+          setAiPrompt('');
+          setAiProcessingAllPages(false);
+          setOriginalContentForAI('');
+          setAiInitialPrompt('');
+        }}
+        title={<Text fw={600} size="lg">AI Rewrite - Letter Content</Text>}
+        size="xl"
+        zIndex={400}
+        overlayProps={{ zIndex: 400 }}
+        styles={{
+          root: {
+            zIndex: 400,
+          },
+          overlay: {
+            zIndex: 399,
+          },
+        }}
+      >
+        <Stack gap="md">
+          {aiError && (
+            <Alert icon={<IconAlertCircle size={16} />} color="red" title="Error">
+              {aiError}
+            </Alert>
+          )}
+
+          {/* Show page selection options if multiple pages and no result yet */}
+          {!aiProcessing && !aiResult && pages.length > 1 && !originalContentForAI && (
+            <Alert icon={<IconSparkles size={16} />} color="blue">
+              <Text size="sm" mb="xs" fw={500}>Select what to process:</Text>
+              <Stack gap="xs" mt="xs">
+                <Button
+                  variant="light"
+                  onClick={handleProcessCurrentPage}
+                  disabled={!activeEditor}
+                >
+                  Process Current Page Only
+                </Button>
+                <Button
+                  variant="light"
+                  onClick={handleProcessAllPages}
+                >
+                  Process All {pages.length} Pages
+                </Button>
+              </Stack>
+            </Alert>
+          )}
+
+          {/* Show content and prompt input before processing */}
+          {originalContentForAI && !aiResult && !aiProcessing && (
+            <>
+              <Box>
+                <Text size="sm" fw={500} mb="xs">
+                  Content to process: {aiProcessingAllPages ? `All ${pages.length} pages` : 'Current page'}
+                </Text>
+                <Code block style={{ maxHeight: '150px', overflow: 'auto', fontSize: '12px' }}>
+                  {originalContentForAI.substring(0, 500)}
+                  {originalContentForAI.length > 500 ? '...' : ''}
+                </Code>
+              </Box>
+
+              <Divider label="Instructions for AI" labelPosition="center" />
+
+              <Textarea
+                label="How would you like OpenAI to process this text? (Optional)"
+                placeholder='e.g., "make it more professional", "expand with more detail", "make it shorter and concise", "rewrite as a formal letter", "add medical terminology"'
+                value={aiInitialPrompt}
+                onChange={(e) => setAiInitialPrompt(e.target.value)}
+                rows={3}
+                autosize
+                minRows={3}
+              />
+
+              <Group justify="flex-end">
+                <Button variant="outline" onClick={() => {
+                  setAiModalOpen(false);
+                  setAiResult('');
+                  setAiError(null);
+                  setAiPrompt('');
+                  setAiProcessingAllPages(false);
+                  setOriginalContentForAI('');
+                  setAiInitialPrompt('');
+                }}>
+                  Cancel
+                </Button>
+                <Button
+                  leftSection={<IconSparkles size={18} />}
+                  onClick={handleProcessWithPrompt}
+                  variant="filled"
+                >
+                  Process with AI
+                </Button>
+              </Group>
+            </>
+          )}
+
+          {aiProcessing ? (
+            <Box py="xl">
+              <Group justify="center">
+                <Loader size="md" />
+                <Text>Processing with OpenAI...</Text>
+              </Group>
+            </Box>
+          ) : aiResult ? (
+            <>
+              <Box>
+                <Text size="sm" fw={500} mb="xs">AI-Generated Result:</Text>
+                <Paper p="md" withBorder>
+                  <Text style={{ whiteSpace: 'pre-wrap' }}>{aiResult}</Text>
+                </Paper>
+              </Box>
+
+              <Divider label="Request Refinement" labelPosition="center" />
+
+              <Textarea
+                label="Refinement Instructions"
+                placeholder='e.g., "make it more professional", "add more detail", "make it shorter"'
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                rows={2}
+              />
+
+              <Group justify="space-between">
+                <Group>
+                  <Button
+                    leftSection={<IconRefresh size={18} />}
+                    onClick={requestAIRefinement}
+                    variant="outline"
+                    disabled={!aiPrompt.trim()}
+                  >
+                    Refine with AI
+                  </Button>
+                </Group>
+                <Group>
+                  <Button variant="outline" onClick={() => {
+                    setAiModalOpen(false);
+                    setAiResult('');
+                    setAiPrompt('');
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    leftSection={<IconCheck size={18} />}
+                    onClick={acceptAIResult}
+                    color="green"
+                  >
+                    Accept & Use This
+                  </Button>
+                </Group>
+              </Group>
+            </>
+          ) : null}
+        </Stack>
       </Modal>
     </>
   );

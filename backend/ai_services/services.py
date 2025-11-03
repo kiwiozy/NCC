@@ -27,32 +27,42 @@ class OpenAIService:
         Returns:
             Rewritten clinical notes
         """
-        system_message = """You are a professional medical scribe specializing in podiatry and orthotic clinical notes.
-Your task is to rewrite patient notes into clear, professional clinical documentation following these guidelines:
+        system_message = """You are a professional medical scribe specializing in podiatry and orthotic clinical documentation.
+Your task is to improve the clinical tone and language of medical letters while preserving the EXACT original structure and format.
 
-1. Use proper medical terminology
-2. Organize into clear sections (Subjective, Objective, Assessment, Plan if appropriate)
-3. Be concise but comprehensive
-4. Maintain clinical accuracy
-5. Use professional tone
-6. Follow standard clinical documentation practices
+CRITICAL RULES:
+1. PRESERVE the original letter structure - do NOT reorganize into sections like "Subjective/Objective/Assessment"
+2. Keep the same paragraphs, line breaks, and overall layout
+3. Maintain the original salutation, greeting, and closing format
+4. Use proper medical terminology where appropriate
+5. Improve clinical language and professionalism
+6. Be more concise if requested, but keep the same paragraph structure
+7. Do NOT add new sections, headers, or reorganize the content
+8. Only refine the wording to be more clinical/professional
 
-Do not add information that wasn't in the original notes. Only restructure and professionalize the existing content."""
+The output should read like an improved version of the same letter, not a restructured document."""
 
         if custom_prompt:
-            user_message = f"""Original notes:
+            user_message = f"""Original letter content:
 {content}
 
 Additional instructions: {custom_prompt}
 
-Please rewrite these notes as professional clinical documentation."""
+Please improve the clinical tone and language while preserving the EXACT original structure, format, paragraphs, and layout. Do not reorganize or add new sections."""
         else:
-            user_message = f"""Original notes:
+            user_message = f"""Original letter content:
 {content}
 
-Please rewrite these notes as professional clinical documentation."""
+Please improve the clinical tone and language while preserving the EXACT original structure, format, paragraphs, and layout. Make it more professional and clinically appropriate without changing the organization."""
 
         try:
+            import logging
+            import time
+            logger = logging.getLogger(__name__)
+            
+            logger.info(f'🌐 Calling OpenAI API - Model: {self.model}, Message length: {len(user_message)} chars')
+            api_start = time.time()
+            
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -60,12 +70,22 @@ Please rewrite these notes as professional clinical documentation."""
                     {"role": "user", "content": user_message}
                 ],
                 temperature=0.7,
-                max_tokens=1000
+                max_tokens=4000  # Increased from 1000 to handle longer content
             )
             
-            return response.choices[0].message.content.strip()
+            api_duration = time.time() - api_start
+            logger.info(f'⏱️ OpenAI API response received in {api_duration:.2f}s')
+            
+            result = response.choices[0].message.content.strip()
+            logger.info(f'✅ OpenAI result length: {len(result)} chars')
+            logger.debug(f'📝 Result preview: {result[:200]}...')
+            
+            return result
             
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'❌ OpenAI API error: {str(e)}', exc_info=True)
             raise Exception(f"OpenAI API error: {str(e)}")
     
     def extract_text_from_pdf(self, pdf_file) -> str:
