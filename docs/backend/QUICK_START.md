@@ -1,4 +1,4 @@
-# 🎉 Nexus Core Clinic - Current Status & Quick Start
+# 🎉 WalkEasy Nexus - Current Status & Quick Start
 
 ## 🚀 **What You Just Built**
 

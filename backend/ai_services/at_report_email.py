@@ -137,7 +137,7 @@ def send_at_report_email_via_gmail(
                     <strong>Participant:</strong> {participant_name}<br>
                     {'<strong>NDIS Number:</strong> ' + ndis_number + '<br>' if ndis_number else ''}
                     <strong>Report Type:</strong> AT Assessment<br>
-                    <strong>Prepared by:</strong> {form_data.get('assessor', {}).get('name', 'Nexus Core Clinic')}
+                    <strong>Prepared by:</strong> {form_data.get('assessor', {}).get('name', 'WalkEasy Nexus')}
                 </div>
                 
                 {f'<div style="background: white; padding: 20px; border-radius: 4px; margin: 20px 0;"><p style="margin: 0;"><em>{custom_message}</em></p></div>' if custom_message else ''}
@@ -162,7 +162,7 @@ def send_at_report_email_via_gmail(
             </div>
             
             <div class="footer">
-                <p><strong>Nexus Core Clinic</strong></p>
+                <p><strong>WalkEasy Nexus</strong></p>
                 <p style="font-size: 12px; color: #9ca3af;">
                     This email and any attachments may contain confidential information. 
                     If you are not the intended recipient, please delete this email and notify the sender immediately.
@@ -179,7 +179,7 @@ NDIS AT Assessment Report
 Participant: {participant_name}
 {'NDIS Number: ' + ndis_number if ndis_number else ''}
 Report Type: AT Assessment
-Prepared by: {form_data.get('assessor', {}).get('name', 'Nexus Core Clinic')}
+Prepared by: {form_data.get('assessor', {}).get('name', 'WalkEasy Nexus')}
 
 {custom_message if custom_message else ''}
 
@@ -196,7 +196,7 @@ Attached: {filename}
 Please review the attached PDF for complete assessment details.
 
 ---
-Nexus Core Clinic
+WalkEasy Nexus
 This email and any attachments may contain confidential information.
     """
     

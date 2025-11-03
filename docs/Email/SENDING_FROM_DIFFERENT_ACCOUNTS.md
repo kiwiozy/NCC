@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to send emails from different Gmail accounts (e.g., info@walkeasy.com.au vs craig@walkeasy.com.au) in the Nexus Core Clinic application.
+This guide explains how to send emails from different Gmail accounts (e.g., info@walkeasy.com.au vs craig@walkeasy.com.au) in the WalkEasy Nexus application.
 
 ---
 
@@ -80,7 +80,7 @@ To switch from one account to another:
 Both accounts must be added as **Test Users** in Google Cloud Console:
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Select project: **Nexus Core Clinic Email System**
+2. Select project: **WalkEasy Nexus Email System**
 3. **APIs & Services** → **OAuth consent screen**
 4. Scroll to **Test users**
 5. Verify both accounts are listed:

@@ -57,7 +57,7 @@ curl https://localhost:8000/api/documents/{id}/download_url/ -k
 - Pre-signed URL generated
 - Expiry: 1 hour
 - File downloaded successfully
-- Content verified: "This is a test document for Nexus Core Clinic S3 integration!"
+- Content verified: "This is a test document for WalkEasy Nexus S3 integration!"
 
 ✅ **PASSED** - File download working
 

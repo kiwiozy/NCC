@@ -1,4 +1,4 @@
-# 🪣 AWS S3 Setup Guide for Nexus Core Clinic
+# 🪣 AWS S3 Setup Guide for WalkEasy Nexus
 
 ## ✅ **What's Already Done**
 The S3 integration code is complete! We just need to create an S3 bucket.

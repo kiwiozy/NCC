@@ -28,7 +28,7 @@
 2. **Click** "NEW PROJECT" button (top right of the dialog)
 3. **Enter project details:**
    ```
-   Project name: Nexus Core Clinic
+   Project name: WalkEasy Nexus
    Organization: (leave default or select your organization)
    Location: (leave default)
    ```
@@ -36,7 +36,7 @@
 5. **Wait** ~10 seconds for the project to be created
 6. **Select** your new project from the dropdown
 
-✅ **Checkpoint:** You should see "Nexus Core Clinic" in the top bar
+✅ **Checkpoint:** You should see "WalkEasy Nexus" in the top bar
 
 ---
 
@@ -72,7 +72,7 @@
 
 3. **Fill in App Information:**
    ```
-   App name: Nexus Core Clinic Email System
+   App name: WalkEasy Nexus Email System
    User support email: [Your clinic email]
    Developer contact email: [Your clinic email]
    ```
@@ -126,7 +126,7 @@
    ```
    Application type: Web application
    
-   Name: Nexus Core Clinic - Gmail Integration
+   Name: WalkEasy Nexus - Gmail Integration
    ```
 
 5. **Authorized JavaScript origins:**
@@ -250,7 +250,7 @@
 
 4. **Check your inbox** for the test email:
    ```
-   Subject: Gmail Integration Test - Nexus Core Clinic
+   Subject: Gmail Integration Test - WalkEasy Nexus
    ```
 
 5. **If you received it:** ✅ Everything is working perfectly!
@@ -272,7 +272,7 @@ GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
 EMAIL_HOST_USER=your-clinic-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password-here
 EMAIL_FROM=your-clinic-email@gmail.com
-EMAIL_FROM_NAME=Nexus Core Clinic
+EMAIL_FROM_NAME=WalkEasy Nexus
 
 # OpenAI (if configured)
 OPENAI_API_KEY=sk-...
@@ -336,14 +336,14 @@ OPENAI_API_KEY=sk-...
 
 1. **Project Dashboard:**
    ```
-   Project: Nexus Core Clinic
+   Project: WalkEasy Nexus
    APIs enabled: Gmail API
    ```
 
 2. **Credentials Page:**
    ```
    OAuth 2.0 Client IDs
-   Name: Nexus Core Clinic - Gmail Integration
+   Name: WalkEasy Nexus - Gmail Integration
    Type: Web application
    Client ID: 123456789-...apps.googleusercontent.com
    ```

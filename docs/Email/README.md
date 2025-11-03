@@ -1,6 +1,6 @@
 # 📧 Email System Documentation
 
-Complete documentation for the Nexus Core Clinic email system, including Gmail API integration, AT Report emailing, and email management.
+Complete documentation for the WalkEasy Nexus email system, including Gmail API integration, AT Report emailing, and email management.
 
 ---
 

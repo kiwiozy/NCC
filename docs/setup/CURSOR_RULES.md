@@ -1,6 +1,6 @@
 # 📋 Cursor Rules - Copy & Paste Ready
 
-**Rules to add to Cursor Settings for Nexus Core Clinic**
+**Rules to add to Cursor Settings for WalkEasy Nexus**
 
 ---
 
@@ -9,7 +9,7 @@
 Copy and paste this entire block:
 
 ```
-# Nexus Core Clinic - Project Rules
+# WalkEasy Nexus - Project Rules
 
 ## CRITICAL: Protected Files (NEVER modify without explicit permission)
 
@@ -84,7 +84,7 @@ Copy and paste this entire block:
 Copy and paste this entire block:
 
 ```
-# Nexus Core Clinic - User Rules
+# WalkEasy Nexus - User Rules
 
 ## General Principles:
 

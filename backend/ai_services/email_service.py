@@ -28,7 +28,7 @@ class EmailService:
         self.smtp_user = os.getenv('EMAIL_HOST_USER', '')
         self.smtp_password = os.getenv('EMAIL_HOST_PASSWORD', '')
         self.from_email = os.getenv('EMAIL_FROM', self.smtp_user)
-        self.from_name = os.getenv('EMAIL_FROM_NAME', 'Nexus Core Clinic')
+        self.from_name = os.getenv('EMAIL_FROM_NAME', 'WalkEasy Nexus')
         
         # Validate configuration
         if not self.smtp_user or not self.smtp_password:
@@ -181,7 +181,7 @@ Please review the attached PDF document for complete details.
 If you have any questions or require additional information, please don't hesitate to contact us.
 
 Best regards,
-Nexus Core Clinic
+WalkEasy Nexus
 """
         
         # Attach PDF
@@ -293,7 +293,7 @@ Nexus Core Clinic
 <body>
     <div class="header">
         <h1>NDIS AT Assessment Report</h1>
-        <p style="margin: 10px 0 0 0; opacity: 0.9;">Nexus Core Clinic</p>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">WalkEasy Nexus</p>
     </div>
     
     <div class="content">
@@ -327,11 +327,11 @@ Nexus Core Clinic
         <p>If you have any questions, require additional information, or would like to discuss the assessment findings, please don't hesitate to contact us.</p>
         
         <p style="margin-top: 30px;">Best regards,</p>
-        <p><strong>Nexus Core Clinic Team</strong></p>
+        <p><strong>WalkEasy Nexus Team</strong></p>
     </div>
     
     <div class="footer">
-        <p><strong>Nexus Core Clinic</strong></p>
+        <p><strong>WalkEasy Nexus</strong></p>
         <p>This email and any attachments contain confidential information intended solely for the named recipient(s).</p>
         <p>If you have received this email in error, please notify the sender immediately and delete this email.</p>
     </div>
@@ -349,13 +349,13 @@ Nexus Core Clinic
         Returns:
             dict with 'success' and 'message' keys
         """
-        subject = "Test Email from Nexus Core Clinic"
+        subject = "Test Email from WalkEasy Nexus"
         body_html = """
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; padding: 20px;">
     <h2 style="color: #663399;">Email Configuration Test</h2>
-    <p>This is a test email from your Nexus Core Clinic application.</p>
+    <p>This is a test email from your WalkEasy Nexus application.</p>
     <p>If you're receiving this, your Gmail SMTP configuration is working correctly! ✓</p>
     <p><strong>Email system is ready to send AT Reports.</strong></p>
     <hr>
@@ -363,7 +363,7 @@ Nexus Core Clinic
 </body>
 </html>
 """
-        body_text = "This is a test email from Nexus Core Clinic. If you're receiving this, your email configuration is working!"
+        body_text = "This is a test email from WalkEasy Nexus. If you're receiving this, your email configuration is working!"
         
         return self.send_email(
             to_emails=[to_email],

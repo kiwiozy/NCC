@@ -1,6 +1,6 @@
 # 📱 SMS Integration Documentation
 
-Complete documentation for SMS Broadcast integration in Nexus Core Clinic.
+Complete documentation for SMS Broadcast integration in WalkEasy Nexus.
 
 ---
 
@@ -160,7 +160,7 @@ curl -X POST https://localhost:8000/api/sms/messages/send/ \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+61400000000",
-    "message": "Test message from Nexus Core Clinic"
+    "message": "Test message from WalkEasy Nexus"
   }' \
   -k
 ```

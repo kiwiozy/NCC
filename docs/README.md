@@ -1,4 +1,4 @@
-# 📚 Nexus Core Clinic - Documentation Index
+# 📚 WalkEasy Nexus - Documentation Index
 
 **Complete documentation for all systems and integrations**
 
@@ -264,7 +264,7 @@ Integration with existing FileMaker Pro databases.
 ### **Overview**
 
 ```
-Nexus Core Clinic
+WalkEasy Nexus
 │
 ├── Frontend (Next.js 15)
 │   ├── Port: 3000
@@ -367,7 +367,7 @@ Nexus Core Clinic
 
 ## 🚀 Getting Started
 
-### **New to Nexus Core Clinic?**
+### **New to WalkEasy Nexus?**
 
 1. **Backend Setup:** [backend/QUICK_START.md](backend/QUICK_START.md)
 2. **Frontend Setup:** [frontend/SETUP.md](frontend/SETUP.md)

@@ -1,5 +1,5 @@
 """
-Appointment and Encounter models for Nexus Core Clinic
+Appointment and Encounter models for WalkEasy Nexus
 Based on schema from: 02-Target-Postgres-Schema.md
 """
 import uuid

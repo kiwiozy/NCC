@@ -1,4 +1,4 @@
-# Nexus Core Clinic
+# WalkEasy Nexus
 
 Modern cloud-native patient management system for Walk Easy Pedorthics.
 

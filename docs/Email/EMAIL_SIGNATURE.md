@@ -2,7 +2,7 @@
 
 ## Overview
 
-All emails sent from the Nexus Core Clinic application automatically include the Walk Easy Pedorthics professional email signature.
+All emails sent from the WalkEasy Nexus application automatically include the Walk Easy Pedorthics professional email signature.
 
 ---
 

@@ -378,13 +378,13 @@ def test_gmail_connection(request):
         # Send test email
         sent_email = gmail_service.send_email(
             to_emails=[to_email],
-            subject='Gmail Integration Test - Nexus Core Clinic',
+            subject='Gmail Integration Test - WalkEasy Nexus',
             body_html="""
             <html>
                 <body style="font-family: Arial, sans-serif; padding: 20px;">
                     <h2 style="color: #4CAF50;">✓ Gmail Integration Test Successful!</h2>
                     <p>Your Gmail integration is working correctly.</p>
-                    <p>This test email was sent from <strong>Nexus Core Clinic</strong> via the Gmail API.</p>
+                    <p>This test email was sent from <strong>WalkEasy Nexus</strong> via the Gmail API.</p>
                     <hr style="border: 1px solid #e0e0e0; margin: 20px 0;">
                     <p style="color: #666; font-size: 12px;">
                         If you received this email, your Gmail OAuth2 connection is configured correctly.

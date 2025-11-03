@@ -1,4 +1,4 @@
-# ✅ Nexus Core Clinic - Setup Checklist
+# ✅ WalkEasy Nexus - Setup Checklist
 
 **Simple step-by-step checklist** for setting up your complete environment. Check off items as you complete them.
 
@@ -635,7 +635,7 @@
 ---
 
 **📅 Last Updated:** October 29, 2025  
-**👤 Project:** Nexus Core Clinic (NCC) - FileMaker Migration  
+**👤 Project:** WalkEasy Nexus (NCC) - FileMaker Migration  
 **🎯 Current Phase:** Planning & Design Complete → Infrastructure Setup Next  
 **🚨 Blockers:** FileMaker Data API (502 errors), Infrastructure decision needed
 

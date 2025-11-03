@@ -1,8 +1,8 @@
-# 🎨 Nexus Core Clinic - UI Framework Specification
+# 🎨 WalkEasy Nexus - UI Framework Specification
 
 ## Overview
 
-This document defines the complete UI framework for the Nexus Core Clinic patient management system. It establishes the structure, components, navigation, layouts, and design patterns that will be used throughout the application.
+This document defines the complete UI framework for the WalkEasy Nexus patient management system. It establishes the structure, components, navigation, layouts, and design patterns that will be used throughout the application.
 
 ---
 

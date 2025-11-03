@@ -1,7 +1,7 @@
 # Timezone Configuration
 
 ## Overview
-This document describes the timezone configuration for the Nexus Core Clinic application, ensuring all dates and times are displayed consistently in **Australian Eastern Time (Australia/Sydney)**, which automatically handles daylight saving transitions (AEST/AEDT).
+This document describes the timezone configuration for the WalkEasy Nexus application, ensuring all dates and times are displayed consistently in **Australian Eastern Time (Australia/Sydney)**, which automatically handles daylight saving transitions (AEST/AEDT).
 
 ## Backend Configuration (Django)
 

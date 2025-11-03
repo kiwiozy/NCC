@@ -1,5 +1,5 @@
 """
-Clinician and Clinic models for Nexus Core Clinic
+Clinician and Clinic models for WalkEasy Nexus
 Based on schema from: 02-Target-Postgres-Schema.md
 """
 import uuid

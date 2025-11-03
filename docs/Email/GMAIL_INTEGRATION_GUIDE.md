@@ -32,7 +32,7 @@ The Gmail Integration provides secure, professional email sending capabilities t
    - Go to **APIs & Services** → **Credentials**
    - Click **Create Credentials** → **OAuth client ID**
    - Select **Web application**
-   - **Name:** Nexus Core Clinic - Gmail Integration
+   - **Name:** WalkEasy Nexus - Gmail Integration
    - **Authorized JavaScript origins:** 
      - `http://localhost:3000`
      - `http://localhost:8000`
@@ -320,7 +320,7 @@ Variables available depend on the context (set by the sending code).
 1. Click **"Test Connection"**
 2. Enter your email address
 3. Check inbox for test email
-4. Subject: "Gmail Integration Test - Nexus Core Clinic"
+4. Subject: "Gmail Integration Test - WalkEasy Nexus"
 
 ### **3. Test AT Report Email**
 

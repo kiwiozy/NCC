@@ -31,7 +31,7 @@ const theme = createTheme({
 });
 
 export const metadata = {
-  title: 'Nexus Core Clinic - Patient Management',
+  title: 'WalkEasy Nexus - Patient Management',
   description: 'Modern patient management system for Walk Easy Pedorthics',
 };
 

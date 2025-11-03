@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-Nexus Core Clinic's Gmail integration now supports **full multi-account functionality**, allowing you to connect multiple Gmail accounts and choose which account to send each email from. Emails appear in the **correct account's Sent folder**, not just the primary account.
+WalkEasy Nexus's Gmail integration now supports **full multi-account functionality**, allowing you to connect multiple Gmail accounts and choose which account to send each email from. Emails appear in the **correct account's Sent folder**, not just the primary account.
 
 **Version**: 2.0.0+  
 **Status**: ✅ Fully Implemented & Working

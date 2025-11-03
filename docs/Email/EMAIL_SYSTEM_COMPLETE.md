@@ -91,7 +91,7 @@ Add:
 EMAIL_HOST_USER=your-clinic-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password-here
 EMAIL_FROM=your-clinic-email@gmail.com
-EMAIL_FROM_NAME=Nexus Core Clinic
+EMAIL_FROM_NAME=WalkEasy Nexus
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 ```
@@ -148,7 +148,7 @@ NDIS AT Assessment Report - [Participant Name]
   - Risk assessment
   - Declarations and consent
 - **Call to Action**: "Please review the attached PDF"
-- **Footer**: Nexus Core Clinic, confidentiality notice
+- **Footer**: WalkEasy Nexus, confidentiality notice
 
 ### **Plain Text Version:**
 Automatically generated for email clients that don't support HTML

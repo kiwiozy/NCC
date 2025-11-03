@@ -1,4 +1,4 @@
-# 🚀 Environment Setup Guide — Nexus Core Clinic
+# 🚀 Environment Setup Guide — WalkEasy Nexus
 
 **Purpose:** Step-by-step guide to set up all cloud environments, accounts, and services needed to begin testing and development of the new patient management system.
 
@@ -187,7 +187,7 @@ If you already have a GCP project and credentials:
 
 ---
 
-### Recommended Approach for Nexus Core Clinic
+### Recommended Approach for WalkEasy Nexus
 
 **Important Distinction:**
 - **User Authentication (SSO):** Users logging into both apps → Shared auth provider ✅
@@ -212,7 +212,7 @@ If both applications are for **the same company** and you want **single sign-on 
 - **When to use:** Same company, same team, same security posture, simpler management
 
 **Option 2: Separate IAM User (More Secure, Better Audit)**
-- ✅ Separate IAM user `ncc-s3-uploader` for Nexus Core Clinic
+- ✅ Separate IAM user `ncc-s3-uploader` for WalkEasy Nexus
 - ✅ Different credentials per app
 - ✅ Better audit trail (know which app accessed what)
 - ✅ Can apply different IAM policies per app
@@ -326,7 +326,7 @@ If creating a separate project:
 2. **Create New Project:**
    ```bash
   gcloud projects create nexus-core-clinic-dev \
-    --name="Nexus Core Clinic - Dev" \
+    --name="WalkEasy Nexus - Dev" \
      --set-as-default
    ```
 
@@ -370,15 +370,15 @@ gcloud services list --enabled
 ```bash
 # API Service Account
 gcloud iam service-accounts create wep-api-sa \
-  --display-name="Nexus Core Clinic API Service Account"
+  --display-name="WalkEasy Nexus API Service Account"
 
 # Web Service Account
 gcloud iam service-accounts create wep-web-sa \
-  --display-name="Nexus Core Clinic Web Service Account"
+  --display-name="WalkEasy Nexus Web Service Account"
 
 # Worker Service Account (for background jobs)
 gcloud iam service-accounts create wep-worker-sa \
-  --display-name="Nexus Core Clinic Worker Service Account"
+  --display-name="WalkEasy Nexus Worker Service Account"
 
 # Grant roles to API service account
 # Use PROJECT_ID variable (works with existing or new project)
@@ -451,7 +451,7 @@ If you already have AWS credentials from another app:
 2. **Option 1: Add bucket permissions to existing user**
    - Add S3 bucket permissions to your existing IAM user's policy
    - Use existing Access Key ID and Secret
-   - ⚠️ Ensure policy only grants access to Nexus Core Clinic buckets
+   - ⚠️ Ensure policy only grants access to WalkEasy Nexus buckets
 
 3. **Option 2: Create app-specific policy attached to existing user**
    - Create new policy `wep-s3-policy` (see section 4.4)
@@ -473,7 +473,7 @@ If you already have AWS credentials from another app:
 If managing multiple apps, use AWS profiles:
 
 ```bash
-# Configure profile for Nexus Core Clinic
+# Configure profile for WalkEasy Nexus
 aws configure --profile wep-dev
 # Enter credentials for wep-s3-uploader
 

@@ -121,7 +121,7 @@ GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
 
 ### Google Cloud Console Setup
 
-✅ Project created: **Nexus Core Clinic Email System**
+✅ Project created: **WalkEasy Nexus Email System**
 ✅ Gmail API enabled
 ✅ OAuth 2.0 Client ID created (Web Application)
 ✅ Authorized redirect URI configured: `http://localhost:8000/gmail/oauth/callback/`

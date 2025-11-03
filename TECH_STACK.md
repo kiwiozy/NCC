@@ -1,4 +1,4 @@
-# 🚀 Nexus Core Clinic - Tech Stack
+# 🚀 WalkEasy Nexus - Tech Stack
 
 **Modern full-stack patient management system for Walk Easy Pedorthics**
 

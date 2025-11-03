@@ -1,6 +1,6 @@
 # 📧 Email System Setup Guide
 
-Complete guide for configuring the Nexus Core Clinic email system with Gmail and Apple Mail.
+Complete guide for configuring the WalkEasy Nexus email system with Gmail and Apple Mail.
 
 ---
 
@@ -52,7 +52,7 @@ cp .env.example .env
 EMAIL_HOST_USER=your-clinic-email@gmail.com
 EMAIL_HOST_PASSWORD=abcd efgh ijkl mnop  # Your 16-char App Password
 EMAIL_FROM=your-clinic-email@gmail.com
-EMAIL_FROM_NAME=Nexus Core Clinic
+EMAIL_FROM_NAME=WalkEasy Nexus
 
 # Gmail SMTP (already configured)
 EMAIL_HOST=smtp.gmail.com
@@ -116,7 +116,7 @@ The email includes:
 **Header:**
 - Purple gradient header (NDIS colors)
 - "NDIS AT Assessment Report" title
-- Nexus Core Clinic branding
+- WalkEasy Nexus branding
 
 **Body:**
 - Participant name and NDIS number
@@ -178,7 +178,7 @@ curl -X POST http://localhost:8000/api/ai/email-at-report/ \
     },
     "to_emails": ["recipient@example.com"],
     "cc_emails": ["cc@example.com"],
-    "custom_message": "Test email from Nexus Core Clinic"
+    "custom_message": "Test email from WalkEasy Nexus"
   }'
 ```
 
@@ -333,7 +333,7 @@ Before going live:
 - [ ] HTML formatting looks professional
 - [ ] All team members' emails work
 - [ ] Confidentiality notice included
-- [ ] FROM name shows "Nexus Core Clinic"
+- [ ] FROM name shows "WalkEasy Nexus"
 
 ---
 

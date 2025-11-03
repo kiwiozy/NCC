@@ -1,6 +1,6 @@
 # 🪣 AWS S3 Integration Documentation
 
-Complete documentation for AWS S3 file storage integration in Nexus Core Clinic.
+Complete documentation for AWS S3 file storage integration in WalkEasy Nexus.
 
 ---
 

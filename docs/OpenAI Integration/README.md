@@ -1,6 +1,6 @@
 # 🤖 OpenAI Integration Documentation
 
-Complete documentation for OpenAI GPT-4 integration in Nexus Core Clinic.
+Complete documentation for OpenAI GPT-4 integration in WalkEasy Nexus.
 
 ---
 

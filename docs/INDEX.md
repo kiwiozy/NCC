@@ -1,6 +1,6 @@
-# 📚 Nexus Core Clinic - Documentation
+# 📚 WalkEasy Nexus - Documentation
 
-Welcome to the Nexus Core Clinic documentation. This directory contains all project documentation.
+Welcome to the WalkEasy Nexus documentation. This directory contains all project documentation.
 
 ---
 
@@ -175,6 +175,6 @@ nexus-core-clinic/
 ---
 
 **Last Updated:** October 30, 2025  
-**Project:** Nexus Core Clinic - Patient Management System  
+**Project:** WalkEasy Nexus - Patient Management System  
 **Version:** 0.1.0 (Development)
 

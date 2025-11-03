@@ -1,8 +1,8 @@
-# 📧 Nexus Core Clinic - Gmail Integration
+# 📧 WalkEasy Nexus - Gmail Integration
 
 ## 🎉 Status: **COMPLETE & WORKING**
 
-The Gmail integration for Nexus Core Clinic is fully implemented and operational with **full multi-account support**!
+The Gmail integration for WalkEasy Nexus is fully implemented and operational with **full multi-account support**!
 
 ---
 
@@ -103,7 +103,7 @@ GMAIL_REDIRECT_URI=http://localhost:8000/gmail/oauth/callback/
 
 ### Google Cloud Console
 
-✅ **Project:** Nexus Core Clinic Email System  
+✅ **Project:** WalkEasy Nexus Email System  
 ✅ **Gmail API:** Enabled  
 ✅ **OAuth Client:** Web Application  
 ✅ **Redirect URI:** `http://localhost:8000/gmail/oauth/callback/`  

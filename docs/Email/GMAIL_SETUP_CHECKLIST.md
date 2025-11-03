@@ -1,6 +1,6 @@
 # ✅ Gmail API Setup Checklist
 
-Quick checklist for setting up Gmail API integration for Nexus Core Clinic.
+Quick checklist for setting up Gmail API integration for WalkEasy Nexus.
 
 ---
 
@@ -18,12 +18,12 @@ Quick checklist for setting up Gmail API integration for Nexus Core Clinic.
 ### 1. Google Cloud Console Setup
 
 - [ ] Go to [Google Cloud Console](https://console.cloud.google.com/)
-- [ ] Create new project: **"Nexus Core Clinic Email System"**
+- [ ] Create new project: **"WalkEasy Nexus Email System"**
 - [ ] Enable **Gmail API**
 - [ ] Navigate to **APIs & Services** → **Credentials**
 - [ ] Create **OAuth 2.0 Client ID**
   - [ ] Application type: **Web application**
-  - [ ] Name: **Nexus Core Clinic Email System**
+  - [ ] Name: **WalkEasy Nexus Email System**
   - [ ] Authorized redirect URIs: `http://localhost:8000/gmail/oauth/callback/`
   - [ ] **Important**: Include trailing slash `/`
 - [ ] Download or copy credentials:
@@ -31,7 +31,7 @@ Quick checklist for setting up Gmail API integration for Nexus Core Clinic.
   - [ ] Client Secret
 - [ ] Configure **OAuth Consent Screen**
   - [ ] User type: **External** (for testing) or **Internal** (for organization)
-  - [ ] App name: **Nexus Core Clinic Email System**
+  - [ ] App name: **WalkEasy Nexus Email System**
   - [ ] User support email: your email
   - [ ] Developer contact email: your email
   - [ ] Scopes: 

@@ -58,7 +58,7 @@ export default function Home() {
         </SimpleGrid>
 
         <Paper p="xl" shadow="sm" radius="md">
-          <Title order={2} size="h3" mb="md">Welcome to Nexus Core Clinic</Title>
+          <Title order={2} size="h3" mb="md">Welcome to WalkEasy Nexus</Title>
           <Text c="dimmed">
             Your patient management dashboard. Use the navigation above to access different sections of the application.
           </Text>

@@ -7,7 +7,7 @@
 ## 🎯 PROJECT RULES (Copy everything below this line)
 
 ```
-# Nexus Core Clinic - Project Rules
+# WalkEasy Nexus - Project Rules
 
 ## CRITICAL: Protected Files (NEVER modify without explicit permission)
 
@@ -68,7 +68,7 @@
 ## 👤 USER RULES (Copy everything below this line)
 
 ```
-# Nexus Core Clinic - User Rules
+# WalkEasy Nexus - User Rules
 
 ## General Principles:
 1. Safety First - Protect working code at all costs

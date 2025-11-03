@@ -1,6 +1,6 @@
 # 💼 Xero Integration Documentation
 
-Complete documentation for Xero accounting integration in Nexus Core Clinic.
+Complete documentation for Xero accounting integration in WalkEasy Nexus.
 
 ---
 
@@ -87,7 +87,7 @@ GET  /xero/logs/                       # View sync logs
 1. Go to [Xero Developer Portal](https://developer.xero.com/app/manage)
 2. Click **"New App"**
 3. Fill in details:
-   - **App Name:** Nexus Core Clinic
+   - **App Name:** WalkEasy Nexus
    - **Company/App URL:** Your website
    - **OAuth 2.0 redirect URI:** `https://localhost:8000/xero/oauth/callback/`
 4. Copy **Client ID** and **Client Secret**
