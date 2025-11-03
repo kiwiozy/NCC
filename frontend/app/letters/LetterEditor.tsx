@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack, Modal } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal, Text } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -9,6 +9,7 @@ import {
   IconUnderline,
   IconFileTypePdf,
   IconPageBreak,
+  IconFileDownload,
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import '../styles/letterhead.css';
@@ -27,7 +28,10 @@ function LetterPage({
 }) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Exclude underline from StarterKit to avoid duplicate with our Underline extension
+        underline: false,
+      }),
       Underline,
       Placeholder.configure({
         placeholder: pageNumber === 1 
@@ -100,6 +104,18 @@ export default function LetterEditor() {
 
   const handleAddPage = () => {
     setPages(prev => [...prev, '<p></p>']);
+  };
+
+  const handleDownloadPDF = () => {
+    if (!pdfUrl) return;
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = `letter-${Date.now()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handlePreviewPDF = async () => {
@@ -212,7 +228,21 @@ export default function LetterEditor() {
             setPdfUrl(null);
           }
         }}
-        title="PDF Preview"
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600}>PDF Preview</Text>
+            {pdfUrl && (
+              <Button
+                leftSection={<IconFileDownload size={18} />}
+                onClick={handleDownloadPDF}
+                size="sm"
+                variant="filled"
+              >
+                Download PDF
+              </Button>
+            )}
+          </Group>
+        }
         size="xl"
         zIndex={300}
         styles={{

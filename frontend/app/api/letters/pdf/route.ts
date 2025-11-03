@@ -53,9 +53,10 @@ export async function POST(request: NextRequest) {
     const pages = splitContentIntoPages(html);
     console.log(`Content split into ${pages.length} page(s)`);
     
-    // Build page HTML for each page
+    // Build page HTML for each page - each page gets its own letterhead background
     const pageElements = pages.map((pageHTML, index) => `
     <div class="we-page">
+      <div class="letterhead-bg-page"></div>
       <div class="we-page-content">
         ${pageHTML}
       </div>
@@ -91,15 +92,16 @@ export async function POST(request: NextRequest) {
         height: 297mm;
         background: #fff;
         page-break-after: always;
+        overflow: hidden;
       }
       
       .we-page:last-child {
         page-break-after: auto;
       }
       
-      /* Fixed letterhead background (appears on ALL pages per ChatGPT) */
-      .letterhead-bg {
-        position: fixed;
+      /* Letterhead background for each page (position: absolute works better for PDF) */
+      .letterhead-bg-page {
+        position: absolute;
         top: 0;
         left: 0;
         width: 210mm;
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
         background-image: url('data:image/png;base64,${letterheadBase64}');
         background-size: 210mm 297mm;
         background-repeat: no-repeat;
+        background-position: 0 0;
         z-index: 0;
         pointer-events: none;
         print-color-adjust: exact;
@@ -174,7 +177,6 @@ export async function POST(request: NextRequest) {
     </style>
   </head>
   <body>
-    <div class="letterhead-bg"></div>
     ${pageElements}
   </body>
 </html>
