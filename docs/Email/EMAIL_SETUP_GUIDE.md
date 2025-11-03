@@ -306,7 +306,7 @@ Set a different reply-to address:
 
 ```python
 # In email_service.py
-reply_to = "assessments@nexuscoreclinic.com.au"
+reply_to = "assessments@walkeasy.com.au"
 ```
 
 ### **Email Tracking**

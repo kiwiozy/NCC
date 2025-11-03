@@ -76,8 +76,16 @@ export default function NotesTest() {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      // For now, load from localStorage
-      const savedNotes = localStorage.getItem('nexus_notes');
+      // Migrate from old localStorage key if it exists
+      const oldNotes = localStorage.getItem('nexus_notes');
+      if (oldNotes) {
+        // Migrate old data to new key
+        localStorage.setItem('walkeasy_nexus_notes', oldNotes);
+        localStorage.removeItem('nexus_notes');
+      }
+      
+      // Load from new localStorage key
+      const savedNotes = localStorage.getItem('walkeasy_nexus_notes');
       if (savedNotes) {
         setNotes(JSON.parse(savedNotes));
       }
@@ -111,7 +119,7 @@ export default function NotesTest() {
             : note
         );
         setNotes(updatedNotes);
-        localStorage.setItem('nexus_notes', JSON.stringify(updatedNotes));
+        localStorage.setItem('walkeasy_nexus_notes', JSON.stringify(updatedNotes));
         setSuccess('Note updated successfully!');
         setEditingId(null);
       } else {
@@ -125,7 +133,7 @@ export default function NotesTest() {
         };
         const updatedNotes = [newNote, ...notes];
         setNotes(updatedNotes);
-        localStorage.setItem('nexus_notes', JSON.stringify(updatedNotes));
+        localStorage.setItem('walkeasy_nexus_notes', JSON.stringify(updatedNotes));
         setSuccess('Note created successfully!');
       }
 
