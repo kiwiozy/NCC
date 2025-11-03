@@ -38,6 +38,20 @@ This file tracks all git commits and pushes for easy reference.
   - Fixed commit hash in git log
   - Updated timestamp
 
+#### ✅ Fix Gmail multi-account support - proper account detection and individual disconnect
+- **Time**: 11:54 AM
+- **Commit**: `4e3e78f`
+- **Changes**:
+  - Fixed connection status detection to use `connectedAccounts.length` instead of old status check
+  - Added individual account disconnect buttons (can disconnect specific accounts)
+  - Updated backend disconnect endpoint to properly handle POST requests with email parameter
+  - Improved email sending notifications to show which account was used
+  - Added account list refresh after connect/disconnect/send operations
+  - Updated AT Report email to refresh connected accounts after sending
+  - Enhanced Connected Accounts UI with disconnect buttons and Add Account button
+  - Fixed useEffect dependencies for Send As addresses fetching
+  - All multi-account features now working per documentation
+
 ---
 
 ## Previous Commits (from main branch)
