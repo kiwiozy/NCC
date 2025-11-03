@@ -19,7 +19,6 @@
 /* Editor shell - gray background */
 .letter-editor-shell {
   background: #f3f3f3;
-  min-height: 100vh;
   padding: 1.5rem;
 }
 
