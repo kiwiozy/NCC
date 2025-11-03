@@ -205,6 +205,7 @@ export default function Navigation({ children }: NavigationProps) {
     menuTimeoutRef.current = setTimeout(() => {
       setShowContactsMenu(false);
       setShowSettingsMenu(false);
+      setShowTestingMenu(false);
     }, 200);
   };
 
@@ -222,6 +223,7 @@ export default function Navigation({ children }: NavigationProps) {
     menuTimeoutRef.current = setTimeout(() => {
       setShowContactsMenu(false);
       setShowSettingsMenu(false);
+      setShowTestingMenu(false);
     }, 200);
   };
 
@@ -268,7 +270,7 @@ export default function Navigation({ children }: NavigationProps) {
                 icon={item.icon}
                 label={item.label}
                 href={item.href}
-                active={pathname.startsWith(item.href) && item.href !== '/'}
+                active={(pathname.startsWith(item.href) && item.href !== '/') || (item.href === '/testing' && pathname.startsWith('/testing')) || (item.href === '/settings' && pathname.startsWith('/settings'))}
                 onClick={() => handleNavClick(item.href, item.hasSubmenu)}
                 onMouseEnter={item.hasSubmenu ? () => handleMenuEnter(item.submenuType!) : undefined}
                 onMouseLeave={item.hasSubmenu ? handleMenuLeave : undefined}
@@ -412,6 +414,79 @@ export default function Navigation({ children }: NavigationProps) {
                     }
                     setShowContactsMenu(false);
                     setShowSettingsMenu(false);
+                    setShowTestingMenu(false);
+                    router.push(item.href);
+                  }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: rem(6),
+                      padding: `${rem(12)} ${rem(16)}`,
+                      borderRadius: rem(8),
+                      transition: 'background-color 0.2s ease',
+                      cursor: 'pointer',
+                      minWidth: rem(90),
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark 
+                        ? 'rgba(25, 113, 194, 0.1)' 
+                        : 'rgba(25, 113, 194, 0.1)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <div style={{ color: '#1971c2' }}>
+                      {item.icon}
+                    </div>
+                    <Text size="xs" ta="center" c="dimmed">
+                      {item.label}
+                    </Text>
+                  </UnstyledButton>
+                ))}
+              </Group>
+            </Paper>
+          </div>
+        )}
+
+        {/* Testing Submenu with Buffer Zone */}
+        {showTestingMenu && (
+          <div
+            onMouseEnter={handleSubmenuEnter}
+            onMouseLeave={handleSubmenuLeave}
+            style={{
+              position: 'absolute',
+              top: '60px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              padding: rem(30), // 30px buffer zone on all sides
+              marginTop: '0px',
+            }}
+          >
+            <Paper
+              shadow="lg"
+              p="md"
+              style={{
+                backgroundColor: isDark ? '#25262b' : '#ffffff',
+                borderTop: `3px solid #1971c2`,
+                minWidth: rem(700),
+                paddingTop: rem(16),
+              }}
+            >
+              <Group gap="xs" justify="center">
+                {testingSubItems.map((item) => (
+                <UnstyledButton
+                  key={item.href}
+                  onClick={() => {
+                    if (menuTimeoutRef.current) {
+                      clearTimeout(menuTimeoutRef.current);
+                    }
+                    setShowContactsMenu(false);
+                    setShowSettingsMenu(false);
+                    setShowTestingMenu(false);
                     router.push(item.href);
                   }}
                     style={{
