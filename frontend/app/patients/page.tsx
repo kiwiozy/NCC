@@ -406,9 +406,14 @@ export default function ContactsPage() {
         const response = await fetch('https://localhost:8000/api/clinics/');
         if (response.ok) {
           const data = await response.json();
+          // Handle paginated response or direct array
+          const clinicsList = Array.isArray(data) ? data : (data.results || []);
           // Extract clinic names from API response
-          const clinicNames = data.map((clinic: any) => clinic.name);
-          setClinics(clinicNames);
+          const clinicNames = clinicsList.map((clinic: any) => clinic.name);
+          if (clinicNames.length > 0) {
+            setClinics(clinicNames);
+          }
+          // Keep hardcoded defaults if API returns empty or error
         }
       } catch (error) {
         console.error('Failed to load clinics:', error);

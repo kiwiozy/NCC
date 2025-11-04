@@ -24,9 +24,17 @@ class PatientViewSet(viewsets.ModelViewSet):
         """Filter out archived patients by default"""
         queryset = Patient.objects.all()
         # Only show archived if explicitly requested
-        archived = self.request.query_params.get('archived', 'false').lower() == 'true'
+        # Handle both string and boolean values
+        archived_param = self.request.query_params.get('archived', 'false')
+        if isinstance(archived_param, str):
+            archived = archived_param.lower() == 'true'
+        else:
+            archived = bool(archived_param)
+        
         if not archived:
             queryset = queryset.filter(archived=False)
+        else:
+            queryset = queryset.filter(archived=True)
         return queryset.order_by('-created_at')
     
     def get_serializer_class(self):
