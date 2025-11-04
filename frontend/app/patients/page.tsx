@@ -308,6 +308,19 @@ export default function ContactsPage() {
   // Coordinator list dialog state
   const [coordinatorListDialogOpened, setCoordinatorListDialogOpened] = useState(false);
   
+  // Communication dialog state
+  const [communicationDialogOpened, setCommunicationDialogOpened] = useState(false);
+  const [communicationType, setCommunicationType] = useState<string>('');
+  const [communicationName, setCommunicationName] = useState<string>('');
+  const [communicationValue, setCommunicationValue] = useState<string>('');
+  const [addressFields, setAddressFields] = useState({
+    address1: '',
+    address2: '',
+    suburb: '',
+    postcode: '',
+    state: '',
+  });
+  
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
     if (!contact) return [];
@@ -1132,7 +1145,24 @@ export default function ContactsPage() {
                   <Box>
                     <Group justify="space-between" mb="xs" align="flex-end">
                       <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Communication</Text>
-                      <ActionIcon variant="subtle" color="blue">
+                      <ActionIcon 
+                        variant="subtle" 
+                        color="blue"
+                        onClick={() => {
+                          setCommunicationDialogOpened(true);
+                          setCommunicationType('');
+                          setCommunicationName('');
+                          setCommunicationValue('');
+                          setAddressFields({
+                            address1: '',
+                            address2: '',
+                            suburb: '',
+                            postcode: '',
+                            state: '',
+                          });
+                        }}
+                        title="Add communication"
+                      >
                         <IconPlus size={20} />
                       </ActionIcon>
                     </Group>
