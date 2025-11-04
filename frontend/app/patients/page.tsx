@@ -2041,6 +2041,7 @@ export default function ContactsPage() {
                         alert(`Failed to save address: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         return; // Don't close dialog on error
                       }
+                      // Address save successful - will close dialog below
                     } else {
                         // Handle phone, mobile, email
                         if (communicationValue) {
