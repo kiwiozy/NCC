@@ -8,6 +8,7 @@ import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash 
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
+import NotesDialog from '../components/dialogs/NotesDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
 import dayjs from 'dayjs';
 
@@ -379,6 +380,9 @@ export default function ContactsPage() {
   const [planEndDate, setPlanEndDate] = useState<Date | null>(null);
   const [planType, setPlanType] = useState<string>('');
   const [editingPlanDate, setEditingPlanDate] = useState<number | null>(null); // Index of plan date being edited
+  
+  // Notes dialog state
+  const [notesDialogOpened, setNotesDialogOpened] = useState(false);
   
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
@@ -943,6 +947,7 @@ export default function ContactsPage() {
         onSearch={handleSearch}
         onAddNew={handleAddNew}
         onArchive={handleArchive}
+        onNotesClick={() => setNotesDialogOpened(true)}
         onFilterApply={handleFilterApply}
         showFilters={true}
         filterOptions={{
@@ -2841,6 +2846,13 @@ export default function ContactsPage() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* Notes Dialog */}
+      <NotesDialog
+        opened={notesDialogOpened}
+        onClose={() => setNotesDialogOpened(false)}
+        patientId={selectedContact?.id}
+      />
     </Navigation>
   );
 }
