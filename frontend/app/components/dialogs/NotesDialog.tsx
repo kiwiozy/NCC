@@ -491,10 +491,11 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                   <Stack gap="md">
                     <Group justify="space-between" align="flex-start">
                       <Box style={{ flex: 1 }}>
+                        <Text size="sm" c="dimmed" mb={4}>NOTE TYPE</Text>
                         <Badge variant="light" size="lg" mb="sm">
                           {selectedNote.title}
                         </Badge>
-                        <Text size="xs" c="dimmed">
+                        <Text size="xs" c="dimmed" mt="xs">
                           Created: {formatDateTimeAU(selectedNote.created_at)}
                           {selectedNote.updated_at !== selectedNote.created_at && (
                             <> • Updated: {formatDateTimeAU(selectedNote.updated_at)}</>
@@ -532,9 +533,12 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                       </Group>
                     </Group>
                     <Divider />
-                    <Text style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                      {selectedNote.content}
-                    </Text>
+                    <Box>
+                      <Text size="sm" c="dimmed" mb={4}>CONTENT</Text>
+                      <Text style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {selectedNote.content}
+                      </Text>
+                    </Box>
                   </Stack>
                 </Box>
               )}
