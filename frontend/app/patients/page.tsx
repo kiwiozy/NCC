@@ -50,7 +50,7 @@ const transformPatientToContact = (patient: any): Contact => {
     
     // Check if it contains "/YYYY" at the end (malformed date from previous bug)
     // This must be checked BEFORE other formats to catch "11 Sep 1947/09/YYYY"
-    if (trimmed.includes('/YYYY')) {
+    if (trimmed.includes('/YYYY') || trimmed.match(/\/\d{1,2}\/YYYY$/)) {
       // Extract just the date part before "/YYYY" and any trailing numbers
       const cleanDate = trimmed.split('/YYYY')[0].trim();
       // Remove any trailing "/NN" pattern (like "/09")
@@ -63,10 +63,19 @@ const transformPatientToContact = (patient: any): Contact => {
     }
     
     // Check if it's in old format with spaces (e.g., "11 Sep 1947") and convert
+    // This pattern matches "11 Sep 1947" even if followed by "/09/YYYY"
     const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
     if (oldFormatMatch) {
       const [, day, month, year] = oldFormatMatch;
       // Convert old format to new format: "11 Sep 1947" -> "11/Sep/1947"
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Check if it looks like a partially formatted date with month name and numbers
+    // Pattern like "11 Sep 1947/09" - extract just the date part
+    const partialFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+    if (partialFormatMatch) {
+      const [, day, month, year] = partialFormatMatch;
       return `${day}/${month}/${year}`;
     }
     
