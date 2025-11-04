@@ -1540,7 +1540,7 @@ export default function ContactsPage() {
           });
         }}
         title={selectedContact ? `New Coms for ${selectedContact.name}` : 'New Communication'}
-        size="md"
+        size="lg"
       >
         <Stack gap="md">
           <Select
@@ -1663,9 +1663,10 @@ export default function ContactsPage() {
                 checked={isDefault}
                 onChange={(e) => setIsDefault(e.currentTarget.checked)}
                 description="Set as the default for this communication type"
+                style={{ flex: 1 }}
               />
             )}
-            <Group gap="xs" justify="flex-end" style={{ flex: communicationType && communicationType !== 'address' ? 0 : 1 }}>
+            <Group gap="xs" ml="auto">
               <Button
                 variant="subtle"
                 onClick={() => {
