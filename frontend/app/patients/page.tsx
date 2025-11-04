@@ -501,13 +501,22 @@ export default function ContactsPage() {
         filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
       />
       
-      <Grid gutter={0} style={{ height: 'calc(100vh - 240px)' }}>
+      <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex' }}>
         {/* Left Panel - Contact List */}
         <Grid.Col span={3} style={{ 
           borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
           height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
         }}>
-          <ScrollArea h="100%">
+          <ScrollArea 
+            style={{ 
+              flex: 1,
+              height: '100%',
+            }}
+            type="scroll"
+          >
             {loading ? (
               <Center h="100%">
                 <Loader />
@@ -769,7 +778,6 @@ export default function ContactsPage() {
                   <Text c="dimmed">Select a contact to view details</Text>
                 </Center>
               )}
-            </Container>
             </Container>
           </ScrollArea>
         </Grid.Col>
