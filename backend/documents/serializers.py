@@ -67,6 +67,7 @@ class DocumentUploadSerializer(serializers.Serializer):
     )
     content_type_id = serializers.IntegerField(required=False)
     object_id = serializers.UUIDField(required=False)
+    patient_id = serializers.UUIDField(required=False, help_text="Patient ID - automatically resolves ContentType")
     uploaded_by = serializers.CharField(required=False, allow_blank=True)
     document_date = serializers.DateField(required=False, allow_null=True)
 
