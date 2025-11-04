@@ -19,7 +19,7 @@ export const AUSTRALIA_TIMEZONE = 'Australia/Sydney';
  */
 export function formatDateAU(
   date: string | Date | DateTime | null | undefined,
-  format: string = 'DD/MM/YYYY h:mm:ss a'
+  format: string = 'dd/MM/yyyy h:mm:ss a'
 ): string {
   if (!date) return '';
 
@@ -69,7 +69,9 @@ export function formatDateOnlyAU(date: string | Date | DateTime | null | undefin
     console.error('formatDateOnlyAU called on already-formatted date:', date);
     return ''; // Return empty to prevent corruption
   }
-  return formatDateAU(date, 'DD/MM/YYYY');
+  // Use 'dd/MM/yyyy' format (lowercase d and M for day/month, lowercase y for year)
+  // DD means day of year, MM means month number, YYYY means week year - all wrong!
+  return formatDateAU(date, 'dd/MM/yyyy');
 }
 
 /**
