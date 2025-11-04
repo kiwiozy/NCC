@@ -208,6 +208,49 @@
 
 ---
 
+### ✅ **6. `reminders` Table**
+
+**Model:** `reminders.models.Reminder`  
+**Status:** ✅ Exists (Built)
+
+**Fields:**
+
+#### Primary & Relationships
+- `id` - UUID (primary key)
+- `patient` - **ForeignKey** → `patients.Patient` (CASCADE)
+  - Related name: `reminders`
+- `clinic` - **ForeignKey** → `clinicians.Clinic` (SET_NULL, nullable)
+  - Related name: `reminders`
+
+#### Reminder Details
+- `note` - TextField - Reminder note/description
+- `reminder_date` - DateField (optional) - Specific date for reminder
+- `status` - CharField(20) - Choices: pending, scheduled, completed, cancelled
+  - Default: 'pending'
+
+#### Appointment Link
+- `appointment_id` - UUIDField (nullable) - Link to appointment if converted
+- `scheduled_at` - DateTimeField (nullable) - When converted to appointment
+
+#### Audit Fields
+- `created_at` - DateTimeField (auto_now_add)
+- `updated_at` - DateTimeField (auto_now)
+- `created_by` - CharField(100) (nullable) - User who created reminder
+
+**Indexes:**
+- `['status']`
+- `['clinic', 'status']`
+- `['patient']`
+- `['reminder_date']`
+
+**Usage:**
+- Created from patient profile via ReminderDialog
+- Appears in calendar "waiting list" section (pending status)
+- Can be converted to appointment when scheduling
+- API endpoints: See `docs/architecture/dialogs/ReminderDialog.md`
+
+---
+
 ## 🔗 **Relationship Diagram**
 
 ```
@@ -240,43 +283,6 @@ documents
 ---
 
 ## 📝 **Pending/Planned Tables**
-
-### ✅ **reminders Table** (Built)
-- Needed for: Reminder dialog, Calendar waiting list, Patient scheduling
-- **Model:** `reminders.models.Reminder`
-- **Fields:**
-  - `id` - UUID (primary key)
-  - `patient_id` - ForeignKey → `patients.Patient` (CASCADE)
-  - `clinic_id` - ForeignKey → `clinicians.Clinic` (SET_NULL, nullable)
-  - `note` - TextField - Reminder note
-  - `reminder_date` - DateField (optional) - Specific date reminder
-  - `status` - CharField - Choices: pending, scheduled, completed, cancelled
-  - `appointment_id` - UUIDField (nullable) - Link to appointment if converted
-  - `created_at` - DateTimeField (auto_now_add)
-  - `updated_at` - DateTimeField (auto_now)
-  - `scheduled_at` - DateTimeField (nullable) - When converted to appointment
-  - `created_by` - CharField(100) (nullable) - User who created reminder
-- **Relationships:**
-  - `patient` → `patients.Patient` (One-to-Many)
-  - `clinic` → `clinicians.Clinic` (Many-to-One, nullable)
-- **Indexes:**
-  - `['status']`
-  - `['clinic', 'status']`
-  - `['patient']`
-  - `['reminder_date']`
-- **Usage:**
-  - Created from patient profile via ReminderDialog
-  - Appears in calendar "waiting list" section (pending status)
-  - Can be converted to appointment when scheduling
-- **Status:** ✅ Built - see `docs/architecture/dialogs/ReminderDialog.md`
-- **API Endpoints:**
-  - `GET /api/reminders/` - List all reminders
-  - `POST /api/reminders/` - Create reminder
-  - `GET /api/reminders/{id}/` - Get reminder details
-  - `PATCH /api/reminders/{id}/` - Update reminder
-  - `DELETE /api/reminders/{id}/` - Delete reminder
-  - `GET /api/reminders/pending/` - List pending reminders (waiting list)
-  - `PATCH /api/reminders/{id}/convert_to_appointment/` - Convert to appointment
 
 ### ❌ **Orders Table** (Not Yet Built)
 - Needed for: Orders pages, Patient Detail, Dashboard
@@ -319,6 +325,7 @@ documents
 - ✅ Added `plan_start_date`, `plan_end_date`
 - ✅ Added `notes` field
 - ✅ Added archive fields (`archived`, `archived_at`, `archived_by`)
+- ✅ Created `reminders` table with all fields and relationships
 
 ### Pending Migrations
 - ⚠️ **Multiple Coordinators:** Need to decide on JSONField vs separate table
@@ -330,7 +337,9 @@ documents
 ## 📚 **Related Documentation**
 
 - **Page Documentation:** `docs/architecture/pages/PatientsPage.md` - Patient page requirements
-- **Dialog Documentation:** `docs/architecture/dialogs/CommunicationDialog.md` - Communication data structure
+- **Dialog Documentation:** 
+  - `docs/architecture/dialogs/CommunicationDialog.md` - Communication data structure
+  - `docs/architecture/dialogs/ReminderDialog.md` - Reminder functionality
 - **Settings:** `docs/architecture/settings/SETTINGS_REQUIREMENTS.md` - Settings tables
 
 ---
