@@ -257,14 +257,28 @@ export default function ContactsPage() {
           const data = await response.json();
           // Handle paginated response
           const patients = data.results || data;
-          const transformed = patients.map(transformPatientToContact);
+          // Clear existing data first to prevent stale formatted dates
+          setAllContacts([]);
+          setContacts([]);
+          
+          // Transform fresh from API - always use ISO dates from API
+          const transformed = patients.map((patient: any) => {
+            // Ensure we're working with fresh ISO date from API (not cached formatted date)
+            const freshPatient = { ...patient };
+            // Ensure dob is ISO format (YYYY-MM-DD)
+            if (freshPatient.dob && !/^\d{4}-\d{2}-\d{2}/.test(freshPatient.dob)) {
+              // If not ISO format, log warning but continue
+              console.warn('Unexpected DOB format from API:', freshPatient.dob);
+            }
+            return transformPatientToContact(freshPatient);
+          });
           setAllContacts(transformed);
           
           // Apply client-side filtering
           applyFilters(transformed, searchQuery, activeFilters);
           
-          // Select first contact if none selected
-          if (transformed.length > 0 && !selectedContact) {
+          // Select first contact
+          if (transformed.length > 0) {
             setSelectedContact(transformed[0]);
           }
         } else {
