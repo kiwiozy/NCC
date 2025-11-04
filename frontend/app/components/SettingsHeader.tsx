@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Group, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Text, Box } from '@mantine/core';
-import { IconMenu2, IconSettings as IconSettingsIcon, IconCurrencyDollar } from '@tabler/icons-react';
+import { IconMenu2, IconSettings as IconSettingsIcon, IconCurrencyDollar, IconBuildingHospital } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SettingsHeaderProps {
@@ -23,6 +23,7 @@ export default function SettingsHeader({
   const menuItems = [
     { icon: <IconSettingsIcon size={20} />, label: 'General', value: 'general' },
     { icon: <IconCurrencyDollar size={20} />, label: 'Funding Sources', value: 'funding-sources' },
+    { icon: <IconBuildingHospital size={20} />, label: 'Clinics', value: 'clinics' },
   ];
 
   const activeMenuItem = menuItems.find(item => item.value === activeTab);

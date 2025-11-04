@@ -8,8 +8,9 @@ import SettingsHeader from '../components/SettingsHeader';
 
 // We'll import these as separate components
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
+import ClinicsSettings from '../components/settings/ClinicsSettings';
 
-type SettingsTab = 'general' | 'funding-sources';
+type SettingsTab = 'general' | 'funding-sources' | 'clinics';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -26,6 +27,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'funding-sources':
         return <FundingSourcesSettings />;
+      case 'clinics':
+        return <ClinicsSettings />;
       case 'general':
       default:
         return (

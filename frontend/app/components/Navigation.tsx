@@ -167,6 +167,7 @@ export default function Navigation({ children }: NavigationProps) {
   const settingsSubItems = [
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'General', href: '/settings?tab=general' },
     { icon: <IconPencil size={subIconSize} stroke={1.5} />, label: 'Funding Sources', href: '/settings?tab=funding-sources' },
+    { icon: <IconBuildingHospital size={subIconSize} stroke={1.5} />, label: 'Clinics', href: '/settings?tab=clinics' },
   ];
 
   const handleNavClick = (href: string, hasSubmenu?: boolean) => {
