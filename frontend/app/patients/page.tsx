@@ -36,9 +36,9 @@ interface Contact {
   };
   planDates?: string;
   communication?: {
-    phone?: string | { [key: string]: string };
-    mobile?: string | { [key: string]: string };
-    email?: string | { [key: string]: string };
+    phone?: string | { [key: string]: string | { value: string; default?: boolean } };
+    mobile?: string | { [key: string]: string | { value: string; default?: boolean } };
+    email?: string | { [key: string]: string | { value: string; default?: boolean } };
   };
   address_json?: {
     street?: string;
@@ -1262,8 +1262,8 @@ export default function ContactsPage() {
                                 );
                               } else {
                                 Object.entries(comms.email).forEach(([name, entry]) => {
-                                  const value = typeof entry === 'string' ? entry : entry.value;
-                                  const isDefault = typeof entry === 'object' && entry.default;
+                                  const value = typeof entry === 'string' ? entry : (entry && typeof entry === 'object' && 'value' in entry ? entry.value : '');
+                                  const isDefault = entry && typeof entry === 'object' && 'default' in entry ? entry.default : false;
                                   items.push(
                                     <Group key={`email-${name}`}>
                                       <Box style={{ minWidth: rem(100) }}>
