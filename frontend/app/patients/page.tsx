@@ -1581,6 +1581,15 @@ export default function ContactsPage() {
             required
           />
 
+          {communicationType && communicationType !== 'address' && (
+            <Switch
+              label="Default"
+              checked={isDefault}
+              onChange={(e) => setIsDefault(e.currentTarget.checked)}
+              description="Set as the default for this communication type"
+            />
+          )}
+
           {communicationType === 'phone' && (
             <TextInput
               label="PHONE"
