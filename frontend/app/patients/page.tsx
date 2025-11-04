@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash, IconX } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -1992,12 +1992,55 @@ export default function ContactsPage() {
           setCoordinatorSearchResults([]);
           setCoordinatorDate(null);
         }}
-        title="Add Coordinator"
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">Add Coordinator</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => {
+                setCoordinatorDialogOpened(false);
+                setCoordinatorSearchQuery('');
+                setCoordinatorSearchResults([]);
+                setCoordinatorDate(null);
+              }}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="md"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
+          {/* Patient Information (Read-only) */}
+          {selectedContact && (
+            <>
+              <Box>
+                <Text size="sm" c="dimmed" mb={4}>NAME</Text>
+                <Text size="md" fw={600}>{selectedContact.name || 'No patient selected'}</Text>
+                {selectedContact.healthNumber && (
+                  <>
+                    <Text size="sm" c="dimmed" mt="xs" mb={4}>HEALTH NUMBER</Text>
+                    <Text size="md">{selectedContact.healthNumber}</Text>
+                  </>
+                )}
+              </Box>
+              <Divider />
+            </>
+          )}
+
           <DatePickerInput
-            label="Assignment Date"
+            label="ASSIGNMENT DATE"
             placeholder="Select assignment date"
             value={coordinatorDate}
             onChange={setCoordinatorDate}
@@ -2006,6 +2049,7 @@ export default function ContactsPage() {
           />
           
           <TextInput
+            label="SEARCH COORDINATORS"
             placeholder="Search coordinators..."
             leftSection={<IconSearch size={16} />}
             value={coordinatorSearchQuery}
@@ -2090,8 +2134,29 @@ export default function ContactsPage() {
       <Modal
         opened={coordinatorListDialogOpened}
         onClose={() => setCoordinatorListDialogOpened(false)}
-        title="Coordinators"
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">Coordinators</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => setCoordinatorListDialogOpened(false)}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="md"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
           {(() => {
@@ -2147,8 +2212,35 @@ export default function ContactsPage() {
           setReminderNoteTemplate('');
           setReminderDate(null);
         }}
-        title={selectedContact ? `Add Reminder for ${selectedContact.name}` : 'Add Reminder'}
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">{selectedContact ? `Add Reminder for ${selectedContact.name}` : 'Add Reminder'}</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => {
+                setReminderDialogOpened(false);
+                setReminderClinic('');
+                setReminderNote('');
+                setReminderNoteTemplate('');
+                setReminderDate(null);
+              }}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="md"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
           {/* Patient Information (Read-only) */}
@@ -2222,7 +2314,7 @@ export default function ContactsPage() {
             clearable
           />
 
-          <Group justify="flex-end" mt="md">
+          <Group justify="space-between" mt="md">
             <Button
               variant="subtle"
               onClick={() => {
@@ -2294,10 +2386,54 @@ export default function ContactsPage() {
           setPlanType('');
           setEditingPlanDate(null);
         }}
-        title={editingPlanDate !== null ? "Edit Plan Dates" : "Add New Plan Dates"}
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">{editingPlanDate !== null ? "Edit Plan Dates" : "Add New Plan Dates"}</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => {
+                setPlanDatesDialogOpened(false);
+                setPlanStartDate(null);
+                setPlanEndDate(null);
+                setPlanType('');
+                setEditingPlanDate(null);
+              }}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="md"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
+          {/* Patient Information (Read-only) */}
+          {selectedContact && (
+            <>
+              <Box>
+                <Text size="sm" c="dimmed" mb={4}>NAME</Text>
+                <Text size="md" fw={600}>{selectedContact.name || 'No patient selected'}</Text>
+                {selectedContact.healthNumber && (
+                  <>
+                    <Text size="sm" c="dimmed" mt="xs" mb={4}>HEALTH NUMBER</Text>
+                    <Text size="md">{selectedContact.healthNumber}</Text>
+                  </>
+                )}
+              </Box>
+              <Divider />
+            </>
+          )}
+
           <DatePickerInput
             label="START DATE"
             placeholder="Select start date"
@@ -2328,7 +2464,7 @@ export default function ContactsPage() {
             clearable
           />
           
-          <Group justify="flex-end" mt="md">
+          <Group justify="space-between" mt="md">
             <Button
               variant="subtle"
               onClick={() => {
@@ -2412,8 +2548,29 @@ export default function ContactsPage() {
       <Modal
         opened={planDatesListDialogOpened}
         onClose={() => setPlanDatesListDialogOpened(false)}
-        title="Plan Dates"
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">Plan Dates</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => setPlanDatesListDialogOpened(false)}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="md"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
           {(() => {
@@ -2480,13 +2637,64 @@ export default function ContactsPage() {
             state: '',
           });
         }}
-        title={selectedContact ? `New Coms for ${selectedContact.name}` : 'New Communication'}
+        title={
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Text fw={600} size="lg">{selectedContact ? `New Coms for ${selectedContact.name}` : 'New Communication'}</Text>
+            <ActionIcon
+              variant="subtle"
+              onClick={() => {
+                setCommunicationDialogOpened(false);
+                setCommunicationType('');
+                setCommunicationName('');
+                setCommunicationValue('');
+                setIsDefault(false);
+                setAddressFields({
+                  address1: '',
+                  address2: '',
+                  suburb: '',
+                  postcode: '',
+                  state: '',
+                });
+              }}
+              size="lg"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+        }
         size="lg"
+        styles={{
+          header: {
+            backgroundColor: '#228BE6',
+            color: 'white',
+            padding: `${rem(16)} ${rem(24)}`,
+          },
+          title: {
+            color: 'white',
+          },
+        }}
       >
         <Stack gap="md">
+          {/* Patient Information (Read-only) */}
+          {selectedContact && (
+            <>
+              <Box>
+                <Text size="sm" c="dimmed" mb={4}>NAME</Text>
+                <Text size="md" fw={600}>{selectedContact.name || 'No patient selected'}</Text>
+                {selectedContact.healthNumber && (
+                  <>
+                    <Text size="sm" c="dimmed" mt="xs" mb={4}>HEALTH NUMBER</Text>
+                    <Text size="md">{selectedContact.healthNumber}</Text>
+                  </>
+                )}
+              </Box>
+              <Divider />
+            </>
+          )}
+
           <Select
             label="TYPE"
-            placeholder="Title"
+            placeholder="Select type"
             data={[
               { value: 'phone', label: 'Phone' },
               { value: 'mobile', label: 'Mobile' },
@@ -2510,7 +2718,7 @@ export default function ContactsPage() {
 
           <Select
             label="NAME"
-            placeholder="Title"
+            placeholder="Select name"
             data={[
               { value: 'home', label: 'Home' },
               { value: 'work', label: 'Work' },
