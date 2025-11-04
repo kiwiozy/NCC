@@ -7,6 +7,7 @@ import { IconPlus, IconCalendar } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
+import { formatDateOnlyAU } from '../utils/dateFormatting';
 
 type ContactType = 'patients' | 'referrers' | 'coordinator' | 'ndis-lac' | 'contacts' | 'companies' | 'clinics';
 
@@ -36,21 +37,25 @@ interface Contact {
 
 // Transform API patient data to Contact interface
 const transformPatientToContact = (patient: any): Contact => {
-  // Format date as DD MMM YYYY
+  // Format date as DD MMM YYYY (using existing date utility)
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    try {
+      // Parse the date and format as DD MMM YYYY
+      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY
+      const [day, month, year] = formatted.split('/');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = parseInt(month) - 1;
+      return `${day} ${months[monthIndex]} ${year}`;
+    } catch {
+      return '';
+    }
   };
 
-  // Format date as DD/MM/YYYY
+  // Format date as DD/MM/YYYY (using existing utility)
   const formatDateShort = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${day}/${month}/${date.getFullYear()}`;
+    return formatDateOnlyAU(dateStr);
   };
 
   // Format date range
@@ -247,13 +252,26 @@ export default function ContactsPage() {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    applyFilters(allContacts, value, activeFilters);
+    // Apply filters immediately to existing data
+    if (allContacts.length > 0) {
+      applyFilters(allContacts, value, activeFilters);
+    }
   };
 
   const handleFilterApply = (filters: Record<string, string>) => {
     setActiveFilters(filters);
-    applyFilters(allContacts, searchQuery, filters);
+    // Apply filters immediately to existing data
+    if (allContacts.length > 0) {
+      applyFilters(allContacts, searchQuery, filters);
+    }
   };
+
+  // Re-apply filters when allContacts changes
+  useEffect(() => {
+    if (allContacts.length > 0) {
+      applyFilters(allContacts, searchQuery, activeFilters);
+    }
+  }, [allContacts]);
 
   const handleAddNew = () => {
     console.log('Add new', activeType);
