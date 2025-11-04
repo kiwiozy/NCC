@@ -178,9 +178,18 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Plan Dates** - Date range string (e.g., "17 Jul 2024 - 27 Jul 2024") ❌ **NOT IN CURRENT MODEL**
 
 #### **Communication**
-- **Phone** - Text (from `contact_json`) ✅ Exists in model
-- **Email** - Text (from `contact_json`) ✅ Exists in model
-- Structure: `contact_json.phone` and `contact_json.email`
+- **Phone** - Object with multiple entries (from `contact_json`) ✅ Exists in model
+  - Structure: `contact_json.phone.{name}: { value: string, default?: boolean }`
+  - Example: `{ home: { value: "0412345678", default: true }, work: { value: "0298765432", default: false } }`
+- **Mobile** - Object with multiple entries (from `contact_json`) ✅ Exists in model
+  - Structure: `contact_json.mobile.{name}: { value: string, default?: boolean }`
+- **Email** - Object with multiple entries (from `contact_json`) ✅ Exists in model
+  - Structure: `contact_json.email.{name}: { value: string, default?: boolean }`
+- **Address** - Object (from `address_json`) ✅ Exists in model
+  - Structure: `address_json: { street, street2, suburb, postcode, state, type, default?: boolean }`
+- **Default Communication**: One entry per type (phone/mobile/email/address) can be marked as default
+- **Visual Indicator**: Default entries display Type and Name in blue color
+- **Edit/Delete**: Hover over communication entries to show edit and delete buttons
 
 #### **Notes**
 - **Note** - Text (general notes) ⚠️ **Could use `flags_json` or separate field**
