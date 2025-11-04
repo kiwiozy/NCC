@@ -285,6 +285,9 @@ export default function ContactsPage() {
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [archiveConfirmOpened, setArchiveConfirmOpened] = useState(false);
+  const [archiveErrorOpened, setArchiveErrorOpened] = useState(false);
+  const [archiveErrorMessage, setArchiveErrorMessage] = useState('');
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   

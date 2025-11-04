@@ -45,6 +45,8 @@ export default function FundingSourcesSettings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);

@@ -497,8 +497,39 @@ export default function NotesTest() {
             </>
           )}
         </Stack>
-      </Modal>
-    </Container>
-  );
-}
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          opened={deleteConfirmOpened}
+          onClose={() => {
+            setDeleteConfirmOpened(false);
+            setNoteToDelete(null);
+          }}
+          title="Delete Note"
+          centered
+        >
+          <Stack gap="md">
+            <Text>
+              Are you sure you want to delete this note?
+            </Text>
+            <Text size="sm" c="dimmed">
+              This action cannot be undone.
+            </Text>
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => {
+                setDeleteConfirmOpened(false);
+                setNoteToDelete(null);
+              }}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={confirmDeleteNote}>
+                Delete
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+      </Container>
+    );
+  }
 
