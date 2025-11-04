@@ -863,7 +863,9 @@ export default function ContactsPage() {
                             onChange={(date) => {
                               if (selectedContact) {
                                 const dateStr = date ? dayjs(date).format('YYYY-MM-DD') : '';
-                                setSelectedContact({ ...selectedContact, dob: dateStr });
+                                // Calculate age from DOB
+                                const calculatedAge = date ? dayjs().diff(dayjs(date), 'year') : 0;
+                                setSelectedContact({ ...selectedContact, dob: dateStr, age: calculatedAge });
                               }
                             }}
                             maxDate={new Date()}
@@ -876,7 +878,11 @@ export default function ContactsPage() {
                               } 
                             }}
                           />
-                          <Text size="lg" fw={700} mt="md">Age: {selectedContact.age || 0}</Text>
+                          <Text size="lg" fw={700} mt="md">
+                            Age: {selectedContact.dob 
+                              ? dayjs().diff(dayjs(selectedContact.dob), 'year') 
+                              : (selectedContact.age || 0)}
+                          </Text>
                         </Box>
                       </Stack>
                     </Grid.Col>
