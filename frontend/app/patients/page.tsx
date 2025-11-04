@@ -202,10 +202,16 @@ export default function ContactsPage() {
       }
     };
 
-    loadPatients();
-  }, [activeType, searchQuery, activeFilters]); // Reload when type, search, or filters change
+    // Only load if we're on the client side
+    if (typeof window !== 'undefined') {
+      loadPatients();
+    }
+  }, [activeType]); // Only reload when type changes, not on every search/filter change
 
   useEffect(() => {
+    // Only load on client side
+    if (typeof window === 'undefined') return;
+
     // Load clinics from API
     const loadClinics = async () => {
       try {
