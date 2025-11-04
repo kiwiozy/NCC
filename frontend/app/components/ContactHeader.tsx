@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch } from '@mantine/core';
+import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
@@ -307,24 +307,44 @@ export default function ContactHeader({
             <Popover.Dropdown p={0}>
               <Stack gap={0}>
                 {menuItems.map((item, index) => (
-                  <Button
+                  <Box
                     key={index}
-                    variant="subtle"
-                    color="blue"
-                    leftSection={item.icon}
+                    component="button"
                     onClick={() => {
                       item.onClick();
                       setMenuOpened(false);
                     }}
                     style={{
-                      justifyContent: 'flex-start',
-                      height: rem(42),
-                      borderRadius: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      width: '100%',
+                      padding: `${rem(12)} ${rem(16)}`,
+                      backgroundColor: 'transparent',
+                      border: 'none',
                       borderBottom: index < menuItems.length - 1 ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : 'none',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
-                    {item.label}
-                  </Button>
+                    <Grid style={{ width: '100%', margin: 0 }}>
+                      <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box style={{ color: isDark ? '#5C7CFA' : '#228BE6' }}>
+                          {item.icon}
+                        </Box>
+                      </Grid.Col>
+                      <Grid.Col span={10} style={{ display: 'flex', alignItems: 'center', paddingLeft: rem(12) }}>
+                        <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
+                          {item.label}
+                        </Text>
+                      </Grid.Col>
+                    </Grid>
+                  </Box>
                 ))}
             </Stack>
           </Popover.Dropdown>
