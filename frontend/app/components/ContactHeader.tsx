@@ -110,6 +110,7 @@ export default function ContactHeader({
       <Group
         justify="space-between"
         wrap="nowrap"
+        align="center"
         style={{
           backgroundColor: isDark ? '#25262b' : '#ffffff',
           padding: `${rem(16)} ${rem(24)}`,
@@ -118,7 +119,7 @@ export default function ContactHeader({
         }}
       >
       {/* Left: Search Field with Filter Button */}
-      <Group gap="md" wrap="nowrap" align="flex-end">
+      <Group gap="md" wrap="nowrap" align="center">
         {showFilters && (
           <Popover
             opened={filterOpened}
@@ -266,19 +267,20 @@ export default function ContactHeader({
       <Group
         justify="space-between"
         wrap="nowrap"
+        align="center"
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
           padding: `${rem(12)} ${rem(24)}`,
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
         }}
       >
-        {/* Left: Count Display - Stacked and left-aligned */}
-        <Stack gap={4} align="flex-start" style={{ flex: '0 0 auto' }}>
-          <Text size="md" c="blue" fw={600} style={{ textAlign: 'left' }}>
+        {/* Left: Count Display - Stacked and centered */}
+        <Stack gap={4} align="center" style={{ flex: '0 0 auto' }}>
+          <Text size="md" c="blue" fw={600} style={{ textAlign: 'center' }}>
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <Text size="xs" c="dimmed" style={{ textAlign: 'left' }}>
+            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
               {achievedCount} records achieved
             </Text>
           )}
