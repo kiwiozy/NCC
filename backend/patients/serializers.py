@@ -19,7 +19,7 @@ class PatientSerializer(serializers.ModelSerializer):
             'id', 'mrn', 'first_name', 'last_name', 'middle_names',
             'dob', 'sex', 'title', 'health_number', 'funding_type', 'clinic',
             'coordinator_name', 'coordinator_date', 'plan_start_date', 'plan_end_date',
-            'notes', 'contact_json', 'address_json', 'emergency_json',
+            'plan_dates_json', 'notes', 'contact_json', 'address_json', 'emergency_json',
             'flags_json', 'archived', 'archived_at', 'archived_by',
             'created_at', 'updated_at',
             'age', 'full_name', 'mobile', 'email'  # computed fields

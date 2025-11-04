@@ -128,17 +128,25 @@ class Patient(models.Model):
         help_text="Date when coordinator was assigned"
     )
     
-    # NDIS Plan Dates
+    # NDIS Plan Dates (legacy - single plan date)
     plan_start_date = models.DateField(
         null=True,
         blank=True,
-        help_text="NDIS plan start date"
+        help_text="NDIS plan start date (legacy - use plan_dates_json for multiple dates)"
     )
     
     plan_end_date = models.DateField(
         null=True,
         blank=True,
-        help_text="NDIS plan end date"
+        help_text="NDIS plan end date (legacy - use plan_dates_json for multiple dates)"
+    )
+    
+    # Multiple NDIS Plan Dates (new format)
+    plan_dates_json = models.JSONField(
+        null=True,
+        blank=True,
+        default=list,
+        help_text="Array of plan dates: [{\"start_date\": \"YYYY-MM-DD\", \"end_date\": \"YYYY-MM-DD\", \"type\": \"1 Year Plan\"}, ...]"
     )
     
     # General Notes

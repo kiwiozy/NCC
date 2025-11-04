@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash, IconChecklist } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -34,7 +34,12 @@ interface Contact {
     name: string;
     date: string;
   };
-  planDates?: string;
+  planDates?: string; // Legacy single plan date (for backwards compatibility)
+  planDatesArray?: Array<{
+    start_date: string;
+    end_date: string;
+    type: string;
+  }>;
   communication?: {
     phone?: string | { [key: string]: string | { value: string; default?: boolean } };
     mobile?: string | { [key: string]: string | { value: string; default?: boolean } };
@@ -302,7 +307,8 @@ const transformPatientToContact = (patient: any): Contact => {
       name: patient.coordinator_name,
       date: formatDateShort(patient.coordinator_date),
     } : undefined,
-    planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date),
+    planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date), // Legacy
+    planDatesArray: patient.plan_dates_json ? (Array.isArray(patient.plan_dates_json) ? patient.plan_dates_json : []) : undefined,
     communication: communication,
     address_json: patient.address_json ? {
       street: patient.address_json.street,
@@ -366,6 +372,13 @@ export default function ContactsPage() {
   const [reminderDate, setReminderDate] = useState<Date | null>(null);
   const [reminderClinics, setReminderClinics] = useState<Array<{value: string; label: string}>>([]);
   
+  // Plan dates dialog state
+  const [planDatesDialogOpened, setPlanDatesDialogOpened] = useState(false);
+  const [planDatesListDialogOpened, setPlanDatesListDialogOpened] = useState(false);
+  const [planStartDate, setPlanStartDate] = useState<Date | null>(null);
+  const [planEndDate, setPlanEndDate] = useState<Date | null>(null);
+  const [planType, setPlanType] = useState<string>('');
+  
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
     if (!contact) return [];
@@ -388,6 +401,44 @@ export default function ContactsPage() {
       const dateB = new Date(b.date);
       return dateB.getTime() - dateA.getTime();
     })[0];
+  };
+  
+  // Helper to get plan dates array (handles both old single plan date and new array)
+  const getPlanDates = (contact: Contact | null): Array<{start_date: string; end_date: string; type: string}> => {
+    if (!contact) return [];
+    // New format: array of plan dates
+    if (contact.planDatesArray && contact.planDatesArray.length > 0) {
+      return contact.planDatesArray;
+    }
+    // Legacy format: single plan date string (parse if needed)
+    if (contact.planDates) {
+      // Try to parse "DD MMM YYYY - DD MMM YYYY" format
+      const parts = contact.planDates.split(' - ');
+      if (parts.length === 2) {
+        // For now, just return empty array - we'll need to parse dates properly
+        // Or better: migrate legacy data to array format
+        return [];
+      }
+    }
+    return [];
+  };
+  
+  // Get current plan date (most recent one)
+  const getCurrentPlanDate = (contact: Contact | null) => {
+    const planDates = getPlanDates(contact);
+    if (planDates.length === 0) return null;
+    // Sort by start_date descending and return most recent
+    return planDates.sort((a, b) => {
+      const dateA = new Date(a.start_date);
+      const dateB = new Date(b.start_date);
+      return dateB.getTime() - dateA.getTime();
+    })[0];
+  };
+  
+  // Check if funding is NDIS
+  const isNDISFunding = (contact: Contact | null): boolean => {
+    if (!contact) return false;
+    return contact.funding?.toLowerCase() === 'ndis';
   };
   
   // Load clinics and funding sources from API for filter dropdown
@@ -1205,24 +1256,82 @@ export default function ContactsPage() {
                           </Group>
                         </Box>
 
-                        <Box style={{ width: '100%' }}>
-                          <Group justify="space-between" mb="xs" align="flex-start">
-                            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Current Plan Dates</Text>
-                            <Group gap="xs">
-                              <ActionIcon variant="subtle" color="blue" size="sm">
-                                <IconPlus size={16} />
-                              </ActionIcon>
-                              <ActionIcon variant="subtle" color="blue" size="sm">
-                                <IconPlus size={16} />
-                              </ActionIcon>
+                        {/* Plan Dates Section - Only show if funding is NDIS */}
+                        {isNDISFunding(selectedContact) && (
+                          <Box style={{ width: '100%' }}>
+                            <Group justify="space-between" mb="xs" align="flex-start">
+                              <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Current Plan Dates</Text>
+                              <Group gap="xs">
+                                {(() => {
+                                  const planDates = getPlanDates(selectedContact);
+                                  const hasMultipleDates = planDates.length >= 2;
+                                  
+                                  if (hasMultipleDates) {
+                                    return (
+                                      <>
+                                        <ActionIcon 
+                                          variant="subtle" 
+                                          color="blue"
+                                          onClick={() => setPlanDatesListDialogOpened(true)}
+                                          title="View all plan dates"
+                                        >
+                                          <IconChecklist size={20} />
+                                        </ActionIcon>
+                                        <ActionIcon 
+                                          variant="subtle" 
+                                          color="blue"
+                                          onClick={() => {
+                                            setPlanStartDate(null);
+                                            setPlanEndDate(null);
+                                            setPlanType('');
+                                            setPlanDatesDialogOpened(true);
+                                          }}
+                                          title="Add new plan dates"
+                                        >
+                                          <IconPlus size={20} />
+                                        </ActionIcon>
+                                      </>
+                                    );
+                                  } else {
+                                    return (
+                                      <ActionIcon 
+                                        variant="subtle" 
+                                        color="blue"
+                                        onClick={() => {
+                                          setPlanStartDate(null);
+                                          setPlanEndDate(null);
+                                          setPlanType('');
+                                          setPlanDatesDialogOpened(true);
+                                        }}
+                                        title="Add new plan dates"
+                                      >
+                                        <IconPlus size={20} />
+                                      </ActionIcon>
+                                    );
+                                  }
+                                })()}
+                              </Group>
                             </Group>
-                          </Group>
-                          {selectedContact.planDates ? (
-                            <Text size="md" fw={700}>{selectedContact.planDates}</Text>
-                          ) : (
-                            <Text size="sm" c="dimmed" fs="italic">No plan dates set</Text>
-                          )}
-                        </Box>
+                            {(() => {
+                              const currentPlanDate = getCurrentPlanDate(selectedContact);
+                              if (currentPlanDate) {
+                                const startDate = formatDateOnlyAU(currentPlanDate.start_date);
+                                const endDate = formatDateOnlyAU(currentPlanDate.end_date);
+                                return (
+                                  <Text size="md" fw={700}>
+                                    {startDate} - {endDate}
+                                    {currentPlanDate.type && ` (${currentPlanDate.type})`}
+                                  </Text>
+                                );
+                              } else if (selectedContact.planDates) {
+                                // Legacy: show old format
+                                return <Text size="md" fw={700}>{selectedContact.planDates}</Text>;
+                              } else {
+                                return <Text size="sm" c="dimmed" fs="italic">No plan dates set</Text>;
+                              }
+                            })()}
+                          </Box>
+                        )}
                       </Stack>
                     </Grid.Col>
                   </Grid>
@@ -2083,6 +2192,176 @@ export default function ContactsPage() {
               Save
             </Button>
           </Group>
+        </Stack>
+      </Modal>
+
+      {/* Plan Dates Dialog */}
+      <Modal
+        opened={planDatesDialogOpened}
+        onClose={() => {
+          setPlanDatesDialogOpened(false);
+          setPlanStartDate(null);
+          setPlanEndDate(null);
+          setPlanType('');
+        }}
+        title="Add New Plan Dates"
+        size="md"
+      >
+        <Stack gap="md">
+          <DatePickerInput
+            label="START DATE"
+            placeholder="Select start date"
+            value={planStartDate}
+            onChange={setPlanStartDate}
+            required
+          />
+          
+          <DatePickerInput
+            label="END DATE"
+            placeholder="Select end date"
+            value={planEndDate}
+            onChange={setPlanEndDate}
+            required
+          />
+          
+          <Select
+            label="TYPE"
+            placeholder="Select plan type"
+            data={[
+              { value: '1 Year Plan', label: '1 Year Plan' },
+              { value: '2 Year Plan', label: '2 Year Plan' },
+              { value: 'Under Review', label: 'Under Review' },
+              { value: 'Short Plan', label: 'Short Plan' },
+            ]}
+            value={planType}
+            onChange={(value) => setPlanType(value || '')}
+            clearable
+          />
+          
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setPlanDatesDialogOpened(false);
+                setPlanStartDate(null);
+                setPlanEndDate(null);
+                setPlanType('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (selectedContact && planStartDate && planEndDate) {
+                  try {
+                    // Get current plan dates array
+                    const currentPlanDates = getPlanDates(selectedContact);
+                    
+                    // Add new plan date
+                    const newPlanDate = {
+                      start_date: planStartDate.toISOString().split('T')[0],
+                      end_date: planEndDate.toISOString().split('T')[0],
+                      type: planType || '',
+                    };
+                    
+                    const updatedPlanDates = [...currentPlanDates, newPlanDate];
+                    
+                    // Update patient with new plan_dates_json
+                    const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        plan_dates_json: updatedPlanDates,
+                      }),
+                    });
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({ detail: 'Failed to save plan dates' }));
+                      throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    }
+                    
+                    // Reload patient data
+                    const reloadResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
+                    if (reloadResponse.ok) {
+                      const updatedPatient = await reloadResponse.json();
+                      const transformed = transformPatientToContact(updatedPatient);
+                      setSelectedContact(transformed);
+                      // Update in allContacts list
+                      setAllContacts(prev => prev.map(c => c.id === transformed.id ? transformed : c));
+                    }
+                    
+                    setPlanDatesDialogOpened(false);
+                    setPlanStartDate(null);
+                    setPlanEndDate(null);
+                    setPlanType('');
+                  } catch (error) {
+                    console.error('Error saving plan dates:', error);
+                    alert(`Failed to save plan dates: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                } else {
+                  alert('Please fill in start date and end date');
+                }
+              }}
+              disabled={!planStartDate || !planEndDate}
+            >
+              Save
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Plan Dates List Dialog */}
+      <Modal
+        opened={planDatesListDialogOpened}
+        onClose={() => setPlanDatesListDialogOpened(false)}
+        title="Plan Dates"
+        size="md"
+      >
+        <Stack gap="md">
+          {(() => {
+            const planDates = getPlanDates(selectedContact);
+            if (planDates.length === 0) {
+              return (
+                <Center py="xl">
+                  <Text c="dimmed">No plan dates found</Text>
+                </Center>
+              );
+            }
+            
+            // Sort by start_date descending (most recent first)
+            const sortedPlanDates = [...planDates].sort((a, b) => {
+              const dateA = new Date(a.start_date);
+              const dateB = new Date(b.start_date);
+              return dateB.getTime() - dateA.getTime();
+            });
+            
+            return (
+              <ScrollArea h={400}>
+                <Stack gap="xs">
+                  {sortedPlanDates.map((planDate, index) => (
+                    <Box
+                      key={index}
+                      style={{
+                        padding: rem(12),
+                        borderRadius: rem(4),
+                        backgroundColor: isDark ? '#25262b' : '#f8f9fa',
+                        border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                      }}
+                    >
+                      <Stack gap={4}>
+                        <Text size="sm" fw={600}>
+                          {formatDateOnlyAU(planDate.start_date)} - {formatDateOnlyAU(planDate.end_date)}
+                        </Text>
+                        {planDate.type && (
+                          <Text size="xs" c="blue">{planDate.type}</Text>
+                        )}
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            );
+          })()}
         </Stack>
       </Modal>
 
