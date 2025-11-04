@@ -1033,7 +1033,7 @@ export default function ContactsPage() {
                             
                             if (currentCoordinator) {
                               return (
-                                <Group gap="xs" align="flex-start">
+                                <Group gap="xs" align="flex-end">
                                   <Box style={{ flex: 1 }}>
                                     <Text size="md" fw={700}>{currentCoordinator.name}</Text>
                                     <Text size="xs" c="blue">{currentCoordinator.date}</Text>
