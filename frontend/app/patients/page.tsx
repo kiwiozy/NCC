@@ -1206,14 +1206,6 @@ export default function ContactsPage() {
                                       key={`phone-${name}`}
                                       justify="space-between"
                                       style={{ position: 'relative' }}
-                                      onMouseEnter={(e) => {
-                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
-                                        if (buttons) buttons.style.display = 'flex';
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
-                                        if (buttons) buttons.style.display = 'none';
-                                      }}
                                     >
                                       <Group style={{ flex: 1 }}>
                                         <Box style={{ minWidth: rem(100) }}>
@@ -1222,7 +1214,7 @@ export default function ContactsPage() {
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
                                       </Group>
-                                      <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                      <Group gap="xs" className="comm-actions">
                                         <ActionIcon
                                           variant="subtle"
                                           color="blue"
@@ -2011,12 +2003,22 @@ export default function ContactsPage() {
                         address_json: addressData,
                       });
                       
-                      // TODO: Save to backend API
-                      // await fetch(`/api/patients/${selectedContact.id}/`, {
-                      //   method: 'PATCH',
-                      //   headers: { 'Content-Type': 'application/json' },
-                      //   body: JSON.stringify({ address_json: addressData }),
-                      // });
+                      // Save to backend API
+                      try {
+                        const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
+                          method: 'PATCH',
+                          headers: { 
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ address_json: addressData }),
+                        });
+                        if (!response.ok) {
+                          throw new Error('Failed to save address');
+                        }
+                      } catch (error) {
+                        console.error('Error saving address:', error);
+                        // TODO: Show error message to user
+                      }
                     } else {
                         // Handle phone, mobile, email
                         if (communicationValue) {
@@ -2072,12 +2074,22 @@ export default function ContactsPage() {
                           communication: updatedCommunication,
                         });
                         
-                        // TODO: Save to backend API
-                        // await fetch(`/api/patients/${selectedContact.id}/`, {
-                        //   method: 'PATCH',
-                        //   headers: { 'Content-Type': 'application/json' },
-                        //   body: JSON.stringify({ contact_json: updatedCommunication }),
-                        // });
+                        // Save to backend API
+                        try {
+                          const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
+                            method: 'PATCH',
+                            headers: { 
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ contact_json: updatedCommunication }),
+                          });
+                          if (!response.ok) {
+                            throw new Error('Failed to save communication');
+                          }
+                        } catch (error) {
+                          console.error('Error saving communication:', error);
+                          // TODO: Show error message to user
+                        }
                       }
                     }
                     
