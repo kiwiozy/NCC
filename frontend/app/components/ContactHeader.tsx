@@ -114,6 +114,8 @@ export default function ContactHeader({
             position="bottom-start"
             shadow="md"
             width={350}
+            closeOnClickOutside={true}
+            closeOnEscape={true}
           >
             <Popover.Target>
               <ActionIcon
@@ -172,6 +174,7 @@ export default function ContactHeader({
                       <Switch
                         checked={Boolean(filters.archived)}
                         onChange={(event) => {
+                          event.stopPropagation(); // Prevent event bubbling
                           const newArchived = event.currentTarget.checked;
                           console.log('Toggle changed:', newArchived, 'Current filters:', filters);
                           setFilters(prev => {
@@ -179,6 +182,9 @@ export default function ContactHeader({
                             console.log('Updated filters:', updated);
                             return updated;
                           });
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation(); // Prevent click from closing popover
                         }}
                         size="md"
                       />
