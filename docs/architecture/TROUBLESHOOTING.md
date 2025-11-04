@@ -2,6 +2,8 @@
 
 **Common issues and solutions for WalkEasy Nexus development**
 
+> ⚠️ **IMPORTANT:** If this troubleshooting guide is updated, you **MUST** also update the "Troubleshooting Reference" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
+
 ---
 
 ## 🚨 **Patients Not Loading**
