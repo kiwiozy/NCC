@@ -1158,105 +1158,6 @@ export default function ContactsPage() {
                           />
                         </Box>
 
-                      </Stack>
-                    </Grid.Col>
-
-                    {/* Right Column */}
-                    <Grid.Col span={4}>
-                      <Stack gap="md" align="flex-start">
-                        <Box style={{ width: '100%' }}>
-                          <Group gap="xs" align="flex-end" mb="xs">
-                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Coordinator</Text>
-                            {(() => {
-                              const currentCoordinator = getCurrentCoordinator(selectedContact);
-                              const coordinators = getCoordinators(selectedContact);
-                              const hasMultipleCoordinators = coordinators.length >= 2;
-                              
-                              if (currentCoordinator) {
-                                return (
-                                  <>
-                                    {hasMultipleCoordinators && (
-                                      <ActionIcon 
-                                        variant="subtle" 
-                                        color="blue"
-                                        onClick={() => setCoordinatorListDialogOpened(true)}
-                                        title="View all coordinators"
-                                      >
-                                        <IconListCheck size={20} />
-                                      </ActionIcon>
-                                    )}
-                                    <ActionIcon 
-                                      variant="subtle" 
-                                      color="blue"
-                                      onClick={() => {
-                                        setCoordinatorDate(new Date());
-                                        setCoordinatorDialogOpened(true);
-                                      }}
-                                      title="Add coordinator"
-                                    >
-                                <IconPlus size={20} />
-                              </ActionIcon>
-                                  </>
-                                );
-                              } else {
-                                return (
-                                  <ActionIcon 
-                                    variant="subtle" 
-                                    color="blue"
-                                    onClick={() => {
-                                      setCoordinatorDate(new Date());
-                                      setCoordinatorDialogOpened(true);
-                                    }}
-                                    title="Add coordinator"
-                                  >
-                                    <IconPlus size={20} />
-                                  </ActionIcon>
-                                );
-                              }
-                            })()}
-                            </Group>
-                          {(() => {
-                            const currentCoordinator = getCurrentCoordinator(selectedContact);
-                            if (currentCoordinator) {
-                              return (
-                                <Box>
-                                  <Text size="md" fw={700}>{currentCoordinator.name}</Text>
-                                  <Text size="xs" c="blue">{currentCoordinator.date}</Text>
-                                </Box>
-                              );
-                            } else {
-                              return (
-                              <TextInput
-                                placeholder="Select coordinator"
-                                  readOnly
-                                  styles={{ input: { height: 'auto', minHeight: rem(36) } }}
-                                  value=""
-                                />
-                              );
-                            }
-                          })()}
-                        </Box>
-
-                        <Box style={{ width: '100%' }}>
-                          <Group gap="xs" align="flex-end" mb="xs">
-                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Reminder</Text>
-                            <ActionIcon 
-                              variant="subtle" 
-                              color="blue"
-                              onClick={() => {
-                                setReminderDialogOpened(true);
-                                setReminderClinic('');
-                                setReminderNote('');
-                                setReminderNoteTemplate('');
-                                setReminderDate(null);
-                              }}
-                              title="Add reminder"
-                            >
-                              <IconPlus size={20} />
-                            </ActionIcon>
-                          </Group>
-                        </Box>
-
                         {/* Plan Dates Section - Only show if funding is NDIS */}
                         {isNDISFunding(selectedContact) && (
                           <Box style={{ width: '100%' }}>
@@ -1300,6 +1201,7 @@ export default function ContactsPage() {
                                         variant="subtle" 
                                         color="blue"
                                         onClick={() => {
+                                          setEditingPlanDate(null);
                                           setPlanStartDate(null);
                                           setPlanEndDate(null);
                                           setPlanType('');
@@ -1415,6 +1317,105 @@ export default function ContactsPage() {
                             })()}
                           </Box>
                         )}
+
+                      </Stack>
+                    </Grid.Col>
+
+                    {/* Right Column */}
+                    <Grid.Col span={4}>
+                      <Stack gap="md" align="flex-start">
+                        <Box style={{ width: '100%' }}>
+                          <Group gap="xs" align="flex-end" mb="xs">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Coordinator</Text>
+                            {(() => {
+                              const currentCoordinator = getCurrentCoordinator(selectedContact);
+                              const coordinators = getCoordinators(selectedContact);
+                              const hasMultipleCoordinators = coordinators.length >= 2;
+                              
+                              if (currentCoordinator) {
+                                return (
+                                  <>
+                                    {hasMultipleCoordinators && (
+                                      <ActionIcon 
+                                        variant="subtle" 
+                                        color="blue"
+                                        onClick={() => setCoordinatorListDialogOpened(true)}
+                                        title="View all coordinators"
+                                      >
+                                        <IconListCheck size={20} />
+                                      </ActionIcon>
+                                    )}
+                                    <ActionIcon 
+                                      variant="subtle" 
+                                      color="blue"
+                                      onClick={() => {
+                                        setCoordinatorDate(new Date());
+                                        setCoordinatorDialogOpened(true);
+                                      }}
+                                      title="Add coordinator"
+                                    >
+                                <IconPlus size={20} />
+                              </ActionIcon>
+                                  </>
+                                );
+                              } else {
+                                return (
+                                  <ActionIcon 
+                                    variant="subtle" 
+                                    color="blue"
+                                    onClick={() => {
+                                      setCoordinatorDate(new Date());
+                                      setCoordinatorDialogOpened(true);
+                                    }}
+                                    title="Add coordinator"
+                                  >
+                                    <IconPlus size={20} />
+                                  </ActionIcon>
+                                );
+                              }
+                            })()}
+                            </Group>
+                          {(() => {
+                            const currentCoordinator = getCurrentCoordinator(selectedContact);
+                            if (currentCoordinator) {
+                              return (
+                                <Box>
+                                  <Text size="md" fw={700}>{currentCoordinator.name}</Text>
+                                  <Text size="xs" c="blue">{currentCoordinator.date}</Text>
+                                </Box>
+                              );
+                            } else {
+                              return (
+                              <TextInput
+                                placeholder="Select coordinator"
+                                  readOnly
+                                  styles={{ input: { height: 'auto', minHeight: rem(36) } }}
+                                  value=""
+                                />
+                              );
+                            }
+                          })()}
+                        </Box>
+
+                        <Box style={{ width: '100%' }}>
+                          <Group gap="xs" align="flex-end" mb="xs">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Reminder</Text>
+                            <ActionIcon 
+                              variant="subtle" 
+                              color="blue"
+                              onClick={() => {
+                                setReminderDialogOpened(true);
+                                setReminderClinic('');
+                                setReminderNote('');
+                                setReminderNoteTemplate('');
+                                setReminderDate(null);
+                              }}
+                              title="Add reminder"
+                            >
+                              <IconPlus size={20} />
+                            </ActionIcon>
+                          </Group>
+                        </Box>
                       </Stack>
                     </Grid.Col>
                   </Grid>
