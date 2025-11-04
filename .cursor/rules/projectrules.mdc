@@ -144,6 +144,17 @@ When encountering issues, **ALWAYS check** the troubleshooting guide first:
 - **Date Flow:** ISO → "dd/MM/yyyy" → "DD MMM YYYY" (display format)
 - **Fixed in:** `frontend/app/utils/dateFormatting.ts`
 
+**Communication Display Issues:**
+- **Problem:** Address not showing when added first (works when phone added first)
+- **Root Cause:** Communication section only rendered when `selectedContact.communication` exists; address saved to `address_json`
+- **Solution:** Updated condition to check `(selectedContact.communication || selectedContact.address_json)`, added null-safe handling
+- **Problem:** TypeError: undefined is not an object (evaluating 'comms.phone')
+- **Root Cause:** Code tried to access `comms.phone` when `comms` was `undefined`
+- **Solution:** Initialize `comms` with empty object, add null checks before accessing properties
+- **Problem:** CORS error with Cache-Control header
+- **Root Cause:** Backend CORS doesn't allow `Cache-Control` header
+- **Solution:** Use timestamp query parameter `?t=${Date.now()}` for cache-busting instead
+
 **Before suggesting solutions:**
 1. Check if the issue is documented in `docs/architecture/TROUBLESHOOTING.md`
 2. Reference the troubleshooting guide in your response
