@@ -819,6 +819,11 @@ export default function ContactsPage() {
                             label=""
                             value={selectedContact.title}
                             data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
+                            onChange={(value) => {
+                              if (selectedContact) {
+                                setSelectedContact({ ...selectedContact, title: value || '' });
+                              }
+                            }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
@@ -884,6 +889,11 @@ export default function ContactsPage() {
                           <Select
                             value={selectedContact.clinic}
                             data={clinics}
+                            onChange={(value) => {
+                              if (selectedContact) {
+                                setSelectedContact({ ...selectedContact, clinic: value || '' });
+                              }
+                            }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
@@ -893,6 +903,11 @@ export default function ContactsPage() {
                           <Select
                             value={selectedContact.funding}
                             data={fundingSources}
+                            onChange={(value) => {
+                              if (selectedContact) {
+                                setSelectedContact({ ...selectedContact, funding: value || '' });
+                              }
+                            }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
