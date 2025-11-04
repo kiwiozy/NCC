@@ -233,6 +233,20 @@ class Patient(models.Model):
         parts.append(self.last_name)
         return " ".join(parts)
     
+    def archive(self, archived_by=None):
+        """Archive this patient (soft delete)"""
+        self.archived = True
+        self.archived_at = timezone.now()
+        self.archived_by = archived_by
+        self.save()
+    
+    def restore(self):
+        """Restore this archived patient"""
+        self.archived = False
+        self.archived_at = None
+        self.archived_by = None
+        self.save()
+    
     def get_age(self):
         """Calculate patient's age in years"""
         if not self.dob:
