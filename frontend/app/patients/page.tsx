@@ -1731,7 +1731,7 @@ export default function ContactsPage() {
               }}
               disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
             >
-              {selectedContact?.name || 'Patient'}
+              Save
             </Button>
           </Group>
         </Stack>
