@@ -1,8 +1,8 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Filter Working, Needs Patient API Connection)  
-**Last Updated:** November 4, 2025
+**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented)  
+**Last Updated:** December 2024
 
 ---
 
@@ -33,16 +33,21 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ### **Filter Component** 🔍 ✅ **IMPLEMENTED**
 - ✅ **Filter Icon Button** - Funnel icon, opens popover
 - ✅ **Filter Popover** - Contains filter dropdowns:
-  - **Funding Source dropdown** - Currently hardcoded (NDIS, Private, DVA, Workers Comp, Medicare)
-    - **TODO:** Load from `/api/settings/funding-sources/` when endpoint exists
+  - **Funding Source dropdown** - ✅ **Loads from API** (`/api/settings/funding-sources/`)
+    - Falls back to hardcoded list if API fails
   - **Clinic dropdown** - ✅ **Loads from API** (`/api/clinics/`)
     - Falls back to hardcoded list if API fails
     - Extracts clinic names from API response
   - **Status dropdown** - Active, Inactive, Archived
-- ✅ **Apply Filters** button - Filters patient list
-- ✅ **Clear Filters** button - Resets all filters
-- ✅ **Filter Logic** - Filters by clinic, funding, and search query
-- ✅ **Search Integration** - Search works together with active filters
+  - **View Toggle** - ✅ **Archive Filter Switch**
+    - Switch component with label "Viewing Archived" on left, toggle on right
+    - Toggles between viewing active patients and archived patients
+    - Works like other filters - applies when "Apply Filters" is clicked
+    - Search and other filters work on whichever list is selected (active or archived)
+- ✅ **Apply Filters** button - Applies all filters including archive view
+- ✅ **Clear Filters** button - Resets all filters including archive view back to active
+- ✅ **Filter Logic** - Filters by clinic, funding, archive status, and search query
+- ✅ **Search Integration** - Search works together with active filters on selected list (active or archived)
 
 ### **Right Panel - Patient Detail Form**
 
