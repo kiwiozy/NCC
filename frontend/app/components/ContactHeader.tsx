@@ -200,9 +200,6 @@ export default function ContactHeader({
         {/* Archive Toggle - Right of Search */}
         {archiveEnabled && (
           <Stack gap={4} align="center">
-            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
-              Viewing Archived
-            </Text>
             <Switch
               checked={Boolean(filters.archived)}
               onChange={(event) => {
@@ -216,6 +213,9 @@ export default function ContactHeader({
               }}
               size="md"
             />
+            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
+              Archive
+            </Text>
           </Stack>
         )}
       </Group>
