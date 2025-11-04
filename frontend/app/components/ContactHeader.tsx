@@ -244,13 +244,21 @@ export default function ContactHeader({
       >
         {/* Left: Count Display - Stacked and left-aligned */}
         <Stack gap={4} align="flex-start" style={{ flex: '0 0 auto' }}>
-          <Text size="sm" c="blue" fw={500} style={{ textAlign: 'left' }}>
+          <Text size="md" c="blue" fw={600} style={{ textAlign: 'left' }}>
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <Text size="sm" c="dimmed" style={{ textAlign: 'left' }}>
-              {achievedCount} records achieved
-            </Text>
+            <>
+              <Text size="xs" c="dimmed" style={{ textAlign: 'left' }}>
+                {achievedCount} records achieved
+              </Text>
+              <div style={{ 
+                width: '100%', 
+                height: '1px', 
+                backgroundColor: isDark ? '#373A40' : '#dee2e6',
+                marginTop: rem(4)
+              }} />
+            </>
           )}
         </Stack>
 
