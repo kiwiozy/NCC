@@ -277,9 +277,8 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 4. **Filter Patients** 🔍 ✅ **IMPLEMENTED**
    - **Filter Icon Button** - Opens filter popover ✅
    - **Funding Source Filter** - Dropdown to filter by funding type ✅
-     - Options: NDIS, Private, DVA, Workers Comp, Medicare (hardcoded)
-     - **Status:** Working with hardcoded list
-     - **TODO:** Load from `/api/settings/funding-sources/` when endpoint exists
+     - **Status:** ✅ **Loads from API** (`/api/settings/funding-sources/`)
+     - Falls back to hardcoded list if API fails
      - **Settings Requirement:** Funding sources must be managed in Settings page
    - **Clinic Filter** - Dropdown to filter by clinic ✅
      - **Status:** ✅ **Loads from API** (`/api/clinics/`)
@@ -291,11 +290,19 @@ The Patients page provides a comprehensive view for managing patient contacts. I
        - **Users/Clinicians** (clinic assignment)
    - **Status Filter** - Dropdown to filter by status ✅
      - Options: Active, Inactive, Archived
-   - **Apply Filters** - Button to apply selected filters ✅ **Working**
+   - **Archive View Toggle** - Switch component ✅ **IMPLEMENTED**
+     - Label "Viewing Archived" on left, toggle switch on right
+     - Toggles between viewing active patients (default) and archived patients
+     - Applies when "Apply Filters" is clicked (works like other filters)
+     - Search and other filters operate on the selected list (active or archived)
+     - When cleared, resets archive view back to active
+   - **Apply Filters** - Button to apply selected filters including archive view ✅ **Working**
      - Filters patient list based on selected criteria
-     - Combines multiple filters (clinic + funding + search)
-   - **Clear Filters** - Button to reset all filters ✅ **Working**
+     - Combines multiple filters (clinic + funding + archive status + search)
+     - Reloads from API when archive filter changes
+   - **Clear Filters** - Button to reset all filters including archive view ✅ **Working**
    - **Filter Count** - Shows filtered count vs total count in header ✅
+   - **Archived Count** - Shows count of archived records below found count ✅
 
 3. **Select Patient**
    - Click patient in list
