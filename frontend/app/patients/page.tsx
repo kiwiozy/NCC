@@ -41,25 +41,31 @@ const transformPatientToContact = (patient: any): Contact => {
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
     
+    const trimmed = typeof dateStr === 'string' ? dateStr.trim() : '';
+    
     // If already formatted in DD/MMM/YYYY format, return as-is
-    if (typeof dateStr === 'string') {
-      // Check if it's already in DD/MMM/YYYY format (e.g., "29/Aug/1986")
-      const alreadyFormatted = /^\d{1,2}\/[A-Za-z]{3}\/\d{4}$/.test(dateStr.trim());
-      if (alreadyFormatted) {
-        return dateStr.trim();
-      }
-      
-      // Check if it's in old format with spaces (e.g., "29 Aug 1986") and convert
-      const oldFormatMatch = dateStr.trim().match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
-      if (oldFormatMatch) {
-        const [, day, month, year] = oldFormatMatch;
-        return `${day}/${month}/${year}`;
-      }
+    if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+    
+    // Check if it's in old format with spaces (e.g., "25 Jun 1949") and convert
+    const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+    if (oldFormatMatch) {
+      const [, day, month, year] = oldFormatMatch;
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Only process if it looks like an ISO date string (YYYY-MM-DD) or similar
+    // If it's already a formatted date string, don't try to format it again
+    if (!/^\d{4}-\d{2}-\d{2}/.test(trimmed) && !trimmed.includes('T')) {
+      // Doesn't look like an ISO date - might be already formatted or invalid
+      console.warn('Date string does not look like ISO format:', trimmed);
+      return trimmed; // Return as-is to avoid double formatting
     }
     
     try {
       // First, get the formatted date in DD/MM/YYYY format
-      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "29/08/1986")
+      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "25/06/1949")
       
       // If formatDateOnlyAU returns empty or invalid, return empty
       if (!formatted || formatted.trim() === '' || formatted === 'Invalid DateTime') {
@@ -90,7 +96,7 @@ const transformPatientToContact = (patient: any): Contact => {
         return formatted; // Return as-is if invalid
       }
       
-      // Return formatted as "DD/MMM/YYYY" (e.g., "29/Aug/1986")
+      // Return formatted as "DD/MMM/YYYY" (e.g., "25/Jun/1949")
       return `${day}/${months[monthIndex]}/${year}`;
     } catch (error) {
       console.error('Error formatting date:', error, 'for input:', dateStr);
