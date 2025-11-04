@@ -38,7 +38,7 @@ interface Contact {
 // Transform API patient data to Contact interface
 const transformPatientToContact = (patient: any): Contact => {
   // Format date as DD/MMM/YYYY (using existing date utility)
-  const formatDate = (dateStr: string | null | undefined): string => {
+  const formatDate = (dateStr: string | null | undefined, isRecursive: boolean = false): string => {
     if (!dateStr) return '';
     
     const trimmed = typeof dateStr === 'string' ? dateStr.trim() : '';
@@ -48,27 +48,33 @@ const transformPatientToContact = (patient: any): Contact => {
       return trimmed;
     }
     
+    // Check if it contains "/YYYY" at the end (malformed date from previous bug)
+    // This must be checked BEFORE other formats to catch "11 Sep 1947/09/YYYY"
+    if (trimmed.includes('/YYYY')) {
+      // Extract just the date part before "/YYYY" and any trailing numbers
+      const cleanDate = trimmed.split('/YYYY')[0].trim();
+      // Remove any trailing "/NN" pattern (like "/09")
+      const cleaned = cleanDate.replace(/\/\d{1,2}$/, '').trim();
+      // Recursively format the clean date (but only once to prevent infinite loop)
+      if (!isRecursive && cleaned) {
+        return formatDate(cleaned, true);
+      }
+      return cleaned; // Fallback if recursive didn't work
+    }
+    
     // Check if it's in old format with spaces (e.g., "11 Sep 1947") and convert
-    const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+    const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
     if (oldFormatMatch) {
       const [, day, month, year] = oldFormatMatch;
       // Convert old format to new format: "11 Sep 1947" -> "11/Sep/1947"
       return `${day}/${month}/${year}`;
     }
     
-    // Check if it contains "/YYYY" at the end (malformed date from previous bug)
-    if (trimmed.includes('/YYYY')) {
-      // Extract just the date part before "/YYYY"
-      const cleanDate = trimmed.split('/YYYY')[0].trim();
-      // Try to format it again
-      return formatDate(cleanDate);
-    }
-    
     // Only process if it looks like an ISO date string (YYYY-MM-DD) or similar
     // If it's already a formatted date string, don't try to format it again
     if (!/^\d{4}-\d{2}-\d{2}/.test(trimmed) && !trimmed.includes('T')) {
       // Doesn't look like an ISO date - might be already formatted or invalid
-      // If it contains month names or looks formatted, return as-is
+      // If it contains month names or looks formatted, try to fix it
       if (/[A-Za-z]{3}/.test(trimmed)) {
         // Contains month name, might be formatted already - but wrong format
         // Try to convert spaces to slashes
