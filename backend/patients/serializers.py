@@ -20,10 +20,11 @@ class PatientSerializer(serializers.ModelSerializer):
             'dob', 'sex', 'title', 'health_number', 'funding_type', 'clinic',
             'coordinator_name', 'coordinator_date', 'plan_start_date', 'plan_end_date',
             'notes', 'contact_json', 'address_json', 'emergency_json',
-            'flags_json', 'created_at', 'updated_at',
+            'flags_json', 'archived', 'archived_at', 'archived_by',
+            'created_at', 'updated_at',
             'age', 'full_name', 'mobile', 'email'  # computed fields
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'age', 'full_name', 'mobile', 'email']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'archived_at', 'age', 'full_name', 'mobile', 'email']
     
     def to_representation(self, instance):
         """Customize serialization to include related object names"""

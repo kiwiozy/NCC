@@ -463,11 +463,131 @@ export default function ContactsPage() {
   const handleAddNew = () => {
     console.log('Add new', activeType);
     // TODO: Implement add new functionality
+    // This should open a type-specific create dialog based on activeType
+    // For now, we'll just log the type
+    switch (activeType) {
+      case 'patients':
+        // Open CreatePatientDialog
+        console.log('Opening create patient dialog');
+        break;
+      case 'referrers':
+        // Open CreateReferrerDialog
+        console.log('Opening create referrer dialog');
+        break;
+      case 'coordinator':
+        // Open CreateCoordinatorDialog
+        console.log('Opening create coordinator dialog');
+        break;
+      case 'ndis-lac':
+        // Open CreateNDISLACDialog
+        console.log('Opening create NDIS LAC dialog');
+        break;
+      case 'contacts':
+        // Open CreateContactDialog
+        console.log('Opening create contact dialog');
+        break;
+      case 'companies':
+        // Open CreateCompanyDialog
+        console.log('Opening create company dialog');
+        break;
+      case 'clinics':
+        // Open CreateClinicDialog
+        console.log('Opening create clinic dialog');
+        break;
+      default:
+        console.warn('Unknown contact type:', activeType);
+    }
   };
 
-  const handleArchive = () => {
-    console.log('Open archive for', activeType);
-    // TODO: Implement archive functionality
+  const handleArchive = async () => {
+    if (!selectedContact) {
+      console.warn('No contact selected for archiving');
+      return;
+    }
+    
+    // Confirm archive action
+    const confirmed = window.confirm(
+      `Are you sure you want to archive ${selectedContact.name}? This will hide them from active lists but keep the record.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+    
+    try {
+      // Determine API endpoint based on activeType
+      let endpoint = '';
+      switch (activeType) {
+        case 'patients':
+          endpoint = `/api/patients/${selectedContact.id}/archive/`;
+          break;
+        case 'referrers':
+          endpoint = `/api/referrers/${selectedContact.id}/archive/`;
+          break;
+        case 'coordinator':
+          endpoint = `/api/coordinators/${selectedContact.id}/archive/`;
+          break;
+        case 'ndis-lac':
+          endpoint = `/api/ndis-lac/${selectedContact.id}/archive/`;
+          break;
+        case 'contacts':
+          endpoint = `/api/contacts/${selectedContact.id}/archive/`;
+          break;
+        case 'companies':
+          endpoint = `/api/companies/${selectedContact.id}/archive/`;
+          break;
+        case 'clinics':
+          endpoint = `/api/clinics/${selectedContact.id}/archive/`;
+          break;
+        default:
+          console.error('Unknown contact type for archiving:', activeType);
+          return;
+      }
+      
+      const response = await fetch(`https://localhost:8000${endpoint}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        // Reload contacts to refresh the list
+        if (activeType === 'patients') {
+          // Reload patients
+          const loadPatients = async () => {
+            setLoading(true);
+            setAllContacts([]);
+            setContacts([]);
+            setSelectedContact(null);
+            
+            try {
+              const response = await fetch('https://localhost:8000/api/patients/');
+              if (response.ok) {
+                const data = await response.json();
+                const patients = data.results || data;
+                const transformed = patients.map((patient: any) => transformPatientToContact(patient));
+                setAllContacts(transformed);
+                applyFilters(transformed, searchQuery, activeFilters);
+              }
+            } catch (error) {
+              console.error('Failed to reload patients:', error);
+            } finally {
+              setLoading(false);
+            }
+          };
+          loadPatients();
+        }
+        console.log('Contact archived successfully');
+      } else {
+        const error = await response.json();
+        console.error('Failed to archive contact:', error);
+        alert('Failed to archive contact. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error archiving contact:', error);
+      alert('Error archiving contact. Please try again.');
+    }
   };
 
   const getPageTitle = () => {

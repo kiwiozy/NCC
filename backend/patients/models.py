@@ -148,6 +148,25 @@ class Patient(models.Model):
         help_text="General notes about the patient"
     )
     
+    # Archive fields (soft delete - never actually delete records)
+    archived = models.BooleanField(
+        default=False,
+        help_text="Whether this patient has been archived (soft deleted)"
+    )
+    
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when patient was archived"
+    )
+    
+    archived_by = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="User who archived this patient (optional)"
+    )
+    
     # Contact information (stored as JSON for flexibility)
     contact_json = models.JSONField(
         null=True,
