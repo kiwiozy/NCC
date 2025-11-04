@@ -34,72 +34,80 @@ interface Contact {
   note?: string;
 }
 
-// Mock data - replace with API call
-const mockContacts: Contact[] = [
-  { 
-    id: '1', 
-    name: 'Mrs. Jacqueline Laird', 
-    clinic: 'Tamworth', 
-    funding: 'NDIS',
-    title: 'Mrs.',
-    firstName: 'Jacqueline',
-    middleName: '',
-    lastName: 'Laird',
-    dob: '27 Jun 1968',
-    age: 57,
-    healthNumber: '3459585',
-    coordinator: {
-      name: 'Warda - Ability Connect',
-      date: '30/10/2025'
-    },
-    planDates: '17 Jul 2024 - 27 Jul 2024',
-    communication: {
-      phone: '393730',
-      email: 'me@me.com'
-    },
-    note: ''
-  },
-  { 
-    id: '2', 
-    name: 'Mr. Craig Laird', 
-    clinic: 'Newcastle', 
-    funding: 'NDIS',
-    title: 'Mr.',
-    firstName: 'Craig',
-    middleName: '',
-    lastName: 'Laird',
-    dob: '21 Jan 1968',
-    age: 57,
-    healthNumber: '3333222',
-    coordinator: undefined,
-    planDates: undefined,
-    communication: {
-      phone: '0412345678',
-      email: 'craig@example.com'
-    },
-    note: ''
-  },
-  { 
-    id: '3', 
-    name: 'Mr. Scott Laird', 
-    clinic: 'Tamworth', 
-    funding: 'NDIS',
-    title: 'Mr.',
-    firstName: 'Scott',
-    middleName: '',
-    lastName: 'Laird',
-    dob: '16 Aug 1994',
-    age: 31,
-    healthNumber: '430372789',
-    coordinator: undefined,
-    planDates: undefined,
-    communication: {
-      phone: '0487654321',
-      email: 'scott.laird@example.com'
-    },
-    note: ''
-  },
-];
+// Transform API patient data to Contact interface
+const transformPatientToContact = (patient: any): Contact => {
+  // Format date as DD MMM YYYY
+  const formatDate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Format date as DD/MM/YYYY
+  const formatDateShort = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${date.getFullYear()}`;
+  };
+
+  // Format date range
+  const formatDateRange = (start: string | null | undefined, end: string | null | undefined): string | undefined => {
+    if (!start || !end) return undefined;
+    return `${formatDate(start)} - ${formatDate(end)}`;
+  };
+
+  // Build full name with title
+  const titleMap: Record<string, string> = {
+    'Mr': 'Mr.',
+    'Mrs': 'Mrs.',
+    'Ms': 'Ms.',
+    'Miss': 'Miss',
+    'Dr': 'Dr.',
+    'Prof': 'Prof.',
+  };
+  const title = patient.title ? titleMap[patient.title] || patient.title : '';
+  const nameParts = [patient.first_name];
+  if (patient.middle_names) nameParts.push(patient.middle_names);
+  nameParts.push(patient.last_name);
+  const fullName = nameParts.join(' ');
+  const displayName = title ? `${title} ${fullName}` : fullName;
+
+  // Extract clinic and funding names
+  const clinicName = patient.clinic?.name || '';
+  const fundingName = patient.funding_type?.name || '';
+
+  // Extract contact info
+  const contactJson = patient.contact_json || {};
+  const phone = contactJson.phone || contactJson.mobile || '';
+  const email = contactJson.email || '';
+
+  return {
+    id: patient.id,
+    name: displayName,
+    clinic: clinicName,
+    funding: fundingName,
+    title: title || '',
+    firstName: patient.first_name || '',
+    middleName: patient.middle_names || undefined,
+    lastName: patient.last_name || '',
+    dob: formatDate(patient.dob),
+    age: patient.age || 0,
+    healthNumber: patient.health_number || '',
+    coordinator: patient.coordinator_name ? {
+      name: patient.coordinator_name,
+      date: formatDateShort(patient.coordinator_date),
+    } : undefined,
+    planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date),
+    communication: phone || email ? {
+      phone: phone || undefined,
+      email: email || undefined,
+    } : undefined,
+    note: patient.notes || '',
+  };
+};
 
 export default function ContactsPage() {
   const searchParams = useSearchParams();
@@ -107,8 +115,9 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
-  const [contacts, setContacts] = useState<Contact[]>(mockContacts);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(mockContacts[0]);
+  const [allContacts, setAllContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -116,6 +125,89 @@ export default function ContactsPage() {
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
   
+  // Load patients from API
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (activeType !== 'patients') return; // Only load for patients type
+      
+      setLoading(true);
+      try {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (searchQuery) {
+          params.append('search', searchQuery);
+        }
+        if (activeFilters.clinic) {
+          // Find clinic ID by name
+          const clinicId = clinics.findIndex(c => c === activeFilters.clinic) >= 0 
+            ? activeFilters.clinic 
+            : null;
+          // For now, filter client-side after loading
+        }
+        if (activeFilters.funding) {
+          // Similar to clinic - filter client-side for now
+        }
+
+        const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Handle paginated response
+          const patients = data.results || data;
+          const transformed = patients.map(transformPatientToContact);
+          setAllContacts(transformed);
+          
+          // Apply client-side filtering
+          applyFilters(transformed, searchQuery, activeFilters);
+          
+          // Select first contact if none selected
+          if (transformed.length > 0 && !selectedContact) {
+            setSelectedContact(transformed[0]);
+          }
+        } else {
+          console.error('Failed to load patients:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error loading patients:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPatients();
+  }, [activeType]); // Reload when type changes
+
+  // Apply filters to contacts
+  const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string>) => {
+    let filtered = [...contactList];
+
+    // Filter by search query
+    if (query) {
+      filtered = filtered.filter(contact =>
+        contact.name.toLowerCase().includes(query.toLowerCase()) ||
+        contact.firstName.toLowerCase().includes(query.toLowerCase()) ||
+        contact.lastName.toLowerCase().includes(query.toLowerCase()) ||
+        contact.healthNumber.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    // Filter by clinic
+    if (filters.clinic) {
+      filtered = filtered.filter(contact => contact.clinic === filters.clinic);
+    }
+
+    // Filter by funding
+    if (filters.funding) {
+      filtered = filtered.filter(contact => contact.funding === filters.funding);
+    }
+
+    setContacts(filtered);
+    
+    // Update selected contact if current selection is not in filtered list
+    if (selectedContact && !filtered.find(c => c.id === selectedContact?.id)) {
+      setSelectedContact(filtered[0] || null);
+    }
+  };
+
   useEffect(() => {
     // Load clinics from API
     const loadClinics = async () => {
@@ -163,56 +255,12 @@ export default function ContactsPage() {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    
-    // Apply search along with active filters
-    let filtered = mockContacts;
-    
-    // Filter by search query
-    if (value) {
-      filtered = filtered.filter(contact =>
-        contact.name.toLowerCase().includes(value.toLowerCase())
-      );
-    }
-    
-    // Re-apply active filters
-    if (activeFilters.clinic) {
-      filtered = filtered.filter(contact => contact.clinic === activeFilters.clinic);
-    }
-    
-    if (activeFilters.funding) {
-      filtered = filtered.filter(contact => contact.funding === activeFilters.funding);
-    }
-    
-    setContacts(filtered);
+    applyFilters(allContacts, value, activeFilters);
   };
 
   const handleFilterApply = (filters: Record<string, string>) => {
     setActiveFilters(filters);
-    
-    // Apply filters to patient list
-    let filtered = mockContacts;
-    
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(contact =>
-        contact.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    // Filter by clinic
-    if (filters.clinic) {
-      filtered = filtered.filter(contact => contact.clinic === filters.clinic);
-    }
-    
-    // Filter by funding
-    if (filters.funding) {
-      filtered = filtered.filter(contact => contact.funding === filters.funding);
-    }
-    
-    // Filter by status (if status field exists)
-    // TODO: Add status field to Contact interface when implemented
-    
-    setContacts(filtered);
+    applyFilters(allContacts, searchQuery, filters);
   };
 
   const handleAddNew = () => {
@@ -252,8 +300,8 @@ export default function ContactsPage() {
           clinic: clinics,
           status: ['Active', 'Inactive', 'Archived'],
         }}
-        contactCount={mockContacts.length}
-        filteredCount={contacts.length !== mockContacts.length ? contacts.length : undefined}
+        contactCount={allContacts.length}
+        filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
       />
       
       <Grid gutter={0} style={{ height: 'calc(100vh - 240px)' }}>
@@ -263,8 +311,17 @@ export default function ContactsPage() {
           height: '100%',
         }}>
           <ScrollArea h="100%">
-            <Stack gap={0}>
-              {contacts.map((contact) => (
+            {loading ? (
+              <Center h="100%">
+                <Loader />
+              </Center>
+            ) : contacts.length === 0 ? (
+              <Center h="100%">
+                <Text c="dimmed">No patients found</Text>
+              </Center>
+            ) : (
+              <Stack gap={0}>
+                {contacts.map((contact) => (
                 <UnstyledButton
                   key={contact.id}
                   onClick={() => setSelectedContact(contact)}
@@ -302,7 +359,8 @@ export default function ContactsPage() {
                   </Stack>
                 </UnstyledButton>
               ))}
-            </Stack>
+              </Stack>
+            )}
           </ScrollArea>
         </Grid.Col>
 
@@ -377,7 +435,7 @@ export default function ContactsPage() {
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Clinic</Text>
                           <Select
                             value={selectedContact.clinic}
-                            data={['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']}
+                            data={clinics}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
                           />
                         </Box>
@@ -386,7 +444,7 @@ export default function ContactsPage() {
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Funding</Text>
                           <Select
                             value={selectedContact.funding}
-                            data={['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']}
+                            data={fundingSources}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
                           />
                         </Box>
