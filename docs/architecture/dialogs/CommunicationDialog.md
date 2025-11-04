@@ -187,25 +187,33 @@ OR for address:
 ### Reload After Save
 After successful save, patient data is reloaded from backend to ensure UI consistency:
 ```
-GET /api/patients/{id}/
+GET /api/patients/{id}/?t={timestamp}
 ```
+- Uses timestamp query parameter for cache-busting (avoids CORS issues with Cache-Control header)
+- Ensures fresh data is loaded after save
+- Updates both `selectedContact` and `allContacts` list
 
 ---
 
 ## Display Logic
 
 ### Communication Display
+- Communication section displays if either `communication` data or `address_json` exists
 - Communication entries displayed in a Paper component with border
 - Each entry shows:
   - Type label (Phone, Mobile, Email, Address) - blue if default, dimmed if not
   - Name label (Home, Work, etc.) - blue if default, dimmed if not
   - Value (phone number, email, or address string)
   - Edit/Delete buttons (visible on hover)
+- **Sorting**: Default entries sorted to the top of the list
+- **Scroll Behavior**: Shows first 3 entries, with scrollable area if more exist
+- **Scroll Indicator**: "Scroll for more... (X more)" text shown when more than 3 entries
 
 ### Legacy Format Support
 - Supports both old string format: `{ phone: "0412345678" }`
 - And new object format: `{ phone: { home: { value: "0412345678", default: true } } }`
 - Legacy entries automatically converted to object format when edited
+- Null-safe handling: Communication section works even when `communication` is `undefined` (only address exists)
 
 ---
 

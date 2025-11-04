@@ -438,8 +438,12 @@ The Patients page provides a comprehensive view for managing patient contacts. I
   - ✅ Blue text indicator for default entries
   - ✅ Edit/delete buttons on hover
   - ✅ Backend API integration for saving
-  - ✅ Patient data reload after save for UI consistency
+  - ✅ Patient data reload after save for UI consistency (with cache-busting)
   - ✅ Proper data structure mapping from backend
+  - ✅ Communication section displays if either `communication` or `address_json` exists
+  - ✅ Null-safe handling for communication data (handles undefined/null gracefully)
+  - ✅ Defaults sorted to top of list
+  - ✅ Scrollable list showing first 3 entries, with "Scroll for more..." indicator
 - ⚠️ Some fields are still read-only (will be editable in future)
 
 ### **Decisions Needed**
