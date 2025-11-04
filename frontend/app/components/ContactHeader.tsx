@@ -248,17 +248,9 @@ export default function ContactHeader({
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <>
-              <Text size="xs" c="dimmed" style={{ textAlign: 'left' }}>
-                {achievedCount} records achieved
-              </Text>
-              <div style={{ 
-                width: '100%', 
-                height: '1px', 
-                backgroundColor: isDark ? '#373A40' : '#dee2e6',
-                marginTop: rem(4)
-              }} />
-            </>
+            <Text size="xs" c="dimmed" style={{ textAlign: 'left' }}>
+              {achievedCount} records achieved
+            </Text>
           )}
         </Stack>
 
