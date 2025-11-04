@@ -328,29 +328,8 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
       <Modal
         opened={opened}
         onClose={onClose}
-        title={
-          <Group justify="space-between" style={{ width: '100%' }}>
-            <Text fw={600} size="lg">Notes</Text>
-            <ActionIcon
-              variant="subtle"
-              onClick={onClose}
-              size="lg"
-            >
-              <IconX size={20} />
-            </ActionIcon>
-          </Group>
-        }
+        title="Notes"
         size="xl"
-        styles={{
-          header: {
-            backgroundColor: '#228BE6',
-            color: 'white',
-            padding: `${rem(16)} ${rem(24)}`,
-          },
-          title: {
-            color: 'white',
-          },
-        }}
       >
         <Grid gutter={0} style={{ height: rem(600) }}>
           {/* Left Column: Notes List */}
@@ -457,27 +436,27 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                       </Alert>
                     )}
 
-                    <Select
-                      label="Note Type"
-                      placeholder="Select note type"
-                      data={NOTE_TYPES}
-                      value={newTitle}
-                      onChange={(value) => setNewTitle(value || 'clinical_notes')}
-                      size="sm"
-                      required
-                      searchable
-                    />
+                  <Select
+                    label="NOTE TYPE"
+                    placeholder="Select note type"
+                    data={NOTE_TYPES}
+                    value={newTitle}
+                    onChange={(value) => setNewTitle(value || 'clinical_notes')}
+                    size="sm"
+                    required
+                    searchable
+                  />
 
-                    <Textarea
-                      label="Content"
-                      placeholder="Enter note content..."
-                      value={newContent}
-                      onChange={(e) => setNewContent(e.currentTarget.value)}
-                      autosize
-                      minRows={10}
-                      maxRows={20}
-                      size="sm"
-                    />
+                  <Textarea
+                    label="CONTENT"
+                    placeholder="Enter note content..."
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.currentTarget.value)}
+                    autosize
+                    minRows={10}
+                    maxRows={20}
+                    size="sm"
+                  />
 
                     <Group gap="xs">
                       <Button
