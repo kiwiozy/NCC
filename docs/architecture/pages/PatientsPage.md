@@ -1,7 +1,7 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support)  
+**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support, Reminder Dialog)  
 **Last Updated:** 2025-01-15
 
 ---
@@ -129,7 +129,18 @@ The Patients page provides a comprehensive view for managing patient contacts. I
     - Each coordinator has: `name` (string) and `date` (YYYY-MM-DD format)
     - Maintains backwards compatibility with single coordinator field
     - Helper functions: `getCoordinators()` and `getCurrentCoordinator()`
-- ✅ Reminder button (with add icon)
+- ✅ **Reminder Section** ✅ **IMPLEMENTED**
+  - **Label**: "REMINDER" (uppercase, dimmed, small size, matches COORDINATOR styling)
+  - **Add Button (+):** Blue plus icon, opens reminder dialog
+  - **Layout**: Matches COORDINATOR section - label on left, icon on right with spacing
+  - **Reminder Dialog:** ✅ **IMPLEMENTED**
+    - **Patient Info**: Read-only display of patient name and health number
+    - **Clinic Selection**: Required dropdown, loads from `/api/clinics/`
+    - **Note Template**: Optional dropdown with templates (Follow-up, Review, Appointment, Assessment, Other)
+    - **Note Field**: Textarea for custom notes (auto-filled when template selected)
+    - **Reminder Date**: Optional date picker for specific reminder date
+    - **Save Button**: Creates reminder via API (`POST /api/reminders/`)
+    - **Error Handling**: Shows alert on API failure
 - ✅ Current Plan Dates display
   - Shows date range or "No plan dates set"
   - Add buttons for plan dates
@@ -219,6 +230,15 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ### **DELETE Endpoints**
 - `DELETE /api/patients/:id` - Delete/archive patient (soft delete)
   - Returns: Success status
+
+### **Reminder Endpoints**
+- `POST /api/reminders/` - Create reminder for patient
+  - Payload: `{ patient: uuid, clinic: uuid, note: string, reminder_date?: date }`
+  - Returns: Created reminder
+- `GET /api/reminders/?patient={uuid}` - Get reminders for patient
+  - Returns: Array of reminder objects
+- `GET /api/reminders/pending/` - Get pending reminders (waiting list)
+  - Returns: Array of pending reminder objects
 
 ---
 
@@ -444,6 +464,13 @@ The Patients page provides a comprehensive view for managing patient contacts. I
   - ✅ Null-safe handling for communication data (handles undefined/null gracefully)
   - ✅ Defaults sorted to top of list
   - ✅ Scrollable list showing first 3 entries, with "Scroll for more..." indicator
+- ✅ **Reminder functionality:**
+  - ✅ Reminder dialog with clinic selection and note fields
+  - ✅ Note templates (Follow-up, Review, Appointment, Assessment, Other)
+  - ✅ Optional reminder date picker
+  - ✅ Backend API integration (`POST /api/reminders/`)
+  - ✅ Error handling and field validation
+  - ✅ Styling matches COORDINATOR section (uppercase, dimmed label)
 - ⚠️ Some fields are still read-only (will be editable in future)
 
 ### **Decisions Needed**
@@ -490,6 +517,7 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Uses:** ContactHeader component
 - **Uses:** CommunicationDialog (✅ Built) - [CommunicationDialog.md](../dialogs/CommunicationDialog.md)
 - **Uses:** CoordinatorDialogs (✅ Built) - [CoordinatorDialogs.md](../dialogs/CoordinatorDialogs.md)
+- **Uses:** ReminderDialog (✅ Built) - [ReminderDialog.md](../dialogs/ReminderDialog.md)
 - **Will use:** CreatePatientDialog (not yet built)
 - **Will link to:** Patient detail page `/patients/[id]` (when built)
 - **Menu items link to:** Notes, Documents, Appointments, Orders, etc. (to be built)

@@ -3,6 +3,7 @@
 ## Overview
 Dialog for creating reminders from patient profile that appear in the calendar as a "waiting list" for scheduling.
 
+**Status:** ✅ Built and Integrated  
 **Last Updated:** 2025-01-15
 
 ---
@@ -18,9 +19,9 @@ Allows clinicians to create reminders from a patient's profile that:
 ## UI Components
 
 ### Dialog Structure
-- **Title**: "Add Reminder for [Patient Name]"
-- **Size**: Medium (`md`) or Large (`lg`)
-- **Close Button**: X icon in top right
+- **Title**: "Add Reminder for [Patient Name]" (dynamic based on selected patient)
+- **Size**: Medium (`md`)
+- **Close Button**: X icon in top right (resets all fields on close)
 
 ### Input Fields
 
@@ -38,17 +39,28 @@ Allows clinicians to create reminders from a patient's profile that:
 
 **SELECT NOTE** (Optional)
 - Dropdown with predefined note templates
-- Options: (To be defined - e.g., "Follow-up needed", "Review required", "Appointment pending")
+- Options: "Follow-up needed", "Review required", "Appointment pending", "Assessment due", "Other"
+- Auto-fills NOTE field when template is selected
 - Or custom notes can be entered
 
-**NOTE** (Optional)
+**NOTE** (Required if no template selected)
 - Large textarea for free-form reminder notes
 - Placeholder: "Enter Note"
 - Allows custom reminder details
+- Auto-filled when note template is selected
+- Minimum 4 rows for better visibility
+
+**REMINDER DATE** (Optional)
+- Date picker for specific reminder date
+- Clearable
+- If not set, reminder is general (not date-specific)
 
 ### Action Buttons
-- **Cancel** (left): Closes dialog without saving
-- **Save** (right): Creates reminder and closes dialog
+- **Cancel** (left): Closes dialog without saving, resets all fields
+- **Save** (right): Creates reminder via API and closes dialog
+  - Disabled until clinic is selected (required field)
+  - Shows error alert if API call fails
+  - Resets all fields after successful save
 
 ---
 
@@ -56,42 +68,25 @@ Allows clinicians to create reminders from a patient's profile that:
 
 ### Backend Storage
 
-**New Table: `reminders`** (to be created)
+**Table: `reminders`** ✅ **BUILT**
 
-```python
-class Reminder(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    patient = models.ForeignKey('patients.Patient', on_delete=models.CASCADE, related_name='reminders')
-    clinic = models.ForeignKey('clinicians.Clinic', on_delete=models.SET_NULL, null=True, blank=True)
-    note_template = models.CharField(max_length=100, null=True, blank=True)  # Predefined note type
-    note = models.TextField(null=True, blank=True)  # Custom note
-    reminder_date = models.DateField(null=True, blank=True)  # Optional: specific date reminder
-    status = models.CharField(max_length=20, default='pending', choices=[
-        ('pending', 'Pending'),
-        ('scheduled', 'Scheduled'),  # Converted to appointment
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-    ])
-    created_by = models.CharField(max_length=100, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    scheduled_at = models.DateTimeField(null=True, blank=True)  # When converted to appointment
-    appointment_id = models.UUIDField(null=True, blank=True)  # Link to appointment if converted
-```
+See `backend/reminders/models.py` for full implementation. Model includes:
+- `id` - UUID (primary key)
+- `patient` - ForeignKey to Patient (CASCADE)
+- `clinic` - ForeignKey to Clinic (SET_NULL, nullable)
+- `note` - TextField (reminder note)
+- `reminder_date` - DateField (optional)
+- `status` - CharField with choices: pending, scheduled, completed, cancelled
+- `appointment_id` - UUIDField (nullable, links to appointment when converted)
+- `created_at`, `updated_at` - DateTimeFields
+- `scheduled_at` - DateTimeField (when converted to appointment)
+- `created_by` - CharField (optional, user who created reminder)
 
-**OR** (Simpler initial version):
-
-```python
-class Reminder(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    patient = models.ForeignKey('patients.Patient', on_delete=models.CASCADE, related_name='reminders')
-    clinic = models.ForeignKey('clinicians.Clinic', on_delete=models.SET_NULL, null=True, blank=True)
-    note = models.TextField()  # Reminder note
-    reminder_date = models.DateField(null=True, blank=True)  # Optional: specific date
-    status = models.CharField(max_length=20, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-```
+**Indexes:**
+- `['status']`
+- `['clinic', 'status']`
+- `['patient']`
+- `['reminder_date']`
 
 ### Frontend Interface
 
@@ -146,12 +141,14 @@ POST /api/reminders/
 **Request Body:**
 ```json
 {
-  "patient_id": "uuid",
-  "clinic_id": "uuid",
+  "patient": "uuid",
+  "clinic": "uuid",
   "note": "Follow-up needed",
-  "reminder_date": "2025-01-20"  // optional
+  "reminder_date": "2025-01-20"  // optional, ISO format (YYYY-MM-DD)
 }
 ```
+
+**Note:** Field names use `patient` and `clinic` (not `patient_id` and `clinic_id`) as Django REST Framework serializes ForeignKey fields this way.
 
 **Response:**
 ```json
@@ -174,9 +171,10 @@ POST /api/reminders/
 ### Get Reminders
 ```
 GET /api/reminders/
-GET /api/reminders/?clinic_id={uuid}
+GET /api/reminders/?clinic={uuid}
 GET /api/reminders/?status=pending
-GET /api/reminders/?patient_id={uuid}
+GET /api/reminders/?patient={uuid}
+GET /api/reminders/pending/  # Custom endpoint for pending reminders (waiting list)
 ```
 
 ### Update Reminder
@@ -188,6 +186,18 @@ PATCH /api/reminders/{id}/
 ```
 DELETE /api/reminders/{id}/
 ```
+
+### Convert Reminder to Appointment
+```
+PATCH /api/reminders/{id}/convert_to_appointment/
+```
+**Request Body:**
+```json
+{
+  "appointment_id": "uuid"
+}
+```
+**Response:** Updated reminder with status='scheduled' and appointment_id set
 
 ---
 
@@ -254,20 +264,35 @@ DELETE /api/reminders/{id}/
 
 ---
 
+## UI Styling
+
+### Patient Profile Integration
+- **Section Label**: "REMINDER" (uppercase, dimmed, small size)
+- **Layout**: Matches COORDINATOR section styling
+  - Label on left with `flex: 1` for spacing
+  - Blue plus icon on right
+  - Group alignment: `flex-end`
+  - Icon size: 20px
+- **Button**: Blue plus icon opens dialog
+- **Position**: Located in right column of patient detail grid
+
 ## Next Steps
 
-1. **Create Backend Model** - Add `Reminder` model to new or existing app
-2. **Create API Endpoints** - CRUD operations for reminders
-3. **Create Dialog Component** - ReminderDialog component
-4. **Integrate with Patient Profile** - Add "+" button and dialog trigger
+1. ~~**Create Backend Model**~~ ✅ Done
+2. ~~**Create API Endpoints**~~ ✅ Done
+3. ~~**Create Dialog Component**~~ ✅ Done
+4. ~~**Integrate with Patient Profile**~~ ✅ Done
 5. **Calendar Integration** - Add reminders/waiting list section to calendar
 6. **Convert to Appointment** - Link reminder to appointment creation
 
 ---
 
 ## Related Files
-- `frontend/app/patients/page.tsx` - Patient profile (where dialog is triggered)
-- `frontend/app/components/ClinicCalendar.tsx` - Calendar component (where reminders appear)
-- `backend/reminders/models.py` - Reminder model (to be created)
-- `backend/reminders/views.py` - Reminder API endpoints (to be created)
+- `frontend/app/patients/page.tsx` - Patient profile (where dialog is triggered) ✅
+- `frontend/app/components/ClinicCalendar.tsx` - Calendar component (where reminders will appear) ⚠️ Pending
+- `backend/reminders/models.py` - Reminder model ✅
+- `backend/reminders/views.py` - Reminder API endpoints ✅
+- `backend/reminders/serializers.py` - Reminder serializers ✅
+- `backend/reminders/admin.py` - Django admin configuration ✅
+- `docs/architecture/DATABASE_SCHEMA.md` - Database schema documentation ✅
 
