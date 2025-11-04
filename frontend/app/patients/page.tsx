@@ -1318,10 +1318,16 @@ export default function ContactsPage() {
                                 const startDate = formatDateOnlyAU(currentPlanDate.start_date);
                                 const endDate = formatDateOnlyAU(currentPlanDate.end_date);
                                 return (
-                                  <Text size="md" fw={700}>
-                                    {startDate} - {endDate}
-                                    {currentPlanDate.type && ` (${currentPlanDate.type})`}
-                                  </Text>
+                                  <Stack gap={4}>
+                                    <Text size="md" fw={700}>
+                                      {startDate} - {endDate}
+                                    </Text>
+                                    {currentPlanDate.type && (
+                                      <Text size="xs" c="blue">
+                                        {currentPlanDate.type}
+                                      </Text>
+                                    )}
+                                  </Stack>
                                 );
                               } else if (selectedContact.planDates) {
                                 // Legacy: show old format
