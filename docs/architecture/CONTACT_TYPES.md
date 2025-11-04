@@ -108,11 +108,13 @@ The system supports 7 different contact types, each with unique information requ
   - `updated_at` - DateTimeField
 
 **API Endpoints Needed:**
-- `GET /api/referrers/` - List all referrers
-- `GET /api/referrers/:id` - Get single referrer
+- `GET /api/referrers/` - List all active referrers (filter: `archived=False`)
+- `GET /api/referrers/:id` - Get single referrer (includes archived)
 - `POST /api/referrers/` - Create referrer
 - `PUT /api/referrers/:id` - Update referrer
-- `DELETE /api/referrers/:id` - Delete referrer
+- `PATCH /api/referrers/:id/archive` - Archive referrer (soft delete)
+- `PATCH /api/referrers/:id/restore` - Restore archived referrer
+- `GET /api/referrers/archived/` - List archived referrers
 
 ---
 
@@ -151,11 +153,13 @@ The system supports 7 different contact types, each with unique information requ
   - `updated_at` - DateTimeField
 
 **API Endpoints Needed:**
-- `GET /api/coordinators/` - List all coordinators
-- `GET /api/coordinators/:id` - Get single coordinator
+- `GET /api/coordinators/` - List all active coordinators (filter: `archived=False`)
+- `GET /api/coordinators/:id` - Get single coordinator (includes archived)
 - `POST /api/coordinators/` - Create coordinator
 - `PUT /api/coordinators/:id` - Update coordinator
-- `DELETE /api/coordinators/:id` - Delete coordinator
+- `PATCH /api/coordinators/:id/archive` - Archive coordinator (soft delete)
+- `PATCH /api/coordinators/:id/restore` - Restore archived coordinator
+- `GET /api/coordinators/archived/` - List archived coordinators
 
 ---
 
@@ -190,11 +194,13 @@ The system supports 7 different contact types, each with unique information requ
   - `updated_at` - DateTimeField
 
 **API Endpoints Needed:**
-- `GET /api/ndis-lac/` - List all NDIS LACs
-- `GET /api/ndis-lac/:id` - Get single NDIS LAC
+- `GET /api/ndis-lac/` - List all active NDIS LACs (filter: `archived=False`)
+- `GET /api/ndis-lac/:id` - Get single NDIS LAC (includes archived)
 - `POST /api/ndis-lac/` - Create NDIS LAC
 - `PUT /api/ndis-lac/:id` - Update NDIS LAC
-- `DELETE /api/ndis-lac/:id` - Delete NDIS LAC
+- `PATCH /api/ndis-lac/:id/archive` - Archive NDIS LAC (soft delete)
+- `PATCH /api/ndis-lac/:id/restore` - Restore archived NDIS LAC
+- `GET /api/ndis-lac/archived/` - List archived NDIS LACs
 
 ---
 
@@ -225,11 +231,13 @@ The system supports 7 different contact types, each with unique information requ
   - `updated_at` - DateTimeField
 
 **API Endpoints Needed:**
-- `GET /api/contacts/` - List all contacts
-- `GET /api/contacts/:id` - Get single contact
+- `GET /api/contacts/` - List all active contacts (filter: `archived=False`)
+- `GET /api/contacts/:id` - Get single contact (includes archived)
 - `POST /api/contacts/` - Create contact
 - `PUT /api/contacts/:id` - Update contact
-- `DELETE /api/contacts/:id` - Delete contact
+- `PATCH /api/contacts/:id/archive` - Archive contact (soft delete)
+- `PATCH /api/contacts/:id/restore` - Restore archived contact
+- `GET /api/contacts/archived/` - List archived contacts
 
 ---
 
@@ -269,11 +277,13 @@ The system supports 7 different contact types, each with unique information requ
   - `updated_at` - DateTimeField
 
 **API Endpoints Needed:**
-- `GET /api/companies/` - List all companies
-- `GET /api/companies/:id` - Get single company
+- `GET /api/companies/` - List all active companies (filter: `archived=False`)
+- `GET /api/companies/:id` - Get single company (includes archived)
 - `POST /api/companies/` - Create company
 - `PUT /api/companies/:id` - Update company
-- `DELETE /api/companies/:id` - Delete company
+- `PATCH /api/companies/:id/archive` - Archive company (soft delete)
+- `PATCH /api/companies/:id/restore` - Restore archived company
+- `GET /api/companies/archived/` - List archived companies
 
 ---
 
@@ -304,11 +314,13 @@ The system supports 7 different contact types, each with unique information requ
 - [x] Plan architecture approach
 
 ### **Phase 2: Backend Models** (Next)
-- [ ] Create Referrers model
-- [ ] Create Coordinators model
-- [ ] Create NDIS LAC model
-- [ ] Create Contacts model
-- [ ] Create Companies model
+- [ ] Add `archived`, `archived_at`, `archived_by` fields to Patient model
+- [ ] Create Referrers model (with archive fields)
+- [ ] Create Coordinators model (with archive fields)
+- [ ] Create NDIS LAC model (with archive fields)
+- [ ] Create Contacts model (with archive fields)
+- [ ] Create Companies model (with archive fields)
+- [ ] Update Clinic model to add archive fields (if needed)
 - [ ] Create migrations for all models
 
 ### **Phase 3: Backend API** (After Phase 2)
@@ -319,9 +331,12 @@ The system supports 7 different contact types, each with unique information requ
 
 ### **Phase 4: Frontend Integration** (After Phase 3)
 - [ ] Update ContactHeader to handle all types
-- [ ] Create type-specific form components
+- [ ] Implement context-aware "Add" button (detects activeType)
+- [ ] Create type-specific form components/dialogs for each contact type
 - [ ] Update patients page to load different types
 - [ ] Add type-specific filtering
+- [ ] Implement archive functionality (archive button, archive view)
+- [ ] Add archive/restore UI components
 
 ### **Phase 5: Relationships** (After Phase 4)
 - [ ] Link Referrers to Patients (referral relationship)
@@ -337,10 +352,32 @@ All contact types share some common fields:
 - `id` - UUID (primary key)
 - `contact_json` - JSONField (phone, email, mobile)
 - `address_json` - JSONField (address details)
-- `active` - BooleanField (default True)
+- `active` - BooleanField (default True) - Controls visibility in active lists
+- `archived` - BooleanField (default False) - **Soft delete** - Never actually delete records
+- `archived_at` - DateTimeField (null=True) - When record was archived
+- `archived_by` - CharField (optional) - Who archived the record
 - `notes` - TextField (general notes)
 - `created_at` - DateTimeField
 - `updated_at` - DateTimeField
+
+### **Archive Pattern** ⚠️ **CRITICAL**
+- **Never delete contacts** - Always archive them instead
+- When a contact is archived:
+  - Set `archived = True`
+  - Set `archived_at = timezone.now()`
+  - Set `archived_by = user_id` (optional)
+  - Set `active = False` (hide from active lists)
+- Archived contacts remain in database for historical records
+- Can be restored by setting `archived = False` and `active = True`
+- API endpoints should filter out archived contacts by default
+- Separate endpoint/view for viewing archived contacts
+
+### **Add/New Button - Context Aware**
+The blue "+" button in the header must be context-aware:
+- Detects which contact type tab is active (Patients, Referrers, Coordinators, etc.)
+- Opens the appropriate create dialog/form for that type
+- Passes `activeType` to the handler: `handleAddNew(activeType)`
+- Frontend routes to type-specific create forms/dialogs
 
 ### **Naming Convention**
 - Model names: Singular (Referrer, Coordinator, NDISLAC, Contact, Company)
