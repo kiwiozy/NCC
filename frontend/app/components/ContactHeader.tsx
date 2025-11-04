@@ -242,13 +242,13 @@ export default function ContactHeader({
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
         }}
       >
-        {/* Left: Count Display - Stacked */}
-        <Stack gap={4} align="flex-start">
-          <Text size="sm" c="blue" fw={500}>
+        {/* Left: Count Display - Stacked and left-aligned */}
+        <Stack gap={4} align="flex-start" style={{ flex: '0 0 auto' }}>
+          <Text size="sm" c="blue" fw={500} style={{ textAlign: 'left' }}>
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <Text size="sm" c="dimmed">
+            <Text size="sm" c="dimmed" style={{ textAlign: 'left' }}>
               {achievedCount} records achieved
             </Text>
           )}
