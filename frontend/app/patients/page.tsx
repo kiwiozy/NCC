@@ -2005,7 +2005,7 @@ export default function ContactsPage() {
                       
                       // Save to backend API
                       try {
-                        const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
+                        const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                           method: 'PATCH',
                           headers: { 
                             'Content-Type': 'application/json',
@@ -2076,7 +2076,7 @@ export default function ContactsPage() {
                         
                         // Save to backend API
                         try {
-                          const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
+                          const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                             method: 'PATCH',
                             headers: { 
                               'Content-Type': 'application/json',
