@@ -2110,6 +2110,9 @@ export default function ContactsPage() {
                           console.error('Error saving communication:', error);
                           // TODO: Show error message to user
                         }
+                      } else {
+                        // No communication value - this shouldn't happen due to validation, but handle gracefully
+                        console.warn('No communication value provided');
                       }
                     }
                     
@@ -2131,6 +2134,12 @@ export default function ContactsPage() {
                     console.error('Error saving communication:', error);
                     // TODO: Show error message to user
                   }
+                } else {
+                  console.warn('Missing required fields for communication save:', { 
+                    selectedContact: !!selectedContact, 
+                    communicationType, 
+                    communicationName 
+                  });
                 }
               }}
                 disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
