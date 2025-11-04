@@ -812,38 +812,45 @@ export default function ContactsPage() {
                   <Grid gutter="lg">
                     {/* Left Column */}
                     <Grid.Col span={4}>
-                      <Stack gap="md">
-                        <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Name</Text>
+                      <Stack gap="md" align="flex-start">
+                        <Box style={{ width: '100%' }}>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Name</Text>
+                          <Select
+                            label=""
+                            value={selectedContact.title}
+                            data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                          />
+                        </Box>
                         
-                        <Select
-                          label=""
-                          value={selectedContact.title}
-                          data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
-                          styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
-                        />
+                        <Box style={{ width: '100%' }}>
+                          <TextInput
+                            label=""
+                            value={selectedContact.firstName}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                          />
+                        </Box>
                         
-                        <TextInput
-                          label=""
-                          value={selectedContact.firstName}
-                          styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
-                        />
+                        <Box style={{ width: '100%' }}>
+                          <TextInput
+                            label=""
+                            placeholder="Middle Name"
+                            value={selectedContact.middleName}
+                            styles={{ input: { fontWeight: 400, fontSize: rem(18) } }}
+                          />
+                        </Box>
                         
-                        <TextInput
-                          label=""
-                          placeholder="Middle Name"
-                          value={selectedContact.middleName}
-                          styles={{ input: { fontWeight: 400, fontSize: rem(18) } }}
-                        />
+                        <Box style={{ width: '100%' }}>
+                          <TextInput
+                            label=""
+                            value={selectedContact.lastName}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                          />
+                        </Box>
                         
-                        <TextInput
-                          label=""
-                          value={selectedContact.lastName}
-                          styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
-                        />
-                        
-                        <Box>
+                        <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Date of Birth</Text>
-                          <Group gap="xs">
+                          <Group gap="xs" align="flex-start">
                             <TextInput
                               value={selectedContact.dob || ''}
                               placeholder="Date of Birth"
@@ -862,8 +869,8 @@ export default function ContactsPage() {
 
                     {/* Middle Column */}
                     <Grid.Col span={4}>
-                      <Stack gap="md">
-                        <Box>
+                      <Stack gap="md" align="flex-start">
+                        <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Health Number</Text>
                           <TextInput
                             placeholder="Health Number"
@@ -872,7 +879,7 @@ export default function ContactsPage() {
                           />
                         </Box>
 
-                        <Box>
+                        <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Clinic</Text>
                           <Select
                             value={selectedContact.clinic}
@@ -881,7 +888,7 @@ export default function ContactsPage() {
                           />
                         </Box>
 
-                        <Box>
+                        <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Funding</Text>
                           <Select
                             value={selectedContact.funding}
@@ -895,8 +902,8 @@ export default function ContactsPage() {
 
                     {/* Right Column */}
                     <Grid.Col span={4}>
-                      <Stack gap="md">
-                        <Box>
+                      <Stack gap="md" align="flex-start">
+                        <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Coordinator</Text>
                           {selectedContact.coordinator ? (
                             <Group gap="xs" align="flex-start">
@@ -909,7 +916,7 @@ export default function ContactsPage() {
                               </ActionIcon>
                             </Group>
                           ) : (
-                            <Group gap="xs">
+                            <Group gap="xs" align="flex-start">
                               <TextInput
                                 placeholder="Select coordinator"
                                 style={{ flex: 1 }}
