@@ -276,6 +276,11 @@ export default function ContactsPage() {
       if (activeType !== 'patients') return; // Only load for patients type
       
       setLoading(true);
+      // Clear ALL state first to prevent any stale data
+      setAllContacts([]);
+      setContacts([]);
+      setSelectedContact(null);
+      
       try {
         // Build query parameters
         const params = new URLSearchParams();
@@ -290,19 +295,18 @@ export default function ContactsPage() {
           const data = await response.json();
           // Handle paginated response
           const patients = data.results || data;
-          // Clear existing data first to prevent stale formatted dates
-          setAllContacts([]);
-          setContacts([]);
           
           // Transform fresh from API - always use ISO dates from API
           const transformed = patients.map((patient: any) => {
             // Ensure we're working with fresh ISO date from API (not cached formatted date)
-            const freshPatient = { ...patient };
-            // Ensure dob is ISO format (YYYY-MM-DD)
-            if (freshPatient.dob && !/^\d{4}-\d{2}-\d{2}/.test(freshPatient.dob)) {
-              // If not ISO format, log warning but continue
-              console.warn('Unexpected DOB format from API:', freshPatient.dob);
+            // Force dob to be ISO format - if it's not, log and skip formatting
+            const isoDob = patient.dob;
+            if (!isoDob || (!/^\d{4}-\d{2}-\d{2}/.test(isoDob) && !isoDob.includes('T'))) {
+              console.warn('Unexpected DOB format from API:', isoDob, 'for patient:', patient.id);
+              // If not ISO, return patient with dob as-is but log warning
             }
+            // Create fresh patient object with ISO dob
+            const freshPatient = { ...patient, dob: isoDob };
             return transformPatientToContact(freshPatient);
           });
           setAllContacts(transformed);
@@ -316,9 +320,11 @@ export default function ContactsPage() {
           }
         } else {
           console.error('Failed to load patients:', response.statusText);
+          setAllContacts([]);
         }
       } catch (error) {
         console.error('Error loading patients:', error);
+        setAllContacts([]);
       } finally {
         setLoading(false);
       }
