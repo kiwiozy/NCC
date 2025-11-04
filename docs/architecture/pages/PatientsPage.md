@@ -484,6 +484,8 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ## 🔗 **Related Pages/Dialogs**
 
 - **Uses:** ContactHeader component
+- **Uses:** CommunicationDialog (✅ Built) - [CommunicationDialog.md](../dialogs/CommunicationDialog.md)
+- **Uses:** CoordinatorDialogs (✅ Built) - [CoordinatorDialogs.md](../dialogs/CoordinatorDialogs.md)
 - **Will use:** CreatePatientDialog (not yet built)
 - **Will link to:** Patient detail page `/patients/[id]` (when built)
 - **Menu items link to:** Notes, Documents, Appointments, Orders, etc. (to be built)
