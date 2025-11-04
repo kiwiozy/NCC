@@ -125,57 +125,6 @@ export default function ContactsPage() {
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
   
-  // Load patients from API
-  useEffect(() => {
-    const loadPatients = async () => {
-      if (activeType !== 'patients') return; // Only load for patients type
-      
-      setLoading(true);
-      try {
-        // Build query parameters
-        const params = new URLSearchParams();
-        if (searchQuery) {
-          params.append('search', searchQuery);
-        }
-        if (activeFilters.clinic) {
-          // Find clinic ID by name
-          const clinicId = clinics.findIndex(c => c === activeFilters.clinic) >= 0 
-            ? activeFilters.clinic 
-            : null;
-          // For now, filter client-side after loading
-        }
-        if (activeFilters.funding) {
-          // Similar to clinic - filter client-side for now
-        }
-
-        const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          // Handle paginated response
-          const patients = data.results || data;
-          const transformed = patients.map(transformPatientToContact);
-          setAllContacts(transformed);
-          
-          // Apply client-side filtering
-          applyFilters(transformed, searchQuery, activeFilters);
-          
-          // Select first contact if none selected
-          if (transformed.length > 0 && !selectedContact) {
-            setSelectedContact(transformed[0]);
-          }
-        } else {
-          console.error('Failed to load patients:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error loading patients:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPatients();
-  }, [activeType]); // Reload when type changes
-
   // Apply filters to contacts
   const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string>) => {
     let filtered = [...contactList];
@@ -207,6 +156,49 @@ export default function ContactsPage() {
       setSelectedContact(filtered[0] || null);
     }
   };
+
+  // Load patients from API
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (activeType !== 'patients') return; // Only load for patients type
+      
+      setLoading(true);
+      try {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (searchQuery) {
+          params.append('search', searchQuery);
+        }
+        // Note: Clinic and funding filtering is done client-side for now
+        // Can be enhanced to use API filtering later
+
+        const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Handle paginated response
+          const patients = data.results || data;
+          const transformed = patients.map(transformPatientToContact);
+          setAllContacts(transformed);
+          
+          // Apply client-side filtering
+          applyFilters(transformed, searchQuery, activeFilters);
+          
+          // Select first contact if none selected
+          if (transformed.length > 0 && !selectedContact) {
+            setSelectedContact(transformed[0]);
+          }
+        } else {
+          console.error('Failed to load patients:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error loading patients:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPatients();
+  }, [activeType, searchQuery, activeFilters]); // Reload when type, search, or filters change
 
   useEffect(() => {
     // Load clinics from API
