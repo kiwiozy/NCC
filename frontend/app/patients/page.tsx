@@ -1179,24 +1179,115 @@ export default function ContactsPage() {
                     {selectedContact.communication && (
                       <Paper p="lg" withBorder>
                         <Stack gap="md">
-                          {selectedContact.communication.phone && (
-                            <Group>
-                              <Box style={{ minWidth: rem(100) }}>
-                                <Text size="sm" c="dimmed">Phone</Text>
-                                <Text size="xs" c="dimmed">Home</Text>
-                              </Box>
-                              <Text size="md" fw={600}>{selectedContact.communication.phone}</Text>
-                            </Group>
-                          )}
-                          {selectedContact.communication.email && (
-                            <Group>
-                              <Box style={{ minWidth: rem(100) }}>
-                                <Text size="sm" c="dimmed">Email</Text>
-                                <Text size="xs" c="dimmed">Home</Text>
-                              </Box>
-                              <Text size="md" fw={600}>{selectedContact.communication.email}</Text>
-                            </Group>
-                          )}
+                          {(() => {
+                            const comms = selectedContact.communication;
+                            const items: JSX.Element[] = [];
+                            
+                            // Handle phone
+                            if (comms.phone) {
+                              if (typeof comms.phone === 'string') {
+                                items.push(
+                                  <Group key="phone-home">
+                                    <Box style={{ minWidth: rem(100) }}>
+                                      <Text size="sm" c="dimmed">Phone</Text>
+                                      <Text size="xs" c="dimmed">Home</Text>
+                                    </Box>
+                                    <Text size="md" fw={600}>{comms.phone}</Text>
+                                  </Group>
+                                );
+                              } else {
+                                Object.entries(comms.phone).forEach(([name, value]) => {
+                                  items.push(
+                                    <Group key={`phone-${name}`}>
+                                      <Box style={{ minWidth: rem(100) }}>
+                                        <Text size="sm" c="dimmed">Phone</Text>
+                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                      </Box>
+                                      <Text size="md" fw={600}>{value}</Text>
+                                    </Group>
+                                  );
+                                });
+                              }
+                            }
+                            
+                            // Handle mobile
+                            if (comms.mobile) {
+                              if (typeof comms.mobile === 'string') {
+                                items.push(
+                                  <Group key="mobile-home">
+                                    <Box style={{ minWidth: rem(100) }}>
+                                      <Text size="sm" c="dimmed">Mobile</Text>
+                                      <Text size="xs" c="dimmed">Home</Text>
+                                    </Box>
+                                    <Text size="md" fw={600}>{comms.mobile}</Text>
+                                  </Group>
+                                );
+                              } else {
+                                Object.entries(comms.mobile).forEach(([name, value]) => {
+                                  items.push(
+                                    <Group key={`mobile-${name}`}>
+                                      <Box style={{ minWidth: rem(100) }}>
+                                        <Text size="sm" c="dimmed">Mobile</Text>
+                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                      </Box>
+                                      <Text size="md" fw={600}>{value}</Text>
+                                    </Group>
+                                  );
+                                });
+                              }
+                            }
+                            
+                            // Handle email
+                            if (comms.email) {
+                              if (typeof comms.email === 'string') {
+                                items.push(
+                                  <Group key="email-home">
+                                    <Box style={{ minWidth: rem(100) }}>
+                                      <Text size="sm" c="dimmed">Email</Text>
+                                      <Text size="xs" c="dimmed">Home</Text>
+                                    </Box>
+                                    <Text size="md" fw={600}>{comms.email}</Text>
+                                  </Group>
+                                );
+                              } else {
+                                Object.entries(comms.email).forEach(([name, value]) => {
+                                  items.push(
+                                    <Group key={`email-${name}`}>
+                                      <Box style={{ minWidth: rem(100) }}>
+                                        <Text size="sm" c="dimmed">Email</Text>
+                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                      </Box>
+                                      <Text size="md" fw={600}>{value}</Text>
+                                    </Group>
+                                  );
+                                });
+                              }
+                            }
+                            
+                            // Handle address
+                            if (selectedContact.address_json) {
+                              const addr = selectedContact.address_json;
+                              const addressStr = [
+                                addr.street,
+                                addr.street2,
+                                addr.suburb,
+                                addr.postcode,
+                                addr.state,
+                              ].filter(Boolean).join(', ');
+                              
+                              items.push(
+                                <Group key="address">
+                                  <Box style={{ minWidth: rem(100) }}>
+                                    <Text size="sm" c="dimmed">Address</Text>
+                                    <Text size="xs" c="dimmed">{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
+                                  </Box>
+                                  <Text size="md" fw={600}>{addressStr}</Text>
+                                </Group>
+                              );
+                            }
+                            
+                            return items.length > 0 ? items : null;
+                          })()}
                         </Stack>
                       </Paper>
                     )}
