@@ -288,6 +288,15 @@ const transformPatientToContact = (patient: any): Contact => {
       phone: phone || undefined,
       email: email || undefined,
     } : undefined,
+    address_json: patient.address_json ? {
+      street: patient.address_json.street,
+      street2: patient.address_json.street2,
+      suburb: patient.address_json.suburb,
+      postcode: patient.address_json.postcode,
+      state: patient.address_json.state,
+      type: patient.address_json.type,
+      default: patient.address_json.default || false,
+    } : undefined,
     note: patient.notes || '',
   };
 };
@@ -1572,6 +1581,7 @@ export default function ContactsPage() {
                                         setEditingCommunication({ type: 'address', name: addr.type || 'home' });
                                         setCommunicationType('address');
                                         setCommunicationName(addr.type || 'home');
+                                        setIsDefault(addr.default || false);
                                         setAddressFields({
                                           address1: addr.street || '',
                                           address2: addr.street2 || '',
