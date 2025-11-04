@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'documents',
     'ai_services',  # S3 document storage
     'settings',  # Settings management (Funding Sources, etc.)
+    'reminders',  # Reminders for calendar waiting list
 ]
 
 MIDDLEWARE = [

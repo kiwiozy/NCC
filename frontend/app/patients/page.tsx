@@ -2030,26 +2030,30 @@ export default function ContactsPage() {
               onClick={async () => {
                 if (selectedContact && reminderClinic) {
                   try {
-                    // TODO: Create reminder via API
-                    // For now, just show alert
                     const reminderData = {
-                      patient_id: selectedContact.id,
-                      clinic_id: reminderClinic,
-                      note: reminderNote || reminderNoteTemplate,
+                      patient: selectedContact.id,
+                      clinic: reminderClinic || null,
+                      note: reminderNote || reminderNoteTemplate || 'Reminder',
                       reminder_date: reminderDate ? reminderDate.toISOString().split('T')[0] : null,
                     };
                     
                     console.log('Creating reminder:', reminderData);
                     
-                    // TODO: Replace with actual API call
-                    // const response = await fetch('https://localhost:8000/api/reminders/', {
-                    //   method: 'POST',
-                    //   headers: { 'Content-Type': 'application/json' },
-                    //   body: JSON.stringify(reminderData),
-                    // });
+                    const response = await fetch('https://localhost:8000/api/reminders/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(reminderData),
+                    });
                     
-                    alert(`Reminder created!\n\nClinic: ${reminderClinics.find(c => c.value === reminderClinic)?.label}\nNote: ${reminderNote || reminderNoteTemplate}`);
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({ detail: 'Failed to create reminder' }));
+                      throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    }
                     
+                    const createdReminder = await response.json();
+                    console.log('Reminder created:', createdReminder);
+                    
+                    // Close dialog and reset state
                     setReminderDialogOpened(false);
                     setReminderClinic('');
                     setReminderNote('');

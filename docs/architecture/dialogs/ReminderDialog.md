@@ -244,9 +244,10 @@ DELETE /api/reminders/{id}/
 
 ## Status
 
-- [ ] Backend model created
-- [ ] Backend API endpoints created
+- [x] Backend model created ✅
+- [x] Backend API endpoints created ✅
 - [x] Frontend dialog component created ✅
+- [x] Frontend-backend integration ✅
 - [ ] Calendar integration (waiting list section)
 - [ ] Convert reminder to appointment functionality
 - [x] Patient profile integration (add reminder button) ✅
