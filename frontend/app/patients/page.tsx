@@ -1559,48 +1559,74 @@ export default function ContactsPage() {
               Cancel
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (selectedContact && communicationType && communicationName) {
-                  // Handle saving communication
-                  if (communicationType === 'address') {
-                    // Handle address separately
-                    const addressStr = [
-                      addressFields.address1,
-                      addressFields.address2,
-                      addressFields.suburb,
-                      addressFields.postcode,
-                      addressFields.state,
-                    ].filter(Boolean).join(', ');
-                    
-                    // Update contact with address (this would normally be saved to backend)
-                    console.log('Adding address:', addressStr);
-                  } else {
-                    // Handle phone, mobile, email
-                    if (communicationValue) {
-                      const updatedCommunication = {
-                        ...selectedContact.communication,
-                        [communicationType]: communicationValue,
+                  try {
+                    // Handle saving communication
+                    if (communicationType === 'address') {
+                      // Handle address - save to address_json
+                      const addressData = {
+                        street: addressFields.address1,
+                        street2: addressFields.address2 || '',
+                        suburb: addressFields.suburb || '',
+                        postcode: addressFields.postcode || '',
+                        state: addressFields.state || '',
+                        type: communicationName, // Home, Work, etc.
                       };
                       
+                      // Update contact with address
                       setSelectedContact({
                         ...selectedContact,
-                        communication: updatedCommunication,
+                        address_json: addressData,
                       });
+                      
+                      // TODO: Save to backend API
+                      // await fetch(`/api/patients/${selectedContact.id}/`, {
+                      //   method: 'PATCH',
+                      //   headers: { 'Content-Type': 'application/json' },
+                      //   body: JSON.stringify({ address_json: addressData }),
+                      // });
+                    } else {
+                      // Handle phone, mobile, email
+                      if (communicationValue) {
+                        const updatedCommunication = {
+                          ...selectedContact.communication || {},
+                          [communicationType]: {
+                            ...(selectedContact.communication?.[communicationType] || {}),
+                            [communicationName]: communicationValue,
+                          },
+                        };
+                        
+                        setSelectedContact({
+                          ...selectedContact,
+                          communication: updatedCommunication,
+                        });
+                        
+                        // TODO: Save to backend API
+                        // await fetch(`/api/patients/${selectedContact.id}/`, {
+                        //   method: 'PATCH',
+                        //   headers: { 'Content-Type': 'application/json' },
+                        //   body: JSON.stringify({ contact_json: updatedCommunication }),
+                        // });
+                      }
                     }
+                    
+                    // Close dialog
+                    setCommunicationDialogOpened(false);
+                    setCommunicationType('');
+                    setCommunicationName('');
+                    setCommunicationValue('');
+                    setAddressFields({
+                      address1: '',
+                      address2: '',
+                      suburb: '',
+                      postcode: '',
+                      state: '',
+                    });
+                  } catch (error) {
+                    console.error('Error saving communication:', error);
+                    // TODO: Show error message to user
                   }
-                  
-                  // Close dialog
-                  setCommunicationDialogOpened(false);
-                  setCommunicationType('');
-                  setCommunicationName('');
-                  setCommunicationValue('');
-                  setAddressFields({
-                    address1: '',
-                    address2: '',
-                    suburb: '',
-                    postcode: '',
-                    state: '',
-                  });
                 }
               }}
               disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
