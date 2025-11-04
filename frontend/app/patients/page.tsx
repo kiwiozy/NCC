@@ -1217,11 +1217,8 @@ export default function ContactsPage() {
                                     >
                                       <Group style={{ flex: 1 }}>
                                         <Box style={{ minWidth: rem(100) }}>
-                                          <Text size="sm" c="dimmed">Phone</Text>
-                                          <Group gap={4}>
-                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                          </Group>
+                                          <Text size="sm" c={isDefault ? "blue" : "dimmed"}>Phone</Text>
+                                          <Text size="xs" c={isDefault ? "blue" : "dimmed"}>{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
                                       </Group>
@@ -1352,11 +1349,8 @@ export default function ContactsPage() {
                                     >
                                       <Group style={{ flex: 1 }}>
                                         <Box style={{ minWidth: rem(100) }}>
-                                          <Text size="sm" c="dimmed">Mobile</Text>
-                                          <Group gap={4}>
-                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                          </Group>
+                                          <Text size="sm" c={isDefault ? "blue" : "dimmed"}>Mobile</Text>
+                                          <Text size="xs" c={isDefault ? "blue" : "dimmed"}>{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
                                       </Group>
@@ -1487,11 +1481,8 @@ export default function ContactsPage() {
                                     >
                                       <Group style={{ flex: 1 }}>
                                         <Box style={{ minWidth: rem(100) }}>
-                                          <Text size="sm" c="dimmed">Email</Text>
-                                          <Group gap={4}>
-                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                          </Group>
+                                          <Text size="sm" c={isDefault ? "blue" : "dimmed"}>Email</Text>
+                                          <Text size="xs" c={isDefault ? "blue" : "dimmed"}>{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
                                       </Group>
