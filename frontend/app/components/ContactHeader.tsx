@@ -164,12 +164,17 @@ export default function ContactHeader({
                 {archiveEnabled && (
                   <Stack gap={4}>
                     <Text size="sm" fw={500}>View</Text>
-                    <Switch
-                      checked={filters.archived === true}
-                      onChange={(event) => setFilters({ ...filters, archived: event.currentTarget.checked })}
-                      label="Viewing Archived"
-                      size="md"
-                    />
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text size="sm">Viewing Archived</Text>
+                      <Switch
+                        checked={filters.archived === true || filters.archived === 'true'}
+                        onChange={(event) => {
+                          const newArchived = event.currentTarget.checked;
+                          setFilters({ ...filters, archived: newArchived });
+                        }}
+                        size="md"
+                      />
+                    </Group>
                   </Stack>
                 )}
                 
