@@ -92,6 +92,8 @@ new Date(dateStr).toLocaleDateString()
 formatDateOnlyAU(dateStr)
 ```
 
+**Important:** Dates are displayed as "DD MMM YYYY" format (e.g., "25 Jun 1949") but stored in ISO format (YYYY-MM-DD) in the database.
+
 #### **3. Avoid Random Values in Render**
 ```typescript
 // ❌ Bad

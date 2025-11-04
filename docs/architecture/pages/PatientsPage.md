@@ -15,10 +15,11 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ## 🎨 **UI Components**
 
 ### **Layout**
-- ✅ Header bar with search, filters, and actions
-- ✅ Left sidebar (25% width) - Patient list
-- ✅ Right panel (75% width) - Patient detail form
-- ✅ Scrollable areas for both panels
+- ✅ Header bar with search, filters, and actions (fixed at top)
+- ✅ Left sidebar (25% width) - Patient list (independently scrollable)
+- ✅ Right panel (75% width) - Patient detail form (fixed/stationary)
+- ✅ Independent scrolling: Left list scrolls while right panel stays fixed
+- ✅ Flexbox layout for proper height management
 
 ### **Left Sidebar - Patient List**
 - ✅ Search bar with filter button
@@ -51,6 +52,9 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ✅ Middle Name input (optional)
 - ✅ Last Name input
 - ✅ Date of Birth input (with calendar icon)
+  - **Format:** Displays as "DD MMM YYYY" (e.g., "25 Jun 1949")
+  - **Storage:** ISO format (YYYY-MM-DD) in database
+  - **Formatting:** Uses `formatDateOnlyAU` utility with Luxon
 - ✅ Age display (calculated from DOB)
 
 #### **Column 2: Health & Clinic**
