@@ -1786,10 +1786,11 @@ export default function ContactsPage() {
                   }
                 }
               }}
-              disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
-            >
-              Save
-            </Button>
+                disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
+              >
+                Save
+              </Button>
+            </Group>
           </Group>
         </Stack>
       </Modal>
