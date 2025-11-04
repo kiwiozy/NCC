@@ -79,41 +79,33 @@ const transformPatientToContact = (patient: any): Contact => {
       return `${day}/${month}/${year}`;
     }
     
+    // CRITICAL CHECK: If date contains letters (month names), NEVER call formatDateOnlyAU
+    // This must be checked BEFORE checking for ISO format
+    if (/[A-Za-z]/.test(trimmed)) {
+      // Already contains letters - must be formatted already
+      // Extract and convert to DD/MMM/YYYY format
+      const extractMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+      if (extractMatch) {
+        const [, d, m, y] = extractMatch;
+        return `${d}/${m}/${y}`;
+      }
+      // If already in DD/MMM/YYYY format, return as-is
+      if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}/.test(trimmed)) {
+        return trimmed.split('/').slice(0, 3).join('/');
+      }
+      console.warn('Date contains letters but format unclear:', trimmed);
+      return trimmed;
+    }
+    
     // Only process if it looks like an ISO date string (YYYY-MM-DD) or similar
     // If it's already a formatted date string, don't try to format it again
     if (!/^\d{4}-\d{2}-\d{2}/.test(trimmed) && !trimmed.includes('T')) {
-      // Doesn't look like an ISO date - might be already formatted or invalid
-      // If it contains month names or looks formatted, try to fix it
-      if (/[A-Za-z]{3}/.test(trimmed)) {
-        // Contains month name, might be formatted already - but wrong format
-        // Try to convert spaces to slashes
-        const spaceToSlash = trimmed.replace(/\s+/g, '/');
-        if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}/.test(spaceToSlash)) {
-          return spaceToSlash.split('/').slice(0, 3).join('/');
-        }
-      }
+      // Doesn't look like an ISO date - return as-is to avoid double formatting
       console.warn('Date string does not look like ISO format:', trimmed);
-      return trimmed; // Return as-is to avoid double formatting
+      return trimmed;
     }
     
     try {
-      // CRITICAL: Only call formatDateOnlyAU on ISO dates (YYYY-MM-DD)
-      // If dateStr is already formatted or contains letters, don't call formatDateOnlyAU
-      if (/[A-Za-z]/.test(trimmed)) {
-        // Already contains letters - must be formatted already
-        // Extract and convert to DD/MMM/YYYY format
-        const extractMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
-        if (extractMatch) {
-          const [, d, m, y] = extractMatch;
-          return `${d}/${m}/${y}`;
-        }
-        // If already in DD/MMM/YYYY format, return as-is
-        if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}/.test(trimmed)) {
-          return trimmed.split('/').slice(0, 3).join('/');
-        }
-        console.warn('Date contains letters but format unclear:', trimmed);
-        return trimmed;
-      }
       
       // First, get the formatted date in DD/MM/YYYY format
       const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "11/09/1947")
