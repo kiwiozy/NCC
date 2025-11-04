@@ -43,9 +43,14 @@ const transformPatientToContact = (patient: any): Contact => {
     
     const trimmed = typeof dateStr === 'string' ? dateStr.trim() : '';
     
-    // If already formatted in DD/MMM/YYYY format, return as-is
-    if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}$/.test(trimmed)) {
+    // If already formatted in DD MMM YYYY format, return as-is
+    if (/^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$/.test(trimmed)) {
       return trimmed;
+    }
+    
+    // If in old DD/MMM/YYYY format, convert to DD MMM YYYY
+    if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}$/.test(trimmed)) {
+      return trimmed.replace(/\//g, ' ');
     }
     
     // Check if it contains "/YYYY" at the end (malformed date from previous bug)
@@ -64,12 +69,12 @@ const transformPatientToContact = (patient: any): Contact => {
     
     // Check if it's in old format with spaces (e.g., "11 Sep 1947") and convert
     // This pattern matches "11 Sep 1947" even if followed by "/09/YYYY"
-    const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
-    if (oldFormatMatch) {
-      const [, day, month, year] = oldFormatMatch;
-      // Convert old format to new format: "11 Sep 1947" -> "11/Sep/1947"
-      return `${day}/${month}/${year}`;
-    }
+      const oldFormatMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+      if (oldFormatMatch) {
+        const [, day, month, year] = oldFormatMatch;
+        // Already in correct format: "10 May 2000"
+        return `${day} ${month} ${year}`;
+      }
     
     // Check if it looks like a partially formatted date with month name and numbers
     // Pattern like "11 Sep 1947/09" - extract just the date part
@@ -87,11 +92,15 @@ const transformPatientToContact = (patient: any): Contact => {
       const extractMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
       if (extractMatch) {
         const [, d, m, y] = extractMatch;
-        return `${d}/${m}/${y}`;
+        return `${d} ${m} ${y}`;
       }
-      // If already in DD/MMM/YYYY format, return as-is
+      // If already in DD MMM YYYY format, return as-is
+      if (/^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(trimmed)) {
+        return trimmed;
+      }
+      // If in DD/MMM/YYYY format, convert to DD MMM YYYY
       if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}/.test(trimmed)) {
-        return trimmed.split('/').slice(0, 3).join('/');
+        return trimmed.replace(/\//g, ' ');
       }
       console.warn('Date contains letters but format unclear:', trimmed);
       return trimmed;
@@ -147,8 +156,8 @@ const transformPatientToContact = (patient: any): Contact => {
         return formatted; // Return as-is if invalid
       }
       
-      // Return formatted as "DD/MMM/YYYY" (e.g., "11/Sep/1947")
-      return `${day}/${months[monthIndex]}/${year}`;
+      // Return formatted as "DD MMM YYYY" (e.g., "10 May 2000")
+      return `${day} ${months[monthIndex]} ${year}`;
     } catch (error) {
       console.error('Error formatting date:', error, 'for input:', dateStr);
       return '';
@@ -230,7 +239,7 @@ const transformPatientToContact = (patient: any): Contact => {
       const oldMatch = dobStr.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
       if (oldMatch) {
         const [, d, m, y] = oldMatch;
-        formattedDob = `${d}/${m}/${y}`;
+        formattedDob = `${d} ${m} ${y}`;
       } else {
         formattedDob = dobStr; // Return as-is to avoid further corruption
       }
