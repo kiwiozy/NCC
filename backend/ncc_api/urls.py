@@ -21,6 +21,7 @@ from patients.views import PatientViewSet
 from clinicians.views import ClinicViewSet, ClinicianViewSet
 from appointments.views import AppointmentViewSet, EncounterViewSet
 from reminders.views import ReminderViewSet
+from notes.views import NoteViewSet
 
 # Create API router
 router = routers.DefaultRouter()
@@ -30,6 +31,7 @@ router.register(r'clinicians', ClinicianViewSet, basename='clinician')
 router.register(r'appointments', AppointmentViewSet, basename='appointment')
 router.register(r'encounters', EncounterViewSet, basename='encounter')
 router.register(r'reminders', ReminderViewSet, basename='reminder')
+router.register(r'notes', NoteViewSet, basename='note')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

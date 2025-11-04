@@ -36,10 +36,14 @@ import { formatDateTimeAU } from '../../utils/dateFormatting';
 
 interface Note {
   id: string;
-  title: string;
+  patient?: string;
+  patient_name?: string;
+  note_type: string;
+  note_type_label?: string;
   content: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
 }
 
 const NOTE_TYPES = [
@@ -114,36 +118,65 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
 
   const fetchNotes = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const storageKey = getStorageKey();
-      
-      // Migrate from old localStorage key if it exists (only for global notes)
-      if (!patientId) {
-        const oldNotes = localStorage.getItem('nexus_notes');
-        if (oldNotes) {
-          localStorage.setItem('walkeasy_nexus_notes', oldNotes);
-          localStorage.removeItem('nexus_notes');
-        }
-      }
-      
-      // Load from localStorage
-      // TODO: In future, load from API using patientId
-      const savedNotes = localStorage.getItem(storageKey);
-      if (savedNotes) {
-        const parsedNotes = JSON.parse(savedNotes);
-        setNotes(parsedNotes);
-        // Auto-select first note if available
-        if (parsedNotes.length > 0 && !selectedNote) {
-          setSelectedNote(parsedNotes[0]);
+      if (patientId) {
+        // Load from API for patient-specific notes
+        const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+        if (response.ok) {
+          const data = await response.json();
+          const notesList = data.results || data;
+          setNotes(notesList);
+          // Auto-select first note if available
+          if (notesList.length > 0 && !selectedNote) {
+            setSelectedNote(notesList[0]);
+          } else if (notesList.length === 0) {
+            setSelectedNote(null);
+          }
+        } else {
+          throw new Error('Failed to load notes from server');
         }
       } else {
-        // No notes found, clear state
-        setNotes([]);
-        setSelectedNote(null);
+        // Fallback to localStorage for global notes (non-patient specific)
+        const storageKey = getStorageKey();
+        const savedNotes = localStorage.getItem(storageKey);
+        if (savedNotes) {
+          const parsedNotes = JSON.parse(savedNotes);
+          // Map localStorage format to API format
+          const mappedNotes = parsedNotes.map((note: any) => ({
+            id: note.id,
+            note_type: note.title || 'clinical_notes',
+            content: note.content,
+            created_at: note.created_at,
+            updated_at: note.updated_at || note.created_at,
+          }));
+          setNotes(mappedNotes);
+          if (mappedNotes.length > 0 && !selectedNote) {
+            setSelectedNote(mappedNotes[0]);
+          } else {
+            setSelectedNote(null);
+          }
+        } else {
+          setNotes([]);
+          setSelectedNote(null);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading notes:', err);
-      setError('Failed to load notes');
+      setError('Failed to load notes: ' + (err.message || 'Unknown error'));
+      // Fallback to localStorage if API fails
+      if (patientId) {
+        try {
+          const storageKey = getStorageKey();
+          const savedNotes = localStorage.getItem(storageKey);
+          if (savedNotes) {
+            const parsedNotes = JSON.parse(savedNotes);
+            setNotes(parsedNotes);
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback also failed:', fallbackErr);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -151,7 +184,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
 
   const saveNote = async () => {
     if (!newTitle || !newContent.trim()) {
-      setError('Title and content are required');
+      setError('Note type and content are required');
       return;
     }
 
@@ -160,46 +193,100 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
     setSuccess(null);
 
     try {
-      const now = new Date().toISOString();
-      const titleLabel = NOTE_TYPES.find(t => t.value === newTitle)?.label || newTitle;
-      
-      const storageKey = getStorageKey();
-      
-      if (editingId) {
-        // Update existing note
-        const updatedNotes = notes.map((note) =>
-          note.id === editingId
-            ? { ...note, title: titleLabel, content: newContent, updated_at: now }
-            : note
-        );
-        setNotes(updatedNotes);
-        localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
-        // Dispatch event to update badge count
-        window.dispatchEvent(new Event('notesUpdated'));
-        setSuccess('Note updated successfully!');
-        setEditingId(null);
-        // Update selected note if it's the one being edited
-        if (selectedNote?.id === editingId) {
-          const updatedNote = updatedNotes.find(n => n.id === editingId);
-          if (updatedNote) setSelectedNote(updatedNote);
+      if (patientId) {
+        // Use API for patient-specific notes
+        if (editingId) {
+          // Update existing note via API
+          const response = await fetch(`https://localhost:8000/api/notes/${editingId}/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              note_type: newTitle,
+              content: newContent,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.message || 'Failed to update note');
+          }
+
+          const updatedNote = await response.json();
+          const updatedNotes = notes.map((note) =>
+            note.id === editingId ? updatedNote : note
+          );
+          setNotes(updatedNotes);
+          window.dispatchEvent(new Event('notesUpdated'));
+          setSuccess('Note updated successfully!');
+          setEditingId(null);
+          if (selectedNote?.id === editingId) {
+            setSelectedNote(updatedNote);
+          }
+        } else {
+          // Create new note via API
+          const response = await fetch('https://localhost:8000/api/notes/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              patient: patientId,
+              note_type: newTitle,
+              content: newContent,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || errorData.message || 'Failed to create note');
+          }
+
+          const newNote = await response.json();
+          const updatedNotes = [newNote, ...notes];
+          setNotes(updatedNotes);
+          window.dispatchEvent(new Event('notesUpdated'));
+          setSuccess('Note created successfully!');
+          setSelectedNote(newNote);
         }
       } else {
-        // Create new note
-        const newNote: Note = {
-          id: Math.random().toString(36).substring(7),
-          title: titleLabel,
-          content: newContent,
-          created_at: now,
-          updated_at: now,
-        };
-        const updatedNotes = [newNote, ...notes];
-        setNotes(updatedNotes);
-        localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
-        // Dispatch event to update badge count
-        window.dispatchEvent(new Event('notesUpdated'));
-        setSuccess('Note created successfully!');
-        // Select the new note
-        setSelectedNote(newNote);
+        // Fallback to localStorage for non-patient notes
+        const now = new Date().toISOString();
+        const storageKey = getStorageKey();
+        const titleLabel = NOTE_TYPES.find(t => t.value === newTitle)?.label || newTitle;
+        
+        if (editingId) {
+          const updatedNotes = notes.map((note: any) =>
+            note.id === editingId
+              ? { ...note, note_type: newTitle, title: titleLabel, content: newContent, updated_at: now }
+              : note
+          );
+          setNotes(updatedNotes);
+          localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+          window.dispatchEvent(new Event('notesUpdated'));
+          setSuccess('Note updated successfully (saved locally)!');
+          setEditingId(null);
+          if (selectedNote?.id === editingId) {
+            const updatedNote = updatedNotes.find((n: Note) => n.id === editingId);
+            if (updatedNote) setSelectedNote(updatedNote);
+          }
+        } else {
+          const newNote: Note = {
+            id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            note_type: newTitle,
+            title: titleLabel,
+            content: newContent,
+            created_at: now,
+            updated_at: now,
+          };
+          const updatedNotes = [newNote, ...notes];
+          setNotes(updatedNotes);
+          localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+          window.dispatchEvent(new Event('notesUpdated'));
+          setSuccess('Note created successfully (saved locally)!');
+          setSelectedNote(newNote);
+        }
       }
 
       // Clear form
@@ -207,6 +294,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
       setNewContent('');
       setEditingId(null);
     } catch (err: any) {
+      console.error('Error saving note:', err);
       setError(err.message || 'Failed to save note');
     } finally {
       setSaving(false);
@@ -214,8 +302,10 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
   };
 
   const editNote = (note: Note) => {
-    const noteType = NOTE_TYPES.find(t => t.label === note.title);
-    setNewTitle(noteType?.value || 'clinical_notes');
+    // Handle both old format (title) and new format (note_type)
+    const noteTypeValue = note.note_type || note.title || 'clinical_notes';
+    const noteType = NOTE_TYPES.find(t => t.value === noteTypeValue || t.label === noteTypeValue || t.label === note.title);
+    setNewTitle(noteType?.value || noteTypeValue);
     setNewContent(note.content);
     setEditingId(note.id);
     setSelectedNote(note);
@@ -236,16 +326,33 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
     setNoteToDelete(null);
 
     try {
-      const storageKey = getStorageKey();
-      const updatedNotes = notes.filter((note) => note.id !== id);
-      setNotes(updatedNotes);
-      localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
-      // Dispatch event to update badge count
-      window.dispatchEvent(new Event('notesUpdated'));
-      setSuccess('Note deleted successfully');
+      if (patientId) {
+        // Delete via API
+        const response = await fetch(`https://localhost:8000/api/notes/${id}/`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete note from server');
+        }
+
+        const updatedNotes = notes.filter((note) => note.id !== id);
+        setNotes(updatedNotes);
+        window.dispatchEvent(new Event('notesUpdated'));
+        setSuccess('Note deleted successfully');
+      } else {
+        // Fallback to localStorage
+        const storageKey = getStorageKey();
+        const updatedNotes = notes.filter((note) => note.id !== id);
+        setNotes(updatedNotes);
+        localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+        window.dispatchEvent(new Event('notesUpdated'));
+        setSuccess('Note deleted successfully');
+      }
       
       // Clear selection if deleted note was selected
       if (selectedNote?.id === id) {
+        const updatedNotes = notes.filter((note) => note.id !== id);
         setSelectedNote(updatedNotes.length > 0 ? updatedNotes[0] : null);
       }
       
@@ -255,9 +362,9 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
         setNewContent('');
         setEditingId(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting note:', err);
-      setError('Failed to delete note');
+      setError('Failed to delete note: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -382,7 +489,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                       <Group justify="space-between" align="flex-start" mb="xs">
                         <Box style={{ flex: 1 }}>
                           <Badge variant="light" size="sm" mb="xs">
-                            {note.title}
+                            {note.note_type_label || NOTE_TYPES.find(t => t.value === note.note_type)?.label || note.title || 'Clinical Notes'}
                           </Badge>
                           <Text size="xs" c="dimmed" lineClamp={2}>
                             {note.content}
@@ -500,7 +607,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                       <Box style={{ flex: 1 }}>
                         <Text size="sm" c="dimmed" mb={4}>NOTE TYPE</Text>
                         <Badge variant="light" size="lg" mb="sm">
-                          {selectedNote.title}
+                          {selectedNote.note_type_label || NOTE_TYPES.find(t => t.value === selectedNote.note_type)?.label || selectedNote.title || 'Clinical Notes'}
                         </Badge>
                         <Text size="xs" c="dimmed" mt="xs">
                           Created: {formatDateTimeAU(selectedNote.created_at)}

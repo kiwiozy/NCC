@@ -61,15 +61,28 @@ export default function ContactHeader({
 
   // Get notes count for patient
   useEffect(() => {
-    const getNotesCount = () => {
+    const getNotesCount = async () => {
       try {
-        const storageKey = patientId ? `patient_notes_${patientId}` : 'walkeasy_nexus_notes';
-        const savedNotes = localStorage.getItem(storageKey);
-        if (savedNotes) {
-          const parsedNotes = JSON.parse(savedNotes);
-          setNotesCount(Array.isArray(parsedNotes) ? parsedNotes.length : 0);
+        if (patientId) {
+          // Load from API for patient-specific notes
+          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+          if (response.ok) {
+            const data = await response.json();
+            const notesList = data.results || data;
+            setNotesCount(Array.isArray(notesList) ? notesList.length : 0);
+          } else {
+            setNotesCount(0);
+          }
         } else {
-          setNotesCount(0);
+          // Fallback to localStorage for global notes
+          const storageKey = 'walkeasy_nexus_notes';
+          const savedNotes = localStorage.getItem(storageKey);
+          if (savedNotes) {
+            const parsedNotes = JSON.parse(savedNotes);
+            setNotesCount(Array.isArray(parsedNotes) ? parsedNotes.length : 0);
+          } else {
+            setNotesCount(0);
+          }
         }
       } catch (err) {
         console.error('Error loading notes count:', err);
@@ -81,9 +94,11 @@ export default function ContactHeader({
     
     // Listen for storage changes (when notes are added/deleted in other tabs/components)
     const handleStorageChange = (e: StorageEvent) => {
-      const storageKey = patientId ? `patient_notes_${patientId}` : 'walkeasy_nexus_notes';
-      if (e.key === storageKey) {
-        getNotesCount();
+      if (!patientId) {
+        const storageKey = 'walkeasy_nexus_notes';
+        if (e.key === storageKey) {
+          getNotesCount();
+        }
       }
     };
     
