@@ -2036,24 +2036,10 @@ export default function ContactsPage() {
                           const errorText = await response.text();
                           throw new Error(`Failed to save address: ${response.status} ${errorText}`);
                         }
-                        // Success - close dialog
-                        setCommunicationDialogOpened(false);
-                        setEditingCommunication(null);
-                        setCommunicationType('');
-                        setCommunicationName('');
-                        setCommunicationValue('');
-                        setIsDefault(false);
-                        setAddressFields({
-                          address1: '',
-                          address2: '',
-                          suburb: '',
-                          postcode: '',
-                          state: '',
-                        });
                       } catch (error) {
                         console.error('Error saving address:', error);
-                        // Show error message to user - don't close dialog on error
                         alert(`Failed to save address: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        return; // Don't close dialog on error
                       }
                     } else {
                         // Handle phone, mobile, email
@@ -2123,31 +2109,33 @@ export default function ContactsPage() {
                             const errorText = await response.text();
                             throw new Error(`Failed to save communication: ${response.status} ${errorText}`);
                           }
-                          // Success - close dialog
-                          setCommunicationDialogOpened(false);
-                          setEditingCommunication(null);
-                          setCommunicationType('');
-                          setCommunicationName('');
-                          setCommunicationValue('');
-                          setIsDefault(false);
-                          setAddressFields({
-                            address1: '',
-                            address2: '',
-                            suburb: '',
-                            postcode: '',
-                            state: '',
-                          });
                         } catch (error) {
                           console.error('Error saving communication:', error);
-                          // TODO: Show error message to user - don't close dialog on error
                           alert(`Failed to save communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          return; // Don't close dialog on error
                         }
                       } else {
                         // No communication value - this shouldn't happen due to validation, but handle gracefully
                         console.warn('No communication value provided');
                         alert('Please enter a communication value');
+                        return; // Don't close dialog
                       }
                     }
+                    
+                    // Close dialog only on successful save
+                    setCommunicationDialogOpened(false);
+                    setEditingCommunication(null);
+                    setCommunicationType('');
+                    setCommunicationName('');
+                    setCommunicationValue('');
+                    setIsDefault(false);
+                    setAddressFields({
+                      address1: '',
+                      address2: '',
+                      suburb: '',
+                      postcode: '',
+                      state: '',
+                    });
                   } catch (error) {
                     console.error('Error saving communication:', error);
                     alert(`Error saving communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
