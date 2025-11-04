@@ -64,6 +64,8 @@ export default function NotesTest() {
 
   // OpenAI Dialog state
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiResult, setAiResult] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
@@ -156,10 +158,19 @@ export default function NotesTest() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const deleteNote = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) {
+  const deleteNote = (id: string) => {
+    setNoteToDelete(id);
+    setDeleteConfirmOpened(true);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) {
       return;
     }
+
+    setDeleteConfirmOpened(false);
+    const id = noteToDelete;
+    setNoteToDelete(null);
 
     try {
       const updatedNotes = notes.filter((note) => note.id !== id);

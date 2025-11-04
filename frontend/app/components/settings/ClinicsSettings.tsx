@@ -162,9 +162,18 @@ export default function ClinicsSettings() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this clinic? This action cannot be undone.')) {
+    setItemToDelete(id);
+    setDeleteConfirmOpened(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) {
       return;
     }
+
+    setDeleteConfirmOpened(false);
+    const id = itemToDelete;
+    setItemToDelete(null);
 
     try {
       const response = await fetch(`https://localhost:8000/api/clinics/${id}/`, {

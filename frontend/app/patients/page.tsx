@@ -514,20 +514,22 @@ export default function ContactsPage() {
     }
   };
 
-  const handleArchive = async () => {
+  const handleArchive = () => {
     if (!selectedContact) {
       console.warn('No contact selected for archiving');
       return;
     }
     
-    // Confirm archive action
-    const confirmed = window.confirm(
-      `Are you sure you want to archive ${selectedContact.name}? This will hide them from active lists but keep the record.`
-    );
-    
-    if (!confirmed) {
+    // Open confirmation modal
+    setArchiveConfirmOpened(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedContact) {
       return;
     }
+    
+    setArchiveConfirmOpened(false);
     
     try {
       // Determine API endpoint based on activeType
@@ -608,11 +610,13 @@ export default function ContactsPage() {
       } else {
         const error = await response.json();
         console.error('Failed to archive contact:', error);
-        alert('Failed to archive contact. Please try again.');
+        setArchiveErrorMessage('Failed to archive contact. Please try again.');
+        setArchiveErrorOpened(true);
       }
     } catch (error) {
       console.error('Error archiving contact:', error);
-      alert('Error archiving contact. Please try again.');
+      setArchiveErrorMessage('Error archiving contact. Please try again.');
+      setArchiveErrorOpened(true);
     }
   };
 

@@ -144,10 +144,19 @@ export default function FundingSourcesSettings() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this funding source?')) {
+  const handleDelete = (id: string) => {
+    setItemToDelete(id);
+    setDeleteConfirmOpened(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) {
       return;
     }
+
+    setDeleteConfirmOpened(false);
+    const id = itemToDelete;
+    setItemToDelete(null);
 
     try {
       const response = await fetch(`https://localhost:8000/api/settings/funding-sources/${id}/`, {

@@ -221,6 +221,10 @@ function LetterPage({
 
 export default function LetterEditor() {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [urlPromptOpened, setUrlPromptOpened] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [errorModalOpened, setErrorModalOpened] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pages, setPages] = useState<string[]>([
@@ -765,11 +769,13 @@ export default function LetterEditor() {
       } else {
         const errorData = await response.json();
         console.error('PDF generation failed:', errorData);
-        alert(`PDF generation failed: ${errorData.details || errorData.error}`);
+        setErrorMessage(`PDF generation failed: ${errorData.details || errorData.error}`);
+        setErrorModalOpened(true);
       }
     } catch (error) {
       console.error('Error calling PDF API:', error);
-      alert('Error generating PDF. Check console for details.');
+      setErrorMessage('Error generating PDF. Check console for details.');
+      setErrorModalOpened(true);
     } finally {
       setPdfLoading(false);
     }
