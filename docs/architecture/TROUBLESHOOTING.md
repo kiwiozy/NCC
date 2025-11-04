@@ -162,6 +162,72 @@ python manage.py migrate
 
 ---
 
+## 📅 **Date Formatting Issues**
+
+### **Symptoms:**
+- Dates showing as ISO format (e.g., "1949-06-25") instead of formatted (e.g., "25 Jun 1949")
+- Console warnings about "Invalid date parts"
+- Dates showing with "/YYYY" suffix (e.g., "25 Jun 1949/06/YYYY")
+
+### **Causes & Solutions:**
+
+#### **1. Luxon Format String Issue** ⚠️ **CRITICAL**
+
+**Problem:**
+Using incorrect Luxon format tokens:
+- `DD` = Day of year (wrong!)
+- `YYYY` = Week year (wrong!)
+
+**Solution:**
+Use correct format tokens:
+- `dd` = Day of month (correct)
+- `yyyy` = Calendar year (correct)
+
+**Example:**
+```typescript
+// ❌ Wrong - Returns malformed dates
+dt.toFormat('DD/MM/YYYY')  // Returns "Jun 25, 1949/06/YYYY"
+
+// ✅ Correct - Returns proper format
+dt.toFormat('dd/MM/yyyy')  // Returns "25/06/1949"
+```
+
+**Fixed in:**
+- `frontend/app/utils/dateFormatting.ts` - `formatDateOnlyAU` and `formatDateAU` now use `dd/MM/yyyy`
+
+#### **2. Double Formatting Protection**
+
+**Problem:**
+`formatDateOnlyAU` being called on already-formatted dates (dates with month names).
+
+**Solution:**
+Multiple layers of protection:
+1. Check in `transformPatientToContact` - Only format ISO dates
+2. Check in `formatDate` - Detect letters before calling `formatDateOnlyAU`
+3. Check in `formatDateOnlyAU` - Reject dates with letters
+4. Check in `formatDateAU` - Validate DateTime before formatting
+
+**Date Format:**
+- **Display:** "DD MMM YYYY" (e.g., "25 Jun 1949")
+- **Storage:** ISO format "YYYY-MM-DD" (e.g., "1949-06-25")
+- **Processing:** Convert ISO → "dd/MM/yyyy" → "DD MMM YYYY"
+
+#### **3. Stale React State**
+
+**Problem:**
+React state may contain old formatted dates from previous renders.
+
+**Solution:**
+Always clear state before fetching new data:
+```typescript
+setAllContacts([]);
+setContacts([]);
+setSelectedContact(null);
+// Then fetch fresh data from API
+```
+
+---
+
 ## 🎨 **Frontend Issues**
 
 ### **Build Errors:**
