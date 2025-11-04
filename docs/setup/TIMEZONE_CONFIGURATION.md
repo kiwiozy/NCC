@@ -42,10 +42,17 @@ A comprehensive utility module using Luxon for consistent Australian timezone fo
 
 #### Available Functions
 
-- `formatDateTimeAU(date, format?)` - Full date and time (default: 'DD/MM/YYYY h:mm:ss a')
-- `formatDateOnlyAU(date)` - Date only (DD/MM/YYYY)
+- `formatDateTimeAU(date, format?)` - Full date and time (default: 'dd/MM/yyyy h:mm:ss a')
+- `formatDateOnlyAU(date)` - Date only (returns 'dd/MM/yyyy' format, e.g., "25/06/1949")
 - `formatTimeOnlyAU(date)` - Time only (h:mm:ss a)
-- `formatShortDateTimeAU(date)` - Short format (DD/MM/YYYY HH:mm)
+- `formatShortDateTimeAU(date)` - Short format (dd/MM/yyyy HH:mm)
+
+**Important:** 
+- Utility functions use **lowercase format tokens** (`dd`, `MM`, `yyyy`) for Luxon
+- `DD` = Day of year (wrong), `dd` = Day of month (correct)
+- `YYYY` = Week year (wrong), `yyyy` = Calendar year (correct)
+- Dates are displayed as "DD MMM YYYY" format (e.g., "25 Jun 1949") in the UI
+- The utility returns "dd/MM/yyyy" which is then converted to the display format
 - `getCurrentTimeAU()` - Get current time in Australian timezone
 - `parseToAUTimezone(dateString)` - Parse and convert to Australian timezone
 - `getRelativeTimeAU(date)` - Relative time (e.g., "2 hours ago")
