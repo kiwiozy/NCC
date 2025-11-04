@@ -1186,12 +1186,11 @@ export default function ContactsPage() {
                         </Box>
 
                         <Box style={{ width: '100%' }}>
-                          <Group gap="xs" mb="xs" align="flex-start">
-                            <Text size="md" c="blue" fw={500}>Reminder</Text>
+                          <Group gap="xs" align="flex-end" mb="xs">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Reminder</Text>
                             <ActionIcon 
                               variant="subtle" 
-                              color="blue" 
-                              size="sm"
+                              color="blue"
                               onClick={() => {
                                 setReminderDialogOpened(true);
                                 setReminderClinic('');
@@ -1201,7 +1200,7 @@ export default function ContactsPage() {
                               }}
                               title="Add reminder"
                             >
-                              <IconPlus size={16} />
+                              <IconPlus size={20} />
                             </ActionIcon>
                           </Group>
                         </Box>
