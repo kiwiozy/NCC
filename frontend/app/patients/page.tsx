@@ -326,6 +326,9 @@ export default function ContactsPage() {
 
   // Load patients from API
   useEffect(() => {
+    // Only load on client side to prevent hydration mismatch
+    if (typeof window === 'undefined') return;
+    
     const loadPatients = async () => {
       if (activeType !== 'patients') return; // Only load for patients type
       
