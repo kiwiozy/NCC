@@ -611,14 +611,29 @@ export default function ContactsPage() {
         }
         console.log('Contact archived successfully');
       } else {
-        const error = await response.json();
-        console.error('Failed to archive contact:', error);
-        setArchiveErrorMessage('Failed to archive contact. Please try again.');
+        // Handle error response - try to parse JSON, but handle non-JSON responses
+        let errorMessage = 'Failed to archive contact. Please try again.';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const error = await response.json();
+            errorMessage = error.detail || error.message || errorMessage;
+          } else {
+            const text = await response.text();
+            errorMessage = text || errorMessage;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `Server error (${response.status}): ${response.statusText}`;
+        }
+        console.error('Failed to archive contact:', errorMessage);
+        setArchiveErrorMessage(errorMessage);
         setArchiveErrorOpened(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error archiving contact:', error);
-      setArchiveErrorMessage('Error archiving contact. Please try again.');
+      const errorMessage = error.message || 'Error archiving contact. Please try again.';
+      setArchiveErrorMessage(errorMessage);
       setArchiveErrorOpened(true);
     }
   };
