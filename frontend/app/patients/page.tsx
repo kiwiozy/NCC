@@ -819,7 +819,7 @@ export default function ContactsPage() {
                             label=""
                             value={selectedContact.title}
                             data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
                         
@@ -827,7 +827,7 @@ export default function ContactsPage() {
                           <TextInput
                             label=""
                             value={selectedContact.firstName}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
                         
@@ -836,7 +836,7 @@ export default function ContactsPage() {
                             label=""
                             placeholder="Middle Name"
                             value={selectedContact.middleName}
-                            styles={{ input: { fontWeight: 400, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 400, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
                         
@@ -844,7 +844,7 @@ export default function ContactsPage() {
                           <TextInput
                             label=""
                             value={selectedContact.lastName}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
                         
@@ -858,7 +858,7 @@ export default function ContactsPage() {
                               rightSection={<IconCalendar size={16} />}
                               styles={{ 
                                 root: { flex: 1 },
-                                input: { fontWeight: 700, fontSize: rem(18) } 
+                                input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } 
                               }}
                             />
                           </Group>
@@ -875,7 +875,7 @@ export default function ContactsPage() {
                           <TextInput
                             placeholder="Health Number"
                             value={selectedContact.healthNumber}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
 
@@ -884,7 +884,7 @@ export default function ContactsPage() {
                           <Select
                             value={selectedContact.clinic}
                             data={clinics}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
 
@@ -893,7 +893,7 @@ export default function ContactsPage() {
                           <Select
                             value={selectedContact.funding}
                             data={fundingSources}
-                            styles={{ input: { fontWeight: 700, fontSize: rem(18) } }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
 
