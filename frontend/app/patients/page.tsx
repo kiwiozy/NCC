@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button } from '@mantine/core';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { IconPlus, IconCalendar, IconSearch, IconListCheck } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
@@ -1130,12 +1130,13 @@ export default function ContactsPage() {
 
                   {/* Full Width Sections */}
                   <Box>
-                    <Group justify="space-between" mb="md">
+                    <Group justify="space-between" mb="xs" align="flex-end">
                       <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Communication</Text>
                       <ActionIcon variant="subtle" color="blue">
                         <IconPlus size={20} />
                       </ActionIcon>
                     </Group>
+                    <Divider mb="md" />
                     {selectedContact.communication && (
                       <Paper p="lg" withBorder>
                         <Stack gap="md">
