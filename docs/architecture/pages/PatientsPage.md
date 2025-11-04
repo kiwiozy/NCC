@@ -2,7 +2,7 @@
 
 **Route:** `/patients`  
 **Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support)  
-**Last Updated:** December 2024
+**Last Updated:** 2025-01-15
 
 ---
 
@@ -430,7 +430,17 @@ The Patients page provides a comprehensive view for managing patient contacts. I
   - ✅ Current coordinator (most recent) displayed by default
   - ✅ Helper functions: `getCoordinators()` and `getCurrentCoordinator()`
   - ⚠️ **Backend Note:** Currently using mock coordinator data, needs API integration
-- ⚠️ All fields are displayed but not yet editable/saveable (read-only for now)
+- ✅ **Communication functionality:**
+  - ✅ Communication dialog for adding/editing entries
+  - ✅ Support for phone, mobile, email, and address types
+  - ✅ Multiple entries per type (home, work, mobile, other)
+  - ✅ Default toggle for all communication types
+  - ✅ Blue text indicator for default entries
+  - ✅ Edit/delete buttons on hover
+  - ✅ Backend API integration for saving
+  - ✅ Patient data reload after save for UI consistency
+  - ✅ Proper data structure mapping from backend
+- ⚠️ Some fields are still read-only (will be editable in future)
 
 ### **Decisions Needed**
 
