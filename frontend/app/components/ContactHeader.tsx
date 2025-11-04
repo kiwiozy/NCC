@@ -219,6 +219,7 @@ export default function ContactHeader({
             size="lg"
             onClick={onArchive}
             title="Archive"
+            style={{ opacity: onArchive ? 1 : 0.5 }}
           >
             <IconArchive size={20} stroke={1.5} />
           </ActionIcon>
