@@ -619,8 +619,23 @@ export default function ContactsPage() {
             }
           };
           loadPatients();
+          
+          // Reload archived count after archiving
+          const loadArchivedCount = async () => {
+            try {
+              const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+              if (response.ok) {
+                const data = await response.json();
+                const archivedPatients = data.results || data;
+                setArchivedCount(Array.isArray(archivedPatients) ? archivedPatients.length : 0);
+              }
+            } catch (error) {
+              console.error('Failed to reload archived count:', error);
+            }
+          };
+          loadArchivedCount();
         }
-        console.log('Contact archived successfully');
+        console.log('Patient archived successfully');
       } else {
         // Handle error response - try to parse JSON, but handle non-JSON responses
         let errorMessage = 'Failed to archive contact. Please try again.';
