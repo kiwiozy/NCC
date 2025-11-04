@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import AllowAny
 from django.contrib.contenttypes.models import ContentType
 from .models import Document
 from .serializers import DocumentSerializer, DocumentUploadSerializer
@@ -16,6 +17,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [AllowAny]  # TODO: Add proper authentication
     
     def get_queryset(self):
         """Filter documents by query parameters"""
@@ -26,6 +28,20 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if category:
             queryset = queryset.filter(category=category)
         
+        # Filter by patient_id (convenience parameter - resolves ContentType automatically)
+        patient_id = self.request.query_params.get('patient_id', None)
+        if patient_id:
+            try:
+                # Get ContentType for Patient model
+                patient_content_type = ContentType.objects.get(app_label='patients', model='patient')
+                queryset = queryset.filter(
+                    content_type=patient_content_type,
+                    object_id=patient_id
+                )
+            except ContentType.DoesNotExist:
+                # If ContentType doesn't exist, return empty queryset
+                queryset = queryset.none()
+        
         # Filter by content type and object ID (e.g., patient documents)
         content_type_id = self.request.query_params.get('content_type_id', None)
         object_id = self.request.query_params.get('object_id', None)
@@ -35,7 +51,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 object_id=object_id
             )
         
-        return queryset
+        return queryset.order_by('-uploaded_at')
     
     @action(detail=False, methods=['post'])
     def upload(self, request):
@@ -50,6 +66,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
             - tags: JSON array of tags (optional)
             - content_type_id: ID of content type to link (optional)
             - object_id: UUID of object to link (optional)
+            - patient_id: Patient UUID (automatically resolves ContentType) (optional)
+            - document_date: Date associated with document (optional, YYYY-MM-DD format)
             - uploaded_by: Username of uploader (optional)
         """
         serializer = DocumentUploadSerializer(data=request.data)
@@ -61,7 +79,21 @@ class DocumentViewSet(viewsets.ModelViewSet):
         tags = serializer.validated_data.get('tags', [])
         content_type_id = serializer.validated_data.get('content_type_id')
         object_id = serializer.validated_data.get('object_id')
+        patient_id = serializer.validated_data.get('patient_id')
+        document_date = serializer.validated_data.get('document_date')
         uploaded_by = serializer.validated_data.get('uploaded_by', 'system')
+        
+        # If patient_id is provided, resolve ContentType automatically
+        if patient_id:
+            try:
+                patient_content_type = ContentType.objects.get(app_label='patients', model='patient')
+                content_type_id = patient_content_type.id
+                object_id = patient_id
+            except ContentType.DoesNotExist:
+                return Response(
+                    {'error': 'Patient ContentType not found'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         try:
             # Upload to S3
@@ -90,6 +122,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 uploaded_by=uploaded_by,
                 content_type_id=content_type_id,
                 object_id=object_id,
+                document_date=document_date,
             )
             
             return Response(
