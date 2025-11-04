@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -469,6 +469,52 @@ export default function ContactsPage() {
     loadClinics();
     loadFundingSources();
   }, []);
+
+  // Search coordinators
+  const searchCoordinators = async (query: string) => {
+    if (typeof window === 'undefined') return;
+    
+    setCoordinatorLoading(true);
+    try {
+      // TODO: Replace with actual coordinator API endpoint when available
+      // For now, using mock data or searching contacts with type=coordinator
+      // When coordinator API exists: GET /api/coordinators/?search={query}
+      
+      // Mock coordinator data for now
+      const mockCoordinators = [
+        { id: '1', name: 'Warda - Ability Connect', organization: 'Ability Connect' },
+        { id: '2', name: 'Sarah Johnson - NDIS Support', organization: 'NDIS Support Services' },
+        { id: '3', name: 'Michael Chen - Support Coordination', organization: 'Support Coordination Plus' },
+      ];
+      
+      // Filter by search query
+      const filtered = query 
+        ? mockCoordinators.filter(c => 
+            c.name.toLowerCase().includes(query.toLowerCase()) ||
+            c.organization.toLowerCase().includes(query.toLowerCase())
+          )
+        : mockCoordinators;
+      
+      setCoordinatorSearchResults(filtered);
+    } catch (error) {
+      console.error('Error searching coordinators:', error);
+      setCoordinatorSearchResults([]);
+    } finally {
+      setCoordinatorLoading(false);
+    }
+  };
+
+  // Handle coordinator search input change
+  useEffect(() => {
+    if (coordinatorDialogOpened) {
+      // Debounce search
+      const timer = setTimeout(() => {
+        searchCoordinators(coordinatorSearchQuery);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [coordinatorSearchQuery, coordinatorDialogOpened]);
 
   useEffect(() => {
     const type = searchParams.get('type') as ContactType;
