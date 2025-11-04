@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid } from '@mantine/core';
+import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +10,8 @@ interface ContactHeaderProps {
   onSearch?: (value: string) => void;
   onAddNew?: () => void;
   onArchive?: () => void;
+  onNotesClick?: () => void;
+  patientId?: string; // For getting note count
   showFilters?: boolean;
   filterOptions?: {
     funding?: string[];
@@ -29,6 +31,8 @@ export default function ContactHeader({
   onSearch, 
   onAddNew, 
   onArchive,
+  onNotesClick,
+  patientId,
   showFilters = true,
   filterOptions = {
     funding: ['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare'],
@@ -47,12 +51,59 @@ export default function ContactHeader({
   const isDark = colorScheme === 'dark';
   const [filterOpened, setFilterOpened] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
+  const [notesCount, setNotesCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
     status: '',
     archived: showArchived || false, // Include archived in filters
   });
+
+  // Get notes count for patient
+  useEffect(() => {
+    const getNotesCount = () => {
+      try {
+        const storageKey = patientId ? `patient_notes_${patientId}` : 'walkeasy_nexus_notes';
+        const savedNotes = localStorage.getItem(storageKey);
+        if (savedNotes) {
+          const parsedNotes = JSON.parse(savedNotes);
+          setNotesCount(Array.isArray(parsedNotes) ? parsedNotes.length : 0);
+        } else {
+          setNotesCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading notes count:', err);
+        setNotesCount(0);
+      }
+    };
+
+    getNotesCount();
+    
+    // Listen for storage changes (when notes are added/deleted in other tabs/components)
+    const handleStorageChange = (e: StorageEvent) => {
+      const storageKey = patientId ? `patient_notes_${patientId}` : 'walkeasy_nexus_notes';
+      if (e.key === storageKey) {
+        getNotesCount();
+      }
+    };
+    
+    // Listen for custom event when notes change in NotesDialog
+    const handleNotesChange = () => {
+      getNotesCount();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('notesUpdated', handleNotesChange);
+    
+    // Refresh count periodically
+    const interval = setInterval(getNotesCount, 2000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('notesUpdated', handleNotesChange);
+    };
+  }, [patientId, menuOpened]);
 
   // Update filters when showArchived prop changes (e.g., when filters are cleared)
   // Only sync when showArchived prop changes from parent, not when local filters change
@@ -88,7 +139,7 @@ export default function ContactHeader({
   };
 
   const menuItems = [
-    { icon: <IconNote size={20} />, label: 'Notes', onClick: () => console.log('Notes') },
+    { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); } },
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => console.log('Documents') },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => console.log('Images') },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => console.log('Appointments') },
@@ -333,10 +384,32 @@ export default function ContactHeader({
                     }}
                   >
                     <Grid style={{ width: '100%', margin: 0 }}>
-                      <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                         <Box style={{ color: '#228BE6' }}>
                           {item.icon}
                         </Box>
+                        {item.label === 'Notes' && notesCount > 0 && (
+                          <Badge
+                            size="xs"
+                            color="red"
+                            variant="filled"
+                            style={{
+                              position: 'absolute',
+                              top: rem(-4),
+                              right: rem(-4),
+                              minWidth: rem(18),
+                              height: rem(18),
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: rem(10),
+                              fontWeight: 700,
+                            }}
+                          >
+                            {notesCount > 99 ? '99+' : notesCount}
+                          </Badge>
+                        )}
                       </Grid.Col>
                       <Grid.Col span={10} style={{ display: 'flex', alignItems: 'center', paddingLeft: rem(12) }}>
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>

@@ -948,6 +948,7 @@ export default function ContactsPage() {
         onAddNew={handleAddNew}
         onArchive={handleArchive}
         onNotesClick={() => setNotesDialogOpened(true)}
+        patientId={selectedContact?.id}
         onFilterApply={handleFilterApply}
         showFilters={true}
         filterOptions={{

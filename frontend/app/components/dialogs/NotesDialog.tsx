@@ -174,6 +174,8 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
         );
         setNotes(updatedNotes);
         localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+        // Dispatch event to update badge count
+        window.dispatchEvent(new Event('notesUpdated'));
         setSuccess('Note updated successfully!');
         setEditingId(null);
         // Update selected note if it's the one being edited
@@ -193,6 +195,8 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
         const updatedNotes = [newNote, ...notes];
         setNotes(updatedNotes);
         localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+        // Dispatch event to update badge count
+        window.dispatchEvent(new Event('notesUpdated'));
         setSuccess('Note created successfully!');
         // Select the new note
         setSelectedNote(newNote);
@@ -236,6 +240,8 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
       const updatedNotes = notes.filter((note) => note.id !== id);
       setNotes(updatedNotes);
       localStorage.setItem(storageKey, JSON.stringify(updatedNotes));
+      // Dispatch event to update badge count
+      window.dispatchEvent(new Event('notesUpdated'));
       setSuccess('Note deleted successfully');
       
       // Clear selection if deleted note was selected
