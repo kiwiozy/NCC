@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash, IconChecklist } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -1177,7 +1177,7 @@ export default function ContactsPage() {
                                           onClick={() => setPlanDatesListDialogOpened(true)}
                                           title="View all plan dates"
                                         >
-                                          <IconChecklist size={20} />
+                                          <IconListCheck size={20} />
                                         </ActionIcon>
                                         <ActionIcon 
                                           variant="subtle" 
