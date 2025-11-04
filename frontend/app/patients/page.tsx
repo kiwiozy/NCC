@@ -378,6 +378,7 @@ export default function ContactsPage() {
   const [planStartDate, setPlanStartDate] = useState<Date | null>(null);
   const [planEndDate, setPlanEndDate] = useState<Date | null>(null);
   const [planType, setPlanType] = useState<string>('');
+  const [editingPlanDate, setEditingPlanDate] = useState<number | null>(null); // Index of plan date being edited
   
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
@@ -1281,6 +1282,7 @@ export default function ContactsPage() {
                                           variant="subtle" 
                                           color="blue"
                                           onClick={() => {
+                                            setEditingPlanDate(null);
                                             setPlanStartDate(null);
                                             setPlanEndDate(null);
                                             setPlanType('');
@@ -1317,17 +1319,92 @@ export default function ContactsPage() {
                               if (currentPlanDate) {
                                 const startDate = formatDateOnlyAU(currentPlanDate.start_date);
                                 const endDate = formatDateOnlyAU(currentPlanDate.end_date);
+                                const planDates = getPlanDates(selectedContact);
+                                const currentIndex = planDates.findIndex(pd => 
+                                  pd.start_date === currentPlanDate.start_date && 
+                                  pd.end_date === currentPlanDate.end_date
+                                );
+                                
                                 return (
-                                  <Stack gap={4}>
-                                    <Text size="md" fw={700}>
-                                      {startDate} - {endDate}
-                                    </Text>
-                                    {currentPlanDate.type && (
-                                      <Text size="xs" c="blue">
-                                        {currentPlanDate.type}
+                                  <Group 
+                                    justify="space-between"
+                                    style={{ position: 'relative' }}
+                                    onMouseEnter={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.plan-date-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'flex';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.plan-date-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'none';
+                                    }}
+                                  >
+                                    <Stack gap={4} style={{ flex: 1 }}>
+                                      <Text size="md" fw={700}>
+                                        {startDate} - {endDate}
                                       </Text>
-                                    )}
-                                  </Stack>
+                                      {currentPlanDate.type && (
+                                        <Text size="xs" c="blue">
+                                          {currentPlanDate.type}
+                                        </Text>
+                                      )}
+                                    </Stack>
+                                    <Group gap="xs" className="plan-date-actions" style={{ display: 'none' }}>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="blue"
+                                        onClick={() => {
+                                          setEditingPlanDate(currentIndex);
+                                          setPlanStartDate(currentPlanDate.start_date ? new Date(currentPlanDate.start_date) : null);
+                                          setPlanEndDate(currentPlanDate.end_date ? new Date(currentPlanDate.end_date) : null);
+                                          setPlanType(currentPlanDate.type || '');
+                                          setPlanDatesDialogOpened(true);
+                                        }}
+                                        title="Edit"
+                                      >
+                                        <IconEdit size={16} />
+                                      </ActionIcon>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={async () => {
+                                          if (selectedContact && currentIndex >= 0) {
+                                            try {
+                                              const planDates = getPlanDates(selectedContact);
+                                              const updatedPlanDates = planDates.filter((_, index) => index !== currentIndex);
+                                              
+                                              const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                                method: 'PATCH',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                  plan_dates_json: updatedPlanDates,
+                                                }),
+                                              });
+                                              
+                                              if (!response.ok) {
+                                                const errorData = await response.json().catch(() => ({ detail: 'Failed to delete plan date' }));
+                                                throw new Error(errorData.detail || `HTTP ${response.status}`);
+                                              }
+                                              
+                                              // Reload patient data
+                                              const reloadResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
+                                              if (reloadResponse.ok) {
+                                                const updatedPatient = await reloadResponse.json();
+                                                const transformed = transformPatientToContact(updatedPatient);
+                                                setSelectedContact(transformed);
+                                                setAllContacts(prev => prev.map(c => c.id === transformed.id ? transformed : c));
+                                              }
+                                            } catch (error) {
+                                              console.error('Error deleting plan date:', error);
+                                              alert(`Failed to delete plan date: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                            }
+                                          }
+                                        }}
+                                        title="Delete"
+                                      >
+                                        <IconTrash size={16} />
+                                      </ActionIcon>
+                                    </Group>
+                                  </Group>
                                 );
                               } else if (selectedContact.planDates) {
                                 // Legacy: show old format
@@ -2209,8 +2286,9 @@ export default function ContactsPage() {
           setPlanStartDate(null);
           setPlanEndDate(null);
           setPlanType('');
+          setEditingPlanDate(null);
         }}
-        title="Add New Plan Dates"
+        title={editingPlanDate !== null ? "Edit Plan Dates" : "Add New Plan Dates"}
         size="md"
       >
         <Stack gap="md">
@@ -2263,14 +2341,21 @@ export default function ContactsPage() {
                     // Get current plan dates array
                     const currentPlanDates = getPlanDates(selectedContact);
                     
-                    // Add new plan date
-                    const newPlanDate = {
+                    const planDateData = {
                       start_date: planStartDate.toISOString().split('T')[0],
                       end_date: planEndDate.toISOString().split('T')[0],
                       type: planType || '',
                     };
                     
-                    const updatedPlanDates = [...currentPlanDates, newPlanDate];
+                    let updatedPlanDates;
+                    if (editingPlanDate !== null && editingPlanDate >= 0) {
+                      // Editing existing plan date
+                      updatedPlanDates = [...currentPlanDates];
+                      updatedPlanDates[editingPlanDate] = planDateData;
+                    } else {
+                      // Adding new plan date
+                      updatedPlanDates = [...currentPlanDates, planDateData];
+                    }
                     
                     // Update patient with new plan_dates_json
                     const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
@@ -2300,6 +2385,7 @@ export default function ContactsPage() {
                     setPlanStartDate(null);
                     setPlanEndDate(null);
                     setPlanType('');
+                    setEditingPlanDate(null);
                   } catch (error) {
                     console.error('Error saving plan dates:', error);
                     alert(`Failed to save plan dates: ${error instanceof Error ? error.message : 'Unknown error'}`);
