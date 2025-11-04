@@ -372,11 +372,14 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                   )}
 
                   <Select
-                    placeholder="Note Type"
+                    label="Note Type"
+                    placeholder="Select note type"
                     data={NOTE_TYPES}
                     value={newTitle}
                     onChange={(value) => setNewTitle(value || 'clinical_notes')}
                     size="sm"
+                    required
+                    searchable
                   />
 
                   <Textarea
