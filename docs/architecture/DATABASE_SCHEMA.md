@@ -229,7 +229,7 @@ appointments
   ├── clinician → clinicians (FK, nullable, SET_NULL)
   └── clinic → clinics (FK, PROTECT)
 
-reminders
+reminders ✅
   ├── patient → patients (FK, CASCADE)
   └── clinic → clinics (FK, nullable, SET_NULL)
 
@@ -241,8 +241,9 @@ documents
 
 ## 📝 **Pending/Planned Tables**
 
-### ❌ **reminders Table** (Not Yet Built)
+### ✅ **reminders Table** (Built)
 - Needed for: Reminder dialog, Calendar waiting list, Patient scheduling
+- **Model:** `reminders.models.Reminder`
 - **Fields:**
   - `id` - UUID (primary key)
   - `patient_id` - ForeignKey → `patients.Patient` (CASCADE)
@@ -250,17 +251,32 @@ documents
   - `note` - TextField - Reminder note
   - `reminder_date` - DateField (optional) - Specific date reminder
   - `status` - CharField - Choices: pending, scheduled, completed, cancelled
-  - `created_at` - DateTimeField
-  - `updated_at` - DateTimeField
   - `appointment_id` - UUIDField (nullable) - Link to appointment if converted
+  - `created_at` - DateTimeField (auto_now_add)
+  - `updated_at` - DateTimeField (auto_now)
+  - `scheduled_at` - DateTimeField (nullable) - When converted to appointment
+  - `created_by` - CharField(100) (nullable) - User who created reminder
 - **Relationships:**
   - `patient` → `patients.Patient` (One-to-Many)
   - `clinic` → `clinicians.Clinic` (Many-to-One, nullable)
+- **Indexes:**
+  - `['status']`
+  - `['clinic', 'status']`
+  - `['patient']`
+  - `['reminder_date']`
 - **Usage:**
-  - Created from patient profile
-  - Appears in calendar "waiting list" section
+  - Created from patient profile via ReminderDialog
+  - Appears in calendar "waiting list" section (pending status)
   - Can be converted to appointment when scheduling
-- **Status:** Planning phase - see `docs/architecture/dialogs/ReminderDialog.md`
+- **Status:** ✅ Built - see `docs/architecture/dialogs/ReminderDialog.md`
+- **API Endpoints:**
+  - `GET /api/reminders/` - List all reminders
+  - `POST /api/reminders/` - Create reminder
+  - `GET /api/reminders/{id}/` - Get reminder details
+  - `PATCH /api/reminders/{id}/` - Update reminder
+  - `DELETE /api/reminders/{id}/` - Delete reminder
+  - `GET /api/reminders/pending/` - List pending reminders (waiting list)
+  - `PATCH /api/reminders/{id}/convert_to_appointment/` - Convert to appointment
 
 ### ❌ **Orders Table** (Not Yet Built)
 - Needed for: Orders pages, Patient Detail, Dashboard
