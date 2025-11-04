@@ -136,7 +136,7 @@ export default function ContactHeader({
                     placeholder="Select funding type"
                     data={filterOptions.funding}
                     value={filters.funding}
-                    onChange={(value) => setFilters({ ...filters, funding: value || '' })}
+                    onChange={(value) => setFilters(prev => ({ ...prev, funding: value || '' }))}
                     clearable
                   />
                 )}
@@ -147,7 +147,7 @@ export default function ContactHeader({
                     placeholder="Select clinic"
                     data={filterOptions.clinic}
                     value={filters.clinic}
-                    onChange={(value) => setFilters({ ...filters, clinic: value || '' })}
+                    onChange={(value) => setFilters(prev => ({ ...prev, clinic: value || '' }))}
                     clearable
                   />
                 )}
@@ -158,7 +158,7 @@ export default function ContactHeader({
                     placeholder="Select status"
                     data={filterOptions.status}
                     value={filters.status}
-                    onChange={(value) => setFilters({ ...filters, status: value || '' })}
+                    onChange={(value) => setFilters(prev => ({ ...prev, status: value || '' }))}
                     clearable
                   />
                 )}
@@ -173,8 +173,12 @@ export default function ContactHeader({
                         checked={Boolean(filters.archived)}
                         onChange={(event) => {
                           const newArchived = event.currentTarget.checked;
-                          console.log('Toggle changed:', newArchived);
-                          setFilters(prev => ({ ...prev, archived: newArchived }));
+                          console.log('Toggle changed:', newArchived, 'Current filters:', filters);
+                          setFilters(prev => {
+                            const updated = { ...prev, archived: newArchived };
+                            console.log('Updated filters:', updated);
+                            return updated;
+                          });
                         }}
                         size="md"
                       />
