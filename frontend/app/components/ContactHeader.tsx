@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box } from '@mantine/core';
-import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
 interface ContactHeaderProps {
@@ -155,18 +155,22 @@ export default function ContactHeader({
                 
                 {/* Archive Toggle */}
                 {onToggleArchived && (
-                  <Box>
-                    <Text size="sm" fw={500} mb="xs">View</Text>
+                  <Stack gap={4}>
+                    <Text size="sm" fw={500}>View</Text>
                     <Button
-                      variant={showArchived ? 'filled' : 'outline'}
-                      color={showArchived ? 'orange' : 'blue'}
+                      variant={showArchived ? 'filled' : 'default'}
+                      color={showArchived ? 'orange' : undefined}
                       onClick={onToggleArchived}
                       fullWidth
-                      leftSection={showArchived ? <IconArchive size={16} /> : undefined}
+                      leftSection={<IconTrash size={16} />}
+                      style={{
+                        backgroundColor: showArchived ? 'var(--mantine-color-orange-6)' : undefined,
+                        color: showArchived ? 'white' : undefined,
+                      }}
                     >
-                      {showArchived ? 'Viewing Archived' : 'View Active'}
+                      Viewing Archived
                     </Button>
-                  </Box>
+                  </Stack>
                 )}
                 
                 <Group justify="space-between" mt="md">

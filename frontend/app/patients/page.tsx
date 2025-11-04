@@ -422,7 +422,7 @@ export default function ContactsPage() {
     if (typeof window !== 'undefined') {
       loadPatients();
     }
-  }, [activeType]); // Only reload when type changes, not on every search/filter change
+  }, [activeType, showArchived, searchQuery]); // Reload when type, archive view, or search changes
 
   useEffect(() => {
     // Only load on client side
