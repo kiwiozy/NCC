@@ -2018,39 +2018,49 @@ export default function ContactsPage() {
                       //   body: JSON.stringify({ address_json: addressData }),
                       // });
                     } else {
-                      // Handle phone, mobile, email
-                      if (communicationValue) {
-                        const currentComms = selectedContact.communication || {};
-                        const currentType = currentComms[communicationType as keyof typeof currentComms];
-                        
-                        // If setting as default, remove default flag from all other entries of this type
-                        let updatedTypeEntries: any = {};
-                        if (currentType && typeof currentType === 'object' && !Array.isArray(currentType)) {
-                          // Handle object format (new structure)
-                          updatedTypeEntries = { ...currentType };
-                          if (isDefault) {
-                            // Remove default flag from all other entries
-                            Object.keys(updatedTypeEntries).forEach((key) => {
-                              if (updatedTypeEntries[key] && typeof updatedTypeEntries[key] === 'object') {
-                                updatedTypeEntries[key] = {
-                                  ...updatedTypeEntries[key],
-                                  default: false,
-                                };
-                              }
-                            });
+                        // Handle phone, mobile, email
+                        if (communicationValue) {
+                          const currentComms = selectedContact.communication || {};
+                          const currentType = currentComms[communicationType as keyof typeof currentComms];
+                          
+                          // If setting as default, remove default flag from all other entries of this type
+                          let updatedTypeEntries: any = {};
+                          if (currentType && typeof currentType === 'object' && !Array.isArray(currentType)) {
+                            // Handle object format (new structure)
+                            updatedTypeEntries = { ...currentType };
+                            
+                            // If editing, remove the old entry first
+                            if (editingCommunication && editingCommunication.type === communicationType) {
+                              delete updatedTypeEntries[editingCommunication.name];
+                            }
+                            
+                            if (isDefault) {
+                              // Remove default flag from all other entries
+                              Object.keys(updatedTypeEntries).forEach((key) => {
+                                if (updatedTypeEntries[key] && typeof updatedTypeEntries[key] === 'object') {
+                                  updatedTypeEntries[key] = {
+                                    ...updatedTypeEntries[key],
+                                    default: false,
+                                  };
+                                }
+                              });
+                            }
+                          } else if (currentType && typeof currentType === 'string') {
+                            // Handle legacy string format - convert to object format
+                            updatedTypeEntries = {
+                              home: { value: currentType, default: false },
+                            };
+                            // If editing and it was the legacy entry, remove it
+                            if (editingCommunication && editingCommunication.type === communicationType && editingCommunication.name === 'home') {
+                              delete updatedTypeEntries.home;
+                            }
                           }
-                        } else if (currentType && typeof currentType === 'string') {
-                          // Handle legacy string format - convert to object format
-                          updatedTypeEntries = {
-                            home: { value: currentType, default: false },
+                          
+                          // Add/update the new entry
+                          updatedTypeEntries[communicationName] = {
+                            value: communicationValue,
+                            default: isDefault,
                           };
-                        }
-                        
-                        // Add/update the new entry
-                        updatedTypeEntries[communicationName] = {
-                          value: communicationValue,
-                          default: isDefault,
-                        };
                         
                         const updatedCommunication = {
                           ...currentComms,
