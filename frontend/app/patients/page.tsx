@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import { IconPlus, IconCalendar } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
+import dayjs from 'dayjs';
 
 type ContactType = 'patients' | 'referrers' | 'coordinator' | 'ndis-lac' | 'contacts' | 'companies' | 'clinics';
 
@@ -855,18 +857,25 @@ export default function ContactsPage() {
                         
                         <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Date of Birth</Text>
-                          <Group gap="xs" align="flex-start">
-                            <TextInput
-                              value={selectedContact.dob || ''}
-                              placeholder="Date of Birth"
-                              readOnly
-                              rightSection={<IconCalendar size={16} />}
-                              styles={{ 
-                                root: { flex: 1 },
-                                input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } 
-                              }}
-                            />
-                          </Group>
+                          <DatePickerInput
+                            placeholder="Select date of birth"
+                            value={selectedContact.dob ? dayjs(selectedContact.dob).toDate() : null}
+                            onChange={(date) => {
+                              if (selectedContact) {
+                                const dateStr = date ? dayjs(date).format('YYYY-MM-DD') : '';
+                                setSelectedContact({ ...selectedContact, dob: dateStr });
+                              }
+                            }}
+                            maxDate={new Date()}
+                            styles={{ 
+                              input: { 
+                                fontWeight: 700, 
+                                fontSize: rem(18), 
+                                height: 'auto', 
+                                minHeight: rem(36) 
+                              } 
+                            }}
+                          />
                           <Text size="lg" fw={700} mt="md">Age: {selectedContact.age || 0}</Text>
                         </Box>
                       </Stack>
