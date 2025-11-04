@@ -13,8 +13,8 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by('-created_at')
     serializer_class = PatientSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['sex']
-    search_fields = ['first_name', 'last_name', 'mrn']
+    filterset_fields = ['sex', 'clinic', 'funding_type']
+    search_fields = ['first_name', 'last_name', 'mrn', 'health_number']
     ordering_fields = ['last_name', 'first_name', 'created_at']
     
     def get_serializer_class(self):

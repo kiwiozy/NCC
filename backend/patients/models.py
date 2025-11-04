@@ -70,6 +70,84 @@ class Patient(models.Model):
         help_text="Patient's sex"
     )
     
+    # Title (Mr., Mrs., Ms., Dr., etc.)
+    title = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        choices=[
+            ('Mr', 'Mr.'),
+            ('Mrs', 'Mrs.'),
+            ('Ms', 'Ms.'),
+            ('Miss', 'Miss'),
+            ('Dr', 'Dr.'),
+            ('Prof', 'Prof.'),
+        ],
+        help_text="Patient's title (Mr., Mrs., Ms., Dr., etc.)"
+    )
+    
+    # Health Number (separate from MRN)
+    health_number = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Health number (different from MRN)"
+    )
+    
+    # Funding Source (ForeignKey to FundingSource)
+    funding_type = models.ForeignKey(
+        'settings.FundingSource',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patients',
+        help_text="Patient's funding source (NDIS, Private, DVA, etc.)"
+    )
+    
+    # Clinic (ForeignKey to Clinic)
+    clinic = models.ForeignKey(
+        'clinicians.Clinic',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patients',
+        help_text="Clinic location for this patient"
+    )
+    
+    # NDIS Coordinator
+    coordinator_name = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text="Coordinator name (e.g., 'Warda - Ability Connect')"
+    )
+    
+    coordinator_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date when coordinator was assigned"
+    )
+    
+    # NDIS Plan Dates
+    plan_start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="NDIS plan start date"
+    )
+    
+    plan_end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="NDIS plan end date"
+    )
+    
+    # General Notes
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        help_text="General notes about the patient"
+    )
+    
     # Contact information (stored as JSON for flexibility)
     contact_json = models.JSONField(
         null=True,

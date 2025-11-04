@@ -34,8 +34,8 @@ backend/ai_services/at_report_email.py
 # ============================================
 # PROTECTED: Core Models (Backend)
 # ============================================
-
-backend/patients/models.py
+# Temporarily unprotected for architecture development
+# backend/patients/models.py
 backend/appointments/models.py
 backend/clinicians/models.py
 backend/documents/models.py

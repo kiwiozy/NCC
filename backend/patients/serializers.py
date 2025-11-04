@@ -17,11 +17,35 @@ class PatientSerializer(serializers.ModelSerializer):
         model = Patient
         fields = [
             'id', 'mrn', 'first_name', 'last_name', 'middle_names',
-            'dob', 'sex', 'contact_json', 'address_json', 'emergency_json',
+            'dob', 'sex', 'title', 'health_number', 'funding_type', 'clinic',
+            'coordinator_name', 'coordinator_date', 'plan_start_date', 'plan_end_date',
+            'notes', 'contact_json', 'address_json', 'emergency_json',
             'flags_json', 'created_at', 'updated_at',
             'age', 'full_name', 'mobile', 'email'  # computed fields
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'age', 'full_name', 'mobile', 'email']
+    
+    def to_representation(self, instance):
+        """Customize serialization to include related object names"""
+        representation = super().to_representation(instance)
+        if instance.funding_type:
+            representation['funding_type'] = {
+                'id': str(instance.funding_type.id),
+                'name': instance.funding_type.name,
+                'code': instance.funding_type.code,
+            }
+        else:
+            representation['funding_type'] = None
+        
+        if instance.clinic:
+            representation['clinic'] = {
+                'id': str(instance.clinic.id),
+                'name': instance.clinic.name,
+            }
+        else:
+            representation['clinic'] = None
+        
+        return representation
     
     def get_age(self, obj):
         """Get patient age"""
