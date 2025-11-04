@@ -293,6 +293,12 @@ export default function ContactsPage() {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
+  // Coordinator dialog state
+  const [coordinatorDialogOpened, setCoordinatorDialogOpened] = useState(false);
+  const [coordinatorSearchQuery, setCoordinatorSearchQuery] = useState('');
+  const [coordinatorSearchResults, setCoordinatorSearchResults] = useState<any[]>([]);
+  const [coordinatorLoading, setCoordinatorLoading] = useState(false);
+  
   // Load clinics and funding sources from API for filter dropdown
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
@@ -672,7 +678,8 @@ export default function ContactsPage() {
                 params.append('search', searchQuery);
               }
               // Keep current archived view state
-              if (showArchived) {
+              const archivedValue = activeFilters.archived === true || activeFilters.archived === 'true';
+              if (archivedValue) {
                 params.append('archived', 'true');
               } else {
                 params.append('archived', 'false');
