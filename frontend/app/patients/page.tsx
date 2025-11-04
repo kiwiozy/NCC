@@ -2108,12 +2108,7 @@ export default function ContactsPage() {
                           [communicationType]: updatedTypeEntries,
                         };
                         
-                        setSelectedContact({
-                          ...selectedContact,
-                          communication: updatedCommunication,
-                        });
-                        
-                        // Save to backend API
+                        // Save to backend API first
                         try {
                           const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                             method: 'PATCH',
@@ -2126,6 +2121,12 @@ export default function ContactsPage() {
                             const errorText = await response.text();
                             throw new Error(`Failed to save communication: ${response.status} ${errorText}`);
                           }
+                          
+                          // Update state after successful save
+                          setSelectedContact({
+                            ...selectedContact,
+                            communication: updatedCommunication,
+                          });
                         } catch (error) {
                           console.error('Error saving communication:', error);
                           alert(`Failed to save communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
