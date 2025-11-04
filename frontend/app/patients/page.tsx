@@ -36,8 +36,17 @@ interface Contact {
   };
   planDates?: string;
   communication?: {
-    phone?: string;
-    email?: string;
+    phone?: string | { [key: string]: string };
+    mobile?: string | { [key: string]: string };
+    email?: string | { [key: string]: string };
+  };
+  address_json?: {
+    street?: string;
+    street2?: string;
+    suburb?: string;
+    postcode?: string;
+    state?: string;
+    type?: string;
   };
   note?: string;
 }
