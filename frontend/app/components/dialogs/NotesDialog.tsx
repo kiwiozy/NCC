@@ -473,14 +473,15 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                         </Button>
                       )}
                       {newTitle === 'clinical_notes' && newContent.trim() && (
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
+                        <Button
+                          leftSection={<IconSparkles size={18} />}
                           onClick={handleOpenAI}
-                          title="Rewrite with AI"
+                          variant="gradient"
+                          gradient={{ from: 'blue', to: 'cyan' }}
+                          size="sm"
                         >
-                          <IconSparkles size={18} />
-                        </ActionIcon>
+                          Rewrite with AI
+                        </Button>
                       )}
                     </Group>
                   </Stack>
