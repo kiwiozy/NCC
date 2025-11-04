@@ -1302,7 +1302,7 @@ export default function ContactsPage() {
                                           setEditingCommunication({ type: 'mobile', name: 'home' });
                                           setCommunicationType('mobile');
                                           setCommunicationName('home');
-                                          setCommunicationValue(comms.mobile);
+                                          setCommunicationValue(typeof comms.mobile === 'string' ? comms.mobile : '');
                                           setIsDefault(false);
                                           setCommunicationDialogOpened(true);
                                         }}
@@ -1437,7 +1437,7 @@ export default function ContactsPage() {
                                           setEditingCommunication({ type: 'email', name: 'home' });
                                           setCommunicationType('email');
                                           setCommunicationName('home');
-                                          setCommunicationValue(comms.email);
+                                          setCommunicationValue(typeof comms.email === 'string' ? comms.email : '');
                                           setIsDefault(false);
                                           setCommunicationDialogOpened(true);
                                         }}
@@ -1552,12 +1552,63 @@ export default function ContactsPage() {
                               ].filter(Boolean).join(', ');
                               
                               items.push(
-                                <Group key="address">
-                                  <Box style={{ minWidth: rem(100) }}>
-                                    <Text size="sm" c="dimmed">Address</Text>
-                                    <Text size="xs" c="dimmed">{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
-                                  </Box>
-                                  <Text size="md" fw={600}>{addressStr}</Text>
+                                <Group 
+                                  key="address"
+                                  justify="space-between"
+                                  style={{ position: 'relative' }}
+                                  onMouseEnter={(e) => {
+                                    const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                    if (buttons) buttons.style.display = 'flex';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                    if (buttons) buttons.style.display = 'none';
+                                  }}
+                                >
+                                  <Group style={{ flex: 1 }}>
+                                    <Box style={{ minWidth: rem(100) }}>
+                                      <Text size="sm" c="dimmed">Address</Text>
+                                      <Text size="xs" c="dimmed">{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
+                                    </Box>
+                                    <Text size="md" fw={600}>{addressStr}</Text>
+                                  </Group>
+                                  <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                    <ActionIcon
+                                      variant="subtle"
+                                      color="blue"
+                                      onClick={() => {
+                                        setEditingCommunication({ type: 'address', name: addr.type || 'home' });
+                                        setCommunicationType('address');
+                                        setCommunicationName(addr.type || 'home');
+                                        setAddressFields({
+                                          address1: addr.street || '',
+                                          address2: addr.street2 || '',
+                                          suburb: addr.suburb || '',
+                                          postcode: addr.postcode || '',
+                                          state: addr.state || '',
+                                        });
+                                        setCommunicationDialogOpened(true);
+                                      }}
+                                      title="Edit"
+                                    >
+                                      <IconEdit size={16} />
+                                    </ActionIcon>
+                                    <ActionIcon
+                                      variant="subtle"
+                                      color="red"
+                                      onClick={() => {
+                                        if (selectedContact) {
+                                          setSelectedContact({
+                                            ...selectedContact,
+                                            address_json: undefined,
+                                          });
+                                        }
+                                      }}
+                                      title="Delete"
+                                    >
+                                      <IconTrash size={16} />
+                                    </ActionIcon>
+                                  </Group>
                                 </Group>
                               );
                             }
