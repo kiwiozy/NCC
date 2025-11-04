@@ -63,6 +63,12 @@ export function formatDateAU(
  * @returns Formatted date string (DD/MM/YYYY)
  */
 export function formatDateOnlyAU(date: string | Date | DateTime | null | undefined): string {
+  // CRITICAL: If date is a string with letters (month names), don't process it
+  // This prevents formatDateOnlyAU from being called on already-formatted dates
+  if (typeof date === 'string' && /[A-Za-z]{3}/.test(date.trim())) {
+    console.error('formatDateOnlyAU called on already-formatted date:', date);
+    return ''; // Return empty to prevent corruption
+  }
   return formatDateAU(date, 'DD/MM/YYYY');
 }
 
