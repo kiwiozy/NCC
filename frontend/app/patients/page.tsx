@@ -1581,15 +1581,6 @@ export default function ContactsPage() {
             required
           />
 
-          {communicationType && communicationType !== 'address' && (
-            <Switch
-              label="Default"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.currentTarget.checked)}
-              description="Set as the default for this communication type"
-            />
-          )}
-
           {communicationType === 'phone' && (
             <TextInput
               label="PHONE"
@@ -1666,26 +1657,35 @@ export default function ContactsPage() {
           )}
 
           <Group justify="space-between" mt="md">
-            <Button
-              variant="subtle"
-              onClick={() => {
-                setCommunicationDialogOpened(false);
-                setCommunicationType('');
-                setCommunicationName('');
-                setCommunicationValue('');
-                setIsDefault(false);
-                setAddressFields({
-                  address1: '',
-                  address2: '',
-                  suburb: '',
-                  postcode: '',
-                  state: '',
-                });
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
+            {communicationType && communicationType !== 'address' && (
+              <Switch
+                label="Default"
+                checked={isDefault}
+                onChange={(e) => setIsDefault(e.currentTarget.checked)}
+                description="Set as the default for this communication type"
+              />
+            )}
+            <Group gap="xs">
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  setCommunicationDialogOpened(false);
+                  setCommunicationType('');
+                  setCommunicationName('');
+                  setCommunicationValue('');
+                  setIsDefault(false);
+                  setAddressFields({
+                    address1: '',
+                    address2: '',
+                    suburb: '',
+                    postcode: '',
+                    state: '',
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
               onClick={async () => {
                 if (selectedContact && communicationType && communicationName) {
                   try {
