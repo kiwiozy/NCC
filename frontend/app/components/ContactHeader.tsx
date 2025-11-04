@@ -234,21 +234,22 @@ export default function ContactHeader({
 
       {/* Second Row: Count and Hamburger Menu */}
       <Group
-        justify="space-between"
+        justify="center"
         wrap="nowrap"
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
           padding: `${rem(12)} ${rem(24)}`,
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+          position: 'relative',
         }}
       >
-        {/* Left: Count Display */}
-        <Stack gap={4}>
-          <Text size="sm" c="dimmed">
+        {/* Center: Count Display */}
+        <Stack gap={4} align="center">
+          <Text size="sm" c="blue" fw={500}>
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <Text size="sm" c="blue" fw={500}>
+            <Text size="sm" c="dimmed">
               {achievedCount} records achieved
             </Text>
           )}
