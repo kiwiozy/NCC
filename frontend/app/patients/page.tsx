@@ -37,9 +37,17 @@ interface Contact {
 
 // Transform API patient data to Contact interface
 const transformPatientToContact = (patient: any): Contact => {
-  // Format date as DD MMM YYYY (using existing date utility)
+  // Format date as DD/MMM/YYYY (using existing date utility)
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
+    
+    // If already formatted (contains month name), return as-is
+    if (typeof dateStr === 'string' && /[A-Za-z]{3}/.test(dateStr)) {
+      // Already contains a month name, might be already formatted
+      // But we still want to ensure it's in DD/MMM/YYYY format
+      return dateStr;
+    }
+    
     try {
       // First, get the formatted date in DD/MM/YYYY format
       const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "25/06/1949")
@@ -73,7 +81,7 @@ const transformPatientToContact = (patient: any): Contact => {
         return formatted; // Return as-is if invalid
       }
       
-      // Return formatted as "DD/MMM/YYYY" (e.g., "25/Jun/1949")
+      // Return formatted as "DD/MMM/YYYY" (e.g., "29/Aug/1986")
       return `${day}/${months[monthIndex]}/${year}`;
     } catch (error) {
       console.error('Error formatting date:', error, 'for input:', dateStr);
