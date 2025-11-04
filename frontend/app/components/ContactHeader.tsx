@@ -399,10 +399,15 @@ export default function ContactHeader({
                     }}
                   >
                     <Grid style={{ width: '100%', margin: 0 }}>
-                      <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                      <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Box style={{ color: '#228BE6' }}>
                           {item.icon}
                         </Box>
+                      </Grid.Col>
+                      <Grid.Col span={10} style={{ display: 'flex', alignItems: 'center', paddingLeft: rem(12), position: 'relative' }}>
+                        <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
+                          {item.label}
+                        </Text>
                         {item.label === 'Notes' && notesCount > 0 && (
                           <Badge
                             size="xs"
@@ -411,7 +416,7 @@ export default function ContactHeader({
                             style={{
                               position: 'absolute',
                               top: rem(-4),
-                              right: rem(-4),
+                              right: 0,
                               minWidth: rem(18),
                               height: rem(18),
                               padding: 0,
@@ -425,11 +430,6 @@ export default function ContactHeader({
                             {notesCount > 99 ? '99+' : notesCount}
                           </Badge>
                         )}
-                      </Grid.Col>
-                      <Grid.Col span={10} style={{ display: 'flex', alignItems: 'center', paddingLeft: rem(12) }}>
-                        <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
-                          {item.label}
-                        </Text>
                       </Grid.Col>
                     </Grid>
                   </Box>
