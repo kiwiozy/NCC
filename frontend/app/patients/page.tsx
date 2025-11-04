@@ -64,27 +64,50 @@ const transformPatientToContact = (patient: any): Contact => {
     return `${formatDate(start)} - ${formatDate(end)}`;
   };
 
-  // Build full name with title
-  const titleMap: Record<string, string> = {
-    'Mr': 'Mr.',
-    'Mrs': 'Mrs.',
-    'Ms': 'Ms.',
-    'Miss': 'Miss',
-    'Dr': 'Dr.',
-    'Prof': 'Prof.',
-  };
-  const title = patient.title ? titleMap[patient.title] || patient.title : '';
-  const nameParts = [patient.first_name];
-  if (patient.middle_names) nameParts.push(patient.middle_names);
-  nameParts.push(patient.last_name);
-  const fullName = nameParts.join(' ');
-  const displayName = title ? `${title} ${fullName}` : fullName;
+  // Handle both full serializer and list serializer responses
+  // List serializer returns: full_name, age, dob
+  // Full serializer returns: first_name, last_name, middle_names, title, clinic, funding_type, etc.
+  
+  // Build name - handle both full_name (from list) and separate fields (from detail)
+  let displayName = '';
+  let firstName = '';
+  let middleName = '';
+  let lastName = '';
+  let title = '';
+  
+  if (patient.full_name) {
+    // Using list serializer - just use full_name
+    displayName = patient.full_name;
+    // Try to parse name parts if possible
+    const nameParts = patient.full_name.split(' ');
+    firstName = nameParts[0] || '';
+    lastName = nameParts[nameParts.length - 1] || '';
+  } else {
+    // Using full serializer - build from parts
+    const titleMap: Record<string, string> = {
+      'Mr': 'Mr.',
+      'Mrs': 'Mrs.',
+      'Ms': 'Ms.',
+      'Miss': 'Miss',
+      'Dr': 'Dr.',
+      'Prof': 'Prof.',
+    };
+    title = patient.title ? titleMap[patient.title] || patient.title : '';
+    firstName = patient.first_name || '';
+    middleName = patient.middle_names || '';
+    lastName = patient.last_name || '';
+    const nameParts = [firstName];
+    if (middleName) nameParts.push(middleName);
+    nameParts.push(lastName);
+    const fullName = nameParts.join(' ');
+    displayName = title ? `${title} ${fullName}` : fullName;
+  }
 
-  // Extract clinic and funding names
+  // Extract clinic and funding names (may not be in list serializer)
   const clinicName = patient.clinic?.name || '';
   const fundingName = patient.funding_type?.name || '';
 
-  // Extract contact info
+  // Extract contact info (may not be in list serializer)
   const contactJson = patient.contact_json || {};
   const phone = contactJson.phone || contactJson.mobile || '';
   const email = contactJson.email || '';
@@ -95,9 +118,9 @@ const transformPatientToContact = (patient: any): Contact => {
     clinic: clinicName,
     funding: fundingName,
     title: title || '',
-    firstName: patient.first_name || '',
-    middleName: patient.middle_names || undefined,
-    lastName: patient.last_name || '',
+    firstName: firstName,
+    middleName: middleName || undefined,
+    lastName: lastName,
     dob: formatDate(patient.dob),
     age: patient.age || 0,
     healthNumber: patient.health_number || '',

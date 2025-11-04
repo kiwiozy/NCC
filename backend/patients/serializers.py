@@ -72,7 +72,32 @@ class PatientListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Patient
-        fields = ['id', 'mrn', 'full_name', 'dob', 'age']
+        fields = ['id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 'first_name', 'last_name', 'middle_names', 'title', 'health_number']
+    
+    def to_representation(self, instance):
+        """Customize serialization to include related object names"""
+        representation = super().to_representation(instance)
+        
+        # Include clinic name if available
+        if instance.clinic:
+            representation['clinic'] = {
+                'id': str(instance.clinic.id),
+                'name': instance.clinic.name,
+            }
+        else:
+            representation['clinic'] = None
+        
+        # Include funding_type name if available
+        if instance.funding_type:
+            representation['funding_type'] = {
+                'id': str(instance.funding_type.id),
+                'name': instance.funding_type.name,
+                'code': instance.funding_type.code,
+            }
+        else:
+            representation['funding_type'] = None
+        
+        return representation
     
     def get_full_name(self, obj):
         return obj.get_full_name()
