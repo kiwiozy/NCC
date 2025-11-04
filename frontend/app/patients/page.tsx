@@ -97,6 +97,24 @@ const transformPatientToContact = (patient: any): Contact => {
     }
     
     try {
+      // CRITICAL: Only call formatDateOnlyAU on ISO dates (YYYY-MM-DD)
+      // If dateStr is already formatted or contains letters, don't call formatDateOnlyAU
+      if (/[A-Za-z]/.test(trimmed)) {
+        // Already contains letters - must be formatted already
+        // Extract and convert to DD/MMM/YYYY format
+        const extractMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+        if (extractMatch) {
+          const [, d, m, y] = extractMatch;
+          return `${d}/${m}/${y}`;
+        }
+        // If already in DD/MMM/YYYY format, return as-is
+        if (/^\d{1,2}\/[A-Za-z]{3}\/\d{4}/.test(trimmed)) {
+          return trimmed.split('/').slice(0, 3).join('/');
+        }
+        console.warn('Date contains letters but format unclear:', trimmed);
+        return trimmed;
+      }
+      
       // First, get the formatted date in DD/MM/YYYY format
       const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "11/09/1947")
       
@@ -104,6 +122,14 @@ const transformPatientToContact = (patient: any): Contact => {
       if (!formatted || formatted.trim() === '' || formatted === 'Invalid DateTime') {
         console.warn('Invalid date from formatDateOnlyAU:', formatted, 'for input:', dateStr);
         return '';
+      }
+      
+      // Check if formatDateOnlyAU returned something with letters (shouldn't happen for ISO dates)
+      if (/[A-Za-z]/.test(formatted)) {
+        console.error('formatDateOnlyAU returned formatted date with letters:', formatted, 'for ISO input:', dateStr);
+        // This shouldn't happen - formatDateOnlyAU should only return DD/MM/YYYY
+        // Return original ISO date to avoid corruption
+        return dateStr;
       }
       
       // Split the formatted date (DD/MM/YYYY)
@@ -117,7 +143,7 @@ const transformPatientToContact = (patient: any): Contact => {
       
       // Validate parts are numbers
       if (!day || !month || !year || isNaN(parseInt(day)) || isNaN(parseInt(month)) || isNaN(parseInt(year))) {
-        console.warn('Invalid date parts:', { day, month, year }, 'from formatted:', formatted);
+        console.warn('Invalid date parts:', { day, month, year }, 'from formatted:', formatted, 'original input:', dateStr);
         return formatted;
       }
       
