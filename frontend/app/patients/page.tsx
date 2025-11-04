@@ -47,6 +47,7 @@ interface Contact {
     postcode?: string;
     state?: string;
     type?: string;
+    default?: boolean;
   };
   note?: string;
 }
@@ -1558,8 +1559,8 @@ export default function ContactsPage() {
                                 >
                                   <Group style={{ flex: 1 }}>
                                     <Box style={{ minWidth: rem(100) }}>
-                                      <Text size="sm" c="dimmed">Address</Text>
-                                      <Text size="xs" c="dimmed">{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
+                                      <Text size="sm" c={addr.default ? "blue" : "dimmed"}>Address</Text>
+                                      <Text size="xs" c={addr.default ? "blue" : "dimmed"}>{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
                                     </Box>
                                     <Text size="md" fw={600}>{addressStr}</Text>
                                   </Group>
@@ -2003,6 +2004,7 @@ export default function ContactsPage() {
                         postcode: addressFields.postcode || '',
                         state: addressFields.state || '',
                         type: communicationName, // Home, Work, etc.
+                        default: isDefault,
                       };
                       
                       // Update contact with address
