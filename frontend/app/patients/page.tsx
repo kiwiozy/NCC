@@ -510,15 +510,20 @@ export default function ContactsPage() {
     }
   };
 
-  // Handle coordinator search input change
+  // Handle coordinator search input change and load on dialog open
   useEffect(() => {
     if (coordinatorDialogOpened) {
-      // Debounce search
-      const timer = setTimeout(() => {
-        searchCoordinators(coordinatorSearchQuery);
-      }, 300);
-      
-      return () => clearTimeout(timer);
+      // Load coordinators when dialog opens
+      if (!coordinatorSearchQuery) {
+        searchCoordinators('');
+      } else {
+        // Debounce search
+        const timer = setTimeout(() => {
+          searchCoordinators(coordinatorSearchQuery);
+        }, 300);
+        
+        return () => clearTimeout(timer);
+      }
     }
   }, [coordinatorSearchQuery, coordinatorDialogOpened]);
 
