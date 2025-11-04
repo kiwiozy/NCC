@@ -1,7 +1,7 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented)  
+**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support)  
 **Last Updated:** December 2024
 
 ---
@@ -412,6 +412,15 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ✅ Loads funding sources from `/api/settings/funding-sources/` API
 - ✅ Date formatting: Displays as "DD MMM YYYY" (e.g., "25 Jun 1949")
 - ✅ Independent scrolling: Left list scrolls, right panel fixed
+- ✅ **Coordinator functionality:**
+  - ✅ Multiple coordinators support (array format)
+  - ✅ Date picker for assignment date (required)
+  - ✅ Coordinator search dialog with debounced search
+  - ✅ List icon (IconListCheck) shows when 2+ coordinators
+  - ✅ Coordinator list dialog to view all coordinators
+  - ✅ Current coordinator (most recent) displayed by default
+  - ✅ Helper functions: `getCoordinators()` and `getCurrentCoordinator()`
+  - ⚠️ **Backend Note:** Currently using mock coordinator data, needs API integration
 - ⚠️ All fields are displayed but not yet editable/saveable (read-only for now)
 
 ### **Decisions Needed**
