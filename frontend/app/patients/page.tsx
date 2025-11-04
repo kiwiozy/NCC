@@ -1405,6 +1405,211 @@ export default function ContactsPage() {
           })()}
         </Stack>
       </Modal>
+
+      {/* Communication Dialog */}
+      <Modal
+        opened={communicationDialogOpened}
+        onClose={() => {
+          setCommunicationDialogOpened(false);
+          setCommunicationType('');
+          setCommunicationName('');
+          setCommunicationValue('');
+          setAddressFields({
+            address1: '',
+            address2: '',
+            suburb: '',
+            postcode: '',
+            state: '',
+          });
+        }}
+        title={selectedContact ? `New Coms for ${selectedContact.name}` : 'New Communication'}
+        size="md"
+      >
+        <Stack gap="md">
+          <Select
+            label="TYPE"
+            placeholder="Title"
+            data={[
+              { value: 'phone', label: 'Phone' },
+              { value: 'mobile', label: 'Mobile' },
+              { value: 'email', label: 'Email' },
+              { value: 'address', label: 'Address' },
+            ]}
+            value={communicationType}
+            onChange={(value) => {
+              setCommunicationType(value || '');
+              setCommunicationValue('');
+              setAddressFields({
+                address1: '',
+                address2: '',
+                suburb: '',
+                postcode: '',
+                state: '',
+              });
+            }}
+            required
+          />
+
+          <Select
+            label="NAME"
+            placeholder="Title"
+            data={[
+              { value: 'home', label: 'Home' },
+              { value: 'work', label: 'Work' },
+              { value: 'mobile', label: 'Mobile' },
+              { value: 'other', label: 'Other' },
+            ]}
+            value={communicationName}
+            onChange={(value) => setCommunicationName(value || '')}
+            required
+          />
+
+          {communicationType === 'phone' && (
+            <TextInput
+              label="PHONE"
+              placeholder="Phone"
+              value={communicationValue}
+              onChange={(e) => setCommunicationValue(e.currentTarget.value)}
+              required
+            />
+          )}
+
+          {communicationType === 'mobile' && (
+            <TextInput
+              label="MOBILE"
+              placeholder="Mobile"
+              value={communicationValue}
+              onChange={(e) => setCommunicationValue(e.currentTarget.value)}
+              required
+            />
+          )}
+
+          {communicationType === 'email' && (
+            <TextInput
+              label="EMAIL"
+              placeholder="Email"
+              type="email"
+              value={communicationValue}
+              onChange={(e) => setCommunicationValue(e.currentTarget.value)}
+              required
+            />
+          )}
+
+          {communicationType === 'address' && (
+            <Stack gap="md">
+              <TextInput
+                label="ADDRESS"
+                placeholder="Address 1"
+                value={addressFields.address1}
+                onChange={(e) => setAddressFields({ ...addressFields, address1: e.currentTarget.value })}
+                required
+              />
+              <TextInput
+                placeholder="Address 2"
+                value={addressFields.address2}
+                onChange={(e) => setAddressFields({ ...addressFields, address2: e.currentTarget.value })}
+              />
+              <TextInput
+                placeholder="Suburb"
+                value={addressFields.suburb}
+                onChange={(e) => setAddressFields({ ...addressFields, suburb: e.currentTarget.value })}
+              />
+              <Group grow>
+                <TextInput
+                  placeholder="Post Code"
+                  value={addressFields.postcode}
+                  onChange={(e) => setAddressFields({ ...addressFields, postcode: e.currentTarget.value })}
+                />
+                <Select
+                  placeholder="State"
+                  data={[
+                    { value: 'NSW', label: 'NSW' },
+                    { value: 'VIC', label: 'VIC' },
+                    { value: 'QLD', label: 'QLD' },
+                    { value: 'SA', label: 'SA' },
+                    { value: 'WA', label: 'WA' },
+                    { value: 'TAS', label: 'TAS' },
+                    { value: 'NT', label: 'NT' },
+                    { value: 'ACT', label: 'ACT' },
+                  ]}
+                  value={addressFields.state}
+                  onChange={(value) => setAddressFields({ ...addressFields, state: value || '' })}
+                />
+              </Group>
+            </Stack>
+          )}
+
+          <Group justify="space-between" mt="md">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setCommunicationDialogOpened(false);
+                setCommunicationType('');
+                setCommunicationName('');
+                setCommunicationValue('');
+                setAddressFields({
+                  address1: '',
+                  address2: '',
+                  suburb: '',
+                  postcode: '',
+                  state: '',
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedContact && communicationType && communicationName) {
+                  // Handle saving communication
+                  if (communicationType === 'address') {
+                    // Handle address separately
+                    const addressStr = [
+                      addressFields.address1,
+                      addressFields.address2,
+                      addressFields.suburb,
+                      addressFields.postcode,
+                      addressFields.state,
+                    ].filter(Boolean).join(', ');
+                    
+                    // Update contact with address (this would normally be saved to backend)
+                    console.log('Adding address:', addressStr);
+                  } else {
+                    // Handle phone, mobile, email
+                    if (communicationValue) {
+                      const updatedCommunication = {
+                        ...selectedContact.communication,
+                        [communicationType]: communicationValue,
+                      };
+                      
+                      setSelectedContact({
+                        ...selectedContact,
+                        communication: updatedCommunication,
+                      });
+                    }
+                  }
+                  
+                  // Close dialog
+                  setCommunicationDialogOpened(false);
+                  setCommunicationType('');
+                  setCommunicationName('');
+                  setCommunicationValue('');
+                  setAddressFields({
+                    address1: '',
+                    address2: '',
+                    suburb: '',
+                    postcode: '',
+                    state: '',
+                  });
+                }
+              }}
+              disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
+            >
+              {selectedContact?.name || 'Patient'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Navigation>
   );
 }
