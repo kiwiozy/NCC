@@ -133,13 +133,23 @@ When encountering issues, **ALWAYS check** the troubleshooting guide first:
   - Hydration mismatch errors (SSR/client mismatches)
   - API connection issues (TLS, CORS, 404 errors)
   - Database issues (no data, migration problems)
+  - **Date formatting issues** (Luxon format strings, double formatting, stale state)
   - Frontend issues (build errors, TypeScript errors)
+
+**Date Formatting Issues (Common):**
+- **Problem:** Dates showing as ISO format ("1949-06-25") instead of formatted ("25 Jun 1949")
+- **Root Cause:** Incorrect Luxon format tokens (`DD/MM/YYYY` instead of `dd/MM/yyyy`)
+- **Solution:** Use `dd/MM/yyyy` format tokens (lowercase `dd` for day of month, lowercase `yyyy` for calendar year)
+- **Protection:** Multiple layers prevent double formatting (check in `transformPatientToContact`, `formatDate`, `formatDateOnlyAU`, `formatDateAU`)
+- **Date Flow:** ISO → "dd/MM/yyyy" → "DD MMM YYYY" (display format)
+- **Fixed in:** `frontend/app/utils/dateFormatting.ts`
 
 **Before suggesting solutions:**
 1. Check if the issue is documented in `docs/architecture/TROUBLESHOOTING.md`
 2. Reference the troubleshooting guide in your response
 3. Follow the documented solutions and debugging steps
-4. Update the troubleshooting guide if you discover new issues or solutions
+4. **IMPORTANT:** If you update `docs/architecture/TROUBLESHOOTING.md`, you MUST also update this "Troubleshooting Reference" section to keep them synchronized
+5. Update the troubleshooting guide if you discover new issues or solutions
 
 ## Safety Reminders:
 
