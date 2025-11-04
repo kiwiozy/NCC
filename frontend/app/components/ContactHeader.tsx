@@ -297,7 +297,6 @@ export default function ContactHeader({
             </Stack>
           </Popover.Dropdown>
         </Popover>
-        </div>
       </Group>
     </Box>
   );
