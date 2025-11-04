@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box } from '@mantine/core';
+import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
@@ -164,19 +164,12 @@ export default function ContactHeader({
                 {archiveEnabled && (
                   <Stack gap={4}>
                     <Text size="sm" fw={500}>View</Text>
-                    <Button
-                      variant={filters.archived ? 'filled' : 'default'}
-                      color={filters.archived ? 'orange' : undefined}
-                      onClick={() => setFilters({ ...filters, archived: !filters.archived })}
-                      fullWidth
-                      leftSection={<IconTrash size={16} />}
-                      style={{
-                        backgroundColor: filters.archived ? 'var(--mantine-color-orange-6)' : undefined,
-                        color: filters.archived ? 'white' : undefined,
-                      }}
-                    >
-                      Viewing Archived
-                    </Button>
+                    <Switch
+                      checked={filters.archived === true}
+                      onChange={(event) => setFilters({ ...filters, archived: event.currentTarget.checked })}
+                      label="Viewing Archived"
+                      size="md"
+                    />
                   </Stack>
                 )}
                 
