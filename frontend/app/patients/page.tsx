@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar, IconSearch, IconListCheck } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -323,6 +323,7 @@ export default function ContactsPage() {
   const [communicationName, setCommunicationName] = useState<string>('');
   const [communicationValue, setCommunicationValue] = useState<string>('');
   const [isDefault, setIsDefault] = useState<boolean>(false);
+  const [editingCommunication, setEditingCommunication] = useState<{type: string; name: string} | null>(null);
   const [addressFields, setAddressFields] = useState({
     address1: '',
     address2: '',
@@ -1201,15 +1202,68 @@ export default function ContactsPage() {
                                   const value = typeof entry === 'string' ? entry : (entry?.value || '');
                                   const isDefault = typeof entry === 'object' && entry !== null && entry.default;
                                   items.push(
-                                    <Group key={`phone-${name}`}>
-                                      <Box style={{ minWidth: rem(100) }}>
-                                        <Text size="sm" c="dimmed">Phone</Text>
-                                        <Group gap={4}>
-                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                        </Group>
-                                      </Box>
-                                      <Text size="md" fw={600}>{value}</Text>
+                                    <Group 
+                                      key={`phone-${name}`}
+                                      justify="space-between"
+                                      style={{ position: 'relative' }}
+                                      onMouseEnter={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'flex';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'none';
+                                      }}
+                                    >
+                                      <Group style={{ flex: 1 }}>
+                                        <Box style={{ minWidth: rem(100) }}>
+                                          <Text size="sm" c="dimmed">Phone</Text>
+                                          <Group gap={4}>
+                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                          </Group>
+                                        </Box>
+                                        <Text size="md" fw={600}>{value}</Text>
+                                      </Group>
+                                      <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="blue"
+                                          onClick={() => {
+                                            setEditingCommunication({ type: 'phone', name });
+                                            setCommunicationType('phone');
+                                            setCommunicationName(name);
+                                            setCommunicationValue(value);
+                                            setIsDefault(isDefault || false);
+                                            setCommunicationDialogOpened(true);
+                                          }}
+                                          title="Edit"
+                                        >
+                                          <IconEdit size={16} />
+                                        </ActionIcon>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="red"
+                                          onClick={() => {
+                                            if (selectedContact) {
+                                              const currentComms = selectedContact.communication || {};
+                                              const phoneEntries = currentComms.phone && typeof currentComms.phone === 'object' ? { ...currentComms.phone } : {};
+                                              delete phoneEntries[name];
+                                              
+                                              setSelectedContact({
+                                                ...selectedContact,
+                                                communication: {
+                                                  ...currentComms,
+                                                  phone: Object.keys(phoneEntries).length > 0 ? phoneEntries : undefined,
+                                                },
+                                              });
+                                            }
+                                          }}
+                                          title="Delete"
+                                        >
+                                          <IconTrash size={16} />
+                                        </ActionIcon>
+                                      </Group>
                                     </Group>
                                   );
                                 });
@@ -1220,12 +1274,62 @@ export default function ContactsPage() {
                             if (comms.mobile) {
                               if (typeof comms.mobile === 'string') {
                                 items.push(
-                                  <Group key="mobile-home">
-                                    <Box style={{ minWidth: rem(100) }}>
-                                      <Text size="sm" c="dimmed">Mobile</Text>
-                                      <Text size="xs" c="dimmed">Home</Text>
-                                    </Box>
-                                    <Text size="md" fw={600}>{comms.mobile}</Text>
+                                  <Group 
+                                    key="mobile-home"
+                                    justify="space-between"
+                                    style={{ position: 'relative' }}
+                                    onMouseEnter={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'flex';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'none';
+                                    }}
+                                  >
+                                    <Group style={{ flex: 1 }}>
+                                      <Box style={{ minWidth: rem(100) }}>
+                                        <Text size="sm" c="dimmed">Mobile</Text>
+                                        <Text size="xs" c="dimmed">Home</Text>
+                                      </Box>
+                                      <Text size="md" fw={600}>{comms.mobile}</Text>
+                                    </Group>
+                                    <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="blue"
+                                        onClick={() => {
+                                          setEditingCommunication({ type: 'mobile', name: 'home' });
+                                          setCommunicationType('mobile');
+                                          setCommunicationName('home');
+                                          setCommunicationValue(comms.mobile);
+                                          setIsDefault(false);
+                                          setCommunicationDialogOpened(true);
+                                        }}
+                                        title="Edit"
+                                      >
+                                        <IconEdit size={16} />
+                                      </ActionIcon>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => {
+                                          if (selectedContact) {
+                                            const currentComms = selectedContact.communication || {};
+                                            setSelectedContact({
+                                              ...selectedContact,
+                                              communication: {
+                                                ...currentComms,
+                                                mobile: undefined,
+                                              },
+                                            });
+                                          }
+                                        }}
+                                        title="Delete"
+                                      >
+                                        <IconTrash size={16} />
+                                      </ActionIcon>
+                                    </Group>
                                   </Group>
                                 );
                               } else {
@@ -1233,15 +1337,68 @@ export default function ContactsPage() {
                                   const value = typeof entry === 'string' ? entry : entry.value;
                                   const isDefault = typeof entry === 'object' && entry.default;
                                   items.push(
-                                    <Group key={`mobile-${name}`}>
-                                      <Box style={{ minWidth: rem(100) }}>
-                                        <Text size="sm" c="dimmed">Mobile</Text>
-                                        <Group gap={4}>
-                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                        </Group>
-                                      </Box>
-                                      <Text size="md" fw={600}>{value}</Text>
+                                    <Group 
+                                      key={`mobile-${name}`}
+                                      justify="space-between"
+                                      style={{ position: 'relative' }}
+                                      onMouseEnter={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'flex';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'none';
+                                      }}
+                                    >
+                                      <Group style={{ flex: 1 }}>
+                                        <Box style={{ minWidth: rem(100) }}>
+                                          <Text size="sm" c="dimmed">Mobile</Text>
+                                          <Group gap={4}>
+                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                          </Group>
+                                        </Box>
+                                        <Text size="md" fw={600}>{value}</Text>
+                                      </Group>
+                                      <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="blue"
+                                          onClick={() => {
+                                            setEditingCommunication({ type: 'mobile', name });
+                                            setCommunicationType('mobile');
+                                            setCommunicationName(name);
+                                            setCommunicationValue(value);
+                                            setIsDefault(isDefault || false);
+                                            setCommunicationDialogOpened(true);
+                                          }}
+                                          title="Edit"
+                                        >
+                                          <IconEdit size={16} />
+                                        </ActionIcon>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="red"
+                                          onClick={() => {
+                                            if (selectedContact) {
+                                              const currentComms = selectedContact.communication || {};
+                                              const mobileEntries = currentComms.mobile && typeof currentComms.mobile === 'object' ? { ...currentComms.mobile } : {};
+                                              delete mobileEntries[name];
+                                              
+                                              setSelectedContact({
+                                                ...selectedContact,
+                                                communication: {
+                                                  ...currentComms,
+                                                  mobile: Object.keys(mobileEntries).length > 0 ? mobileEntries : undefined,
+                                                },
+                                              });
+                                            }
+                                          }}
+                                          title="Delete"
+                                        >
+                                          <IconTrash size={16} />
+                                        </ActionIcon>
+                                      </Group>
                                     </Group>
                                   );
                                 });
@@ -1252,12 +1409,62 @@ export default function ContactsPage() {
                             if (comms.email) {
                               if (typeof comms.email === 'string') {
                                 items.push(
-                                  <Group key="email-home">
-                                    <Box style={{ minWidth: rem(100) }}>
-                                      <Text size="sm" c="dimmed">Email</Text>
-                                      <Text size="xs" c="dimmed">Home</Text>
-                                    </Box>
-                                    <Text size="md" fw={600}>{comms.email}</Text>
+                                  <Group 
+                                    key="email-home"
+                                    justify="space-between"
+                                    style={{ position: 'relative' }}
+                                    onMouseEnter={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'flex';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                      if (buttons) buttons.style.display = 'none';
+                                    }}
+                                  >
+                                    <Group style={{ flex: 1 }}>
+                                      <Box style={{ minWidth: rem(100) }}>
+                                        <Text size="sm" c="dimmed">Email</Text>
+                                        <Text size="xs" c="dimmed">Home</Text>
+                                      </Box>
+                                      <Text size="md" fw={600}>{comms.email}</Text>
+                                    </Group>
+                                    <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="blue"
+                                        onClick={() => {
+                                          setEditingCommunication({ type: 'email', name: 'home' });
+                                          setCommunicationType('email');
+                                          setCommunicationName('home');
+                                          setCommunicationValue(comms.email);
+                                          setIsDefault(false);
+                                          setCommunicationDialogOpened(true);
+                                        }}
+                                        title="Edit"
+                                      >
+                                        <IconEdit size={16} />
+                                      </ActionIcon>
+                                      <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => {
+                                          if (selectedContact) {
+                                            const currentComms = selectedContact.communication || {};
+                                            setSelectedContact({
+                                              ...selectedContact,
+                                              communication: {
+                                                ...currentComms,
+                                                email: undefined,
+                                              },
+                                            });
+                                          }
+                                        }}
+                                        title="Delete"
+                                      >
+                                        <IconTrash size={16} />
+                                      </ActionIcon>
+                                    </Group>
                                   </Group>
                                 );
                               } else {
@@ -1265,15 +1472,68 @@ export default function ContactsPage() {
                                   const value = typeof entry === 'string' ? entry : (entry && typeof entry === 'object' && 'value' in entry ? entry.value : '');
                                   const isDefault = entry && typeof entry === 'object' && 'default' in entry ? entry.default : false;
                                   items.push(
-                                    <Group key={`email-${name}`}>
-                                      <Box style={{ minWidth: rem(100) }}>
-                                        <Text size="sm" c="dimmed">Email</Text>
-                                        <Group gap={4}>
-                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
-                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
-                                        </Group>
-                                      </Box>
-                                      <Text size="md" fw={600}>{value}</Text>
+                                    <Group 
+                                      key={`email-${name}`}
+                                      justify="space-between"
+                                      style={{ position: 'relative' }}
+                                      onMouseEnter={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'flex';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'none';
+                                      }}
+                                    >
+                                      <Group style={{ flex: 1 }}>
+                                        <Box style={{ minWidth: rem(100) }}>
+                                          <Text size="sm" c="dimmed">Email</Text>
+                                          <Group gap={4}>
+                                            <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                            {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                          </Group>
+                                        </Box>
+                                        <Text size="md" fw={600}>{value}</Text>
+                                      </Group>
+                                      <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="blue"
+                                          onClick={() => {
+                                            setEditingCommunication({ type: 'email', name });
+                                            setCommunicationType('email');
+                                            setCommunicationName(name);
+                                            setCommunicationValue(value);
+                                            setIsDefault(isDefault || false);
+                                            setCommunicationDialogOpened(true);
+                                          }}
+                                          title="Edit"
+                                        >
+                                          <IconEdit size={16} />
+                                        </ActionIcon>
+                                        <ActionIcon
+                                          variant="subtle"
+                                          color="red"
+                                          onClick={() => {
+                                            if (selectedContact) {
+                                              const currentComms = selectedContact.communication || {};
+                                              const emailEntries = currentComms.email && typeof currentComms.email === 'object' ? { ...currentComms.email } : {};
+                                              delete emailEntries[name];
+                                              
+                                              setSelectedContact({
+                                                ...selectedContact,
+                                                communication: {
+                                                  ...currentComms,
+                                                  email: Object.keys(emailEntries).length > 0 ? emailEntries : undefined,
+                                                },
+                                              });
+                                            }
+                                          }}
+                                          title="Delete"
+                                        >
+                                          <IconTrash size={16} />
+                                        </ActionIcon>
+                                      </Group>
                                     </Group>
                                   );
                                 });
@@ -1669,20 +1929,21 @@ export default function ContactsPage() {
             <Group gap="xs" ml="auto">
               <Button
                 variant="subtle"
-                onClick={() => {
-                  setCommunicationDialogOpened(false);
-                  setCommunicationType('');
-                  setCommunicationName('');
-                  setCommunicationValue('');
-                  setIsDefault(false);
-                  setAddressFields({
-                    address1: '',
-                    address2: '',
-                    suburb: '',
-                    postcode: '',
-                    state: '',
-                  });
-                }}
+              onClick={() => {
+                setCommunicationDialogOpened(false);
+                setEditingCommunication(null);
+                setCommunicationType('');
+                setCommunicationName('');
+                setCommunicationValue('');
+                setIsDefault(false);
+                setAddressFields({
+                  address1: '',
+                  address2: '',
+                  suburb: '',
+                  postcode: '',
+                  state: '',
+                });
+              }}
               >
                 Cancel
               </Button>
@@ -1770,6 +2031,7 @@ export default function ContactsPage() {
                     
                     // Close dialog
                     setCommunicationDialogOpened(false);
+                    setEditingCommunication(null);
                     setCommunicationType('');
                     setCommunicationName('');
                     setCommunicationValue('');
