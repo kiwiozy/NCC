@@ -543,36 +543,14 @@ export default function ContactsPage() {
     setArchiveConfirmOpened(false);
     
     try {
-      // Determine API endpoint based on activeType
-      let endpoint = '';
-      switch (activeType) {
-        case 'patients':
-          endpoint = `/api/patients/${selectedContact.id}/archive/`;
-          break;
-        case 'referrers':
-          endpoint = `/api/referrers/${selectedContact.id}/archive/`;
-          break;
-        case 'coordinator':
-          endpoint = `/api/coordinators/${selectedContact.id}/archive/`;
-          break;
-        case 'ndis-lac':
-          endpoint = `/api/ndis-lac/${selectedContact.id}/archive/`;
-          break;
-        case 'contacts':
-          endpoint = `/api/contacts/${selectedContact.id}/archive/`;
-          break;
-        case 'companies':
-          endpoint = `/api/companies/${selectedContact.id}/archive/`;
-          break;
-        case 'clinics':
-          endpoint = `/api/clinics/${selectedContact.id}/archive/`;
-          break;
-        default:
-          console.error('Unknown contact type for archiving:', activeType);
-          setArchiveErrorMessage(`Archive not supported for type: ${activeType}`);
-          setArchiveErrorOpened(true);
-          return;
+      // Only patients can be archived (backend endpoint exists)
+      if (activeType !== 'patients') {
+        setArchiveErrorMessage(`Archive functionality is not yet available for ${activeType}. Only patients can be archived at this time.`);
+        setArchiveErrorOpened(true);
+        return;
       }
+      
+      const endpoint = `/api/patients/${selectedContact.id}/archive/`;
       
       // Validate contact ID
       if (!selectedContact.id || typeof selectedContact.id !== 'string') {
