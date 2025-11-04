@@ -215,6 +215,28 @@ const transformPatientToContact = (patient: any): Contact => {
   const phone = contactJson.phone || contactJson.mobile || '';
   const email = contactJson.email || '';
 
+  // Format DOB - ensure we only pass ISO dates to formatDate
+  let formattedDob = '';
+  if (patient.dob) {
+    // CRITICAL: Only format if it's an ISO date (YYYY-MM-DD)
+    const dobStr = String(patient.dob).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(dobStr) || dobStr.includes('T')) {
+      // It's an ISO date - safe to format
+      formattedDob = formatDate(patient.dob);
+    } else {
+      // Not an ISO date - might be already formatted or corrupted
+      console.error('CRITICAL: Patient DOB is not ISO format:', dobStr, 'for patient:', patient.id);
+      // Try to extract and format if it's in old format
+      const oldMatch = dobStr.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+      if (oldMatch) {
+        const [, d, m, y] = oldMatch;
+        formattedDob = `${d}/${m}/${y}`;
+      } else {
+        formattedDob = dobStr; // Return as-is to avoid further corruption
+      }
+    }
+  }
+
   return {
     id: patient.id,
     name: displayName,
@@ -224,7 +246,7 @@ const transformPatientToContact = (patient: any): Contact => {
     firstName: firstName,
     middleName: middleName || undefined,
     lastName: lastName,
-    dob: formatDate(patient.dob),
+    dob: formattedDob,
     age: patient.age || 0,
     healthNumber: patient.health_number || '',
     coordinator: patient.coordinator_name ? {
