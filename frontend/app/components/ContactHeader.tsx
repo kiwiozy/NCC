@@ -234,17 +234,16 @@ export default function ContactHeader({
 
       {/* Second Row: Count and Hamburger Menu */}
       <Group
-        justify="center"
+        justify="space-between"
         wrap="nowrap"
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
           padding: `${rem(12)} ${rem(24)}`,
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-          position: 'relative',
         }}
       >
-        {/* Center: Count Display */}
-        <Stack gap={4} align="center">
+        {/* Left: Count Display */}
+        <Stack gap={4} align="flex-start">
           <Text size="sm" c="blue" fw={500}>
             {displayCount} of {contactCount} found
           </Text>
@@ -255,9 +254,8 @@ export default function ContactHeader({
           )}
         </Stack>
 
-        {/* Right: Hamburger Menu - Positioned absolutely */}
-        <div style={{ position: 'absolute', right: rem(24) }}>
-          <Popover
+        {/* Right: Hamburger Menu */}
+        <Popover
             opened={menuOpened}
             onChange={setMenuOpened}
             position="bottom-end"
@@ -296,10 +294,9 @@ export default function ContactHeader({
                     {item.label}
                   </Button>
                 ))}
-              </Stack>
-            </Popover.Dropdown>
-          </Popover>
-        </div>
+            </Stack>
+          </Popover.Dropdown>
+        </Popover>
       </Group>
     </Box>
   );
