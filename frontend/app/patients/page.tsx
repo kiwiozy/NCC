@@ -529,6 +529,7 @@ export default function ContactsPage() {
 
   const confirmArchive = async () => {
     if (!selectedContact) {
+      console.error('No contact selected for archiving');
       return;
     }
     
@@ -561,14 +562,38 @@ export default function ContactsPage() {
           break;
         default:
           console.error('Unknown contact type for archiving:', activeType);
+          setArchiveErrorMessage(`Archive not supported for type: ${activeType}`);
+          setArchiveErrorOpened(true);
           return;
       }
       
-      const response = await fetch(`https://localhost:8000${endpoint}`, {
+      // Validate contact ID
+      if (!selectedContact.id || typeof selectedContact.id !== 'string') {
+        console.error('Invalid contact ID:', selectedContact.id);
+        setArchiveErrorMessage('Invalid contact ID. Please select a contact and try again.');
+        setArchiveErrorOpened(true);
+        return;
+      }
+      
+      const fullUrl = `https://localhost:8000${endpoint}`;
+      console.log('Archive request:', {
+        url: fullUrl,
+        method: 'PATCH',
+        contactId: selectedContact.id,
+        contactName: selectedContact.name
+      });
+      
+      const response = await fetch(fullUrl, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
+      });
+      
+      console.log('Archive response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
       
       if (response.ok) {
