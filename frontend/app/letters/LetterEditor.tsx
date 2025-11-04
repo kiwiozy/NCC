@@ -1,4 +1,4 @@
-import { Paper, Button, Group, ActionIcon, Stack, Modal, Text, Select, Divider, ColorPicker, Popover, Menu, Textarea, Code, Loader, Alert, Box } from '@mantine/core';
+import { Paper, Button, Group, ActionIcon, Stack, Modal, Text, Select, Divider, ColorPicker, Popover, Menu, Textarea, Code, Loader, Alert, Box, TextInput } from '@mantine/core';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -395,11 +395,9 @@ export default function LetterEditor() {
       // Remove link
       activeEditor.chain().focus().unsetLink().run();
     } else {
-      // Create link - prompt for URL
-      const url = window.prompt('Enter URL:');
-      if (url) {
-        activeEditor.chain().focus().setLink({ href: url }).run();
-      }
+      // Create link - open URL input modal
+      setUrlInput('');
+      setUrlPromptOpened(true);
     }
   };
 
