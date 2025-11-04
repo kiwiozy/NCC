@@ -357,9 +357,10 @@ documents
 - ✅ Added `coordinator_name`, `coordinator_date`
 - ✅ Added `plan_start_date`, `plan_end_date` (legacy fields)
 - ✅ Added `plan_dates_json` JSONField for multiple plan dates support
-- ✅ Added `notes` field
+- ✅ Added `notes` field (TextField on Patient model - legacy)
 - ✅ Added archive fields (`archived`, `archived_at`, `archived_by`)
 - ✅ Created `reminders` table with all fields and relationships
+- ✅ Created `notes` table for patient-specific notes (replaces localStorage)
 
 ### Pending Migrations
 - ⚠️ **Multiple Coordinators:** Need to decide on JSONField vs separate table
@@ -374,6 +375,7 @@ documents
 - **Dialog Documentation:** 
   - `docs/architecture/dialogs/CommunicationDialog.md` - Communication data structure
   - `docs/architecture/dialogs/ReminderDialog.md` - Reminder functionality
+  - Notes Dialog - Patient-specific notes with database persistence
 - **Settings:** `docs/architecture/settings/SETTINGS_REQUIREMENTS.md` - Settings tables
 
 ---

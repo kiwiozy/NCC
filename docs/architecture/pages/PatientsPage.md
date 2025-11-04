@@ -244,8 +244,24 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Visual Indicator**: Default entries display Type and Name in blue color
 - **Edit/Delete**: Hover over communication entries to show edit and delete buttons
 
-#### **Notes**
-- **Note** - Text (general notes) ⚠️ **Could use `flags_json` or separate field**
+#### **Notes** ✅ **IMPLEMENTED**
+- ✅ **Notes Dialog** - Accessible via menu button (hamburger icon → Notes)
+  - **Patient-Specific Notes:** Stored in database (`notes` table)
+  - **Note Types:** Clinical Notes, Clinic Dates, Order Notes, Admin Notes, Referral, 3D Scan Data, Workshop Note, Other
+  - **Features:**
+    - List of notes on left (scrollable)
+    - Create/Edit form on right
+    - View selected note details
+    - AI rewrite for Clinical Notes (gradient button)
+    - Edit/Delete buttons on hover for list items
+    - Real-time notification badge in menu
+  - **API Endpoints:**
+    - `GET /api/notes/?patient_id={id}` - List notes
+    - `POST /api/notes/` - Create note
+    - `PATCH /api/notes/{id}/` - Update note
+    - `DELETE /api/notes/{id}/` - Delete note
+  - **Database:** Persistent storage in `notes` table (replaces localStorage)
+  - **Badge:** Shows count of notes for current patient in menu
 
 ---
 
@@ -450,8 +466,13 @@ The Patients page provides a comprehensive view for managing patient contacts. I
    - Click archive button
    - Soft delete/archive
 
-7. **Menu Actions** (Hamburger menu)
-   - Notes, Documents, Images, Appointments, Accounts/Quotes, Orders, Evaluation, Letters, SMS, PDFs, NDIS, Workshop Notes
+7. **Menu Actions** (Hamburger menu) ✅ **Notes Dialog Implemented**
+   - ✅ **Notes** - Opens Notes dialog with patient-specific notes
+     - **Notification Badge:** Red circular badge on right side of "Notes" text showing count of notes
+     - Badge appears inline with text (vertically centered)
+     - Badge updates in real-time when notes are added/deleted
+     - Count loads from API for patient-specific notes
+   - Documents, Images, Appointments, Accounts/Quotes, Orders, Evaluation, Letters, SMS, PDFs, NDIS, Workshop Notes
 
 ---
 
