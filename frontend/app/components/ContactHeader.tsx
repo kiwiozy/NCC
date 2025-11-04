@@ -21,6 +21,7 @@ interface ContactHeaderProps {
   filteredCount?: number;
   showArchived?: boolean;
   onToggleArchived?: () => void;
+  archiveEnabled?: boolean; // Whether archive button should be enabled
 }
 
 export default function ContactHeader({ 
@@ -39,6 +40,7 @@ export default function ContactHeader({
   filteredCount,
   showArchived = false,
   onToggleArchived,
+  archiveEnabled = true,
 }: ContactHeaderProps) {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
@@ -218,8 +220,9 @@ export default function ContactHeader({
             variant="default"
             size="lg"
             onClick={onArchive}
-            title="Archive"
-            style={{ opacity: onArchive ? 1 : 0.5 }}
+            title={archiveEnabled ? "Archive" : "Archive (not available for this contact type)"}
+            disabled={!archiveEnabled}
+            style={{ opacity: archiveEnabled ? 1 : 0.5 }}
           >
             <IconArchive size={20} stroke={1.5} />
           </ActionIcon>

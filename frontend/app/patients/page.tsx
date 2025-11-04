@@ -523,6 +523,13 @@ export default function ContactsPage() {
       return;
     }
     
+    // Only patients can be archived for now (other types don't have backend endpoints)
+    if (activeType !== 'patients') {
+      setArchiveErrorMessage(`Archive functionality is not yet available for ${activeType}. Only patients can be archived at this time.`);
+      setArchiveErrorOpened(true);
+      return;
+    }
+    
     // Open confirmation modal
     setArchiveConfirmOpened(true);
   };
