@@ -1210,6 +1210,7 @@ export default function ContactsPage() {
                           {(() => {
                             const comms = selectedContact.communication;
                             const items: JSX.Element[] = [];
+                            const MAX_VISIBLE = 3;
                             
                             // Handle phone
                             if (comms.phone) {
@@ -1631,7 +1632,28 @@ export default function ContactsPage() {
                               );
                             }
                             
-                            return items.length > 0 ? items : null;
+                            const hasMore = items.length > MAX_VISIBLE;
+                            const visibleItems = items.slice(0, MAX_VISIBLE);
+                            const remainingCount = items.length - MAX_VISIBLE;
+                            
+                            if (items.length === 0) {
+                              return null;
+                            }
+                            
+                            return (
+                              <>
+                                <ScrollArea h={hasMore ? 200 : undefined} style={{ overflowY: hasMore ? 'auto' : 'visible' }}>
+                                  <Stack gap="md">
+                                    {hasMore ? visibleItems : items}
+                                  </Stack>
+                                </ScrollArea>
+                                {hasMore && (
+                                  <Text size="xs" c="dimmed" ta="center" mt="xs">
+                                    Scroll for more... ({remainingCount} more)
+                                  </Text>
+                                )}
+                              </>
+                            );
                           })()}
                         </Stack>
                       </Paper>
