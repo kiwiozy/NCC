@@ -207,14 +207,12 @@ export default function ContactHeader({
               checked={Boolean(filters.archived)}
               onChange={(event) => {
                 const newArchived = event.currentTarget.checked;
-                console.log('Toggle changed:', newArchived, 'Current filters:', filters);
                 setFilters(prev => {
                   const updated = { ...prev, archived: newArchived };
-                  console.log('Updated filters:', updated);
+                  // Apply archive filter immediately with updated state
+                  onFilterApply?.(updated);
                   return updated;
                 });
-                // Apply archive filter immediately
-                onFilterApply?.({ ...filters, archived: newArchived });
               }}
               size="md"
             />
