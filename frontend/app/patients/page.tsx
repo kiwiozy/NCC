@@ -1026,38 +1026,66 @@ export default function ContactsPage() {
                       <Stack gap="md" align="flex-start">
                         <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Coordinator</Text>
-                          {selectedContact.coordinator ? (
-                            <Group gap="xs" align="flex-start">
-                              <Box style={{ flex: 1 }}>
-                                <Text size="md" fw={700}>{selectedContact.coordinator.name}</Text>
-                                <Text size="xs" c="blue">{selectedContact.coordinator.date}</Text>
-                              </Box>
-                              <ActionIcon 
-                                variant="subtle" 
-                                color="blue"
-                                onClick={() => setCoordinatorDialogOpened(true)}
-                              >
-                                <IconPlus size={20} />
-                              </ActionIcon>
-                            </Group>
-                          ) : (
-                            <Group gap="xs" align="flex-start">
-                              <TextInput
-                                placeholder="Select coordinator"
-                                style={{ flex: 1 }}
-                                readOnly
-                                styles={{ input: { height: 'auto', minHeight: rem(36) } }}
-                                value=""
-                              />
-                              <ActionIcon 
-                                variant="subtle" 
-                                color="blue"
-                                onClick={() => setCoordinatorDialogOpened(true)}
-                              >
-                                <IconPlus size={20} />
-                              </ActionIcon>
-                            </Group>
-                          )}
+                          {(() => {
+                            const currentCoordinator = getCurrentCoordinator(selectedContact);
+                            const coordinators = getCoordinators(selectedContact);
+                            const hasMultipleCoordinators = coordinators.length >= 2;
+                            
+                            if (currentCoordinator) {
+                              return (
+                                <Group gap="xs" align="flex-start">
+                                  <Box style={{ flex: 1 }}>
+                                    <Text size="md" fw={700}>{currentCoordinator.name}</Text>
+                                    <Text size="xs" c="blue">{currentCoordinator.date}</Text>
+                                  </Box>
+                                  {hasMultipleCoordinators && (
+                                    <ActionIcon 
+                                      variant="subtle" 
+                                      color="blue"
+                                      onClick={() => setCoordinatorListDialogOpened(true)}
+                                      title="View all coordinators"
+                                    >
+                                      <IconListCheck size={20} />
+                                    </ActionIcon>
+                                  )}
+                                  <ActionIcon 
+                                    variant="subtle" 
+                                    color="blue"
+                                    onClick={() => {
+                                      setCoordinatorDate(new Date());
+                                      setCoordinatorDialogOpened(true);
+                                    }}
+                                    title="Add coordinator"
+                                  >
+                                    <IconPlus size={20} />
+                                  </ActionIcon>
+                                </Group>
+                              );
+                            } else {
+                              return (
+                                <Group gap="xs" align="flex-start">
+                                  <TextInput
+                                    placeholder="Select coordinator"
+                                    style={{ flex: 1 }}
+                                    readOnly
+                                    styles={{ input: { height: 'auto', minHeight: rem(36) } }}
+                                    value=""
+                                  />
+                                  <ActionIcon 
+                                    variant="subtle" 
+                                    color="blue"
+                                    onClick={() => {
+                                      setCoordinatorDate(new Date());
+                                      setCoordinatorDialogOpened(true);
+                                    }}
+                                    title="Add coordinator"
+                                  >
+                                    <IconPlus size={20} />
+                                  </ActionIcon>
+                                </Group>
+                              );
+                            }
+                          })()}
                         </Box>
 
                         <Box style={{ width: '100%' }}>
