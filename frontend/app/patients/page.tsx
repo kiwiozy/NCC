@@ -928,8 +928,8 @@ export default function ContactsPage() {
                           )}
                         </Box>
 
-                        <Box>
-                          <Group gap="xs" mb="xs">
+                        <Box style={{ width: '100%' }}>
+                          <Group gap="xs" mb="xs" align="flex-start">
                             <Text size="md" c="blue" fw={500}>Reminder</Text>
                             <ActionIcon variant="subtle" color="blue" size="sm">
                               <IconPlus size={16} />
@@ -937,8 +937,8 @@ export default function ContactsPage() {
                           </Group>
                         </Box>
 
-                        <Box>
-                          <Group justify="space-between" mb="xs">
+                        <Box style={{ width: '100%' }}>
+                          <Group justify="space-between" mb="xs" align="flex-start">
                             <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Current Plan Dates</Text>
                             <Group gap="xs">
                               <ActionIcon variant="subtle" color="blue" size="sm">
