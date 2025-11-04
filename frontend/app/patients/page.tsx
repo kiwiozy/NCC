@@ -1959,7 +1959,7 @@ export default function ContactsPage() {
           )}
 
           <Group justify="space-between" mt="md">
-            {communicationType && communicationType !== 'address' && (
+            {communicationType && (
               <Switch
                 label="Default"
                 checked={isDefault}
