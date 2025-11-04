@@ -994,7 +994,11 @@ export default function ContactsPage() {
                                 <Text size="md" fw={700}>{selectedContact.coordinator.name}</Text>
                                 <Text size="xs" c="blue">{selectedContact.coordinator.date}</Text>
                               </Box>
-                              <ActionIcon variant="subtle" color="blue">
+                              <ActionIcon 
+                                variant="subtle" 
+                                color="blue"
+                                onClick={() => setCoordinatorDialogOpened(true)}
+                              >
                                 <IconPlus size={20} />
                               </ActionIcon>
                             </Group>
@@ -1003,9 +1007,15 @@ export default function ContactsPage() {
                               <TextInput
                                 placeholder="Select coordinator"
                                 style={{ flex: 1 }}
+                                readOnly
                                 styles={{ input: { height: 'auto', minHeight: rem(36) } }}
+                                value=""
                               />
-                              <ActionIcon variant="subtle" color="blue">
+                              <ActionIcon 
+                                variant="subtle" 
+                                color="blue"
+                                onClick={() => setCoordinatorDialogOpened(true)}
+                              >
                                 <IconPlus size={20} />
                               </ActionIcon>
                             </Group>
@@ -1133,6 +1143,86 @@ export default function ContactsPage() {
           <Group justify="flex-end" mt="md">
             <Button onClick={() => setArchiveErrorOpened(false)}>Close</Button>
           </Group>
+        </Stack>
+      </Modal>
+
+      {/* Coordinator Selection Dialog */}
+      <Modal
+        opened={coordinatorDialogOpened}
+        onClose={() => {
+          setCoordinatorDialogOpened(false);
+          setCoordinatorSearchQuery('');
+          setCoordinatorSearchResults([]);
+        }}
+        title="Select Coordinator"
+        size="md"
+      >
+        <Stack gap="md">
+          <TextInput
+            placeholder="Search coordinators..."
+            leftSection={<IconSearch size={16} />}
+            value={coordinatorSearchQuery}
+            onChange={(e) => setCoordinatorSearchQuery(e.currentTarget.value)}
+          />
+          
+          {coordinatorLoading ? (
+            <Center py="xl">
+              <Loader size="sm" />
+            </Center>
+          ) : coordinatorSearchResults.length > 0 ? (
+            <ScrollArea h={300}>
+              <Stack gap="xs">
+                {coordinatorSearchResults.map((coordinator) => (
+                  <UnstyledButton
+                    key={coordinator.id}
+                    onClick={() => {
+                      if (selectedContact) {
+                        const today = dayjs().format('YYYY-MM-DD');
+                        setSelectedContact({
+                          ...selectedContact,
+                          coordinator: {
+                            name: coordinator.name,
+                            date: today,
+                          },
+                        });
+                        setCoordinatorDialogOpened(false);
+                        setCoordinatorSearchQuery('');
+                        setCoordinatorSearchResults([]);
+                      }
+                    }}
+                    style={{
+                      padding: rem(12),
+                      borderRadius: rem(4),
+                      backgroundColor: isDark ? '#25262b' : '#f8f9fa',
+                      border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                      transition: 'background-color 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                    }}
+                  >
+                    <Stack gap={4}>
+                      <Text size="sm" fw={600}>{coordinator.name}</Text>
+                      {coordinator.organization && (
+                        <Text size="xs" c="dimmed">{coordinator.organization}</Text>
+                      )}
+                    </Stack>
+                  </UnstyledButton>
+                ))}
+              </Stack>
+            </ScrollArea>
+          ) : coordinatorSearchQuery ? (
+            <Center py="xl">
+              <Text c="dimmed" size="sm">No coordinators found</Text>
+            </Center>
+          ) : (
+            <Center py="xl">
+              <Text c="dimmed" size="sm">Start typing to search coordinators</Text>
+            </Center>
+          )}
         </Stack>
       </Modal>
     </Navigation>
