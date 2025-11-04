@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider } from '@mantine/core';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { IconPlus, IconCalendar, IconSearch, IconListCheck } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
@@ -322,6 +322,7 @@ export default function ContactsPage() {
   const [communicationType, setCommunicationType] = useState<string>('');
   const [communicationName, setCommunicationName] = useState<string>('');
   const [communicationValue, setCommunicationValue] = useState<string>('');
+  const [isDefault, setIsDefault] = useState<boolean>(false);
   const [addressFields, setAddressFields] = useState({
     address1: '',
     address2: '',
@@ -1223,12 +1224,17 @@ export default function ContactsPage() {
                                   </Group>
                                 );
                               } else {
-                                Object.entries(comms.mobile).forEach(([name, value]) => {
+                                Object.entries(comms.mobile).forEach(([name, entry]) => {
+                                  const value = typeof entry === 'string' ? entry : entry.value;
+                                  const isDefault = typeof entry === 'object' && entry.default;
                                   items.push(
                                     <Group key={`mobile-${name}`}>
                                       <Box style={{ minWidth: rem(100) }}>
                                         <Text size="sm" c="dimmed">Mobile</Text>
-                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                        <Group gap={4}>
+                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                        </Group>
                                       </Box>
                                       <Text size="md" fw={600}>{value}</Text>
                                     </Group>
@@ -1250,12 +1256,17 @@ export default function ContactsPage() {
                                   </Group>
                                 );
                               } else {
-                                Object.entries(comms.email).forEach(([name, value]) => {
+                                Object.entries(comms.email).forEach(([name, entry]) => {
+                                  const value = typeof entry === 'string' ? entry : entry.value;
+                                  const isDefault = typeof entry === 'object' && entry.default;
                                   items.push(
                                     <Group key={`email-${name}`}>
                                       <Box style={{ minWidth: rem(100) }}>
                                         <Text size="sm" c="dimmed">Email</Text>
-                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                        <Group gap={4}>
+                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                        </Group>
                                       </Box>
                                       <Text size="md" fw={600}>{value}</Text>
                                     </Group>
@@ -1514,6 +1525,7 @@ export default function ContactsPage() {
           setCommunicationType('');
           setCommunicationName('');
           setCommunicationValue('');
+          setIsDefault(false);
           setAddressFields({
             address1: '',
             address2: '',
@@ -1647,6 +1659,7 @@ export default function ContactsPage() {
                 setCommunicationType('');
                 setCommunicationName('');
                 setCommunicationValue('');
+                setIsDefault(false);
                 setAddressFields({
                   address1: '',
                   address2: '',
@@ -1689,12 +1702,41 @@ export default function ContactsPage() {
                     } else {
                       // Handle phone, mobile, email
                       if (communicationValue) {
+                        const currentComms = selectedContact.communication || {};
+                        const currentType = currentComms[communicationType as keyof typeof currentComms];
+                        
+                        // If setting as default, remove default flag from all other entries of this type
+                        let updatedTypeEntries: any = {};
+                        if (currentType && typeof currentType === 'object' && !Array.isArray(currentType)) {
+                          // Handle object format (new structure)
+                          updatedTypeEntries = { ...currentType };
+                          if (isDefault) {
+                            // Remove default flag from all other entries
+                            Object.keys(updatedTypeEntries).forEach((key) => {
+                              if (updatedTypeEntries[key] && typeof updatedTypeEntries[key] === 'object') {
+                                updatedTypeEntries[key] = {
+                                  ...updatedTypeEntries[key],
+                                  default: false,
+                                };
+                              }
+                            });
+                          }
+                        } else if (currentType && typeof currentType === 'string') {
+                          // Handle legacy string format - convert to object format
+                          updatedTypeEntries = {
+                            home: { value: currentType, default: false },
+                          };
+                        }
+                        
+                        // Add/update the new entry
+                        updatedTypeEntries[communicationName] = {
+                          value: communicationValue,
+                          default: isDefault,
+                        };
+                        
                         const updatedCommunication = {
-                          ...selectedContact.communication || {},
-                          [communicationType]: {
-                            ...(selectedContact.communication?.[communicationType] || {}),
-                            [communicationName]: communicationValue,
-                          },
+                          ...currentComms,
+                          [communicationType]: updatedTypeEntries,
                         };
                         
                         setSelectedContact({
@@ -1716,6 +1758,7 @@ export default function ContactsPage() {
                     setCommunicationType('');
                     setCommunicationName('');
                     setCommunicationValue('');
+                    setIsDefault(false);
                     setAddressFields({
                       address1: '',
                       address2: '',
