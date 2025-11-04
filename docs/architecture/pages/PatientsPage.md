@@ -246,12 +246,30 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 ## 🎯 **User Actions**
 
 ### **Available Actions**
-1. **Search Patients** ✅ **IMPLEMENTED**
+
+1. **Add New Contact** ➕ **CONTEXT-AWARE** ⚠️ **TODO**
+   - Blue "+" button in header
+   - **Context-Aware:** Detects active contact type tab (Patients, Referrers, Coordinators, etc.)
+   - Opens type-specific create dialog/form based on `activeType`
+   - Passes `activeType` to handler: `handleAddNew(activeType)`
+   - **Implementation:** Needs type-specific create dialogs for each contact type
+   - **Status:** ⚠️ TODO - Handler exists but needs implementation
+
+2. **Archive Contact** 📦 **SOFT DELETE** ⚠️ **TODO**
+   - Grey archive button in header
+   - **Never deletes records** - Always archives them instead
+   - Sets `archived = True`, `archived_at = now()`, `active = False`
+   - Archived contacts remain in database for historical records
+   - Can be restored later by setting `archived = False` and `active = True`
+   - **API Endpoint:** `PATCH /api/{type}/:id/archive` (soft delete)
+   - **Status:** ⚠️ TODO - Handler exists but needs implementation
+
+3. **Search Patients** ✅ **IMPLEMENTED**
    - Search by name (real-time filtering) ✅
    - Works together with active filters ✅
    - **TODO:** Search by health number, MRN (when fields exist)
 
-2. **Filter Patients** 🔍 ✅ **IMPLEMENTED**
+4. **Filter Patients** 🔍 ✅ **IMPLEMENTED**
    - **Filter Icon Button** - Opens filter popover ✅
    - **Funding Source Filter** - Dropdown to filter by funding type ✅
      - Options: NDIS, Private, DVA, Workers Comp, Medicare (hardcoded)
