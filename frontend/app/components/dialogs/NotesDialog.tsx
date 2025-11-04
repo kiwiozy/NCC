@@ -355,185 +355,211 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
         <Grid gutter={0} style={{ height: rem(600) }}>
           {/* Left Column: Notes List */}
           <Grid.Col span={4} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-            <Stack gap={0} style={{ height: '100%' }}>
-              {/* Create/Edit Form */}
-              <Box p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-                <Stack gap="sm">
-                  {error && (
-                    <Alert icon={<IconAlertCircle size={16} />} color="red" onClose={() => setError(null)}>
-                      {error}
-                    </Alert>
-                  )}
-
-                  {success && (
-                    <Alert icon={<IconCheck size={16} />} color="green" onClose={() => setSuccess(null)}>
-                      {success}
-                    </Alert>
-                  )}
-
-                  <Select
-                    label="Note Type"
-                    placeholder="Select note type"
-                    data={NOTE_TYPES}
-                    value={newTitle}
-                    onChange={(value) => setNewTitle(value || 'clinical_notes')}
-                    size="sm"
-                    required
-                    searchable
-                  />
-
-                  <Textarea
-                    placeholder="Enter note content..."
-                    value={newContent}
-                    onChange={(e) => setNewContent(e.currentTarget.value)}
-                    autosize
-                    minRows={3}
-                    maxRows={6}
-                    size="sm"
-                  />
-
-                  <Group gap="xs">
-                    <Button
-                      leftSection={editingId ? <IconEdit size={16} /> : <IconPlus size={16} />}
-                      onClick={saveNote}
-                      loading={saving}
-                      size="sm"
-                      style={{ flex: 1 }}
+            <ScrollArea style={{ height: '100%' }}>
+              <Stack gap={0}>
+                {loading ? (
+                  <Box p="md">
+                    <Text c="dimmed" size="sm">Loading notes...</Text>
+                  </Box>
+                ) : notes.length === 0 ? (
+                  <Box p="md">
+                    <Text c="dimmed" size="sm">No notes yet. Create your first note!</Text>
+                  </Box>
+                ) : (
+                  notes.map((note) => (
+                    <Box
+                      key={note.id}
+                      p="md"
+                      style={{
+                        cursor: 'pointer',
+                        backgroundColor: selectedNote?.id === note.id
+                          ? (isDark ? '#25262b' : '#f8f9fa')
+                          : 'transparent',
+                        borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                      }}
+                      onClick={() => {
+                        setSelectedNote(note);
+                        setEditingId(null);
+                        setNewTitle('clinical_notes');
+                        setNewContent('');
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedNote?.id !== note.id) {
+                          e.currentTarget.style.backgroundColor = isDark ? '#1A1B1E' : '#f0f0f0';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedNote?.id !== note.id) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
+                      }}
                     >
-                      {editingId ? 'Update' : 'Create'}
-                    </Button>
-                    {editingId && (
-                      <Button variant="outline" onClick={cancelEdit} size="sm">
-                        Cancel
-                      </Button>
-                    )}
-                    {newTitle === 'clinical_notes' && newContent.trim() && (
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        onClick={handleOpenAI}
-                        title="Rewrite with AI"
-                      >
-                        <IconSparkles size={18} />
-                      </ActionIcon>
-                    )}
-                  </Group>
-                </Stack>
-              </Box>
-
-              {/* Notes List */}
-              <ScrollArea style={{ flex: 1 }}>
-                <Stack gap={0}>
-                  {loading ? (
-                    <Box p="md">
-                      <Text c="dimmed" size="sm">Loading notes...</Text>
-                    </Box>
-                  ) : notes.length === 0 ? (
-                    <Box p="md">
-                      <Text c="dimmed" size="sm">No notes yet. Create your first note above!</Text>
-                    </Box>
-                  ) : (
-                    notes.map((note) => (
-                      <Box
-                        key={note.id}
-                        p="md"
-                        style={{
-                          cursor: 'pointer',
-                          backgroundColor: selectedNote?.id === note.id
-                            ? (isDark ? '#25262b' : '#f8f9fa')
-                            : 'transparent',
-                          borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-                        }}
-                        onClick={() => setSelectedNote(note)}
-                        onMouseEnter={(e) => {
-                          if (selectedNote?.id !== note.id) {
-                            e.currentTarget.style.backgroundColor = isDark ? '#1A1B1E' : '#f0f0f0';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedNote?.id !== note.id) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }
-                        }}
-                      >
-                        <Group justify="space-between" align="flex-start" mb="xs">
-                          <Box style={{ flex: 1 }}>
-                            <Badge variant="light" size="sm" mb="xs">
-                              {note.title}
-                            </Badge>
-                            <Text size="xs" c="dimmed" lineClamp={2}>
-                              {note.content}
-                            </Text>
-                            <Text size="xs" c="dimmed" mt="xs">
-                              {formatDateTimeAU(note.created_at)}
-                            </Text>
-                          </Box>
-                          <Group gap="xs">
-                            <ActionIcon
-                              variant="subtle"
-                              color="blue"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                editNote(note);
-                              }}
-                            >
-                              <IconEdit size={16} />
-                            </ActionIcon>
-                            <ActionIcon
-                              variant="subtle"
-                              color="red"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNote(note.id);
-                              }}
-                            >
-                              <IconTrash size={16} />
-                            </ActionIcon>
-                          </Group>
+                      <Group justify="space-between" align="flex-start" mb="xs">
+                        <Box style={{ flex: 1 }}>
+                          <Badge variant="light" size="sm" mb="xs">
+                            {note.title}
+                          </Badge>
+                          <Text size="xs" c="dimmed" lineClamp={2}>
+                            {note.content}
+                          </Text>
+                          <Text size="xs" c="dimmed" mt="xs">
+                            {formatDateTimeAU(note.created_at)}
+                          </Text>
+                        </Box>
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="subtle"
+                            color="blue"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editNote(note);
+                            }}
+                          >
+                            <IconEdit size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNote(note.id);
+                            }}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
                         </Group>
-                      </Box>
-                    ))
-                  )}
-                </Stack>
-              </ScrollArea>
-            </Stack>
+                      </Group>
+                    </Box>
+                  ))
+                )}
+              </Stack>
+            </ScrollArea>
           </Grid.Col>
 
-          {/* Right Column: Selected Note Content */}
+          {/* Right Column: Create/Edit Form and Note View */}
           <Grid.Col span={8}>
-            <Box p="md" style={{ height: '100%' }}>
-              {selectedNote ? (
-                <Stack gap="md">
-                  <Group justify="space-between" align="flex-start">
-                    <Box style={{ flex: 1 }}>
-                      <Badge variant="light" size="lg" mb="sm">
-                        {selectedNote.title}
-                      </Badge>
-                      <Text size="xs" c="dimmed">
-                        Created: {formatDateTimeAU(selectedNote.created_at)}
-                        {selectedNote.updated_at !== selectedNote.created_at && (
-                          <> • Updated: {formatDateTimeAU(selectedNote.updated_at)}</>
-                        )}
-                      </Text>
-                    </Box>
-                  </Group>
-                  <Divider />
-                  <ScrollArea style={{ height: 'calc(100% - 120px)' }}>
+            <Stack gap={0} style={{ height: '100%' }}>
+              {editingId || !selectedNote ? (
+                /* Create/Edit Form */
+                <Box p="md" style={{ height: '100%', overflow: 'auto' }}>
+                  <Stack gap="md">
+                    {error && (
+                      <Alert icon={<IconAlertCircle size={16} />} color="red" onClose={() => setError(null)}>
+                        {error}
+                      </Alert>
+                    )}
+
+                    {success && (
+                      <Alert icon={<IconCheck size={16} />} color="green" onClose={() => setSuccess(null)}>
+                        {success}
+                      </Alert>
+                    )}
+
+                    <Select
+                      label="Note Type"
+                      placeholder="Select note type"
+                      data={NOTE_TYPES}
+                      value={newTitle}
+                      onChange={(value) => setNewTitle(value || 'clinical_notes')}
+                      size="sm"
+                      required
+                      searchable
+                    />
+
+                    <Textarea
+                      label="Content"
+                      placeholder="Enter note content..."
+                      value={newContent}
+                      onChange={(e) => setNewContent(e.currentTarget.value)}
+                      autosize
+                      minRows={10}
+                      maxRows={20}
+                      size="sm"
+                    />
+
+                    <Group gap="xs">
+                      <Button
+                        leftSection={editingId ? <IconEdit size={16} /> : <IconPlus size={16} />}
+                        onClick={saveNote}
+                        loading={saving}
+                        size="sm"
+                      >
+                        {editingId ? 'Update' : 'Create'}
+                      </Button>
+                      {editingId && (
+                        <Button variant="outline" onClick={cancelEdit} size="sm">
+                          Cancel
+                        </Button>
+                      )}
+                      {newTitle === 'clinical_notes' && newContent.trim() && (
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          onClick={handleOpenAI}
+                          title="Rewrite with AI"
+                        >
+                          <IconSparkles size={18} />
+                        </ActionIcon>
+                      )}
+                    </Group>
+                  </Stack>
+                </Box>
+              ) : (
+                /* Selected Note View */
+                <Box p="md" style={{ height: '100%', overflow: 'auto' }}>
+                  <Stack gap="md">
+                    <Group justify="space-between" align="flex-start">
+                      <Box style={{ flex: 1 }}>
+                        <Badge variant="light" size="lg" mb="sm">
+                          {selectedNote.title}
+                        </Badge>
+                        <Text size="xs" c="dimmed">
+                          Created: {formatDateTimeAU(selectedNote.created_at)}
+                          {selectedNote.updated_at !== selectedNote.created_at && (
+                            <> • Updated: {formatDateTimeAU(selectedNote.updated_at)}</>
+                          )}
+                        </Text>
+                      </Box>
+                      <Group gap="xs">
+                        <Button
+                          leftSection={<IconPlus size={16} />}
+                          variant="subtle"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedNote(null);
+                            setEditingId(null);
+                            setNewTitle('clinical_notes');
+                            setNewContent('');
+                          }}
+                        >
+                          New Note
+                        </Button>
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          onClick={() => editNote(selectedNote)}
+                        >
+                          <IconEdit size={18} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          onClick={() => deleteNote(selectedNote.id)}
+                        >
+                          <IconTrash size={18} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                    <Divider />
                     <Text style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                       {selectedNote.content}
                     </Text>
-                  </ScrollArea>
-                </Stack>
-              ) : (
-                <Center style={{ height: '100%' }}>
-                  <Text c="dimmed" size="sm">
-                    Select a note from the list to view its content
-                  </Text>
-                </Center>
+                  </Stack>
+                </Box>
               )}
-            </Box>
+            </Stack>
           </Grid.Col>
         </Grid>
       </Modal>
