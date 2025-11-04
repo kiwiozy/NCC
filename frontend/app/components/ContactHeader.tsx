@@ -415,7 +415,8 @@ export default function ContactHeader({
                             variant="filled"
                             style={{
                               position: 'absolute',
-                              top: rem(-4),
+                              top: '50%',
+                              transform: 'translateY(-50%)',
                               right: 0,
                               minWidth: rem(18),
                               height: rem(18),
