@@ -4,6 +4,8 @@
 
 **Approach:** Document as we go - update this file whenever we add/modify tables, fields, or relationships.
 
+> ⚠️ **IMPORTANT:** If this database schema documentation is updated, you **MUST** also update the "Database Schema Documentation" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
+
 **Last Updated:** 2025-01-15
 
 ---

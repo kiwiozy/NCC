@@ -124,6 +124,19 @@ The following integrations are **PRODUCTION READY** and **WORKING**:
 - Maintain consistent code style
 - Write meaningful commit messages
 
+## Database Schema Documentation:
+
+When adding or modifying database tables/models, **ALWAYS update** the database schema documentation:
+- **Location:** `docs/architecture/DATABASE_SCHEMA.md`
+- **Update when:**
+  - Adding a new table/model
+  - Adding/modifying fields in existing tables
+  - Adding/modifying relationships (ForeignKeys)
+  - Changing JSON field structures
+  - Creating migrations
+- **Keep synchronized** with actual Django models
+- **Document as we go** - don't wait until the end
+
 ## Troubleshooting Reference:
 
 When encountering issues, **ALWAYS check** the troubleshooting guide first:
@@ -161,6 +174,13 @@ When encountering issues, **ALWAYS check** the troubleshooting guide first:
 3. Follow the documented solutions and debugging steps
 4. **IMPORTANT:** If you update `docs/architecture/TROUBLESHOOTING.md`, you MUST also update this "Troubleshooting Reference" section to keep them synchronized
 5. Update the troubleshooting guide if you discover new issues or solutions
+
+**Before creating/modifying database tables:**
+1. **ALWAYS update** `docs/architecture/DATABASE_SCHEMA.md` when adding/modifying tables
+2. Document all fields, relationships, and indexes
+3. Move tables from "Pending/Planned" to "Current Database Tables" when built
+4. Update "Completed Migrations" section after running migrations
+5. Keep schema documentation synchronized with actual Django models
 
 ## Safety Reminders:
 
