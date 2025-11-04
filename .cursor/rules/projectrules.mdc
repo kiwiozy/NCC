@@ -112,6 +112,7 @@ The following integrations are **PRODUCTION READY** and **WORKING**:
 - **Multiple file changes** → Suggest doing one at a time
 - **New features** → Suggest creating new files/directories
 - **Refactoring** → Suggest feature flags and gradual rollout
+- **Troubleshooting requests** → Check `docs/architecture/TROUBLESHOOTING.md` first, then provide solutions based on the guide
 
 ## Code Quality Standards:
 
@@ -122,6 +123,23 @@ The following integrations are **PRODUCTION READY** and **WORKING**:
 - Update documentation when making changes
 - Maintain consistent code style
 - Write meaningful commit messages
+
+## Troubleshooting Reference:
+
+When encountering issues, **ALWAYS check** the troubleshooting guide first:
+- **Location:** `docs/architecture/TROUBLESHOOTING.md`
+- **Common issues covered:**
+  - Patients not loading (backend server not running, TLS errors)
+  - Hydration mismatch errors (SSR/client mismatches)
+  - API connection issues (TLS, CORS, 404 errors)
+  - Database issues (no data, migration problems)
+  - Frontend issues (build errors, TypeScript errors)
+
+**Before suggesting solutions:**
+1. Check if the issue is documented in `docs/architecture/TROUBLESHOOTING.md`
+2. Reference the troubleshooting guide in your response
+3. Follow the documented solutions and debugging steps
+4. Update the troubleshooting guide if you discover new issues or solutions
 
 ## Safety Reminders:
 
