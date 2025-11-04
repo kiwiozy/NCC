@@ -19,6 +19,7 @@ interface ContactHeaderProps {
   onFilterApply?: (filters: Record<string, string>) => void;
   contactCount?: number;
   filteredCount?: number;
+  achievedCount?: number; // Number of archived/achieved records
   showArchived?: boolean;
   onToggleArchived?: () => void;
   archiveEnabled?: boolean; // Whether archive button should be enabled
@@ -38,6 +39,7 @@ export default function ContactHeader({
   onFilterApply,
   contactCount = 0,
   filteredCount,
+  achievedCount,
   showArchived = false,
   onToggleArchived,
   archiveEnabled = true,
@@ -241,14 +243,16 @@ export default function ContactHeader({
         }}
       >
         {/* Left: Count Display */}
-        <Text size="sm" c="dimmed">
-          {displayCount} of {contactCount} found
-          {filteredCount !== undefined && filteredCount !== contactCount && (
-            <Text component="span" size="sm" c="dimmed" ml="xs">
-              {filteredCount} records achieved
+        <Stack gap={4}>
+          <Text size="sm" c="dimmed">
+            {displayCount} of {contactCount} found
+          </Text>
+          {achievedCount !== undefined && achievedCount > 0 && (
+            <Text size="sm" c="blue" fw={500}>
+              {achievedCount} records achieved
             </Text>
           )}
-        </Text>
+        </Stack>
 
         {/* Right: Hamburger Menu */}
         <Popover

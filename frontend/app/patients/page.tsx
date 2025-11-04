@@ -285,6 +285,7 @@ export default function ContactsPage() {
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [archivedCount, setArchivedCount] = useState<number>(0);
   const [archiveConfirmOpened, setArchiveConfirmOpened] = useState(false);
   const [archiveErrorOpened, setArchiveErrorOpened] = useState(false);
   const [archiveErrorMessage, setArchiveErrorMessage] = useState('');
@@ -679,6 +680,7 @@ export default function ContactsPage() {
         onToggleArchived={() => setShowArchived(!showArchived)}
         contactCount={allContacts.length}
         filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
+        achievedCount={archivedCount}
       />
       
       <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex' }}>
