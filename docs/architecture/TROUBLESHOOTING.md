@@ -327,5 +327,50 @@ If issues persist:
 
 ---
 
-**Last Updated:** November 4, 2025
+## Communication Display Issues
+
+### Problem: Address not showing when added first
+**Symptoms:**
+- Adding an address first doesn't display
+- Adding a phone first works, then address shows
+
+**Root Cause:**
+- Communication section only rendered when `selectedContact.communication` exists
+- Address is saved to `address_json`, not `communication`
+- When only address exists, `communication` is `undefined`, so section doesn't render
+
+**Solution:**
+- Updated condition to: `{(selectedContact.communication || selectedContact.address_json) && (`
+- Added null-safe handling: `const comms = selectedContact.communication || {};`
+- Added null checks before accessing `comms.phone`, `comms.mobile`, `comms.email`
+
+### Problem: TypeError: undefined is not an object (evaluating 'comms.phone')
+**Symptoms:**
+- Console error when viewing communication section
+- App crashes when trying to display communications
+
+**Root Cause:**
+- Code tried to access `comms.phone` when `comms` was `undefined`
+
+**Solution:**
+- Initialize `comms` with empty object: `const comms = selectedContact.communication || {};`
+- Add null checks: `if (comms && comms.phone)`
+
+### Problem: CORS error with Cache-Control header
+**Symptoms:**
+- Error: "Request header field Cache-Control is not allowed by Access-Control-Allow-Headers"
+- Reload after save fails
+
+**Root Cause:**
+- Backend CORS configuration doesn't allow `Cache-Control` header
+
+**Solution:**
+- Removed `Cache-Control` header from fetch requests
+- Use timestamp query parameter for cache-busting: `?t=${Date.now()}`
+
+---
+
+**Last Updated:** 2025-01-15
+
+**IMPORTANT:** If this troubleshooting guide is updated, you MUST also update the project rules at `.cursor/rules/projectrules.mdc` to keep them synchronized.
 
