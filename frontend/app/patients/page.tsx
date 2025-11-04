@@ -2033,11 +2033,27 @@ export default function ContactsPage() {
                           body: JSON.stringify({ address_json: addressData }),
                         });
                         if (!response.ok) {
-                          throw new Error('Failed to save address');
+                          const errorText = await response.text();
+                          throw new Error(`Failed to save address: ${response.status} ${errorText}`);
                         }
+                        // Success - close dialog
+                        setCommunicationDialogOpened(false);
+                        setEditingCommunication(null);
+                        setCommunicationType('');
+                        setCommunicationName('');
+                        setCommunicationValue('');
+                        setIsDefault(false);
+                        setAddressFields({
+                          address1: '',
+                          address2: '',
+                          suburb: '',
+                          postcode: '',
+                          state: '',
+                        });
                       } catch (error) {
                         console.error('Error saving address:', error);
-                        // TODO: Show error message to user
+                        // Show error message to user - don't close dialog on error
+                        alert(`Failed to save address: ${error instanceof Error ? error.message : 'Unknown error'}`);
                       }
                     } else {
                         // Handle phone, mobile, email
@@ -2104,35 +2120,37 @@ export default function ContactsPage() {
                             body: JSON.stringify({ contact_json: updatedCommunication }),
                           });
                           if (!response.ok) {
-                            throw new Error('Failed to save communication');
+                            const errorText = await response.text();
+                            throw new Error(`Failed to save communication: ${response.status} ${errorText}`);
                           }
+                          // Success - close dialog
+                          setCommunicationDialogOpened(false);
+                          setEditingCommunication(null);
+                          setCommunicationType('');
+                          setCommunicationName('');
+                          setCommunicationValue('');
+                          setIsDefault(false);
+                          setAddressFields({
+                            address1: '',
+                            address2: '',
+                            suburb: '',
+                            postcode: '',
+                            state: '',
+                          });
                         } catch (error) {
                           console.error('Error saving communication:', error);
-                          // TODO: Show error message to user
+                          // TODO: Show error message to user - don't close dialog on error
+                          alert(`Failed to save communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         }
                       } else {
                         // No communication value - this shouldn't happen due to validation, but handle gracefully
                         console.warn('No communication value provided');
+                        alert('Please enter a communication value');
                       }
                     }
-                    
-                    // Close dialog
-                    setCommunicationDialogOpened(false);
-                    setEditingCommunication(null);
-                    setCommunicationType('');
-                    setCommunicationName('');
-                    setCommunicationValue('');
-                    setIsDefault(false);
-                    setAddressFields({
-                      address1: '',
-                      address2: '',
-                      suburb: '',
-                      postcode: '',
-                      state: '',
-                    });
                   } catch (error) {
                     console.error('Error saving communication:', error);
-                    // TODO: Show error message to user
+                    alert(`Error saving communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
                   }
                 } else {
                   console.warn('Missing required fields for communication save:', { 
@@ -2140,6 +2158,7 @@ export default function ContactsPage() {
                     communicationType, 
                     communicationName 
                   });
+                  alert('Please fill in all required fields');
                 }
               }}
                 disabled={!communicationType || !communicationName || (communicationType !== 'address' && !communicationValue) || (communicationType === 'address' && !addressFields.address1)}
