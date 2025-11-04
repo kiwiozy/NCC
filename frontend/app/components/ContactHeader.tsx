@@ -334,7 +334,7 @@ export default function ContactHeader({
                   >
                     <Grid style={{ width: '100%', margin: 0 }}>
                       <Grid.Col span={2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Box style={{ color: isDark ? '#5C7CFA' : '#228BE6' }}>
+                        <Box style={{ color: '#228BE6' }}>
                           {item.icon}
                         </Box>
                       </Grid.Col>
