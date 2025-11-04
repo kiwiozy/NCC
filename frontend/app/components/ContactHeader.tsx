@@ -11,7 +11,8 @@ interface ContactHeaderProps {
   onAddNew?: () => void;
   onArchive?: () => void;
   onNotesClick?: () => void;
-  patientId?: string; // For getting note count
+  onDocumentsClick?: () => void;
+  patientId?: string; // For getting note and document counts
   showFilters?: boolean;
   filterOptions?: {
     funding?: string[];
@@ -32,6 +33,7 @@ export default function ContactHeader({
   onAddNew, 
   onArchive,
   onNotesClick,
+  onDocumentsClick,
   patientId,
   showFilters = true,
   filterOptions = {
@@ -52,6 +54,7 @@ export default function ContactHeader({
   const [filterOpened, setFilterOpened] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
   const [notesCount, setNotesCount] = useState<number>(0);
+  const [documentsCount, setDocumentsCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
@@ -120,6 +123,47 @@ export default function ContactHeader({
     };
   }, [patientId, menuOpened]);
 
+  // Get documents count for patient
+  useEffect(() => {
+    const getDocumentsCount = async () => {
+      try {
+        if (patientId) {
+          // Load from API for patient-specific documents
+          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+          if (response.ok) {
+            const data = await response.json();
+            const docsList = data.results || data;
+            setDocumentsCount(Array.isArray(docsList) ? docsList.length : 0);
+          } else {
+            setDocumentsCount(0);
+          }
+        } else {
+          setDocumentsCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading documents count:', err);
+        setDocumentsCount(0);
+      }
+    };
+
+    getDocumentsCount();
+    
+    // Listen for custom event when documents change
+    const handleDocumentsChange = () => {
+      getDocumentsCount();
+    };
+    
+    window.addEventListener('documentsUpdated', handleDocumentsChange);
+    
+    // Refresh count periodically
+    const interval = setInterval(getDocumentsCount, 2000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('documentsUpdated', handleDocumentsChange);
+    };
+  }, [patientId, menuOpened]);
+
   // Update filters when showArchived prop changes (e.g., when filters are cleared)
   // Only sync when showArchived prop changes from parent, not when local filters change
   useEffect(() => {
@@ -155,7 +199,7 @@ export default function ContactHeader({
 
   const menuItems = [
     { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); } },
-    { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => console.log('Documents') },
+    { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); } },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => console.log('Images') },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => console.log('Appointments') },
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
@@ -408,7 +452,7 @@ export default function ContactHeader({
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
                           {item.label}
                         </Text>
-                        {item.label === 'Notes' && notesCount > 0 && (
+                        {(item.label === 'Notes' && notesCount > 0) || (item.label === 'Documents' && documentsCount > 0) ? (
                           <Badge
                             size="xs"
                             color="red"
@@ -428,9 +472,12 @@ export default function ContactHeader({
                               fontWeight: 700,
                             }}
                           >
-                            {notesCount > 99 ? '99+' : notesCount}
+                            {item.label === 'Notes' 
+                              ? (notesCount > 99 ? '99+' : notesCount)
+                              : (documentsCount > 99 ? '99+' : documentsCount)
+                            }
                           </Badge>
-                        )}
+                        ) : null}
                       </Grid.Col>
                     </Grid>
                   </Box>

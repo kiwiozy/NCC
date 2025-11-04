@@ -27,6 +27,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             'uploaded_at',
             'updated_at',
             'is_active',
+            'document_date',
             'content_type',
             'object_id',
         ]
@@ -67,4 +68,5 @@ class DocumentUploadSerializer(serializers.Serializer):
     content_type_id = serializers.IntegerField(required=False)
     object_id = serializers.UUIDField(required=False)
     uploaded_by = serializers.CharField(required=False, allow_blank=True)
+    document_date = serializers.DateField(required=False, allow_null=True)
 
