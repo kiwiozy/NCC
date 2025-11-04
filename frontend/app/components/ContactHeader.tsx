@@ -167,7 +167,7 @@ export default function ContactHeader({
                     <Group justify="space-between" wrap="nowrap">
                       <Text size="sm">Viewing Archived</Text>
                       <Switch
-                        checked={filters.archived === true || filters.archived === 'true'}
+                        checked={Boolean(filters.archived)}
                         onChange={(event) => {
                           const newArchived = event.currentTarget.checked;
                           setFilters({ ...filters, archived: newArchived });
