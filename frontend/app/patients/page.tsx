@@ -73,8 +73,8 @@ const transformPatientToContact = (patient: any): Contact => {
         return formatted; // Return as-is if invalid
       }
       
-      // Return formatted as "DD MMM YYYY" (e.g., "25 Jun 1949")
-      return `${day} ${months[monthIndex]} ${year}`;
+      // Return formatted as "DD/MMM/YYYY" (e.g., "25/Jun/1949")
+      return `${day}/${months[monthIndex]}/${year}`;
     } catch (error) {
       console.error('Error formatting date:', error, 'for input:', dateStr);
       return '';
