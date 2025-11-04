@@ -13,7 +13,8 @@ from .serializers import PatientSerializer, PatientListSerializer
 class PatientViewSet(viewsets.ModelViewSet):
     """API endpoint for patients"""
     
-    queryset = Patient.objects.filter(archived=False).order_by('-created_at')
+    # Default queryset - will be overridden by get_queryset()
+    queryset = Patient.objects.all().order_by('-created_at')
     serializer_class = PatientSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['sex', 'clinic', 'funding_type', 'archived']
