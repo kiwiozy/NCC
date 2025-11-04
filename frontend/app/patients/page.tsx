@@ -43,11 +43,16 @@ const transformPatientToContact = (patient: any): Contact => {
     try {
       // Parse the date and format as DD MMM YYYY
       const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY
-      const [day, month, year] = formatted.split('/');
+      if (!formatted) return '';
+      const parts = formatted.split('/');
+      if (parts.length !== 3) return formatted; // Return as-is if format is unexpected
+      const [day, month, year] = parts;
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = parseInt(month) - 1;
+      const monthIndex = parseInt(month, 10) - 1;
+      if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) return formatted; // Return as-is if invalid
       return `${day} ${months[monthIndex]} ${year}`;
-    } catch {
+    } catch (error) {
+      console.error('Error formatting date:', error, dateStr);
       return '';
     }
   };
@@ -445,7 +450,9 @@ export default function ContactsPage() {
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Date of Birth</Text>
                           <Group gap="xs">
                             <TextInput
-                              value={selectedContact.dob}
+                              value={selectedContact.dob || ''}
+                              placeholder="Date of Birth"
+                              readOnly
                               rightSection={<IconCalendar size={16} />}
                               styles={{ 
                                 root: { flex: 1 },
@@ -453,7 +460,7 @@ export default function ContactsPage() {
                               }}
                             />
                           </Group>
-                          <Text size="lg" fw={700} mt="md">Age: {selectedContact.age}</Text>
+                          <Text size="lg" fw={700} mt="md">Age: {selectedContact.age || 0}</Text>
                         </Box>
                       </Stack>
                     </Grid.Col>
