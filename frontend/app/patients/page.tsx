@@ -937,6 +937,46 @@ export default function ContactsPage() {
           </ScrollArea>
         </Grid.Col>
       </Grid>
+
+      {/* Archive Confirmation Modal */}
+      <Modal
+        opened={archiveConfirmOpened}
+        onClose={() => setArchiveConfirmOpened(false)}
+        title="Archive Contact"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to archive <strong>{selectedContact?.name}</strong>?
+          </Text>
+          <Text size="sm" c="dimmed">
+            This will hide them from active lists but keep the record. You can restore them later from the archived view.
+          </Text>
+          <Group justify="flex-end" mt="md">
+            <Button variant="subtle" onClick={() => setArchiveConfirmOpened(false)}>
+              Cancel
+            </Button>
+            <Button color="orange" onClick={confirmArchive}>
+              Archive
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Archive Error Modal */}
+      <Modal
+        opened={archiveErrorOpened}
+        onClose={() => setArchiveErrorOpened(false)}
+        title="Archive Error"
+        centered
+      >
+        <Stack gap="md">
+          <Text c="red">{archiveErrorMessage}</Text>
+          <Group justify="flex-end" mt="md">
+            <Button onClick={() => setArchiveErrorOpened(false)}>Close</Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Navigation>
   );
 }
