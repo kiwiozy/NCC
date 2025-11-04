@@ -19,8 +19,9 @@ import {
   Paper,
   Progress,
   FileButton,
-  DatePickerInput,
+  Textarea,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import {
   IconPlus,
   IconTrash,
