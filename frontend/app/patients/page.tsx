@@ -1025,29 +1025,41 @@ export default function ContactsPage() {
                     <Grid.Col span={4}>
                       <Stack gap="md" align="flex-start">
                         <Box style={{ width: '100%' }}>
-                          <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Coordinator</Text>
-                          {(() => {
-                            const currentCoordinator = getCurrentCoordinator(selectedContact);
-                            const coordinators = getCoordinators(selectedContact);
-                            const hasMultipleCoordinators = coordinators.length >= 2;
-                            
-                            if (currentCoordinator) {
-                              return (
-                                <Group gap="xs" align="flex-end">
-                                  <Box style={{ flex: 1 }}>
-                                    <Text size="md" fw={700}>{currentCoordinator.name}</Text>
-                                    <Text size="xs" c="blue">{currentCoordinator.date}</Text>
-                                  </Box>
-                                  {hasMultipleCoordinators && (
+                          <Group gap="xs" align="flex-end" mb="xs">
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Coordinator</Text>
+                            {(() => {
+                              const currentCoordinator = getCurrentCoordinator(selectedContact);
+                              const coordinators = getCoordinators(selectedContact);
+                              const hasMultipleCoordinators = coordinators.length >= 2;
+                              
+                              if (currentCoordinator) {
+                                return (
+                                  <>
+                                    {hasMultipleCoordinators && (
+                                      <ActionIcon 
+                                        variant="subtle" 
+                                        color="blue"
+                                        onClick={() => setCoordinatorListDialogOpened(true)}
+                                        title="View all coordinators"
+                                      >
+                                        <IconListCheck size={20} />
+                                      </ActionIcon>
+                                    )}
                                     <ActionIcon 
                                       variant="subtle" 
                                       color="blue"
-                                      onClick={() => setCoordinatorListDialogOpened(true)}
-                                      title="View all coordinators"
+                                      onClick={() => {
+                                        setCoordinatorDate(new Date());
+                                        setCoordinatorDialogOpened(true);
+                                      }}
+                                      title="Add coordinator"
                                     >
-                                      <IconListCheck size={20} />
+                                      <IconPlus size={20} />
                                     </ActionIcon>
-                                  )}
+                                  </>
+                                );
+                              } else {
+                                return (
                                   <ActionIcon 
                                     variant="subtle" 
                                     color="blue"
@@ -1059,30 +1071,27 @@ export default function ContactsPage() {
                                   >
                                     <IconPlus size={20} />
                                   </ActionIcon>
-                                </Group>
+                                );
+                              }
+                            })()}
+                          </Group>
+                          {(() => {
+                            const currentCoordinator = getCurrentCoordinator(selectedContact);
+                            if (currentCoordinator) {
+                              return (
+                                <Box>
+                                  <Text size="md" fw={700}>{currentCoordinator.name}</Text>
+                                  <Text size="xs" c="blue">{currentCoordinator.date}</Text>
+                                </Box>
                               );
                             } else {
                               return (
-                                <Group gap="xs" align="flex-start">
-                                  <TextInput
-                                    placeholder="Select coordinator"
-                                    style={{ flex: 1 }}
-                                    readOnly
-                                    styles={{ input: { height: 'auto', minHeight: rem(36) } }}
-                                    value=""
-                                  />
-                                  <ActionIcon 
-                                    variant="subtle" 
-                                    color="blue"
-                                    onClick={() => {
-                                      setCoordinatorDate(new Date());
-                                      setCoordinatorDialogOpened(true);
-                                    }}
-                                    title="Add coordinator"
-                                  >
-                                    <IconPlus size={20} />
-                                  </ActionIcon>
-                                </Group>
+                                <TextInput
+                                  placeholder="Select coordinator"
+                                  readOnly
+                                  styles={{ input: { height: 'auto', minHeight: rem(36) } }}
+                                  value=""
+                                />
                               );
                             }
                           })()}
