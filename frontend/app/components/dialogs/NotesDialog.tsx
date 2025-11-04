@@ -453,8 +453,8 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
                     value={newContent}
                     onChange={(e) => setNewContent(e.currentTarget.value)}
                     autosize
-                    minRows={10}
-                    maxRows={20}
+                    minRows={18}
+                    maxRows={30}
                     size="sm"
                   />
 
