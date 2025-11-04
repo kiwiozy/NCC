@@ -41,16 +41,25 @@ const transformPatientToContact = (patient: any): Contact => {
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
     
-    // If already formatted (contains month name), return as-is
-    if (typeof dateStr === 'string' && /[A-Za-z]{3}/.test(dateStr)) {
-      // Already contains a month name, might be already formatted
-      // But we still want to ensure it's in DD/MMM/YYYY format
-      return dateStr;
+    // If already formatted in DD/MMM/YYYY format, return as-is
+    if (typeof dateStr === 'string') {
+      // Check if it's already in DD/MMM/YYYY format (e.g., "29/Aug/1986")
+      const alreadyFormatted = /^\d{1,2}\/[A-Za-z]{3}\/\d{4}$/.test(dateStr.trim());
+      if (alreadyFormatted) {
+        return dateStr.trim();
+      }
+      
+      // Check if it's in old format with spaces (e.g., "29 Aug 1986") and convert
+      const oldFormatMatch = dateStr.trim().match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+      if (oldFormatMatch) {
+        const [, day, month, year] = oldFormatMatch;
+        return `${day}/${month}/${year}`;
+      }
     }
     
     try {
       // First, get the formatted date in DD/MM/YYYY format
-      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "25/06/1949")
+      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "29/08/1986")
       
       // If formatDateOnlyAU returns empty or invalid, return empty
       if (!formatted || formatted.trim() === '' || formatted === 'Invalid DateTime') {
