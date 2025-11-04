@@ -920,6 +920,7 @@ export default function ContactsPage() {
                               <TextInput
                                 placeholder="Select coordinator"
                                 style={{ flex: 1 }}
+                                styles={{ input: { height: 'auto', minHeight: rem(36) } }}
                               />
                               <ActionIcon variant="subtle" color="blue">
                                 <IconPlus size={20} />
