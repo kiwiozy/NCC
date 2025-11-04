@@ -64,6 +64,18 @@ export default function ContactHeader({
     }
   }, [showArchived]); // Only depend on showArchived, not filters.archived
 
+  // Reset filters to current active filters when popover opens
+  useEffect(() => {
+    if (filterOpened) {
+      setFilters({
+        funding: '',
+        clinic: '',
+        status: '',
+        archived: Boolean(showArchived),
+      });
+    }
+  }, [filterOpened, showArchived]);
+
   const handleFilterApply = () => {
     onFilterApply?.({ ...filters, archived: filters.archived });
     setFilterOpened(false);
