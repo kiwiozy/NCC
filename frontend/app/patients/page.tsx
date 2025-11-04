@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconPlus, IconCalendar, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconCalendar, IconSearch, IconListCheck } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
@@ -25,6 +25,11 @@ interface Contact {
   dob: string;
   age: number;
   healthNumber: string;
+  coordinators?: Array<{
+    name: string;
+    date: string;
+  }>;
+  // Legacy single coordinator support (for backwards compatibility)
   coordinator?: {
     name: string;
     date: string;
@@ -298,6 +303,34 @@ export default function ContactsPage() {
   const [coordinatorSearchQuery, setCoordinatorSearchQuery] = useState('');
   const [coordinatorSearchResults, setCoordinatorSearchResults] = useState<any[]>([]);
   const [coordinatorLoading, setCoordinatorLoading] = useState(false);
+  const [coordinatorDate, setCoordinatorDate] = useState<Date | null>(null);
+  
+  // Coordinator list dialog state
+  const [coordinatorListDialogOpened, setCoordinatorListDialogOpened] = useState(false);
+  
+  // Helper to get coordinators array (handles both old single coordinator and new array)
+  const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
+    if (!contact) return [];
+    if (contact.coordinators && contact.coordinators.length > 0) {
+      return contact.coordinators;
+    }
+    if (contact.coordinator) {
+      return [contact.coordinator];
+    }
+    return [];
+  };
+  
+  // Get current coordinator (most recent one)
+  const getCurrentCoordinator = (contact: Contact | null) => {
+    const coordinators = getCoordinators(contact);
+    if (coordinators.length === 0) return null;
+    // Sort by date descending and return most recent
+    return coordinators.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    })[0];
+  };
   
   // Load clinics and funding sources from API for filter dropdown
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
@@ -1158,11 +1191,21 @@ export default function ContactsPage() {
           setCoordinatorDialogOpened(false);
           setCoordinatorSearchQuery('');
           setCoordinatorSearchResults([]);
+          setCoordinatorDate(null);
         }}
-        title="Select Coordinator"
+        title="Add Coordinator"
         size="md"
       >
         <Stack gap="md">
+          <DatePickerInput
+            label="Assignment Date"
+            placeholder="Select assignment date"
+            value={coordinatorDate}
+            onChange={setCoordinatorDate}
+            maxDate={new Date()}
+            required
+          />
+          
           <TextInput
             placeholder="Search coordinators..."
             leftSection={<IconSearch size={16} />}
@@ -1181,32 +1224,45 @@ export default function ContactsPage() {
                   <UnstyledButton
                     key={coordinator.id}
                     onClick={() => {
-                      if (selectedContact) {
-                        const today = dayjs().format('YYYY-MM-DD');
+                      if (selectedContact && coordinatorDate) {
+                        const dateStr = dayjs(coordinatorDate).format('YYYY-MM-DD');
+                        const coordinators = getCoordinators(selectedContact);
+                        const newCoordinator = {
+                          name: coordinator.name,
+                          date: dateStr,
+                        };
+                        // Add to coordinators array (avoid duplicates)
+                        const updatedCoordinators = [...coordinators, newCoordinator];
                         setSelectedContact({
                           ...selectedContact,
-                          coordinator: {
-                            name: coordinator.name,
-                            date: today,
-                          },
+                          coordinators: updatedCoordinators,
+                          // Keep legacy coordinator for backwards compatibility (most recent)
+                          coordinator: newCoordinator,
                         });
                         setCoordinatorDialogOpened(false);
                         setCoordinatorSearchQuery('');
                         setCoordinatorSearchResults([]);
+                        setCoordinatorDate(null);
                       }
                     }}
+                    disabled={!coordinatorDate}
                     style={{
                       padding: rem(12),
                       borderRadius: rem(4),
                       backgroundColor: isDark ? '#25262b' : '#f8f9fa',
                       border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                       transition: 'background-color 0.2s ease',
+                      opacity: coordinatorDate ? 1 : 0.5,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
+                      if (coordinatorDate) {
+                        e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                      if (coordinatorDate) {
+                        e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                      }
                     }}
                   >
                     <Stack gap={4}>
@@ -1228,6 +1284,57 @@ export default function ContactsPage() {
               <Text c="dimmed" size="sm">Start typing to search coordinators</Text>
             </Center>
           )}
+        </Stack>
+      </Modal>
+
+      {/* Coordinator List Dialog */}
+      <Modal
+        opened={coordinatorListDialogOpened}
+        onClose={() => setCoordinatorListDialogOpened(false)}
+        title="Coordinators"
+        size="md"
+      >
+        <Stack gap="md">
+          {(() => {
+            const coordinators = getCoordinators(selectedContact);
+            if (coordinators.length === 0) {
+              return (
+                <Center py="xl">
+                  <Text c="dimmed" size="sm">No coordinators assigned</Text>
+                </Center>
+              );
+            }
+            
+            // Sort by date descending (most recent first)
+            const sortedCoordinators = [...coordinators].sort((a, b) => {
+              const dateA = new Date(a.date);
+              const dateB = new Date(b.date);
+              return dateB.getTime() - dateA.getTime();
+            });
+            
+            return (
+              <ScrollArea h={400}>
+                <Stack gap="xs">
+                  {sortedCoordinators.map((coordinator, index) => (
+                    <Box
+                      key={index}
+                      style={{
+                        padding: rem(12),
+                        borderRadius: rem(4),
+                        backgroundColor: isDark ? '#25262b' : '#f8f9fa',
+                        border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                      }}
+                    >
+                      <Stack gap={4}>
+                        <Text size="sm" fw={600}>{coordinator.name}</Text>
+                        <Text size="xs" c="blue">{coordinator.date}</Text>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            );
+          })()}
         </Stack>
       </Modal>
     </Navigation>
