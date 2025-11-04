@@ -1,7 +1,7 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support, Reminder Dialog, Plan Dates with Edit/Delete)  
+**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support, Reminder Dialog, Plan Dates with Edit/Delete, Notes Dialog with Database Persistence)  
 **Last Updated:** 2025-01-15
 
 ---
@@ -584,6 +584,7 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Uses:** CommunicationDialog (✅ Built) - [CommunicationDialog.md](../dialogs/CommunicationDialog.md)
 - **Uses:** CoordinatorDialogs (✅ Built) - [CoordinatorDialogs.md](../dialogs/CoordinatorDialogs.md)
 - **Uses:** ReminderDialog (✅ Built) - [ReminderDialog.md](../dialogs/ReminderDialog.md)
+- **Uses:** NotesDialog (✅ Built) - [NotesDialog.md](../dialogs/NotesDialog.md)
 - **Uses:** PlanDatesDialog (✅ Built) - Plan dates add/edit dialog
 - **Uses:** PlanDatesListDialog (✅ Built) - Plan dates list view dialog
 - **Will use:** CreatePatientDialog (not yet built)

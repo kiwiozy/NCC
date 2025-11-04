@@ -6,7 +6,7 @@
 
 > ⚠️ **IMPORTANT:** If this database schema documentation is updated, you **MUST** also update the "Database Schema Documentation" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
 
-**Last Updated:** 2025-01-15
+**Last Updated:** 2025-01-15 (Added notes table)
 
 ---
 
@@ -283,7 +283,9 @@
 patients
   ├── funding_type → funding_sources (FK, nullable)
   ├── clinic → clinics (FK, nullable)
-  └── appointments ← appointments (One-to-Many)
+  ├── appointments ← appointments (One-to-Many)
+  ├── reminders ← reminders (One-to-Many)
+  └── patient_notes ← notes (One-to-Many)
 
 funding_sources
   └── patients ← patients.funding_type (One-to-Many)
