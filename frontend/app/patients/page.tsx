@@ -1206,6 +1206,14 @@ export default function ContactsPage() {
                                       key={`phone-${name}`}
                                       justify="space-between"
                                       style={{ position: 'relative' }}
+                                      onMouseEnter={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'flex';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        const buttons = e.currentTarget.querySelector('.comm-actions') as HTMLElement;
+                                        if (buttons) buttons.style.display = 'none';
+                                      }}
                                     >
                                       <Group style={{ flex: 1 }}>
                                         <Box style={{ minWidth: rem(100) }}>
@@ -1214,7 +1222,7 @@ export default function ContactsPage() {
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
                                       </Group>
-                                      <Group gap="xs" className="comm-actions">
+                                      <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
                                         <ActionIcon
                                           variant="subtle"
                                           color="blue"
