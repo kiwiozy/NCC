@@ -1197,12 +1197,17 @@ export default function ContactsPage() {
                                   </Group>
                                 );
                               } else {
-                                Object.entries(comms.phone).forEach(([name, value]) => {
+                                Object.entries(comms.phone).forEach(([name, entry]) => {
+                                  const value = typeof entry === 'string' ? entry : (entry?.value || '');
+                                  const isDefault = typeof entry === 'object' && entry !== null && entry.default;
                                   items.push(
                                     <Group key={`phone-${name}`}>
                                       <Box style={{ minWidth: rem(100) }}>
                                         <Text size="sm" c="dimmed">Phone</Text>
-                                        <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                        <Group gap={4}>
+                                          <Text size="xs" c="dimmed">{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
+                                          {isDefault && <Badge size="xs" color="blue">Default</Badge>}
+                                        </Group>
                                       </Box>
                                       <Text size="md" fw={600}>{value}</Text>
                                     </Group>
