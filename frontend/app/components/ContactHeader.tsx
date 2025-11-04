@@ -149,6 +149,22 @@ export default function ContactHeader({
                   />
                 )}
                 
+                {/* Archive Toggle */}
+                {onToggleArchived && (
+                  <Box>
+                    <Text size="sm" fw={500} mb="xs">View</Text>
+                    <Button
+                      variant={showArchived ? 'filled' : 'outline'}
+                      color={showArchived ? 'orange' : 'blue'}
+                      onClick={onToggleArchived}
+                      fullWidth
+                      leftSection={showArchived ? <IconArchive size={16} /> : undefined}
+                    >
+                      {showArchived ? 'Viewing Archived' : 'View Active'}
+                    </Button>
+                  </Box>
+                )}
+                
                 <Group justify="space-between" mt="md">
                   <Button variant="subtle" onClick={handleFilterClear}>
                     Clear

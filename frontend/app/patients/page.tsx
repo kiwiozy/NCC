@@ -561,7 +561,7 @@ export default function ContactsPage() {
       if (response.ok) {
         // Reload contacts to refresh the list
         if (activeType === 'patients') {
-          // Reload patients
+          // Reload patients - keep current view (archived or active)
           const loadPatients = async () => {
             setLoading(true);
             setAllContacts([]);
@@ -569,7 +569,18 @@ export default function ContactsPage() {
             setSelectedContact(null);
             
             try {
-              const response = await fetch('https://localhost:8000/api/patients/');
+              const params = new URLSearchParams();
+              if (searchQuery) {
+                params.append('search', searchQuery);
+              }
+              // Keep current archived view state
+              if (showArchived) {
+                params.append('archived', 'true');
+              } else {
+                params.append('archived', 'false');
+              }
+              
+              const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
               if (response.ok) {
                 const data = await response.json();
                 const patients = data.results || data;
@@ -624,6 +635,8 @@ export default function ContactsPage() {
           clinic: clinics,
           status: ['Active', 'Inactive', 'Archived'],
         }}
+        showArchived={showArchived}
+        onToggleArchived={() => setShowArchived(!showArchived)}
         contactCount={allContacts.length}
         filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
       />
