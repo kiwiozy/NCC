@@ -1665,7 +1665,7 @@ export default function ContactsPage() {
                 description="Set as the default for this communication type"
               />
             )}
-            <Group gap="xs">
+            <Group gap="xs" justify="flex-end" style={{ flex: communicationType && communicationType !== 'address' ? 0 : 1 }}>
               <Button
                 variant="subtle"
                 onClick={() => {
