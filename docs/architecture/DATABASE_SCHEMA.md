@@ -46,8 +46,8 @@
 #### NDIS/Plan Information
 - `coordinator_name` - CharField(200) - Coordinator name (e.g., "Warda - Ability Connect")
 - `coordinator_date` - DateField - Date when coordinator was assigned
-- `plan_start_date` - DateField - NDIS plan start date
-- `plan_end_date` - DateField - NDIS plan end date
+- `plan_start_date` - DateField - ⚠️ **LEGACY** NDIS plan start date (use `plan_dates_json` instead)
+- `plan_end_date` - DateField - ⚠️ **LEGACY** NDIS plan end date (use `plan_dates_json` instead)
 
 **⚠️ Note:** Frontend supports multiple coordinators with dates (array format), but backend currently only has single coordinator fields. Backend decision needed for multiple coordinators support.
 
@@ -70,6 +70,30 @@
     }
     ```
     - **Legacy format also supported:** `{ "phone": "0412345678", "email": "patient@example.com" }`
+
+- `plan_dates_json` - JSONField - Array of NDIS plan dates (replaces legacy `plan_start_date` and `plan_end_date`)
+  - **Structure:**
+    ```json
+    [
+      {
+        "start_date": "2024-07-02",
+        "end_date": "2025-10-31",
+        "type": "1 Year Plan"
+      },
+      {
+        "start_date": "2023-01-01",
+        "end_date": "2024-06-30",
+        "type": "2 Year Plan"
+      }
+    ]
+    ```
+  - **Fields:**
+    - `start_date` - String (YYYY-MM-DD format) - Plan start date
+    - `end_date` - String (YYYY-MM-DD format) - Plan end date
+    - `type` - String (optional) - Plan type (e.g., "1 Year Plan", "2 Year Plan")
+  - **Display:** Frontend shows most recent plan date (sorted by start_date descending)
+  - **Usage:** Only displayed when patient's funding type is NDIS
+  - **Frontend Features:** Add, edit, delete plan dates with hover actions
 
 - `address_json` - JSONField - Address details
   - **Structure:**
@@ -311,6 +335,13 @@ documents
 - **Address:** Stored in `patients.address_json`
   - Format: `{ street, suburb, postcode, state, type, default }`
 
+### Plan Dates Data
+- **Plan Dates:** Stored in `patients.plan_dates_json`
+  - Array format: `[{ start_date: "YYYY-MM-DD", end_date: "YYYY-MM-DD", type: "1 Year Plan" }, ...]`
+  - Frontend displays most recent plan date (sorted by start_date descending)
+  - Only shown when funding type is NDIS
+  - Supports add, edit, delete operations with hover actions
+
 ### Archive/Soft Delete
 - All patient records use soft delete (`archived` flag)
 - Never actually delete records
@@ -324,7 +355,8 @@ documents
 - ✅ Patient model with all basic fields
 - ✅ Added `title`, `health_number`, `funding_type`, `clinic` FKs
 - ✅ Added `coordinator_name`, `coordinator_date`
-- ✅ Added `plan_start_date`, `plan_end_date`
+- ✅ Added `plan_start_date`, `plan_end_date` (legacy fields)
+- ✅ Added `plan_dates_json` JSONField for multiple plan dates support
 - ✅ Added `notes` field
 - ✅ Added archive fields (`archived`, `archived_at`, `archived_by`)
 - ✅ Created `reminders` table with all fields and relationships

@@ -1,7 +1,7 @@
 # Patients Page
 
 **Route:** `/patients`  
-**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support, Reminder Dialog)  
+**Status:** ✅ Built (UI Complete, Filter Working, Archive Filter Implemented, Multiple Coordinators Support, Reminder Dialog, Plan Dates with Edit/Delete)  
 **Last Updated:** 2025-01-15
 
 ---
@@ -84,6 +84,51 @@ The Patients page provides a comprehensive view for managing patient contacts. I
     - Edit existing funding sources
     - Remove/archive funding sources
   - **Data Model:** Should be Enum or separate table for funding types
+- ✅ **Current Plan Dates Section** ✅ **IMPLEMENTED**
+  - **Location:** Directly below Funding field in Column 2 (Middle Column) for vertical alignment
+  - **Conditional Display:** Only shows when funding type is NDIS
+  - **Label**: "CURRENT PLAN DATES" (uppercase, dimmed, small size)
+  - **List Icon (IconListCheck):** ✅ **IMPLEMENTED**
+    - Shows only when patient has 2+ plan dates
+    - Located next to the label header
+    - Opens plan dates list dialog to view all plan dates
+    - Tooltip: "View all plan dates"
+  - **Add Button (+):** ✅ **IMPLEMENTED**
+    - Always visible when section is shown
+    - Opens "Add New Plan Dates" dialog
+    - Tooltip: "Add new plan dates"
+  - **Current Plan Date Display:** ✅ **IMPLEMENTED**
+    - Shows most recent plan date (sorted by start_date descending)
+    - Date range on first line: "DD/MM/YYYY - DD/MM/YYYY" (bold, medium size)
+    - Plan type on second line: e.g., "1 Year Plan" (small, blue color)
+    - Displays "No plan dates set" if none exist
+  - **Edit/Delete on Hover:** ✅ **IMPLEMENTED**
+    - Edit button (blue pencil icon) - appears on hover
+    - Delete button (red trash icon) - appears on hover
+    - Same hover pattern as Communication entries
+    - Edit opens dialog pre-filled with current plan date data
+    - Delete removes plan date from array and saves to backend
+  - **Add New Plan Dates Dialog:** ✅ **IMPLEMENTED**
+    - **Title:** "Add New Plan Dates" (or "Edit Plan Dates" when editing)
+    - **Start Date:** Required DatePickerInput
+    - **End Date:** Required DatePickerInput
+    - **Type:** Optional Select dropdown (e.g., "1 Year Plan", "2 Year Plan")
+    - **Save Button:** Disabled until both dates are selected
+    - **Cancel Button:** Closes dialog without saving
+    - **Save Logic:** Adds new plan date to `plan_dates_json` array or updates existing if editing
+    - **API:** `PATCH /api/patients/{id}/` with `plan_dates_json`
+    - **Reload:** Fetches updated patient data after successful save
+  - **Plan Dates List Dialog:** ✅ **IMPLEMENTED**
+    - Opens when list icon (IconListCheck) is clicked
+    - Displays all plan dates assigned to patient
+    - Sorted by start_date (most recent first)
+    - Shows date range and plan type for each entry
+    - Scrollable list for many plan dates
+  - **Data Structure:**
+    - Supports multiple plan dates (array format in `plan_dates_json`)
+    - Each plan date has: `start_date` (YYYY-MM-DD), `end_date` (YYYY-MM-DD), `type` (optional string)
+    - Helper functions: `getPlanDates()` and `getCurrentPlanDate()`
+    - Backend: `plan_dates_json` JSONField on Patient model
 
 #### **Column 3: Coordinator & Plans**
 - ✅ **Coordinator selector with multiple coordinators support** ✅ **IMPLEMENTED**
@@ -141,9 +186,6 @@ The Patients page provides a comprehensive view for managing patient contacts. I
     - **Reminder Date**: Optional date picker for specific reminder date
     - **Save Button**: Creates reminder via API (`POST /api/reminders/`)
     - **Error Handling**: Shows alert on API failure
-- ✅ Current Plan Dates display
-  - Shows date range or "No plan dates set"
-  - Add buttons for plan dates
 
 #### **Full Width Sections**
 - ✅ Communication section
@@ -496,10 +538,13 @@ The Patients page provides a comprehensive view for managing patient contacts. I
    - Option B: Use `flags_json` for notes
    - **Recommendation:** Add dedicated `notes` field (clearer)
 
-3. **Plan Dates:**
-   - Store as `plan_start_date` and `plan_end_date` (two DateFields)
-   - Or store as JSON string?
-   - **Recommendation:** Two separate DateFields (easier to query)
+3. **Plan Dates:** ✅ **IMPLEMENTED**
+   - ✅ **Backend Implementation:** `plan_dates_json` JSONField on Patient model
+   - ✅ **Structure:** Array of objects: `[{start_date: "YYYY-MM-DD", end_date: "YYYY-MM-DD", type: "1 Year Plan"}, ...]`
+   - ✅ **Frontend Support:** Multiple plan dates with add/edit/delete functionality
+   - ✅ **Display:** Shows most recent plan date, with list view for all dates
+   - ✅ **Conditional Display:** Only shows when funding type is NDIS
+   - ✅ **Features:** Edit/delete on hover, dialog for adding/editing, list view for multiple dates
 
 4. **Clinic Relationship:**
    - Currently clinic is a string
@@ -518,6 +563,8 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Uses:** CommunicationDialog (✅ Built) - [CommunicationDialog.md](../dialogs/CommunicationDialog.md)
 - **Uses:** CoordinatorDialogs (✅ Built) - [CoordinatorDialogs.md](../dialogs/CoordinatorDialogs.md)
 - **Uses:** ReminderDialog (✅ Built) - [ReminderDialog.md](../dialogs/ReminderDialog.md)
+- **Uses:** PlanDatesDialog (✅ Built) - Plan dates add/edit dialog
+- **Uses:** PlanDatesListDialog (✅ Built) - Plan dates list view dialog
 - **Will use:** CreatePatientDialog (not yet built)
 - **Will link to:** Patient detail page `/patients/[id]` (when built)
 - **Menu items link to:** Notes, Documents, Appointments, Orders, etc. (to be built)
