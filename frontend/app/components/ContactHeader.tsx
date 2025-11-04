@@ -19,6 +19,8 @@ interface ContactHeaderProps {
   onFilterApply?: (filters: Record<string, string>) => void;
   contactCount?: number;
   filteredCount?: number;
+  showArchived?: boolean;
+  onToggleArchived?: () => void;
 }
 
 export default function ContactHeader({ 
@@ -35,6 +37,8 @@ export default function ContactHeader({
   onFilterApply,
   contactCount = 0,
   filteredCount,
+  showArchived = false,
+  onToggleArchived,
 }: ContactHeaderProps) {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();

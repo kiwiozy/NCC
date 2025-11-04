@@ -281,6 +281,7 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [showArchived, setShowArchived] = useState(false);
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -339,6 +340,12 @@ export default function ContactsPage() {
         const params = new URLSearchParams();
         if (searchQuery) {
           params.append('search', searchQuery);
+        }
+        // Add archived filter if showArchived is true
+        if (showArchived) {
+          params.append('archived', 'true');
+        } else {
+          params.append('archived', 'false');
         }
         // Note: Clinic and funding filtering is done client-side for now
         // Can be enhanced to use API filtering later
