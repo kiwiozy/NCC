@@ -55,11 +55,14 @@ export default function ContactHeader({
   });
 
   // Update filters when showArchived prop changes (e.g., when filters are cleared)
+  // Only sync when showArchived prop changes from parent, not when local filters change
   useEffect(() => {
-    if (showArchived !== filters.archived) {
-      setFilters(prev => ({ ...prev, archived: showArchived || false }));
+    const propArchived = Boolean(showArchived);
+    const currentArchived = Boolean(filters.archived);
+    if (propArchived !== currentArchived) {
+      setFilters(prev => ({ ...prev, archived: propArchived }));
     }
-  }, [showArchived, filters.archived]);
+  }, [showArchived]); // Only depend on showArchived, not filters.archived
 
   const handleFilterApply = () => {
     onFilterApply?.({ ...filters, archived: filters.archived });
@@ -170,7 +173,8 @@ export default function ContactHeader({
                         checked={Boolean(filters.archived)}
                         onChange={(event) => {
                           const newArchived = event.currentTarget.checked;
-                          setFilters({ ...filters, archived: newArchived });
+                          console.log('Toggle changed:', newArchived);
+                          setFilters(prev => ({ ...prev, archived: newArchived }));
                         }}
                         size="md"
                       />
