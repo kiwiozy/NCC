@@ -229,6 +229,10 @@ appointments
   ├── clinician → clinicians (FK, nullable, SET_NULL)
   └── clinic → clinics (FK, PROTECT)
 
+reminders
+  ├── patient → patients (FK, CASCADE)
+  └── clinic → clinics (FK, nullable, SET_NULL)
+
 documents
   └── Generic FK → Any model (content_type + object_id)
 ```
@@ -236,6 +240,27 @@ documents
 ---
 
 ## 📝 **Pending/Planned Tables**
+
+### ❌ **reminders Table** (Not Yet Built)
+- Needed for: Reminder dialog, Calendar waiting list, Patient scheduling
+- **Fields:**
+  - `id` - UUID (primary key)
+  - `patient_id` - ForeignKey → `patients.Patient` (CASCADE)
+  - `clinic_id` - ForeignKey → `clinicians.Clinic` (SET_NULL, nullable)
+  - `note` - TextField - Reminder note
+  - `reminder_date` - DateField (optional) - Specific date reminder
+  - `status` - CharField - Choices: pending, scheduled, completed, cancelled
+  - `created_at` - DateTimeField
+  - `updated_at` - DateTimeField
+  - `appointment_id` - UUIDField (nullable) - Link to appointment if converted
+- **Relationships:**
+  - `patient` → `patients.Patient` (One-to-Many)
+  - `clinic` → `clinicians.Clinic` (Many-to-One, nullable)
+- **Usage:**
+  - Created from patient profile
+  - Appears in calendar "waiting list" section
+  - Can be converted to appointment when scheduling
+- **Status:** Planning phase - see `docs/architecture/dialogs/ReminderDialog.md`
 
 ### ❌ **Orders Table** (Not Yet Built)
 - Needed for: Orders pages, Patient Detail, Dashboard

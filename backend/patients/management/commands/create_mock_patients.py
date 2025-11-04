@@ -96,9 +96,70 @@ class Command(BaseCommand):
             clinic = random.choice(clinics) if clinics else None
             funding_type = random.choice(funding_sources) if funding_sources else None
             
-            # Generate contact info
+            # Generate contact info in new structured format
             phone = f"04{random.randint(10000000, 99999999)}"
+            mobile = f"04{random.randint(10000000, 99999999)}"
             email = f"{first_name.lower()}.{last_name.lower()}@example.com"
+            
+            # Build contact_json in new format with defaults
+            contact_json = {}
+            
+            # Phone - always add home, sometimes add work
+            contact_json['phone'] = {
+                'home': {
+                    'value': phone,
+                    'default': True
+                }
+            }
+            if random.choice([True, False]):  # 50% have work phone
+                contact_json['phone']['work'] = {
+                    'value': f"02{random.randint(90000000, 99999999)}",
+                    'default': False
+                }
+            
+            # Mobile - always add home, sometimes add work
+            contact_json['mobile'] = {
+                'home': {
+                    'value': mobile,
+                    'default': random.choice([True, False])  # 50% default
+                }
+            }
+            if random.choice([True, False]):  # 50% have work mobile
+                contact_json['mobile']['work'] = {
+                    'value': f"04{random.randint(10000000, 99999999)}",
+                    'default': False
+                }
+            
+            # Email - always add home, sometimes add work
+            contact_json['email'] = {
+                'home': {
+                    'value': email,
+                    'default': True
+                }
+            }
+            if random.choice([True, False]):  # 50% have work email
+                contact_json['email']['work'] = {
+                    'value': f"{first_name.lower()}.{last_name.lower()}@work.com",
+                    'default': False
+                }
+            
+            # Build address_json in new format
+            address_types = ['home', 'work', 'other']
+            address_type = random.choice(address_types)
+            suburbs = ['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale', 'Sydney', 'Maitland', 'Cessnock']
+            suburb = random.choice(suburbs)
+            
+            address_json = {
+                'street': f"{random.randint(1, 999)} {random.choice(['Main', 'High', 'Park', 'Oak', 'Elm', 'King', 'Queen', 'Victoria'])} Street",
+                'street2': random.choice([None, None, None, f"Unit {random.randint(1, 20)}", f"Apartment {random.randint(1, 50)}"]),  # 75% no street2
+                'suburb': suburb,
+                'postcode': str(random.randint(2000, 2999)),
+                'state': 'NSW',
+                'type': address_type,
+                'default': True
+            }
+            # Remove None values
+            address_json = {k: v for k, v in address_json.items() if v is not None}
             
             # Some patients have coordinator info
             has_coordinator = random.choice([True, False, False])  # 33% have coordinator
@@ -133,17 +194,8 @@ class Command(BaseCommand):
                 coordinator_date=coordinator_date,
                 plan_start_date=plan_start_date,
                 plan_end_date=plan_end_date,
-                contact_json={
-                    'phone': phone,
-                    'email': email,
-                    'mobile': phone,
-                },
-                address_json={
-                    'street': f"{random.randint(1, 999)} {random.choice(['Main', 'High', 'Park', 'Oak', 'Elm'])} Street",
-                    'city': random.choice(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale', 'Sydney']),
-                    'state': 'NSW',
-                    'postcode': str(random.randint(2000, 2999)),
-                },
+                contact_json=contact_json,
+                address_json=address_json,
                 notes=random.choice([
                     None,
                     'Regular patient, follow up in 3 months',

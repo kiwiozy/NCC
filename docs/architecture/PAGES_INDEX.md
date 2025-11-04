@@ -75,6 +75,7 @@ Each page/dialog gets its own markdown file documenting:
 | Patient Notes | `PatientNotesDialog` | ❌ Not Built | [PatientNotesDialog.md](dialogs/PatientNotesDialog.md) | Patient Notes? |
 | Communication Dialog | `CommunicationDialog` | ✅ Built | [CommunicationDialog.md](dialogs/CommunicationDialog.md) | Patients ✅ |
 | Coordinator Dialogs | `CoordinatorDialogs` | ✅ Built | [CoordinatorDialogs.md](dialogs/CoordinatorDialogs.md) | Patients ✅ |
+| Reminder Dialog | `ReminderDialog` | ❌ Not Built | [ReminderDialog.md](dialogs/ReminderDialog.md) | Reminders ❌ |
 
 ### **Order Dialogs**
 

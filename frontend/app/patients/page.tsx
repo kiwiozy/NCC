@@ -358,6 +358,14 @@ export default function ContactsPage() {
     state: '',
   });
   
+  // Reminder dialog state
+  const [reminderDialogOpened, setReminderDialogOpened] = useState(false);
+  const [reminderClinic, setReminderClinic] = useState<string>('');
+  const [reminderNote, setReminderNote] = useState<string>('');
+  const [reminderNoteTemplate, setReminderNoteTemplate] = useState<string>('');
+  const [reminderDate, setReminderDate] = useState<Date | null>(null);
+  const [reminderClinics, setReminderClinics] = useState<Array<{value: string; label: string}>>([]);
+  
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
     if (!contact) return [];
@@ -525,16 +533,46 @@ export default function ContactsPage() {
           const data = await response.json();
           // Handle paginated response or direct array
           const clinicsList = Array.isArray(data) ? data : (data.results || []);
-          // Extract clinic names from API response
+          // Extract clinic names from API response for filter
           const clinicNames = clinicsList.map((clinic: any) => clinic.name);
           if (clinicNames.length > 0) {
             setClinics(clinicNames);
           }
+          // Transform for reminder dialog (needs ID and name)
+          const reminderClinicsList = clinicsList.map((clinic: any) => ({
+            value: clinic.id || clinic.name, // Use ID if available, fallback to name
+            label: clinic.name,
+          }));
+          if (reminderClinicsList.length > 0) {
+            setReminderClinics(reminderClinicsList);
+          } else {
+            // Fallback to hardcoded defaults if API returns empty
+            setReminderClinics([
+              { value: 'Newcastle', label: 'Newcastle' },
+              { value: 'Tamworth', label: 'Tamworth' },
+              { value: 'Port Macquarie', label: 'Port Macquarie' },
+              { value: 'Armidale', label: 'Armidale' },
+            ]);
+          }
           // Keep hardcoded defaults if API returns empty or error
+        } else {
+          // Fallback on API error
+          setReminderClinics([
+            { value: 'Newcastle', label: 'Newcastle' },
+            { value: 'Tamworth', label: 'Tamworth' },
+            { value: 'Port Macquarie', label: 'Port Macquarie' },
+            { value: 'Armidale', label: 'Armidale' },
+          ]);
         }
       } catch (error) {
         console.error('Failed to load clinics:', error);
         // Keep hardcoded defaults on error
+        setReminderClinics([
+          { value: 'Newcastle', label: 'Newcastle' },
+          { value: 'Tamworth', label: 'Tamworth' },
+          { value: 'Port Macquarie', label: 'Port Macquarie' },
+          { value: 'Armidale', label: 'Armidale' },
+        ]);
       }
     };
     
@@ -891,8 +929,8 @@ export default function ContactsPage() {
                 <Text c="dimmed">No patients found</Text>
               </Center>
             ) : (
-              <Stack gap={0}>
-                {contacts.map((contact) => (
+            <Stack gap={0}>
+              {contacts.map((contact) => (
                 <UnstyledButton
                   key={contact.id}
                   onClick={() => setSelectedContact(contact)}
@@ -930,7 +968,7 @@ export default function ContactsPage() {
                   </Stack>
                 </UnstyledButton>
               ))}
-              </Stack>
+            </Stack>
             )}
           </ScrollArea>
         </Grid.Col>
@@ -958,10 +996,10 @@ export default function ContactsPage() {
                       <Stack gap="md" align="flex-start">
                         <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Name</Text>
-                          <Select
-                            label=""
-                            value={selectedContact.title}
-                            data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
+                        <Select
+                          label=""
+                          value={selectedContact.title}
+                          data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
                             onChange={(value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, title: value || '' });
@@ -972,28 +1010,28 @@ export default function ContactsPage() {
                         </Box>
                         
                         <Box style={{ width: '100%' }}>
-                          <TextInput
-                            label=""
-                            value={selectedContact.firstName}
+                        <TextInput
+                          label=""
+                          value={selectedContact.firstName}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
-                          />
+                        />
                         </Box>
                         
                         <Box style={{ width: '100%' }}>
-                          <TextInput
-                            label=""
-                            placeholder="Middle Name"
-                            value={selectedContact.middleName}
+                        <TextInput
+                          label=""
+                          placeholder="Middle Name"
+                          value={selectedContact.middleName}
                             styles={{ input: { fontWeight: 400, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
-                          />
+                        />
                         </Box>
                         
                         <Box style={{ width: '100%' }}>
-                          <TextInput
-                            label=""
-                            value={selectedContact.lastName}
+                        <TextInput
+                          label=""
+                          value={selectedContact.lastName}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
-                          />
+                        />
                         </Box>
                         
                         <Box style={{ width: '100%' }}>
@@ -1010,7 +1048,7 @@ export default function ContactsPage() {
                               }
                             }}
                             maxDate={new Date()}
-                            styles={{ 
+                              styles={{ 
                               input: { 
                                 fontWeight: 700, 
                                 fontSize: rem(18), 
@@ -1104,8 +1142,8 @@ export default function ContactsPage() {
                                       }}
                                       title="Add coordinator"
                                     >
-                                      <IconPlus size={20} />
-                                    </ActionIcon>
+                                <IconPlus size={20} />
+                              </ActionIcon>
                                   </>
                                 );
                               } else {
@@ -1124,7 +1162,7 @@ export default function ContactsPage() {
                                 );
                               }
                             })()}
-                          </Group>
+                            </Group>
                           {(() => {
                             const currentCoordinator = getCurrentCoordinator(selectedContact);
                             if (currentCoordinator) {
@@ -1136,8 +1174,8 @@ export default function ContactsPage() {
                               );
                             } else {
                               return (
-                                <TextInput
-                                  placeholder="Select coordinator"
+                              <TextInput
+                                placeholder="Select coordinator"
                                   readOnly
                                   styles={{ input: { height: 'auto', minHeight: rem(36) } }}
                                   value=""
@@ -1204,31 +1242,37 @@ export default function ContactsPage() {
                       </ActionIcon>
                     </Group>
                     <Divider mb="md" />
-                    {selectedContact.communication && (
+                    {(selectedContact.communication || selectedContact.address_json) && (
                       <Paper p="lg" withBorder>
                         <Stack gap="md">
                           {(() => {
-                            const comms = selectedContact.communication;
-                            const items: JSX.Element[] = [];
+                            const comms = selectedContact.communication || {};
+                            const items: Array<{ element: JSX.Element; isDefault: boolean }> = [];
                             const MAX_VISIBLE = 3;
                             
+                            // Helper function to create item entry
+                            const createItem = (element: JSX.Element, isDefault: boolean = false) => {
+                              items.push({ element, isDefault });
+                            };
+                            
                             // Handle phone
-                            if (comms.phone) {
+                            if (comms && comms.phone) {
                               if (typeof comms.phone === 'string') {
-                                items.push(
+                                createItem(
                                   <Group key="phone-home">
-                                    <Box style={{ minWidth: rem(100) }}>
-                                      <Text size="sm" c="dimmed">Phone</Text>
-                                      <Text size="xs" c="dimmed">Home</Text>
-                                    </Box>
+                              <Box style={{ minWidth: rem(100) }}>
+                                <Text size="sm" c="dimmed">Phone</Text>
+                                <Text size="xs" c="dimmed">Home</Text>
+                              </Box>
                                     <Text size="md" fw={600}>{comms.phone}</Text>
-                                  </Group>
+                                  </Group>,
+                                  false
                                 );
                               } else {
                                 Object.entries(comms.phone).forEach(([name, entry]) => {
                                   const value = typeof entry === 'string' ? entry : (entry?.value || '');
                                   const isDefault = typeof entry === 'object' && entry !== null && entry.default;
-                                  items.push(
+                                  createItem(
                                     <Group 
                                       key={`phone-${name}`}
                                       justify="space-between"
@@ -1248,7 +1292,7 @@ export default function ContactsPage() {
                                           <Text size="xs" c={isDefault ? "blue" : "dimmed"}>{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
                                         </Box>
                                         <Text size="md" fw={600}>{value}</Text>
-                                      </Group>
+                            </Group>
                                       <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
                                         <ActionIcon
                                           variant="subtle"
@@ -1288,16 +1332,17 @@ export default function ContactsPage() {
                                           <IconTrash size={16} />
                                         </ActionIcon>
                                       </Group>
-                                    </Group>
+                                    </Group>,
+                                    isDefault || false
                                   );
                                 });
                               }
                             }
                             
                             // Handle mobile
-                            if (comms.mobile) {
+                            if (comms && comms.mobile) {
                               if (typeof comms.mobile === 'string') {
-                                items.push(
+                                createItem(
                                   <Group 
                                     key="mobile-home"
                                     justify="space-between"
@@ -1354,13 +1399,14 @@ export default function ContactsPage() {
                                         <IconTrash size={16} />
                                       </ActionIcon>
                                     </Group>
-                                  </Group>
+                                  </Group>,
+                                  false
                                 );
                               } else {
                                 Object.entries(comms.mobile).forEach(([name, entry]) => {
                                   const value = typeof entry === 'string' ? entry : entry.value;
                                   const isDefault = typeof entry === 'object' && entry.default;
-                                  items.push(
+                                  createItem(
                                     <Group 
                                       key={`mobile-${name}`}
                                       justify="space-between"
@@ -1427,9 +1473,9 @@ export default function ContactsPage() {
                             }
                             
                             // Handle email
-                            if (comms.email) {
+                            if (comms && comms.email) {
                               if (typeof comms.email === 'string') {
-                                items.push(
+                                createItem(
                                   <Group 
                                     key="email-home"
                                     justify="space-between"
@@ -1444,12 +1490,12 @@ export default function ContactsPage() {
                                     }}
                                   >
                                     <Group style={{ flex: 1 }}>
-                                      <Box style={{ minWidth: rem(100) }}>
-                                        <Text size="sm" c="dimmed">Email</Text>
-                                        <Text size="xs" c="dimmed">Home</Text>
-                                      </Box>
+                              <Box style={{ minWidth: rem(100) }}>
+                                <Text size="sm" c="dimmed">Email</Text>
+                                <Text size="xs" c="dimmed">Home</Text>
+                              </Box>
                                       <Text size="md" fw={600}>{comms.email}</Text>
-                                    </Group>
+                            </Group>
                                     <Group gap="xs" className="comm-actions" style={{ display: 'none' }}>
                                       <ActionIcon
                                         variant="subtle"
@@ -1486,13 +1532,14 @@ export default function ContactsPage() {
                                         <IconTrash size={16} />
                                       </ActionIcon>
                                     </Group>
-                                  </Group>
+                                  </Group>,
+                                  false
                                 );
                               } else {
                                 Object.entries(comms.email).forEach(([name, entry]) => {
                                   const value = typeof entry === 'string' ? entry : (entry && typeof entry === 'object' && 'value' in entry ? entry.value : '');
                                   const isDefault = entry && typeof entry === 'object' && 'default' in entry ? entry.default : false;
-                                  items.push(
+                                  createItem(
                                     <Group 
                                       key={`email-${name}`}
                                       justify="space-between"
@@ -1569,7 +1616,7 @@ export default function ContactsPage() {
                                 addr.state,
                               ].filter(Boolean).join(', ');
                               
-                              items.push(
+                              createItem(
                                 <Group 
                                   key="address"
                                   justify="space-between"
@@ -1628,23 +1675,31 @@ export default function ContactsPage() {
                                       <IconTrash size={16} />
                                     </ActionIcon>
                                   </Group>
-                                </Group>
+                                </Group>,
+                                addr.default || false
                               );
                             }
                             
-                            const hasMore = items.length > MAX_VISIBLE;
-                            const visibleItems = items.slice(0, MAX_VISIBLE);
-                            const remainingCount = items.length - MAX_VISIBLE;
+                            // Sort items: defaults first
+                            items.sort((a, b) => {
+                              if (a.isDefault && !b.isDefault) return -1;
+                              if (!a.isDefault && b.isDefault) return 1;
+                              return 0;
+                            });
                             
-                            if (items.length === 0) {
+                            const sortedElements = items.map(item => item.element);
+                            const hasMore = sortedElements.length > MAX_VISIBLE;
+                            const remainingCount = sortedElements.length - MAX_VISIBLE;
+                            
+                            if (sortedElements.length === 0) {
                               return null;
                             }
                             
                             return (
                               <>
-                                <ScrollArea h={hasMore ? 200 : undefined} style={{ overflowY: hasMore ? 'auto' : 'visible' }}>
+                                <ScrollArea h={hasMore ? 200 : undefined}>
                                   <Stack gap="md">
-                                    {hasMore ? visibleItems : items}
+                                    {sortedElements}
                                   </Stack>
                                 </ScrollArea>
                                 {hasMore && (
@@ -1873,6 +1928,149 @@ export default function ContactsPage() {
         </Stack>
       </Modal>
 
+      {/* Reminder Dialog */}
+      <Modal
+        opened={reminderDialogOpened}
+        onClose={() => {
+          setReminderDialogOpened(false);
+          setReminderClinic('');
+          setReminderNote('');
+          setReminderNoteTemplate('');
+          setReminderDate(null);
+        }}
+        title={selectedContact ? `Add Reminder for ${selectedContact.name}` : 'Add Reminder'}
+        size="md"
+      >
+        <Stack gap="md">
+          {/* Patient Information (Read-only) */}
+          <Box>
+            <Text size="sm" c="dimmed" mb={4}>NAME</Text>
+            <Text size="md" fw={600}>{selectedContact?.name || 'No patient selected'}</Text>
+            {selectedContact?.healthNumber && (
+              <>
+                <Text size="sm" c="dimmed" mt="xs" mb={4}>HEALTH NUMBER</Text>
+                <Text size="md">{selectedContact.healthNumber}</Text>
+              </>
+            )}
+          </Box>
+
+          <Divider />
+
+          {/* Clinic Selection */}
+          <Select
+            label="CLINIC"
+            placeholder="Select clinic"
+            data={reminderClinics}
+            value={reminderClinic}
+            onChange={(value) => setReminderClinic(value || '')}
+            required
+            searchable
+          />
+
+          {/* Note Template Selection (Optional) */}
+          <Select
+            label="SELECT NOTE"
+            placeholder="Select Note"
+            data={[
+              { value: 'follow-up', label: 'Follow-up needed' },
+              { value: 'review', label: 'Review required' },
+              { value: 'appointment', label: 'Appointment pending' },
+              { value: 'assessment', label: 'Assessment due' },
+              { value: 'other', label: 'Other' },
+            ]}
+            value={reminderNoteTemplate}
+            onChange={(value) => {
+              setReminderNoteTemplate(value || '');
+              // Auto-fill note if template selected
+              if (value === 'follow-up') {
+                setReminderNote('Follow-up needed');
+              } else if (value === 'review') {
+                setReminderNote('Review required');
+              } else if (value === 'appointment') {
+                setReminderNote('Appointment pending');
+              } else if (value === 'assessment') {
+                setReminderNote('Assessment due');
+              }
+            }}
+            clearable
+          />
+
+          {/* Free-form Note */}
+          <Textarea
+            label="NOTE"
+            placeholder="Enter Note"
+            value={reminderNote}
+            onChange={(e) => setReminderNote(e.currentTarget.value)}
+            minRows={4}
+          />
+
+          {/* Optional Reminder Date */}
+          <DatePickerInput
+            label="REMINDER DATE (Optional)"
+            placeholder="Select date"
+            value={reminderDate}
+            onChange={setReminderDate}
+            clearable
+          />
+
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setReminderDialogOpened(false);
+                setReminderClinic('');
+                setReminderNote('');
+                setReminderNoteTemplate('');
+                setReminderDate(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (selectedContact && reminderClinic) {
+                  try {
+                    // TODO: Create reminder via API
+                    // For now, just show alert
+                    const reminderData = {
+                      patient_id: selectedContact.id,
+                      clinic_id: reminderClinic,
+                      note: reminderNote || reminderNoteTemplate,
+                      reminder_date: reminderDate ? reminderDate.toISOString().split('T')[0] : null,
+                    };
+                    
+                    console.log('Creating reminder:', reminderData);
+                    
+                    // TODO: Replace with actual API call
+                    // const response = await fetch('https://localhost:8000/api/reminders/', {
+                    //   method: 'POST',
+                    //   headers: { 'Content-Type': 'application/json' },
+                    //   body: JSON.stringify(reminderData),
+                    // });
+                    
+                    alert(`Reminder created!\n\nClinic: ${reminderClinics.find(c => c.value === reminderClinic)?.label}\nNote: ${reminderNote || reminderNoteTemplate}`);
+                    
+                    setReminderDialogOpened(false);
+                    setReminderClinic('');
+                    setReminderNote('');
+                    setReminderNoteTemplate('');
+                    setReminderDate(null);
+                  } catch (error) {
+                    console.error('Error creating reminder:', error);
+                    alert(`Failed to create reminder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  }
+                } else {
+                  alert('Please select a clinic');
+                }
+              }}
+              disabled={!reminderClinic}
+            >
+              Save
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* Communication Dialog */}
       <Modal
         opened={communicationDialogOpened}
@@ -2075,18 +2273,30 @@ export default function ContactsPage() {
                           throw new Error(`Failed to save address: ${response.status} ${errorText}`);
                         }
                         
-                        // Reload patient from backend to get updated data
-                        const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`);
-                        if (patientResponse.ok) {
-                          const updatedPatient = await patientResponse.json();
-                          const updatedContact = transformPatientToContact(updatedPatient);
-                          setSelectedContact(updatedContact);
-                          
-                          // Also update in allContacts list
-                          setAllContacts((prevContacts) => 
-                            prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
-                          );
-                        } else {
+                        // Force reload patient from backend to get updated data
+                        try {
+                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                            cache: 'no-cache',
+                          });
+                          if (patientResponse.ok) {
+                            const updatedPatient = await patientResponse.json();
+                            const updatedContact = transformPatientToContact(updatedPatient);
+                            setSelectedContact(updatedContact);
+                            
+                            // Also update in allContacts list
+                            setAllContacts((prevContacts) => 
+                              prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
+                            );
+                          } else {
+                            console.error('Failed to reload patient:', patientResponse.status);
+                            // Fallback: update state directly if reload fails
+                            setSelectedContact({
+                              ...selectedContact,
+                              address_json: addressData,
+                            });
+                          }
+                        } catch (reloadError) {
+                          console.error('Error reloading patient:', reloadError);
                           // Fallback: update state directly if reload fails
                           setSelectedContact({
                             ...selectedContact,
@@ -2163,18 +2373,33 @@ export default function ContactsPage() {
                             throw new Error(`Failed to save communication: ${response.status} ${errorText}`);
                           }
                           
-                          // Reload patient from backend to get updated data
-                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`);
-                          if (patientResponse.ok) {
-                            const updatedPatient = await patientResponse.json();
-                            const updatedContact = transformPatientToContact(updatedPatient);
-                            setSelectedContact(updatedContact);
-                            
-                            // Also update in allContacts list
-                            setAllContacts((prevContacts) => 
-                              prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
-                            );
-                          } else {
+                          // Force reload patient from backend to get updated data
+                          try {
+                            const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                              cache: 'no-cache',
+                              headers: {
+                                'Cache-Control': 'no-cache',
+                              },
+                            });
+                            if (patientResponse.ok) {
+                              const updatedPatient = await patientResponse.json();
+                              const updatedContact = transformPatientToContact(updatedPatient);
+                              setSelectedContact(updatedContact);
+                              
+                              // Also update in allContacts list
+                              setAllContacts((prevContacts) => 
+                                prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
+                              );
+                            } else {
+                              console.error('Failed to reload patient:', patientResponse.status);
+                              // Fallback: update state directly if reload fails
+                              setSelectedContact({
+                                ...selectedContact,
+                                communication: updatedCommunication,
+                              });
+                            }
+                          } catch (reloadError) {
+                            console.error('Error reloading patient:', reloadError);
                             // Fallback: update state directly if reload fails
                             setSelectedContact({
                               ...selectedContact,

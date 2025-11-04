@@ -217,6 +217,7 @@ class Patient(models.Model):
             models.Index(fields=['last_name', 'first_name']),
             models.Index(fields=['mrn']),
             models.Index(fields=['created_at']),
+            models.Index(fields=['archived']),  # Index for filtering archived records
         ]
         verbose_name = 'Patient'
         verbose_name_plural = 'Patients'
