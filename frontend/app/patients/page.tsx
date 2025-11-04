@@ -328,6 +328,27 @@ export default function ContactsPage() {
     }
   };
 
+  // Load archived count from API
+  useEffect(() => {
+    if (typeof window === 'undefined' || activeType !== 'patients') return;
+    
+    const loadArchivedCount = async () => {
+      try {
+        const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+        if (response.ok) {
+          const data = await response.json();
+          const archivedPatients = data.results || data;
+          setArchivedCount(Array.isArray(archivedPatients) ? archivedPatients.length : 0);
+        }
+      } catch (error) {
+        console.error('Failed to load archived count:', error);
+        setArchivedCount(0);
+      }
+    };
+    
+    loadArchivedCount();
+  }, [activeType]);
+
   // Load patients from API
   useEffect(() => {
     // Only load on client side to prevent hydration mismatch
