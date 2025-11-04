@@ -232,6 +232,10 @@ const transformPatientToContact = (patient: any): Contact => {
     if (/^\d{4}-\d{2}-\d{2}/.test(dobStr) || dobStr.includes('T')) {
       // It's an ISO date - safe to format
       formattedDob = formatDate(patient.dob);
+      // Debug: Log if formatting fails
+      if (!formattedDob || formattedDob === dobStr) {
+        console.warn('Date formatting may have failed:', { original: dobStr, formatted: formattedDob });
+      }
     } else {
       // Not an ISO date - might be already formatted or corrupted
       console.error('CRITICAL: Patient DOB is not ISO format:', dobStr, 'for patient:', patient.id);
