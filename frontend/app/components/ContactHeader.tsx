@@ -118,7 +118,7 @@ export default function ContactHeader({
         }}
       >
       {/* Left: Search Field with Filter Button */}
-      <Group gap="xs" wrap="nowrap">
+      <Group gap="md" wrap="nowrap" align="flex-end">
         {showFilters && (
           <Popover
             opened={filterOpened}
@@ -177,33 +177,6 @@ export default function ContactHeader({
                   />
                 )}
                 
-                {/* Archive Toggle */}
-                {archiveEnabled && (
-                  <Stack gap={4}>
-                    <Text size="sm" fw={500}>View</Text>
-                    <Group justify="space-between" wrap="nowrap">
-                      <Text size="sm">Viewing Archived</Text>
-                      <Switch
-                        checked={Boolean(filters.archived)}
-                        onChange={(event) => {
-                          event.stopPropagation(); // Prevent event bubbling
-                          const newArchived = event.currentTarget.checked;
-                          console.log('Toggle changed:', newArchived, 'Current filters:', filters);
-                          setFilters(prev => {
-                            const updated = { ...prev, archived: newArchived };
-                            console.log('Updated filters:', updated);
-                            return updated;
-                          });
-                        }}
-                        onClick={(event) => {
-                          event.stopPropagation(); // Prevent click from closing popover
-                        }}
-                        size="md"
-                      />
-                    </Group>
-                  </Stack>
-                )}
-                
                 <Group justify="space-between" mt="md">
                   <Button variant="subtle" onClick={handleFilterClear}>
                     Clear
@@ -223,6 +196,30 @@ export default function ContactHeader({
           onChange={(event) => onSearch?.(event.currentTarget.value)}
           style={{ width: rem(300) }}
         />
+
+        {/* Archive Toggle - Right of Search */}
+        {archiveEnabled && (
+          <Stack gap={4} align="center">
+            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
+              Viewing Archived
+            </Text>
+            <Switch
+              checked={Boolean(filters.archived)}
+              onChange={(event) => {
+                const newArchived = event.currentTarget.checked;
+                console.log('Toggle changed:', newArchived, 'Current filters:', filters);
+                setFilters(prev => {
+                  const updated = { ...prev, archived: newArchived };
+                  console.log('Updated filters:', updated);
+                  return updated;
+                });
+                // Apply archive filter immediately
+                onFilterApply?.({ ...filters, archived: newArchived });
+              }}
+              size="md"
+            />
+          </Stack>
+        )}
       </Group>
 
       {/* Center: Title */}
