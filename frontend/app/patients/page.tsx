@@ -2052,6 +2052,25 @@ export default function ContactsPage() {
                           const errorText = await response.text();
                           throw new Error(`Failed to save address: ${response.status} ${errorText}`);
                         }
+                        
+                        // Reload patient from backend to get updated data
+                        const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`);
+                        if (patientResponse.ok) {
+                          const updatedPatient = await patientResponse.json();
+                          const updatedContact = transformPatientToContact(updatedPatient);
+                          setSelectedContact(updatedContact);
+                          
+                          // Also update in allContacts list
+                          setAllContacts((prevContacts) => 
+                            prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
+                          );
+                        } else {
+                          // Fallback: update state directly if reload fails
+                          setSelectedContact({
+                            ...selectedContact,
+                            address_json: addressData,
+                          });
+                        }
                       } catch (error) {
                         console.error('Error saving address:', error);
                         alert(`Failed to save address: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -2122,11 +2141,24 @@ export default function ContactsPage() {
                             throw new Error(`Failed to save communication: ${response.status} ${errorText}`);
                           }
                           
-                          // Update state after successful save
-                          setSelectedContact({
-                            ...selectedContact,
-                            communication: updatedCommunication,
-                          });
+                          // Reload patient from backend to get updated data
+                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`);
+                          if (patientResponse.ok) {
+                            const updatedPatient = await patientResponse.json();
+                            const updatedContact = transformPatientToContact(updatedPatient);
+                            setSelectedContact(updatedContact);
+                            
+                            // Also update in allContacts list
+                            setAllContacts((prevContacts) => 
+                              prevContacts.map((c) => c.id === updatedContact.id ? updatedContact : c)
+                            );
+                          } else {
+                            // Fallback: update state directly if reload fails
+                            setSelectedContact({
+                              ...selectedContact,
+                              communication: updatedCommunication,
+                            });
+                          }
                         } catch (error) {
                           console.error('Error saving communication:', error);
                           alert(`Failed to save communication: ${error instanceof Error ? error.message : 'Unknown error'}`);
