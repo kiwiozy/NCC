@@ -17,6 +17,7 @@ import {
   ScrollArea,
   Grid,
   Paper,
+  Center,
   rem,
   useMantineColorScheme,
 } from '@mantine/core';
@@ -49,6 +50,7 @@ const NOTE_TYPES = [
   { value: 'referral', label: 'Referral' },
   { value: '3d_scan_data', label: '3D Scan Data' },
   { value: 'workshop_note', label: 'Workshop Note' },
+  { value: 'other', label: 'Other...' },
 ];
 
 interface NotesDialogProps {
