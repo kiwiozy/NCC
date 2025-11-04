@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
@@ -16,12 +16,11 @@ interface ContactHeaderProps {
     clinic?: string[];
     status?: string[];
   };
-  onFilterApply?: (filters: Record<string, string>) => void;
+  onFilterApply?: (filters: Record<string, string | boolean>) => void;
   contactCount?: number;
   filteredCount?: number;
   achievedCount?: number; // Number of archived/achieved records
-  showArchived?: boolean;
-  onToggleArchived?: () => void;
+  showArchived?: boolean; // Current archive filter state
   archiveEnabled?: boolean; // Whether archive button should be enabled
 }
 
@@ -41,7 +40,6 @@ export default function ContactHeader({
   filteredCount,
   achievedCount,
   showArchived = false,
-  onToggleArchived,
   archiveEnabled = true,
 }: ContactHeaderProps) {
   const router = useRouter();
@@ -53,16 +51,25 @@ export default function ContactHeader({
     funding: '',
     clinic: '',
     status: '',
+    archived: showArchived || false, // Include archived in filters
   });
 
+  // Update filters when showArchived prop changes (e.g., when filters are cleared)
+  useEffect(() => {
+    if (showArchived !== filters.archived) {
+      setFilters(prev => ({ ...prev, archived: showArchived || false }));
+    }
+  }, [showArchived, filters.archived]);
+
   const handleFilterApply = () => {
-    onFilterApply?.(filters);
+    onFilterApply?.({ ...filters, archived: filters.archived });
     setFilterOpened(false);
   };
 
   const handleFilterClear = () => {
-    setFilters({ funding: '', clinic: '', status: '' });
-    onFilterApply?.({ funding: '', clinic: '', status: '' });
+    const clearedFilters = { funding: '', clinic: '', status: '', archived: false };
+    setFilters(clearedFilters);
+    onFilterApply?.(clearedFilters);
   };
 
   const menuItems = [
@@ -154,18 +161,18 @@ export default function ContactHeader({
                 )}
                 
                 {/* Archive Toggle */}
-                {onToggleArchived && (
+                {archiveEnabled && (
                   <Stack gap={4}>
                     <Text size="sm" fw={500}>View</Text>
                     <Button
-                      variant={showArchived ? 'filled' : 'default'}
-                      color={showArchived ? 'orange' : undefined}
-                      onClick={onToggleArchived}
+                      variant={filters.archived ? 'filled' : 'default'}
+                      color={filters.archived ? 'orange' : undefined}
+                      onClick={() => setFilters({ ...filters, archived: !filters.archived })}
                       fullWidth
                       leftSection={<IconTrash size={16} />}
                       style={{
-                        backgroundColor: showArchived ? 'var(--mantine-color-orange-6)' : undefined,
-                        color: showArchived ? 'white' : undefined,
+                        backgroundColor: filters.archived ? 'var(--mantine-color-orange-6)' : undefined,
+                        color: filters.archived ? 'white' : undefined,
                       }}
                     >
                       Viewing Archived

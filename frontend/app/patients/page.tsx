@@ -280,8 +280,7 @@ export default function ContactsPage() {
   const [activeType, setActiveType] = useState<ContactType>('patients');
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
-  const [showArchived, setShowArchived] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({ archived: false });
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -296,8 +295,8 @@ export default function ContactsPage() {
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
   
-  // Apply filters to contacts
-  const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string>) => {
+  // Apply filters to contacts (archived filter is handled at API level, not here)
+  const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string | boolean>) => {
     let filtered = [...contactList];
 
     // Filter by search query
@@ -311,14 +310,16 @@ export default function ContactsPage() {
     }
 
     // Filter by clinic
-    if (filters.clinic) {
+    if (filters.clinic && typeof filters.clinic === 'string') {
       filtered = filtered.filter(contact => contact.clinic === filters.clinic);
     }
 
     // Filter by funding
-    if (filters.funding) {
+    if (filters.funding && typeof filters.funding === 'string') {
       filtered = filtered.filter(contact => contact.funding === filters.funding);
     }
+
+    // Note: archived filter is handled at API level, not in client-side filtering
 
     setContacts(filtered);
     
@@ -369,12 +370,9 @@ export default function ContactsPage() {
         if (searchQuery) {
           params.append('search', searchQuery);
         }
-        // Add archived filter if showArchived is true
-        if (showArchived) {
-          params.append('archived', 'true');
-        } else {
-          params.append('archived', 'false');
-        }
+        // Add archived filter from activeFilters
+        const archivedValue = activeFilters.archived === true || activeFilters.archived === 'true';
+        params.append('archived', String(archivedValue));
         // Note: Clinic and funding filtering is done client-side for now
         // Can be enhanced to use API filtering later
 
@@ -422,7 +420,7 @@ export default function ContactsPage() {
     if (typeof window !== 'undefined') {
       loadPatients();
     }
-  }, [activeType, showArchived, searchQuery]); // Reload when type, archive view, or search changes
+  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes
 
   useEffect(() => {
     // Only load on client side
@@ -485,9 +483,16 @@ export default function ContactsPage() {
     }
   };
 
-  const handleFilterApply = (filters: Record<string, string>) => {
+  const handleFilterApply = (filters: Record<string, string | boolean>) => {
     setActiveFilters(filters);
-    // Apply filters immediately to existing data
+    // When archive filter changes, we need to reload from API
+    // Other filters can be applied client-side to existing data
+    const archivedChanged = activeFilters.archived !== filters.archived;
+    if (archivedChanged) {
+      // Archive filter changed - will trigger useEffect to reload from API
+      return;
+    }
+    // Apply filters immediately to existing data (only for non-archive filters)
     if (allContacts.length > 0) {
       applyFilters(allContacts, searchQuery, filters);
     }
@@ -712,8 +717,7 @@ export default function ContactsPage() {
           clinic: clinics,
           status: ['Active', 'Inactive', 'Archived'],
         }}
-        showArchived={showArchived}
-        onToggleArchived={() => setShowArchived(!showArchived)}
+        showArchived={activeFilters.archived === true || activeFilters.archived === 'true'}
         contactCount={allContacts.length}
         filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
         achievedCount={archivedCount}
