@@ -41,18 +41,42 @@ const transformPatientToContact = (patient: any): Contact => {
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
     try {
-      // Parse the date and format as DD MMM YYYY
-      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY
-      if (!formatted) return '';
+      // First, get the formatted date in DD/MM/YYYY format
+      const formatted = formatDateOnlyAU(dateStr); // Returns DD/MM/YYYY (e.g., "25/06/1949")
+      
+      // If formatDateOnlyAU returns empty or invalid, return empty
+      if (!formatted || formatted.trim() === '' || formatted === 'Invalid DateTime') {
+        console.warn('Invalid date from formatDateOnlyAU:', formatted, 'for input:', dateStr);
+        return '';
+      }
+      
+      // Split the formatted date (DD/MM/YYYY)
       const parts = formatted.split('/');
-      if (parts.length !== 3) return formatted; // Return as-is if format is unexpected
-      const [day, month, year] = parts;
+      if (parts.length !== 3) {
+        console.warn('Unexpected date format from formatDateOnlyAU:', formatted, 'parts:', parts);
+        return formatted; // Return as-is if format is unexpected
+      }
+      
+      const [day, month, year] = parts.map(p => p.trim());
+      
+      // Validate parts are numbers
+      if (!day || !month || !year || isNaN(parseInt(day)) || isNaN(parseInt(month)) || isNaN(parseInt(year))) {
+        console.warn('Invalid date parts:', { day, month, year }, 'from formatted:', formatted);
+        return formatted;
+      }
+      
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthIndex = parseInt(month, 10) - 1;
-      if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) return formatted; // Return as-is if invalid
+      
+      if (isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+        console.warn('Invalid month index:', monthIndex, 'from month:', month);
+        return formatted; // Return as-is if invalid
+      }
+      
+      // Return formatted as "DD MMM YYYY" (e.g., "25 Jun 1949")
       return `${day} ${months[monthIndex]} ${year}`;
     } catch (error) {
-      console.error('Error formatting date:', error, dateStr);
+      console.error('Error formatting date:', error, 'for input:', dateStr);
       return '';
     }
   };
