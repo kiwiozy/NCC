@@ -236,10 +236,29 @@ const transformPatientToContact = (patient: any): Contact => {
   const clinicName = patient.clinic?.name || '';
   const fundingName = patient.funding_type?.name || '';
 
-  // Extract contact info (may not be in list serializer)
+  // Extract contact info - handle both old string format and new object format
   const contactJson = patient.contact_json || {};
-  const phone = contactJson.phone || contactJson.mobile || '';
-  const email = contactJson.email || '';
+  
+  // Build communication object - preserve the structure from backend
+  let communication: any = undefined;
+  if (contactJson.phone || contactJson.mobile || contactJson.email) {
+    communication = {};
+    
+    // Handle phone - can be string or object
+    if (contactJson.phone) {
+      communication.phone = contactJson.phone;
+    }
+    
+    // Handle mobile - can be string or object
+    if (contactJson.mobile) {
+      communication.mobile = contactJson.mobile;
+    }
+    
+    // Handle email - can be string or object
+    if (contactJson.email) {
+      communication.email = contactJson.email;
+    }
+  }
 
   // Format DOB - ensure we only pass ISO dates to formatDate
   let formattedDob = '';
@@ -284,10 +303,7 @@ const transformPatientToContact = (patient: any): Contact => {
       date: formatDateShort(patient.coordinator_date),
     } : undefined,
     planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date),
-    communication: phone || email ? {
-      phone: phone || undefined,
-      email: email || undefined,
-    } : undefined,
+    communication: communication,
     address_json: patient.address_json ? {
       street: patient.address_json.street,
       street2: patient.address_json.street2,
