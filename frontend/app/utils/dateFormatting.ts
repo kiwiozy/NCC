@@ -30,15 +30,28 @@ export function formatDateAU(
       dateTime = date;
     } else if (date instanceof Date) {
       dateTime = DateTime.fromJSDate(date);
-    } else {
+    } else if (typeof date === 'string') {
+      // Check if date string contains letters (month names) - don't parse formatted dates
+      if (/[A-Za-z]{3}/.test(date)) {
+        console.warn('formatDateAU called on already-formatted date:', date);
+        return ''; // Return empty to prevent corruption
+      }
       // Assume ISO string
       dateTime = DateTime.fromISO(date);
+    } else {
+      return '';
+    }
+
+    // Check if DateTime is valid before formatting
+    if (!dateTime.isValid) {
+      console.warn('Invalid DateTime created from:', date);
+      return '';
     }
 
     // Convert to Australian timezone and format
     return dateTime.setZone(AUSTRALIA_TIMEZONE).toFormat(format);
   } catch (error) {
-    console.error('Error formatting date:', error);
+    console.error('Error formatting date:', error, 'input:', date);
     return '';
   }
 }
