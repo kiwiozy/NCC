@@ -255,49 +255,51 @@ export default function ContactHeader({
           )}
         </Stack>
 
-        {/* Right: Hamburger Menu */}
-        <Popover
-          opened={menuOpened}
-          onChange={setMenuOpened}
-          position="bottom-end"
-          shadow="md"
-          width={250}
-        >
-          <Popover.Target>
-            <ActionIcon
-              variant="default"
-              size="lg"
-              onClick={() => setMenuOpened((o) => !o)}
-              title="Menu"
-            >
-              <IconMenu2 size={20} stroke={1.5} />
-            </ActionIcon>
-          </Popover.Target>
-          <Popover.Dropdown p={0}>
-            <Stack gap={0}>
-              {menuItems.map((item, index) => (
-                <Button
-                  key={index}
-                  variant="subtle"
-                  color="blue"
-                  leftSection={item.icon}
-                  onClick={() => {
-                    item.onClick();
-                    setMenuOpened(false);
-                  }}
-                  style={{
-                    justifyContent: 'flex-start',
-                    height: rem(42),
-                    borderRadius: 0,
-                    borderBottom: index < menuItems.length - 1 ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : 'none',
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Stack>
-          </Popover.Dropdown>
-        </Popover>
+        {/* Right: Hamburger Menu - Positioned absolutely */}
+        <div style={{ position: 'absolute', right: rem(24) }}>
+          <Popover
+            opened={menuOpened}
+            onChange={setMenuOpened}
+            position="bottom-end"
+            shadow="md"
+            width={250}
+          >
+            <Popover.Target>
+              <ActionIcon
+                variant="default"
+                size="lg"
+                onClick={() => setMenuOpened((o) => !o)}
+                title="Menu"
+              >
+                <IconMenu2 size={20} stroke={1.5} />
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown p={0}>
+              <Stack gap={0}>
+                {menuItems.map((item, index) => (
+                  <Button
+                    key={index}
+                    variant="subtle"
+                    color="blue"
+                    leftSection={item.icon}
+                    onClick={() => {
+                      item.onClick();
+                      setMenuOpened(false);
+                    }}
+                    style={{
+                      justifyContent: 'flex-start',
+                      height: rem(42),
+                      borderRadius: 0,
+                      borderBottom: index < menuItems.length - 1 ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : 'none',
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Stack>
+            </Popover.Dropdown>
+          </Popover>
+        </div>
       </Group>
     </Box>
   );
