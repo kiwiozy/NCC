@@ -180,6 +180,6 @@ nexus-core-clinic/
 
 **Last Updated:** November 4, 2025  
 **Project:** WalkEasy Nexus - Patient Management System  
-**Version:** 0.1.0 (Development)  
+**Version:** 0.1.0 (Development)
 **Infrastructure:** ✅ Migrated to WalkEasy Nexus naming (GCP: walkeasy-nexus-dev, S3: walkeasy-nexus-documents)
 

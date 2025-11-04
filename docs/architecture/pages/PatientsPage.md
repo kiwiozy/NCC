@@ -86,9 +86,49 @@ The Patients page provides a comprehensive view for managing patient contacts. I
   - **Data Model:** Should be Enum or separate table for funding types
 
 #### **Column 3: Coordinator & Plans**
-- ✅ Coordinator selector (with add button)
-  - Shows coordinator name and date
-  - Or "Select coordinator" placeholder
+- ✅ **Coordinator selector with multiple coordinators support** ✅ **IMPLEMENTED**
+  - **Current Coordinator Display:**
+    - Shows most recent coordinator name and assignment date
+    - Displays coordinator name in bold
+    - Displays assignment date in blue below name
+    - Format: "DD MMM YYYY" (e.g., "4 Nov 2025")
+  - **List Icon (IconListCheck):** ✅ **IMPLEMENTED**
+    - Shows only when patient has 2+ coordinators
+    - Located between coordinator name and + button
+    - Opens coordinator list dialog to view all coordinators
+    - Tooltip: "View all coordinators"
+  - **Add Coordinator Button (+):** ✅ **IMPLEMENTED**
+    - Always visible (when coordinator exists or not)
+    - Opens coordinator selection dialog
+    - Tooltip: "Add coordinator"
+  - **Coordinator Selection Dialog:** ✅ **IMPLEMENTED**
+    - **Date Picker:** Required field for assignment date
+      - Defaults to today's date when dialog opens
+      - Required before selecting coordinator
+      - Max date: today (cannot select future dates)
+    - **Search Input:** Search coordinators by name or organization
+      - Debounced search (300ms delay)
+      - Filters coordinator results in real-time
+      - Auto-loads all coordinators when dialog opens
+    - **Coordinator List:**
+      - Displays clickable coordinator items
+      - Shows coordinator name and organization
+      - Disabled until date is selected
+      - Selecting coordinator adds to patient's coordinators array
+    - **Empty States:**
+      - "No coordinators found" when search returns no results
+      - "Start typing to search coordinators" when no search query
+  - **Coordinator List Dialog:** ✅ **IMPLEMENTED**
+    - Opens when list icon (IconListCheck) is clicked
+    - Displays all coordinators assigned to patient
+    - Sorted by date (most recent first)
+    - Shows coordinator name and assignment date
+    - Scrollable list for many coordinators
+  - **Data Structure:**
+    - Supports multiple coordinators (array format)
+    - Each coordinator has: `name` (string) and `date` (YYYY-MM-DD format)
+    - Maintains backwards compatibility with single coordinator field
+    - Helper functions: `getCoordinators()` and `getCurrentCoordinator()`
 - ✅ Reminder button (with add icon)
 - ✅ Current Plan Dates display
   - Shows date range or "No plan dates set"
@@ -201,8 +241,24 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - ❌ `clinic_id` - ForeignKey to Clinic (currently clinic is just a string)
   - **Settings Requirement:** Clinics managed in Settings
   - Clinic details used in calendar, linked to patients and clinicians
-- ❌ `coordinator_name` - CharField (optional) - Coordinator name
-- ❌ `coordinator_date` - DateField (optional) - When coordinator was assigned
+- ⚠️ **Coordinators** - Multiple coordinators support ⚠️ **NEEDS BACKEND IMPLEMENTATION**
+  - **Option A: JSONField** (Recommended for now)
+    - `coordinators_json` - JSONField storing array: `[{"name": "Dawn Allington", "date": "2025-11-04"}, ...]`
+    - Pros: Simple, flexible, easy to query
+    - Cons: Less structured, harder to query by coordinator name
+  - **Option B: Separate Table** (Better long-term)
+    - Create `patient_coordinators` table with:
+      - `id` - UUID (primary key)
+      - `patient_id` - ForeignKey to Patient
+      - `coordinator_name` - CharField
+      - `assignment_date` - DateField
+      - `created_at`, `updated_at` - Timestamps
+    - Pros: Better queries, can link to coordinator table later
+    - Cons: More complex, requires joins
+  - **Current Status:** ✅ Frontend supports multiple coordinators with dates
+    - Frontend stores in `coordinators` array
+    - Maintains backwards compatibility with single `coordinator` field
+    - ⚠️ **Backend needs to support** coordinator array storage
 - ❌ `plan_start_date` - DateField (optional) - NDIS plan start
 - ❌ `plan_end_date` - DateField (optional) - NDIS plan end
 - ❌ `notes` - TextField (optional) - General notes (or use flags_json?)
@@ -242,7 +298,10 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 2. Add `health_number` field
 3. Add `funding_type` field (enum)
 4. Add `clinic_id` FK (instead of string)
-5. Add `coordinator_name` and `coordinator_date` fields
+5. ⚠️ **Add coordinators support** - Multiple coordinators with dates
+   - **Option A:** Add `coordinators_json` JSONField (recommended for now)
+   - **Option B:** Create `patient_coordinators` table with FK relationship
+   - **Current Status:** ✅ Frontend ready, ⚠️ Backend needs implementation
 6. Add `plan_start_date` and `plan_end_date` fields
 7. Add `notes` field (or clarify if using flags_json)
 
@@ -357,10 +416,21 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 
 ### **Decisions Needed**
 
-1. **Coordinator Storage:**
-   - Option A: Simple fields (`coordinator_name`, `coordinator_date`) in Patient
-   - Option B: Separate `coordinators` table with FK
-   - **Recommendation:** Start with Option A (simple), upgrade to B if needed
+1. **Coordinator Storage:** ✅ **FRONTEND DECISION MADE**
+   - ✅ **Frontend Implementation:** Multiple coordinators with dates (array format)
+   - ✅ **Frontend Structure:** `coordinators: [{name: string, date: string}]`
+   - ✅ **Features Implemented:**
+     - Date picker for assignment date (required)
+     - Search dialog for selecting coordinators
+     - List view for all coordinators (sorted by date, most recent first)
+     - Current coordinator display (most recent by default)
+   - ⚠️ **Backend Decision Needed:**
+     - Option A: JSONField (`coordinators_json`) storing array (recommended for now)
+     - Option B: Separate `patient_coordinators` table with FK (better long-term)
+     - **Recommendation:** Start with Option A (JSONField), upgrade to Option B if needed
+   - ⚠️ **Coordinator Master List:** Currently using mock data, needs API endpoint
+     - Future: `GET /api/coordinators/` for coordinator master list
+     - Future: Coordinator search API with query parameter
 
 2. **Notes Storage:**
    - Option A: Add `notes` TextField to Patient
