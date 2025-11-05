@@ -177,7 +177,7 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 image = Image.objects.create(
                     batch=batch,
                     s3_key=s3_key,
-                    s3_thumbnail_key=s3_thumbnail_key if thumb_upload_result else None,
+                    s3_thumbnail_key=s3_thumbnail_key,  # Already set to None if upload failed
                     original_name=file.name,
                     file_size=file.size,
                     mime_type=file.content_type or 'image/jpeg',
