@@ -394,6 +394,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
               )}
             </Stack>
           </ScrollArea>
+          </Stack>
         </Grid.Col>
 
         {/* Right Column: Upload/View */}

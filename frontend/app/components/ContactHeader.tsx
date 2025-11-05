@@ -66,7 +66,8 @@ export default function ContactHeader({
   useEffect(() => {
     const getNotesCount = async () => {
       try {
-        if (patientId) {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific notes
           const response = await fetch(`http://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
@@ -127,7 +128,8 @@ export default function ContactHeader({
   useEffect(() => {
     const getDocumentsCount = async () => {
       try {
-        if (patientId) {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific documents
           const response = await fetch(`http://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
