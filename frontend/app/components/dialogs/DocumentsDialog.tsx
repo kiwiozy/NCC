@@ -458,8 +458,8 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           </Text>
                         </Box>
                       )}
-                      {/* Reload button for PDFs (not needed for Safari) */}
-                      {selectedDocument.download_url && !browser.isSafari && (
+                      {/* Reload button for PDFs */}
+                      {selectedDocument.download_url && (
                         (() => {
                           const mimeType = selectedDocument.mime_type || '';
                           const isPDF = mimeType === 'application/pdf' || selectedDocument.original_name.toLowerCase().endsWith('.pdf');
@@ -515,73 +515,53 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(selectedDocument.original_name);
                         
                         if (isPDF) {
-                          // Safari has issues with inline PDF rendering
-                          // For Safari, show a nice preview card with open button
-                          // Safari handles PDFs best when opened directly
+                          // Safari has issues with iframes for cross-origin PDFs
+                          // Use object tag which allows scrolling
                           if (browser.isSafari) {
                             return (
                               <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
-                                <Box 
-                                  style={{ 
-                                    flex: 1, 
-                                    border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, 
-                                    borderRadius: rem(8),
-                                    backgroundColor: isDark ? '#25262b' : '#f8f9fa',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexDirection: 'column',
-                                    gap: rem(24),
+                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4), overflow: 'hidden' }}>
+                                  <object
+                                    key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
+                                    data={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
+                                    type="application/pdf"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      minHeight: rem(400),
+                                      display: 'block',
+                                    }}
+                                    onError={() => {
+                                      console.error('PDF failed to load in object tag');
+                                      setIsReloadingPDF(false);
+                                    }}
+                                  >
+                                    <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                      <IconFile size={48} style={{ opacity: 0.5 }} />
+                                      <Text c="dimmed" size="sm" ta="center">
+                                        PDF viewer not available
+                                      </Text>
+                                      <Button
+                                        leftSection={<IconDownload size={16} />}
+                                        onClick={() => {
+                                          window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
+                                        }}
+                                      >
+                                        Open PDF in New Window
+                                      </Button>
+                                    </Box>
+                                  </object>
+                                </Box>
+                                <Button
+                                  variant="light"
+                                  fullWidth
+                                  leftSection={<IconDownload size={16} />}
+                                  onClick={() => {
+                                    window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
                                   }}
                                 >
-                                  <IconFile size={64} style={{ opacity: 0.6, color: isDark ? '#C1C2C5' : '#495057' }} />
-                                  <Stack gap="xs" align="center">
-                                    <Text size="lg" fw={600} ta="center">
-                                      PDF Document
-                                    </Text>
-                                    <Text size="sm" c="dimmed" ta="center" maw={400}>
-                                      Safari doesn't support inline PDF viewing. Click the button below to open this PDF in a new window.
-                                    </Text>
-                                  </Stack>
-                                  <Group gap="md">
-                                    <Button
-                                      size="lg"
-                                      variant="filled"
-                                      leftSection={<IconDownload size={20} />}
-                                      onClick={() => {
-                                        window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
-                                      }}
-                                    >
-                                      Open PDF
-                                    </Button>
-                                    <Button
-                                      size="lg"
-                                      variant="outline"
-                                      leftSection={<IconDownload size={20} />}
-                                      onClick={async () => {
-                                        try {
-                                          // Try to download the PDF directly
-                                          const response = await fetch(getDownloadUrlWithCacheBust(selectedDocument.download_url));
-                                          const blob = await response.blob();
-                                          const url = window.URL.createObjectURL(blob);
-                                          const a = document.createElement('a');
-                                          a.href = url;
-                                          a.download = selectedDocument.original_name;
-                                          document.body.appendChild(a);
-                                          a.click();
-                                          window.URL.revokeObjectURL(url);
-                                          document.body.removeChild(a);
-                                        } catch (err) {
-                                          console.error('Failed to download PDF:', err);
-                                          // Fallback to opening in new window
-                                          window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
-                                        }
-                                      }}
-                                    >
-                                      Download PDF
-                                    </Button>
-                                  </Group>
-                                </Box>
+                                  Open PDF in Safari
+                                </Button>
                               </Box>
                             );
                           } else {
