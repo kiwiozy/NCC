@@ -368,8 +368,8 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
           <Stack gap={0} style={{ height: '100%' }}>
             {selectedDocument ? (
               /* Selected Document View */
-              <Box p="md" style={{ height: '100%', overflow: 'auto' }}>
-                <Stack gap="md">
+              <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1 }}>
                       <Text size="sm" c="dimmed" mb={4}>DOCUMENT TYPE</Text>
@@ -405,25 +405,96 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                       </Text>
                     </Box>
                   </Group>
+                  
+                  {/* Document Viewer */}
                   {selectedDocument.download_url && (
-                    <Button
-                      leftSection={<IconDownload size={16} />}
-                      onClick={() => {
-                        window.open(selectedDocument.download_url, '_blank');
+                    <Box 
+                      style={{ 
+                        flex: 1, 
+                        minHeight: 0,
+                        border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                        borderRadius: rem(8),
+                        overflow: 'hidden',
+                        backgroundColor: isDark ? '#1A1B1E' : '#ffffff',
                       }}
                     >
-                      Download Document
-                    </Button>
+                      {(() => {
+                        const mimeType = selectedDocument.mime_type || '';
+                        const isPDF = mimeType === 'application/pdf' || selectedDocument.original_name.toLowerCase().endsWith('.pdf');
+                        const isImage = mimeType.startsWith('image/') || 
+                          /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(selectedDocument.original_name);
+                        
+                        if (isPDF) {
+                          return (
+                            <iframe
+                              src={selectedDocument.download_url}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                border: 'none',
+                                minHeight: rem(400),
+                              }}
+                              title={selectedDocument.original_name}
+                            />
+                          );
+                        } else if (isImage) {
+                          return (
+                            <Box style={{ padding: rem(16), height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <img
+                                src={selectedDocument.download_url}
+                                alt={selectedDocument.original_name}
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '100%',
+                                  objectFit: 'contain',
+                                }}
+                              />
+                            </Box>
+                          );
+                        } else {
+                          return (
+                            <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                              <IconFile size={48} style={{ opacity: 0.5 }} />
+                              <Text c="dimmed" size="sm">
+                                Preview not available for this file type
+                              </Text>
+                              <Button
+                                leftSection={<IconDownload size={16} />}
+                                onClick={() => {
+                                  window.open(selectedDocument.download_url, '_blank');
+                                }}
+                              >
+                                Download to View
+                              </Button>
+                            </Box>
+                          );
+                        }
+                      })()}
+                    </Box>
                   )}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedDocument(null);
-                      resetForm();
-                    }}
-                  >
-                    Upload New Document
-                  </Button>
+                  
+                  <Group gap="xs">
+                    {selectedDocument.download_url && (
+                      <Button
+                        variant="outline"
+                        leftSection={<IconDownload size={16} />}
+                        onClick={() => {
+                          window.open(selectedDocument.download_url, '_blank');
+                        }}
+                      >
+                        Download
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedDocument(null);
+                        resetForm();
+                      }}
+                    >
+                      Upload New Document
+                    </Button>
+                  </Group>
                 </Stack>
               </Box>
             ) : (
