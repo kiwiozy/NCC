@@ -11,39 +11,20 @@ class Document(models.Model):
     Uses Generic Foreign Key to link to any model (Patient, Appointment, etc.)
     """
     
-    CATEGORY_CHOICES = [
+        CATEGORY_CHOICES = [
+        ('erf', 'ERF'),
+        ('purchase_order', 'Purchase Order'),
+        ('referral', 'Referral'),
+        ('enablensw_application', 'EnableNSW Application'),
+        ('remittance_advice', 'Remittance Advice'),
+        ('quote', 'Quote'),
         ('medical', 'Medical Records'),
         ('prescription', 'Prescription'),
-        ('referral', 'Referral Letter'),
         ('xray', 'X-Ray / Imaging'),
-        ('invoice', 'Invoice'),
-        ('quote', 'Quote'),
         ('consent', 'Consent Form'),
         ('insurance', 'Insurance Document'),
-        ('dorsal', 'Dorsal'),
-        ('plantar', 'Plantar'),
-        ('posterior', 'Posterior'),
-        ('anterior', 'Anterior'),
-        ('medial', 'Medial'),
-        ('lateral', 'Lateral'),
-        ('wound', 'Wound'),
-        ('right_leg', 'Right Leg'),
-        ('left_leg', 'Left Leg'),
-        ('l_brannock', 'L-Brannock'),
-        ('r_brannock', 'R-Brannock'),
-        ('r_mfoot_length', 'R-MFoot Length'),
-        ('r_mfoot_width', 'R-MFoot Width'),
-        ('l_mfoot_length', 'L-MFoot Length'),
-        ('l_mfoot_width', 'L-MFoot Width'),
-        ('casts', 'Casts'),
-        ('left_lat', 'Left Lat'),
-        ('right_lat', 'Right Lat'),
-        ('r_shoe', 'R-Shoe'),
-        ('l_shoe', 'L-Shoe'),
-        ('afo', 'AFO'),
-        ('x_ray', 'X-Ray'),
-        ('cmo', 'CMO'),
-        ('other', 'Other'),
+        ('invoice', 'Invoice'),
+        ('other', 'Other')
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
