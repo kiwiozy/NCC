@@ -12,6 +12,7 @@ interface ContactHeaderProps {
   onArchive?: () => void;
   onNotesClick?: () => void;
   onDocumentsClick?: () => void;
+  onImagesClick?: () => void;
   patientId?: string; // For getting note and document counts
   showFilters?: boolean;
   filterOptions?: {
@@ -34,6 +35,7 @@ export default function ContactHeader({
   onArchive,
   onNotesClick,
   onDocumentsClick,
+  onImagesClick,
   patientId,
   showFilters = true,
   filterOptions = {
@@ -55,12 +57,36 @@ export default function ContactHeader({
   const [menuOpened, setMenuOpened] = useState(false);
   const [notesCount, setNotesCount] = useState<number>(0);
   const [documentsCount, setDocumentsCount] = useState<number>(0);
+  const [imagesCount, setImagesCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
     status: '',
     archived: showArchived || false, // Include archived in filters
   });
+
+  // Get images count for patient
+  useEffect(() => {
+    const getImagesCount = async () => {
+      try {
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+          const response = await fetch(`http://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`);
+          if (response.ok) {
+            const batches = await response.json();
+            const totalImages = batches.reduce((sum: number, batch: any) => sum + batch.image_count, 0);
+            setImagesCount(totalImages);
+          } else {
+            setImagesCount(0);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading images count:', err);
+        setImagesCount(0);
+      }
+    };
+
+    getImagesCount();
+  }, [patientId]);
 
   // Get notes count for patient
   useEffect(() => {
@@ -200,9 +226,9 @@ export default function ContactHeader({
   };
 
   const menuItems = [
-    { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); } },
-    { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); } },
-    { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => console.log('Images') },
+    { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); }, count: notesCount },
+    { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
+    { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => console.log('Appointments') },
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },

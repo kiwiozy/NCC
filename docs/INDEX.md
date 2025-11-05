@@ -1,185 +1,222 @@
-# 📚 WalkEasy Nexus - Documentation
+# 📚 WalkEasy Nexus - Documentation Index
 
-Welcome to the WalkEasy Nexus documentation. This directory contains all project documentation.
-
----
-
-## 📖 **Quick Links**
-
-| Document | Description | Location |
-|----------|-------------|----------|
-| **[Project README](README.md)** | Project overview and quick start | `docs/` |
-| **[Backend Guide](backend/QUICK_START.md)** | Django backend setup and usage | `docs/backend/` |
-| **[Calendar Guide](frontend/CALENDAR_GUIDE.md)** | Calendar component documentation | `docs/frontend/` |
-| **[Setup Checklist](../ChatGPT_Docs/Setup-Checklist.md)** | Complete setup progress tracker | `ChatGPT_Docs/` |
+**Last Updated:** November 2025  
+**Project:** WalkEasy Nexus - Patient Management System
 
 ---
 
-## 🗂️ **Documentation Structure**
+## 🚀 **Quick Start**
+
+| Document | Description |
+|----------|-------------|
+| **[Quick Start Guide](QUICK_START.md)** | Start backend and frontend servers |
+| **[Project README](README.md)** | Project overview and architecture |
+| **[Troubleshooting](architecture/TROUBLESHOOTING.md)** | Common issues and solutions |
+
+---
+
+## 📁 **Documentation Structure**
 
 ```
-nexus-core-clinic/
-├── docs/                           # Project documentation (you are here)
-│   ├── README.md                   # Main project README
-│   ├── INDEX.md                    # This file
-│   ├── backend/                    # Backend documentation
-│   │   ├── QUICK_START.md          # Django quick start guide
-│   │   ├── API.md                  # API documentation (to be created)
-│   │   └── MODELS.md               # Database models reference (to be created)
-│   ├── frontend/                   # Frontend documentation
-│   │   ├── CALENDAR_GUIDE.md       # Calendar component guide
-│   │   ├── COMPONENTS.md           # Component library (to be created)
-│   │   └── STYLING.md              # Mantine/Tailwind guide (to be created)
-│   └── setup/                      # Setup & deployment docs
-│       ├── CODE_ORGANIZATION_STRATEGY.md  # ⭐ Protect code from overwrites
-│       ├── CURSOR_SAFETY_GUIDE.md         # ⭐ Cursor AI safety tips
-│       ├── TIMEZONE_CONFIGURATION.md      # Timezone setup
-│       ├── INFRASTRUCTURE_MIGRATION_GUIDE.md  # ✅ Infrastructure migration (completed)
-│       ├── NEXT_STEPS.md           # Next steps for deployment
-│       ├── DEVELOPMENT.md          # Local development setup (to be created)
-│       ├── DEPLOYMENT.md           # Production deployment (to be created)
-│       └── CLOUD_SQL.md            # Cloud SQL connection guide (to be created)
+docs/
+├── INDEX.md                      # This file
+├── README.md                     # Project overview
+├── QUICK_START.md               # How to start the app
 │
-└── ChatGPT_Docs/                   # Detailed technical specifications
-    ├── Setup-Checklist.md          # Complete setup progress
-    ├── 00-Environment-Setup-Guide.md
-    ├── 01-Architecture.md
-    ├── 02-Target-Postgres-Schema.md
-    ├── 03-Staging-and-Mapping.md
-    ├── 04-Containers-Migration.md
-    ├── 05-ETL-and-DBT.md
-    ├── 07-Firestore-Read-Cache.md
-    ├── Calendar_Spec_FullCalendar.md
-    ├── ENV-File-Guide.md
-    ├── Hosting_Decision_Guide.md
-    ├── Mantine-UI-Setup-Guide.md
-    ├── Recommended_Tech_Stack.md
-    ├── S3_Integration.md
-    ├── SMS_End_to_End_Integration.md
-    └── Xero_Integration.md
+├── architecture/                 # ⭐ Current development work
+│   ├── DATABASE_SCHEMA.md
+│   ├── PAGES_INDEX.md
+│   ├── TROUBLESHOOTING.md
+│   ├── dialogs/                  # Dialog components
+│   │   ├── CommunicationDialog.md
+│   │   ├── CoordinatorDialogs.md
+│   │   ├── DocumentsDialog.md
+│   │   ├── NotesDialog.md
+│   │   └── ReminderDialog.md
+│   ├── pages/                    # Page components
+│   │   └── PatientsPage.md
+│   └── settings/
+│       └── SETTINGS_REQUIREMENTS.md
+│
+├── integrations/                 # ⭐ Integration guides
+│   ├── GMAIL.md                 # Gmail OAuth & email sending
+│   ├── XERO.md                  # Xero OAuth & accounting
+│   ├── SMS.md                   # SMS Broadcast messaging
+│   ├── S3.md                    # AWS S3 document storage
+│   └── OPENAI.md                # OpenAI GPT-4o-mini features
+│
+├── setup/                        # Setup & configuration
+│   ├── CODE_ORGANIZATION_STRATEGY.md
+│   ├── CURSOR_RULES.md
+│   ├── CURSOR_RULES_QUICK_COPY.md
+│   ├── CURSOR_SAFETY_GUIDE.md
+│   ├── INFRASTRUCTURE_MIGRATION_GUIDE.md
+│   ├── NEXT_STEPS.md
+│   ├── TIMEZONE_CONFIGURATION.md
+│   └── TROUBLESHOOTING_REPORT.md
+│
+└── archive/                      # Historical documentation
+    ├── legacy-integrations/      # Old integration setup docs
+    │   ├── Email/
+    │   ├── SMS Integration/
+    │   ├── Xero Integration/
+    │   ├── S3 Integration/
+    │   └── OpenAI Integration/
+    ├── troubleshooting/          # Old troubleshooting docs
+    ├── Letter/                   # Letter template development
+    ├── AT Report/                # AT Report PDF generation
+    ├── DOCUMENTATION_SUMMARY.md
+    └── GIT_COMMIT_LOG.md
 ```
 
 ---
 
-## 🚀 **Getting Started**
+## 📖 **Documentation by Topic**
 
-### **For Development:**
-1. Read **[Project README](README.md)** for overview
-2. Follow **[Backend Quick Start](backend/QUICK_START.md)** to set up Django
-3. Follow **[Calendar Guide](frontend/CALENDAR_GUIDE.md)** to understand the frontend
+### **Getting Started**
+- [Quick Start Guide](QUICK_START.md) - Start servers and access app
+- [Project README](README.md) - Project overview
+- [Troubleshooting](architecture/TROUBLESHOOTING.md) - Common issues
 
-### **For Deployment:**
-1. Review **[Infrastructure Migration Guide](setup/INFRASTRUCTURE_MIGRATION_GUIDE.md)** ✅ **Completed**
-2. Check **[Setup Checklist](../ChatGPT_Docs/Setup-Checklist.md)** for infrastructure
-3. Review **[Next Steps](setup/NEXT_STEPS.md)** for deployment
-4. Check **[Architecture](../ChatGPT_Docs/01-Architecture.md)** for system design
-5. Follow **[Hosting Decision Guide](../ChatGPT_Docs/Hosting_Decision_Guide.md)**
+### **Architecture & Database**
+- [Database Schema](architecture/DATABASE_SCHEMA.md) - All tables and relationships
+- [Pages Index](architecture/PAGES_INDEX.md) - All pages and dialogs
+- [Patients Page](architecture/pages/PatientsPage.md) - Main patient management page
 
-### **For Integrations:**
-- **Xero:** See [Xero_Integration.md](../ChatGPT_Docs/Xero_Integration.md)
-- **SMS:** See [SMS_End_to_End_Integration.md](../ChatGPT_Docs/SMS_End_to_End_Integration.md)
-- **S3:** See [S3_Integration.md](../ChatGPT_Docs/S3_Integration.md)
+### **Feature Documentation**
+- [Communication Dialog](architecture/dialogs/CommunicationDialog.md) - Patient contact info
+- [Coordinator Dialogs](architecture/dialogs/CoordinatorDialogs.md) - NDIS coordinators
+- [Documents Dialog](architecture/dialogs/DocumentsDialog.md) - S3 document management
+- [Notes Dialog](architecture/dialogs/NotesDialog.md) - Clinical notes with AI
+- [Reminder Dialog](architecture/dialogs/ReminderDialog.md) - Patient reminders
 
----
+### **Integrations** (Production-Ready ✅)
+- [Gmail Integration](integrations/GMAIL.md) - OAuth2 email sending
+- [Xero Integration](integrations/XERO.md) - Accounting API
+- [SMS Integration](integrations/SMS.md) - SMS Broadcast messaging
+- [S3 Integration](integrations/S3.md) - AWS document storage
+- [OpenAI Integration](integrations/OPENAI.md) - AI-powered features
 
-## 📊 **Documentation Types**
-
-### **1. Project Documentation** (`docs/`)
-- User-facing documentation
-- Quick start guides
-- API references
-- Component documentation
-- Deployment guides
-
-### **2. Technical Specifications** (`ChatGPT_Docs/`)
-- Architecture decisions
-- Database schema design
-- Integration specifications
-- Infrastructure setup
-- Complete technical details
+### **Setup & Configuration**
+- [Code Organization Strategy](setup/CODE_ORGANIZATION_STRATEGY.md) - Protected files
+- [Cursor Rules](setup/CURSOR_RULES.md) - AI assistant rules
+- [Cursor Safety Guide](setup/CURSOR_SAFETY_GUIDE.md) - Prevent overwrites
+- [Infrastructure Migration](setup/INFRASTRUCTURE_MIGRATION_GUIDE.md) - Naming changes
+- [Timezone Configuration](setup/TIMEZONE_CONFIGURATION.md) - Australia/Sydney
 
 ---
 
-## 🎯 **Documentation Standards**
+## 🎯 **Key Features (Current State)**
 
-### **File Naming:**
-- Use UPPERCASE for guide names: `QUICK_START.md`, `API.md`
-- Use Title Case for spec names: `Calendar_Spec_FullCalendar.md`
-- Use kebab-case for numbered guides: `01-Architecture.md`
+### ✅ **Implemented**
+- Patient management (list, search, filter, archive)
+- Contact types (patients, referrers, coordinators, etc.)
+- Multi-clinic calendar with drag-and-drop
+- Settings management (funding sources, clinics)
+- Notes system (with AI rewrite)
+- Documents system (with Safari PDF support)
+- Reminders system
+- NDIS plan dates tracking
+- Multiple coordinators per patient
+- Communication management (phone, email, address)
 
-### **Structure:**
-- Start with emoji + title
+### ⏳ **In Progress**
+- Patient detail page
+- Orders/invoices system
+- Calendar enhancements
+- Real-time updates
+
+### 📅 **Planned**
+- Patient portal
+- Reports & analytics
+- Mobile app
+- Advanced scheduling
+
+---
+
+## 🛠 **Tech Stack**
+
+### **Backend**
+- Django 5.0+ with Django REST Framework
+- SQLite (dev) / PostgreSQL (target production)
+- Python 3.11+
+
+### **Frontend**
+- Next.js 15 (React)
+- Mantine UI v7
+- FullCalendar
+- Luxon (dates)
+
+### **Infrastructure**
+- AWS S3 (documents)
+- Google Cloud Platform (planned)
+- IndexedDB (client-side caching)
+
+### **APIs**
+- Gmail API (email)
+- Xero API (accounting)
+- SMS Broadcast API (messaging)
+- OpenAI API (AI features)
+
+---
+
+## 📝 **Documentation Standards**
+
+### **File Naming**
+- Guides: `QUICK_START.md`, `TROUBLESHOOTING.md`
+- Components: `PatientsPage.md`, `NotesDialog.md`
+- Integrations: `GMAIL.md`, `XERO.md`
+
+### **Structure**
+- Start with title and last updated date
 - Include table of contents for long docs
 - Use code blocks with language tags
-- Include examples and screenshots where helpful
 - Link to related documentation
 
-### **Maintenance:**
-- Update documentation with code changes
+### **Maintenance**
+- Update docs with code changes
 - Keep examples current
 - Mark deprecated features
-- Date significant updates
-
----
-
-## 🔄 **Document Updates**
-
-| Document | Last Updated | Status |
-|----------|--------------|--------|
-| Project README | Oct 30, 2025 | ✅ Current |
-| Backend Quick Start | Oct 30, 2025 | ✅ Current |
-| Calendar Guide | Oct 30, 2025 | ✅ Current |
-| Setup Checklist | Oct 30, 2025 | ✅ Current |
-
----
-
-## 📝 **Contributing to Documentation**
-
-### **Adding New Documentation:**
-1. Place in appropriate directory (`backend/`, `frontend/`, `setup/`)
-2. Follow naming conventions
-3. Update this INDEX.md
-4. Link from relevant documents
-
-### **Updating Existing Documentation:**
-1. Make changes inline
-2. Update "Last Updated" date
-3. Note changes in git commit message
+- Update "Last Updated" dates
 
 ---
 
 ## 🔗 **External Resources**
 
-### **Frameworks & Libraries:**
-- [Django Documentation](https://docs.djangoproject.com/)
+### **Frameworks**
+- [Django](https://docs.djangoproject.com/)
 - [Django REST Framework](https://www.django-rest-framework.org/)
-- [Next.js Documentation](https://nextjs.org/docs)
+- [Next.js](https://nextjs.org/docs)
 - [Mantine UI](https://mantine.dev/)
 - [FullCalendar](https://fullcalendar.io/docs)
 
-### **Cloud Services:**
+### **Cloud & APIs**
 - [Google Cloud Platform](https://cloud.google.com/docs)
-- [Cloud SQL](https://cloud.google.com/sql/docs)
-- [Cloud Run](https://cloud.google.com/run/docs)
 - [AWS S3](https://docs.aws.amazon.com/s3/)
-
-### **Integrations:**
+- [Gmail API](https://developers.google.com/gmail/api)
 - [Xero API](https://developer.xero.com/)
-- [FileMaker Data API](https://help.claris.com/en/data-api-guide/)
 - [SMS Broadcast API](https://www.smsbroadcast.com.au/api)
+- [OpenAI API](https://platform.openai.com/docs)
+
+---
+
+## 🗂️ **Archive**
+
+Historical documentation is preserved in `docs/archive/`:
+- Legacy integration setup guides (detailed step-by-step)
+- Old troubleshooting docs (superseded by consolidated guide)
+- Letter template development history
+- AT Report implementation history
 
 ---
 
 ## 📞 **Support**
 
-- **Technical Issues:** Check relevant documentation first
-- **Questions:** craig@walkeasy.com.au
-- **Updates:** Monitor Setup-Checklist.md for progress
+- **Documentation Issues:** Check [Troubleshooting Guide](architecture/TROUBLESHOOTING.md)
+- **Integration Help:** See `docs/integrations/` for specific guides
+- **Contact:** craig@walkeasy.com.au
 
 ---
 
-**Last Updated:** November 4, 2025  
-**Project:** WalkEasy Nexus - Patient Management System  
-**Version:** 0.1.0 (Development)
-**Infrastructure:** ✅ Migrated to WalkEasy Nexus naming (GCP: walkeasy-nexus-dev, S3: walkeasy-nexus-documents)
-
+**Project Status:** Active Development  
+**Infrastructure:** ✅ Migrated to WalkEasy Nexus (GCP: walkeasy-nexus-dev, S3: walkeasy-nexus-documents)
