@@ -1074,6 +1074,7 @@ export default function ContactsPage() {
                         <TextInput
                           label=""
                           value={selectedContact.firstName}
+                          readOnly
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1083,6 +1084,7 @@ export default function ContactsPage() {
                           label=""
                           placeholder="Middle Name"
                           value={selectedContact.middleName}
+                          readOnly
                             styles={{ input: { fontWeight: 400, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1091,6 +1093,7 @@ export default function ContactsPage() {
                         <TextInput
                           label=""
                           value={selectedContact.lastName}
+                          readOnly
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1135,6 +1138,11 @@ export default function ContactsPage() {
                           <TextInput
                             placeholder="Health Number"
                             value={selectedContact.healthNumber}
+                            onChange={(e) => {
+                              if (selectedContact) {
+                                setSelectedContact({ ...selectedContact, healthNumber: e.currentTarget.value });
+                              }
+                            }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>

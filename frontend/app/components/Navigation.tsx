@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon } from '@mantine/core';
+import ConsoleFilter from './ConsoleFilter';
 import { 
   IconLayoutDashboard, 
   IconUsers, 
@@ -242,10 +243,12 @@ export default function Navigation({ children }: NavigationProps) {
   };
 
   return (
-    <AppShell
-      header={{ height: 80 }}
-      padding={0}
-    >
+    <>
+      <ConsoleFilter />
+      <AppShell
+        header={{ height: 80 }}
+        padding={0}
+      >
       <AppShell.Header
         style={{
           backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
@@ -549,5 +552,6 @@ export default function Navigation({ children }: NavigationProps) {
         {children}
       </AppShell.Main>
     </AppShell>
+    </>
   );
 }
