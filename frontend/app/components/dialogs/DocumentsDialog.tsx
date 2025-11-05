@@ -218,14 +218,22 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
           setSuccess('Document uploaded successfully!');
           resetForm();
         } else {
-          const errorData = JSON.parse(xhr.responseText);
-          throw new Error(errorData.error || errorData.message || 'Upload failed');
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            const errorMsg = errorData.error || errorData.message || errorData.detail || 'Upload failed';
+            console.error('Upload error response:', errorData);
+            setError(`Upload failed: ${errorMsg}`);
+          } catch (e) {
+            console.error('Upload error (non-JSON):', xhr.responseText);
+            setError(`Upload failed: ${xhr.status} ${xhr.statusText}`);
+          }
         }
         setUploading(false);
       });
 
       xhr.addEventListener('error', () => {
-        setError('Upload failed. Please try again.');
+        console.error('XHR error event');
+        setError('Upload failed. Please check your connection and try again.');
         setUploading(false);
       });
 
