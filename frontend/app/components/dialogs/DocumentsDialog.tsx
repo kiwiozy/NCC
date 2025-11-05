@@ -41,6 +41,7 @@ import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 import { DateValue } from '@mantine/dates';
 import dayjs from 'dayjs';
 import { useBrowserDetection } from '../../utils/browserDetection';
+import { pdfCache } from '../../utils/pdfCache';
 
 interface Document {
   id: string;
@@ -155,37 +156,59 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       setPdfError(null);
       
       try {
-        // Validate download_url exists
-        if (!selectedDocument.download_url) {
-          throw new Error('No download URL available for this document');
+        // Validate document ID exists
+        if (!selectedDocument.id) {
+          throw new Error('No document ID available');
         }
+
+        // Step 1: Check cache first
+        let blob: Blob | null = await pdfCache.get(selectedDocument.id);
         
-        const url = getDownloadUrlWithCacheBust(selectedDocument.download_url);
-        console.log('Fetching PDF from S3:', url);
-        
-        const res = await fetch(url, {
-          credentials: 'include',
-          mode: 'cors',
-        });
-        
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => res.statusText);
-          console.error('PDF fetch failed:', {
-            status: res.status,
-            statusText: res.statusText,
-            url: url,
-            errorText: errorText
+        if (blob) {
+          console.log('PDF loaded from cache:', blob.size, 'bytes');
+        } else {
+          // Step 2: Not in cache, fetch from proxy endpoint (bypasses CORS)
+          console.log('Fetching PDF from proxy endpoint:', selectedDocument.id);
+          
+          const proxyUrl = `http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`;
+          const res = await fetch(proxyUrl, {
+            credentials: 'include',
+            mode: 'cors',
           });
-          throw new Error(`HTTP ${res.status}: ${res.statusText || errorText}`);
+          
+          if (!res.ok) {
+            const errorText = await res.text().catch(() => res.statusText);
+            console.error('PDF fetch failed:', {
+              status: res.status,
+              statusText: res.statusText,
+              documentId: selectedDocument.id,
+              errorText: errorText
+            });
+            throw new Error(`HTTP ${res.status}: ${res.statusText || errorText}`);
+          }
+          
+          blob = await res.blob();
+          
+          if (!blob || blob.size === 0) {
+            throw new Error('Received empty PDF blob');
+          }
+          
+          console.log('PDF blob loaded from proxy:', blob.size, 'bytes');
+          
+          // Step 3: Store in cache for future use
+          try {
+            await pdfCache.set(
+              selectedDocument.id,
+              blob,
+              selectedDocument.mime_type || 'application/pdf',
+              selectedDocument.original_name
+            );
+            console.log('PDF cached successfully');
+          } catch (cacheError) {
+            console.warn('Failed to cache PDF (will continue without cache):', cacheError);
+            // Continue even if caching fails
+          }
         }
-        
-        const blob = await res.blob();
-        
-        if (!blob || blob.size === 0) {
-          throw new Error('Received empty PDF blob');
-        }
-        
-        console.log('PDF blob loaded successfully:', blob.size, 'bytes');
         
         if (cancelled) {
           URL.revokeObjectURL(URL.createObjectURL(blob));
@@ -197,17 +220,17 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
           URL.revokeObjectURL(blobUrl);
         }
         
+        // Step 4: Create blob URL from cached or fetched blob
         blobUrl = URL.createObjectURL(blob);
         setPdfBlobUrl(blobUrl);
       } catch (err: any) {
-        console.error('PDF fetch failed:', {
+        console.error('PDF load failed:', {
           error: err,
           message: err.message,
           documentId: selectedDocument.id,
-          downloadUrl: selectedDocument.download_url,
           stack: err.stack
         });
-        setPdfError(err.message || 'Failed to load PDF. The document may not exist or the URL may have expired.');
+        setPdfError(err.message || 'Failed to load PDF. Please try again.');
         setPdfBlobUrl(null);
       } finally {
         if (!cancelled) {
@@ -638,14 +661,14 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                       <Text c="red" size="sm" ta="center">
                                         {pdfError}
                                       </Text>
-                                      <Button
+                                    <Button
                                         leftSection={<IconDownload size={16} />}
                                         onClick={() => {
-                                          window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
+                                            window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                         }}
-                                      >
+                                    >
                                         Open PDF in New Window
-                                      </Button>
+                                    </Button>
                                     </Box>
                                   )}
                                   {pdfBlobUrl && !isLoadingPdf && !pdfError && (
@@ -690,7 +713,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                   fullWidth
                                   leftSection={<IconDownload size={16} />}
                                   onClick={() => {
-                                    window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
+                                    window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                   }}
                                 >
                                   Open PDF in Safari
@@ -698,27 +721,62 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                               </Box>
                             );
                           } else {
-                            // For other browsers, use iframe
-                            return (
-                              <iframe
-                                key={`pdf-iframe-${selectedDocument.id}-${reloadKey}`}
-                                src={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  minHeight: rem(400),
-                                }}
-                                title={selectedDocument.original_name}
-                                onError={() => {
-                                  console.error('PDF failed to load in iframe');
-                                  setIsReloadingPDF(false);
-                                }}
-                                onLoad={() => {
-                                  setIsReloadingPDF(false);
-                                }}
-                              />
-                            );
+                            // For other browsers, use iframe with blob URL (cached)
+                            if (pdfBlobUrl) {
+                              return (
+                                <iframe
+                                  key={`pdf-iframe-${selectedDocument.id}-${reloadKey}`}
+                                  src={pdfBlobUrl}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                    minHeight: rem(400),
+                                  }}
+                                  title={selectedDocument.original_name}
+                                  onError={() => {
+                                    console.error('PDF failed to load in iframe');
+                                    setIsReloadingPDF(false);
+                                  }}
+                                  onLoad={() => {
+                                    setIsReloadingPDF(false);
+                                  }}
+                                />
+                              );
+                            } else if (isLoadingPdf) {
+                              return (
+                                <Box style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                  <Loader size="lg" />
+                                  <Text c="dimmed" size="sm">Loading PDF...</Text>
+                                </Box>
+                              );
+                            } else if (pdfError) {
+                              return (
+                                <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                  <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
+                                  <Text c="red" size="sm" ta="center">
+                                    {pdfError}
+                                  </Text>
+                                  <Button
+                                    leftSection={<IconDownload size={16} />}
+                                    onClick={() => {
+                                      window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
+                                    }}
+                                  >
+                                    Open PDF in New Window
+                                  </Button>
+                                </Box>
+                              );
+                            } else {
+                              return (
+                                <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                  <IconFile size={48} style={{ opacity: 0.5 }} />
+                                  <Text c="dimmed" size="sm" ta="center">
+                                    Preparing PDF...
+                                  </Text>
+                                </Box>
+                              );
+                            }
                           }
                         } else if (isImage) {
                           return (

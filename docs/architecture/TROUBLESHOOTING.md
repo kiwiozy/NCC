@@ -370,7 +370,42 @@ If issues persist:
 
 ---
 
-**Last Updated:** 2025-01-15
+## 📄 **PDF Rendering and CORS Issues**
+
+### Problem: PDFs not loading from S3 (CORS errors)
+**Symptoms:**
+- "Origin http://localhost:3000 is not allowed by Access-Control-Allow-Origin. Status code: 403"
+- PDFs fail to load in Safari
+- "Load failed" error in document viewer
+
+**Root Cause:**
+- S3 bucket CORS configuration doesn't allow `http://localhost:3000`
+- Browser blocks cross-origin requests to S3
+
+**Solution Implemented:**
+- **Backend Proxy Endpoint**: `/api/documents/{id}/proxy/`
+  - Fetches PDFs from S3 server-side (bypasses CORS)
+  - Streams PDF through Django to frontend
+- **IndexedDB Cache**: `frontend/app/utils/pdfCache.ts`
+  - Caches PDFs locally for instant subsequent loads
+  - Automatic cleanup (7 days, 100MB limit)
+- **Updated Dialog**: `DocumentsDialog.tsx`
+  - Checks cache first, falls back to proxy if not cached
+  - Stores in cache after fetching
+
+**Benefits:**
+- ✅ No CORS errors (proxy bypasses browser restrictions)
+- ✅ Works consistently in Safari
+- ✅ Instant loads for cached PDFs (zero bandwidth)
+- ✅ Automatic storage management
+
+**Documentation:**
+- See `docs/troubleshooting/PDF_CACHING_SOLUTION.md` for complete details
+- See `docs/troubleshooting/SAFARI_PDF_RENDERING_ISSUE.md` for original problem analysis
+
+---
+
+**Last Updated:** 2025-11-05
 
 **IMPORTANT:** If this troubleshooting guide is updated, you MUST also update the project rules at `.cursor/rules/projectrules.mdc` to keep them synchronized.
 

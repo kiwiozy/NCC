@@ -170,5 +170,47 @@ We want Safari to:
 
 ---
 
-**Next Steps**: Please provide recommendations for fixing Safari PDF inline rendering with cross-origin S3 URLs.
+## ✅ SOLUTION IMPLEMENTED
+
+### Problem Solved
+
+We implemented a **backend proxy + IndexedDB cache** solution that:
+1. ✅ Bypasses CORS issues (Django proxy endpoint)
+2. ✅ Works consistently in Safari (blob URL approach)
+3. ✅ Provides instant loads for cached PDFs
+4. ✅ Automatically cleans up old cache entries
+
+### Implementation Details
+
+**Backend Proxy**: `backend/documents/proxy_views.py`
+- Endpoint: `/api/documents/{id}/proxy/`
+- Fetches from S3 server-side (no CORS)
+- Streams PDF through Django to frontend
+
+**Frontend Cache**: `frontend/app/utils/pdfCache.ts`
+- IndexedDB storage for PDF blobs
+- Cache-first loading strategy
+- Automatic cleanup (7 days, 100MB limit)
+
+**Updated Dialog**: `frontend/app/components/dialogs/DocumentsDialog.tsx`
+- Checks cache first
+- Falls back to proxy if not cached
+- Stores in cache after fetching
+
+### Result
+
+- ✅ PDFs load consistently in Safari
+- ✅ No CORS errors
+- ✅ Instant loads for cached PDFs
+- ✅ Zero bandwidth for repeat views
+- ✅ Automatic storage management
+
+### Documentation
+
+See `docs/troubleshooting/PDF_CACHING_SOLUTION.md` for complete details.
+
+---
+
+**Status**: ✅ RESOLVED  
+**Date**: November 2025
 
