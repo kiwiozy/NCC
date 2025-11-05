@@ -36,6 +36,7 @@ import {
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 import { DateValue } from '@mantine/dates';
 import dayjs from 'dayjs';
+import { useBrowserDetection } from '../../utils/browserDetection';
 
 interface Document {
   id: string;
@@ -425,18 +426,64 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(selectedDocument.original_name);
                         
                         if (isPDF) {
-                          return (
-                            <iframe
-                              src={selectedDocument.download_url}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                border: 'none',
-                                minHeight: rem(400),
-                              }}
-                              title={selectedDocument.original_name}
-                            />
-                          );
+                          // Safari has issues with iframes for cross-origin PDFs
+                          // Use object/embed as fallback, or open in new window
+                          if (browser.isSafari) {
+                            return (
+                              <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
+                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4) }}>
+                                  <object
+                                    data={selectedDocument.download_url}
+                                    type="application/pdf"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      minHeight: rem(400),
+                                    }}
+                                  >
+                                    <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                      <IconFile size={48} style={{ opacity: 0.5 }} />
+                                      <Text c="dimmed" size="sm" ta="center">
+                                        PDF viewer not available
+                                      </Text>
+                                      <Button
+                                        leftSection={<IconDownload size={16} />}
+                                        onClick={() => {
+                                          window.open(selectedDocument.download_url, '_blank');
+                                        }}
+                                      >
+                                        Open PDF in New Window
+                                      </Button>
+                                    </Box>
+                                  </object>
+                                </Box>
+                                <Button
+                                  variant="light"
+                                  fullWidth
+                                  leftSection={<IconDownload size={16} />}
+                                  onClick={() => {
+                                    window.open(selectedDocument.download_url, '_blank');
+                                  }}
+                                >
+                                  Open PDF in Safari
+                                </Button>
+                              </Box>
+                            );
+                          } else {
+                            // For other browsers, use iframe
+                            return (
+                              <iframe
+                                src={selectedDocument.download_url}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  minHeight: rem(400),
+                                }}
+                                title={selectedDocument.original_name}
+                              />
+                            );
+                          }
                         } else if (isImage) {
                           return (
                             <Box style={{ padding: rem(16), height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
