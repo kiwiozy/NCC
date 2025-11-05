@@ -492,7 +492,7 @@ export default function ContactsPage() {
     
     const loadArchivedCount = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+        const response = await fetch('http://localhost:8000/api/patients/?archived=true');
         if (response.ok) {
           const data = await response.json();
           const archivedPatients = data.results || data;
@@ -533,7 +533,7 @@ export default function ContactsPage() {
         // Note: Clinic and funding filtering is done client-side for now
         // Can be enhanced to use API filtering later
 
-        const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
+        const response = await fetch(`http://localhost:8000/api/patients/?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           // Handle paginated response
@@ -586,7 +586,7 @@ export default function ContactsPage() {
     // Load clinics from API
     const loadClinics = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/clinics/');
+        const response = await fetch('http://localhost:8000/api/clinics/');
         if (response.ok) {
           const data = await response.json();
           // Handle paginated response or direct array
@@ -637,7 +637,7 @@ export default function ContactsPage() {
     // Load funding sources from API
     const loadFundingSources = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/settings/funding-sources/?active=true');
+        const response = await fetch('http://localhost:8000/api/settings/funding-sources/?active=true');
         if (response.ok) {
           const data = await response.json();
           // Extract funding source names from API response (handles paginated response)
@@ -825,7 +825,7 @@ export default function ContactsPage() {
         return;
       }
       
-      const fullUrl = `https://localhost:8000${endpoint}`;
+      const fullUrl = `http://localhost:8000${endpoint}`;
       console.log('Archive request:', {
         url: fullUrl,
         method: 'PATCH',
@@ -869,7 +869,7 @@ export default function ContactsPage() {
                 params.append('archived', 'false');
               }
               
-              const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
+              const response = await fetch(`http://localhost:8000/api/patients/?${params.toString()}`);
               if (response.ok) {
                 const data = await response.json();
                 const patients = data.results || data;
@@ -888,7 +888,7 @@ export default function ContactsPage() {
           // Reload archived count after archiving
           const loadArchivedCount = async () => {
             try {
-              const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+              const response = await fetch('http://localhost:8000/api/patients/?archived=true');
               if (response.ok) {
                 const data = await response.json();
                 const archivedPatients = data.results || data;
@@ -1283,7 +1283,7 @@ export default function ContactsPage() {
                                               const planDates = getPlanDates(selectedContact);
                                               const updatedPlanDates = planDates.filter((_, index) => index !== currentIndex);
                                               
-                                              const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                              const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
                                                 method: 'PATCH',
                                                 headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({
@@ -1297,7 +1297,7 @@ export default function ContactsPage() {
                                               }
                                               
                                               // Reload patient data
-                                              const reloadResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
+                                              const reloadResponse = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
                                               if (reloadResponse.ok) {
                                                 const updatedPatient = await reloadResponse.json();
                                                 const transformed = transformPatientToContact(updatedPatient);
@@ -2344,7 +2344,7 @@ export default function ContactsPage() {
                     
                     console.log('Creating reminder:', reminderData);
                     
-                    const response = await fetch('https://localhost:8000/api/reminders/', {
+                    const response = await fetch('http://localhost:8000/api/reminders/', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(reminderData),
@@ -2504,7 +2504,7 @@ export default function ContactsPage() {
                     }
                     
                     // Update patient with new plan_dates_json
-                    const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                    const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
                       method: 'PATCH',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -2518,7 +2518,7 @@ export default function ContactsPage() {
                     }
                     
                     // Reload patient data
-                    const reloadResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
+                    const reloadResponse = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`);
                     if (reloadResponse.ok) {
                       const updatedPatient = await reloadResponse.json();
                       const transformed = transformPatientToContact(updatedPatient);
@@ -2865,7 +2865,7 @@ export default function ContactsPage() {
                       
                       // Save to backend API
                       try {
-                        const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                        const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
                           method: 'PATCH',
                           headers: { 
                             'Content-Type': 'application/json',
@@ -2879,7 +2879,7 @@ export default function ContactsPage() {
                         
                         // Force reload patient from backend to get updated data
                         try {
-                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                          const patientResponse = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
                             cache: 'no-cache',
                           });
                           if (patientResponse.ok) {
@@ -2965,7 +2965,7 @@ export default function ContactsPage() {
                         
                         // Save to backend API first
                         try {
-                          const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                          const response = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
                             method: 'PATCH',
                             headers: { 
                               'Content-Type': 'application/json',
@@ -2979,7 +2979,7 @@ export default function ContactsPage() {
                           
                           // Force reload patient from backend to get updated data
                           try {
-                            const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                            const patientResponse = await fetch(`http://localhost:8000/api/patients/${selectedContact.id}/`, {
                               cache: 'no-cache',
                               headers: {
                                 'Cache-Control': 'no-cache',
