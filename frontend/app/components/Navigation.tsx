@@ -47,7 +47,13 @@ interface NavButtonProps {
 
 function NavButton({ icon, label, href, active, onClick, onMouseEnter, onMouseLeave }: NavButtonProps) {
   const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const isDark = mounted && colorScheme === 'dark';
   const buttonRef = useRef<HTMLButtonElement>(null);
   
   const hoverColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)';
@@ -122,12 +128,19 @@ export default function Navigation({ children }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
+  const [mounted, setMounted] = useState(false);
   const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showTestingMenu, setShowTestingMenu] = useState(false);
   const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Prevent hydration mismatch by only using color scheme after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const isDark = mounted && colorScheme === 'dark';
   
   const iconSize = 28;
   const subIconSize = 24;
@@ -235,8 +248,8 @@ export default function Navigation({ children }: NavigationProps) {
     >
       <AppShell.Header
         style={{
-          backgroundColor: isDark ? '#25262b' : '#ffffff',
-          borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+          backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
+          borderBottom: mounted ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : '1px solid #dee2e6',
           // Sticky positioning with Safari-specific fixes
           position: (browser.isSafari ? '-webkit-sticky' : 'sticky') as any,
           top: 0,
@@ -295,7 +308,7 @@ export default function Navigation({ children }: NavigationProps) {
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isDark 
+                e.currentTarget.style.backgroundColor = mounted && isDark 
                   ? 'rgba(255, 255, 255, 0.05)' 
                   : 'rgba(0, 0, 0, 0.02)';
               }}
@@ -328,7 +341,7 @@ export default function Navigation({ children }: NavigationProps) {
               shadow="lg"
               p="md"
               style={{
-                backgroundColor: isDark ? '#25262b' : '#ffffff',
+                backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
                 borderTop: `3px solid #1971c2`,
                 minWidth: rem(700),
                 paddingTop: rem(16),
@@ -399,7 +412,7 @@ export default function Navigation({ children }: NavigationProps) {
               shadow="lg"
               p="md"
               style={{
-                backgroundColor: isDark ? '#25262b' : '#ffffff',
+                backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
                 borderTop: `3px solid #1971c2`,
                 minWidth: rem(700),
                 paddingTop: rem(16),
@@ -471,7 +484,7 @@ export default function Navigation({ children }: NavigationProps) {
               shadow="lg"
               p="md"
               style={{
-                backgroundColor: isDark ? '#25262b' : '#ffffff',
+                backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
                 borderTop: `3px solid #1971c2`,
                 minWidth: rem(700),
                 paddingTop: rem(16),
@@ -527,7 +540,7 @@ export default function Navigation({ children }: NavigationProps) {
 
       <AppShell.Main
         style={{
-          backgroundColor: isDark ? '#1A1B1E' : '#f5f5f5',
+          backgroundColor: mounted ? (isDark ? '#1A1B1E' : '#f5f5f5') : '#f5f5f5',
           padding: 0,
           // Ensure content is scrollable and doesn't conflict with sticky header
           minHeight: '100vh',
