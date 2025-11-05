@@ -78,6 +78,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'middle_names', 'title', 'health_number',
             'contact_json', 'address_json', 'plan_dates_json',  # Include JSON fields for communication/address
             'coordinator_name', 'coordinator_date',  # Include coordinator info
+            'notes',  # Include general notes field
         ]
     
     def to_representation(self, instance):

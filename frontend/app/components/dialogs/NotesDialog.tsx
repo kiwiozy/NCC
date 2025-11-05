@@ -122,7 +122,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
     try {
       if (patientId) {
         // Load from API for patient-specific notes
-        const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+        const response = await fetch(`http://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
         if (response.ok) {
           const data = await response.json();
           const notesList = data.results || data;
@@ -197,7 +197,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
         // Use API for patient-specific notes
         if (editingId) {
           // Update existing note via API
-          const response = await fetch(`https://localhost:8000/api/notes/${editingId}/`, {
+          const response = await fetch(`http://localhost:8000/api/notes/${editingId}/`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
           }
         } else {
           // Create new note via API
-          const response = await fetch('https://localhost:8000/api/notes/', {
+          const response = await fetch('http://localhost:8000/api/notes/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
     try {
       if (patientId) {
         // Delete via API
-        const response = await fetch(`https://localhost:8000/api/notes/${id}/`, {
+        const response = await fetch(`http://localhost:8000/api/notes/${id}/`, {
           method: 'DELETE',
         });
 
@@ -396,7 +396,7 @@ export default function NotesDialog({ opened, onClose, patientId }: NotesDialogP
     setError(null);
 
     try {
-      const response = await fetch('https://localhost:8000/api/ai/rewrite-clinical-notes/', {
+      const response = await fetch('http://localhost:8000/api/ai/rewrite-clinical-notes/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

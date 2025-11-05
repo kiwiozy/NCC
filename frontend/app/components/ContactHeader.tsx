@@ -68,7 +68,7 @@ export default function ContactHeader({
       try {
         if (patientId) {
           // Load from API for patient-specific notes
-          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`http://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             const notesList = data.results || data;
@@ -129,7 +129,7 @@ export default function ContactHeader({
       try {
         if (patientId) {
           // Load from API for patient-specific documents
-          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`http://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             const docsList = data.results || data;

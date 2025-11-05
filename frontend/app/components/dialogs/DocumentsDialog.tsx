@@ -125,7 +125,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     try {
       // Fetch documents for patient
       // Backend will filter by content_type__model=patient and object_id=patientId
-      const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+      const response = await fetch(`http://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
       if (response.ok) {
         const data = await response.json();
         const docsList = data.results || data;
@@ -237,7 +237,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
         setUploading(false);
       });
 
-      xhr.open('POST', 'https://localhost:8000/api/documents/upload/');
+      xhr.open('POST', 'http://localhost:8000/api/documents/upload/');
       xhr.send(formData);
 
     } catch (err: any) {
@@ -249,7 +249,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
 
   const deleteDocument = async (id: string) => {
     try {
-      const response = await fetch(`https://localhost:8000/api/documents/${id}/`, {
+      const response = await fetch(`http://localhost:8000/api/documents/${id}/`, {
         method: 'DELETE',
       });
 
