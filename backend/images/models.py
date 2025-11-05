@@ -132,6 +132,7 @@ class Image(models.Model):
     # File metadata
     original_name = models.CharField(max_length=255)
     file_size = models.IntegerField(help_text="File size in bytes")
+    thumbnail_size = models.IntegerField(null=True, blank=True, help_text="Thumbnail file size in bytes")
     mime_type = models.CharField(max_length=100, default='image/jpeg')
     width = models.IntegerField(null=True, blank=True, help_text="Image width in pixels")
     height = models.IntegerField(null=True, blank=True, help_text="Image height in pixels")

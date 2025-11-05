@@ -27,6 +27,7 @@ interface UploadedImage {
   thumbnail_url: string | null;
   mime_type: string;
   file_size: number;
+  thumbnail_size?: number;
   width?: number;
   height?: number;
 }
@@ -262,13 +263,20 @@ export default function ImageUploadTest() {
                   <Box p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-6)' }}>
                     <Text size="xs" truncate>{img.original_name}</Text>
                     <Group gap="xs">
-                      <Text size="xs" c="dimmed">{(img.file_size / 1024).toFixed(1)} KB</Text>
+                      <Text size="xs" c="dimmed">
+                        {img.thumbnail_size ? (img.thumbnail_size / 1024).toFixed(1) : (img.file_size / 1024).toFixed(1)} KB
+                      </Text>
                       {img.s3_thumbnail_key && (
                         <Badge size="xs" color="green" variant="dot">Thumbnail</Badge>
                       )}
                     </Group>
                     {img.width && img.height && (
                       <Text size="xs" c="dimmed">{img.width} × {img.height}</Text>
+                    )}
+                    {img.thumbnail_size && (
+                      <Text size="xs" c="green">
+                        {((1 - img.thumbnail_size / img.file_size) * 100).toFixed(0)}% smaller
+                      </Text>
                     )}
                   </Box>
                 </Box>
@@ -301,7 +309,15 @@ export default function ImageUploadTest() {
             
             <Stack gap="xs" mt="md">
               <Text size="sm"><strong>Filename:</strong> {selectedImage.original_name}</Text>
-              <Text size="sm"><strong>Size:</strong> {(selectedImage.file_size / 1024).toFixed(1)} KB</Text>
+              <Text size="sm"><strong>Original Size:</strong> {(selectedImage.file_size / 1024).toFixed(1)} KB</Text>
+              {selectedImage.thumbnail_size && (
+                <>
+                  <Text size="sm" c="green">
+                    <strong>Thumbnail Size:</strong> {(selectedImage.thumbnail_size / 1024).toFixed(1)} KB 
+                    ({((1 - selectedImage.thumbnail_size / selectedImage.file_size) * 100).toFixed(0)}% reduction)
+                  </Text>
+                </>
+              )}
               <Text size="sm"><strong>Type:</strong> {selectedImage.mime_type}</Text>
               {selectedImage.width && selectedImage.height && (
                 <Text size="sm"><strong>Dimensions:</strong> {selectedImage.width} × {selectedImage.height} px</Text>

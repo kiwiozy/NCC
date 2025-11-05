@@ -132,17 +132,20 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 thumb_img.save(thumb_buffer, format=img.format or 'JPEG', quality=85)
                 thumb_buffer.seek(0)
                 
+                # Get thumbnail size before wrapping
+                thumbnail_size = thumb_buffer.getbuffer().nbytes
+                
                 # Wrap thumbnail in InMemoryUploadedFile for S3 upload
                 thumb_file = InMemoryUploadedFile(
                     thumb_buffer,
                     None,
                     f"{file.name}_thumb",
                     file.content_type,
-                    thumb_buffer.getbuffer().nbytes,
+                    thumbnail_size,
                     None
                 )
                 
-                print(f"    🖼️  Generated thumbnail: {thumb_img.size[0]}x{thumb_img.size[1]} ({thumb_file.size} bytes)")
+                print(f"    🖼️  Generated thumbnail: {thumb_img.size[0]}x{thumb_img.size[1]} ({thumbnail_size} bytes = {round(thumbnail_size/1024, 1)} KB)")
                 
                 # Upload full image to S3 using boto3 directly (to control exact S3 key)
                 file.seek(0)
@@ -161,6 +164,7 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 
                 # Upload thumbnail to S3 using boto3 directly
                 thumb_file.seek(0)
+                thumb_uploaded = False
                 try:
                     s3_service.s3_client.put_object(
                         Bucket=s3_service.bucket_name,
@@ -169,15 +173,18 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                         ContentType=file.content_type or 'image/jpeg'
                     )
                     print(f"    ✅ Thumbnail uploaded: {s3_thumbnail_key}")
+                    thumb_uploaded = True
                 except Exception as e:
                     print(f"    ⚠️  Thumbnail upload failed: {str(e)}")
                     s3_thumbnail_key = None
+                    thumbnail_size = None
                 
                 # Create Image record
                 image = Image.objects.create(
                     batch=batch,
                     s3_key=s3_key,
-                    s3_thumbnail_key=s3_thumbnail_key,  # Already set to None if upload failed
+                    s3_thumbnail_key=s3_thumbnail_key if thumb_uploaded else None,
+                    thumbnail_size=thumbnail_size if thumb_uploaded else None,
                     original_name=file.name,
                     file_size=file.size,
                     mime_type=file.content_type or 'image/jpeg',

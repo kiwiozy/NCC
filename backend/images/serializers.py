@@ -13,7 +13,7 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = [
-            'id', 'batch', 'original_name', 'file_size', 'mime_type',
+            'id', 'batch', 'original_name', 'file_size', 'thumbnail_size', 'mime_type',
             'width', 'height', 'category', 'caption', 'date_taken',
             'order', 'uploaded_by', 'uploaded_by_name', 'uploaded_at',
             'download_url', 'thumbnail_url', 's3_key', 's3_thumbnail_key'
