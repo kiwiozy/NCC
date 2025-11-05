@@ -14,8 +14,9 @@ import NotesTest from '../components/settings/NotesTest';
 import ATReport from '../components/settings/ATReport';
 import GmailIntegration from '../components/settings/GmailIntegration';
 import LetterComposer from '../components/settings/LetterComposer';
+import ImageUploadTest from '../components/settings/ImageUploadTest';
 
-type TestingTab = 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'notes' | 'at-report' | 'notifications';
+type TestingTab = 'gmail' | 'letters' | 'xero' | 'sms' | 's3' | 'images' | 'notes' | 'at-report' | 'notifications';
 
 export default function TestingPage() {
   const searchParams = useSearchParams();
@@ -40,6 +41,8 @@ export default function TestingPage() {
         return <SMSIntegration />;
       case 's3':
         return <S3Integration />;
+      case 'images':
+        return <ImageUploadTest />;
       case 'notes':
         return <NotesTest />;
       case 'at-report':

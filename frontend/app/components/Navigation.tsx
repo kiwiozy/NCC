@@ -26,7 +26,8 @@ import {
   IconNote,
   IconBell,
   IconPencil,
-  IconFlask
+  IconFlask,
+  IconPhoto
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -173,6 +174,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/testing?tab=xero' },
     { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/testing?tab=sms' },
     { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/testing?tab=s3' },
+    { icon: <IconPhoto size={subIconSize} stroke={1.5} />, label: 'Images Test', href: '/testing?tab=images' },
     { icon: <IconNote size={subIconSize} stroke={1.5} />, label: 'Notes Test', href: '/testing?tab=notes' },
     { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'AT Report', href: '/testing?tab=at-report' },
     { icon: <IconBell size={subIconSize} stroke={1.5} />, label: 'Notifications', href: '/testing?tab=notifications' },

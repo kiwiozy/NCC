@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Group, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Box } from '@mantine/core';
-import { IconMenu2, IconMail, IconBrandXing, IconMessage, IconCloud, IconNote, IconFileText, IconBell } from '@tabler/icons-react';
+import { IconMenu2, IconMail, IconBrandXing, IconMessage, IconCloud, IconNote, IconFileText, IconBell, IconPhoto } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface TestingHeaderProps {
@@ -26,6 +26,7 @@ export default function TestingHeader({
     { icon: <IconBrandXing size={20} />, label: 'Xero Integration', value: 'xero' },
     { icon: <IconMessage size={20} />, label: 'SMS', value: 'sms' },
     { icon: <IconCloud size={20} />, label: 'S3 Storage', value: 's3' },
+    { icon: <IconPhoto size={20} />, label: 'Images Test', value: 'images' },
     { icon: <IconNote size={20} />, label: 'Notes Test', value: 'notes' },
     { icon: <IconFileText size={20} />, label: 'AT Report', value: 'at-report' },
     { icon: <IconBell size={20} />, label: 'Notifications', value: 'notifications' },
