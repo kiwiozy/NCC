@@ -1932,7 +1932,12 @@ export default function ContactsPage() {
                     <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="md">Note</Text>
                     <Textarea
                       placeholder="Additional notes..."
-                      value={selectedContact.note}
+                      value={selectedContact.note || ''}
+                      onChange={(e) => {
+                        if (selectedContact) {
+                          setSelectedContact({ ...selectedContact, note: e.currentTarget.value });
+                        }
+                      }}
                       minRows={4}
                     />
                   </Box>
