@@ -72,10 +72,11 @@ Each page/dialog gets its own markdown file documenting:
 |--------|-----------|--------|-----|------------|
 | Create Patient | `CreatePatientDialog` | ❌ Not Built | [CreatePatientDialog.md](dialogs/CreatePatientDialog.md) | Patients ✅ |
 | Edit Patient | `EditPatientDialog` | ❌ Not Built | [EditPatientDialog.md](dialogs/EditPatientDialog.md) | Patients ✅ |
-| Patient Notes | `PatientNotesDialog` | ❌ Not Built | [PatientNotesDialog.md](dialogs/PatientNotesDialog.md) | Patient Notes? |
+| Notes Dialog | `NotesDialog` | ✅ Built | [NotesDialog.md](dialogs/NotesDialog.md) | Notes ✅ |
+| Documents Dialog | `DocumentsDialog` | ✅ Built | [DocumentsDialog.md](dialogs/DocumentsDialog.md) | Documents ✅ |
 | Communication Dialog | `CommunicationDialog` | ✅ Built | [CommunicationDialog.md](dialogs/CommunicationDialog.md) | Patients ✅ |
 | Coordinator Dialogs | `CoordinatorDialogs` | ✅ Built | [CoordinatorDialogs.md](dialogs/CoordinatorDialogs.md) | Patients ✅ |
-| Reminder Dialog | `ReminderDialog` | ❌ Not Built | [ReminderDialog.md](dialogs/ReminderDialog.md) | Reminders ❌ |
+| Reminder Dialog | `ReminderDialog` | ✅ Built | [ReminderDialog.md](dialogs/ReminderDialog.md) | Reminders ✅ |
 
 ### **Order Dialogs**
 

@@ -585,11 +585,12 @@ The Patients page provides a comprehensive view for managing patient contacts. I
 - **Uses:** CoordinatorDialogs (✅ Built) - [CoordinatorDialogs.md](../dialogs/CoordinatorDialogs.md)
 - **Uses:** ReminderDialog (✅ Built) - [ReminderDialog.md](../dialogs/ReminderDialog.md)
 - **Uses:** NotesDialog (✅ Built) - [NotesDialog.md](../dialogs/NotesDialog.md)
+- **Uses:** DocumentsDialog (✅ Built) - [DocumentsDialog.md](../dialogs/DocumentsDialog.md)
 - **Uses:** PlanDatesDialog (✅ Built) - Plan dates add/edit dialog
 - **Uses:** PlanDatesListDialog (✅ Built) - Plan dates list view dialog
 - **Will use:** CreatePatientDialog (not yet built)
 - **Will link to:** Patient detail page `/patients/[id]` (when built)
-- **Menu items link to:** Notes, Documents, Appointments, Orders, etc. (to be built)
+- **Menu items link to:** Notes, Documents, Appointments, Orders, etc. (partially built)
 
 ---
 
