@@ -53,6 +53,11 @@ class Document(models.Model):
     # Audit fields
     uploaded_by = models.CharField(max_length=100, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    document_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date associated with this document (e.g., document issue date)'
+    )
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     
