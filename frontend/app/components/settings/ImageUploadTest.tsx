@@ -13,6 +13,7 @@ import {
   Modal,
   Box,
   rem,
+  Badge,
 } from '@mantine/core';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { IconUpload, IconAlertCircle, IconCheck, IconPhoto, IconX } from '@tabler/icons-react';
@@ -21,9 +22,13 @@ interface UploadedImage {
   id: string;
   original_name: string;
   s3_key: string;
+  s3_thumbnail_key: string | null;
   download_url: string;
+  thumbnail_url: string | null;
   mime_type: string;
   file_size: number;
+  width?: number;
+  height?: number;
 }
 
 export default function ImageUploadTest() {
@@ -47,38 +52,57 @@ export default function ImageUploadTest() {
     const failedUploads: string[] = [];
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}`);
+      // Step 1: Create a batch
+      setUploadProgress('Creating batch...');
+      const batchResponse = await fetch('https://localhost:8000/api/images/batches/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `Test Upload ${new Date().toLocaleString()}`,
+          description: 'Image upload test with thumbnail generation',
+          content_type: 'patients.patient',
+          object_id: '041912d8-f562-471e-890e-7c71d0a62c61', // Test patient ID
+        }),
+      });
 
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('category', 'other');
-          formData.append('description', `Batch upload - ${file.name}`);
+      if (!batchResponse.ok) {
+        const errorData = await batchResponse.json();
+        console.error('Batch creation error:', errorData);
+        setError(`Failed to create batch: ${JSON.stringify(errorData)}`);
+        return;
+      }
 
-          console.log('Uploading file:', file.name, file.size);
+      const batch = await batchResponse.json();
+      console.log('✅ Batch created:', batch.id);
 
-          const response = await fetch('https://localhost:8000/api/documents/upload/', {
-            method: 'POST',
-            body: formData,
-          });
+      // Step 2: Upload images to the batch
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('images', file);
+        formData.append('categories', 'other');
+        formData.append('captions', '');
+      });
 
-          console.log('Response status:', response.status);
+      setUploadProgress(`Uploading ${files.length} image(s) with thumbnail generation...`);
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Upload error response:', errorData);
-            failedUploads.push(`${file.name}: ${JSON.stringify(errorData)}`);
-          } else {
-            const result = await response.json();
-            successfulUploads.push(result);
-            console.log('Upload successful:', result);
-          }
-        } catch (err) {
-          console.error('Upload error for', file.name, err);
-          failedUploads.push(`${file.name}: ${err instanceof Error ? err.message : 'Upload failed'}`);
-        }
+      const uploadResponse = await fetch(`https://localhost:8000/api/images/batches/${batch.id}/upload/`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadResult = await uploadResponse.json();
+      console.log('Upload result:', uploadResult);
+
+      if (uploadResult.uploaded && uploadResult.uploaded.length > 0) {
+        successfulUploads.push(...uploadResult.uploaded);
+        console.log('✅ Uploaded:', uploadResult.uploaded.length, 'images');
+      }
+
+      if (uploadResult.errors && uploadResult.errors.length > 0) {
+        failedUploads.push(...uploadResult.errors);
+        console.error('❌ Errors:', uploadResult.errors);
       }
 
       // Update uploaded images
@@ -198,6 +222,9 @@ export default function ImageUploadTest() {
           {uploadedImages.length > 0 && (
             <Alert icon={<IconCheck size={16} />} color="green" title="Upload Successful">
               <Text size="sm">{uploadedImages.length} image(s) uploaded successfully</Text>
+              <Text size="xs" c="dimmed" mt="xs">
+                {uploadedImages.filter(img => img.s3_thumbnail_key).length} thumbnails generated ✅
+              </Text>
             </Alert>
           )}
         </Stack>
@@ -224,8 +251,9 @@ export default function ImageUploadTest() {
                     setViewerOpen(true);
                   }}
                 >
+                  {/* Use thumbnail if available, fallback to full image */}
                   <MantineImage
-                    src={`https://localhost:8000/api/documents/${img.id}/proxy/`}
+                    src={img.thumbnail_url || img.download_url}
                     alt={img.original_name}
                     fit="cover"
                     h={200}
@@ -233,14 +261,22 @@ export default function ImageUploadTest() {
                   />
                   <Box p="xs" style={{ backgroundColor: 'var(--mantine-color-dark-6)' }}>
                     <Text size="xs" truncate>{img.original_name}</Text>
-                    <Text size="xs" c="dimmed">{(img.file_size / 1024).toFixed(1)} KB</Text>
+                    <Group gap="xs">
+                      <Text size="xs" c="dimmed">{(img.file_size / 1024).toFixed(1)} KB</Text>
+                      {img.s3_thumbnail_key && (
+                        <Badge size="xs" color="green" variant="dot">Thumbnail</Badge>
+                      )}
+                    </Group>
+                    {img.width && img.height && (
+                      <Text size="xs" c="dimmed">{img.width} × {img.height}</Text>
+                    )}
                   </Box>
                 </Box>
               ))}
             </Group>
             
             <Text size="sm" c="dimmed">
-              Click any image to view full size
+              Click any image to view full size • Green dot indicates thumbnail was generated
             </Text>
           </Stack>
         </Paper>
@@ -257,7 +293,7 @@ export default function ImageUploadTest() {
         {selectedImage && (
           <Box>
             <MantineImage
-              src={`https://localhost:8000/api/documents/${selectedImage.id}/proxy/`}
+              src={selectedImage.download_url}
               alt={selectedImage.original_name}
               fit="contain"
               fallbackSrc="https://placehold.co/800x600?text=Image+Not+Found"
@@ -267,7 +303,13 @@ export default function ImageUploadTest() {
               <Text size="sm"><strong>Filename:</strong> {selectedImage.original_name}</Text>
               <Text size="sm"><strong>Size:</strong> {(selectedImage.file_size / 1024).toFixed(1)} KB</Text>
               <Text size="sm"><strong>Type:</strong> {selectedImage.mime_type}</Text>
+              {selectedImage.width && selectedImage.height && (
+                <Text size="sm"><strong>Dimensions:</strong> {selectedImage.width} × {selectedImage.height} px</Text>
+              )}
               <Text size="sm"><strong>S3 Key:</strong> {selectedImage.s3_key}</Text>
+              {selectedImage.s3_thumbnail_key && (
+                <Text size="sm" c="green"><strong>✅ Thumbnail Key:</strong> {selectedImage.s3_thumbnail_key}</Text>
+              )}
             </Stack>
           </Box>
         )}
