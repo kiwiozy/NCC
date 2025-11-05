@@ -372,40 +372,22 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
               /* Selected Document View */
               <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
+                  {/* Top Row: Document Type and Document Date */}
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1 }}>
                       <Text size="sm" c="dimmed" mb={4}>DOCUMENT TYPE</Text>
-                      <Badge variant="light" size="lg" mb="sm">
+                      <Badge variant="light" size="lg">
                         {DOCUMENT_TYPES.find(t => t.value === selectedDocument.category)?.label || selectedDocument.category}
                       </Badge>
-                      <Text size="sm" c="dimmed" mb={4} mt="md">FILE NAME</Text>
-                      <Text size="md" fw={500} mb="sm">
-                        {selectedDocument.original_name}
-                      </Text>
-                      <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
-                      <Text size="sm" mb="sm">
-                        {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
-                      </Text>
-                      {selectedDocument.document_date && (
-                        <>
-                          <Text size="sm" c="dimmed" mb={4} mt="md">DOCUMENT DATE</Text>
-                          <Text size="sm" mb="sm">
-                            {formatDateOnlyAU(selectedDocument.document_date)}
-                          </Text>
-                        </>
-                      )}
-                      {selectedDocument.description && (
-                        <>
-                          <Text size="sm" c="dimmed" mb={4} mt="md">DESCRIPTION</Text>
-                          <Text size="sm" mb="sm">
-                            {selectedDocument.description}
-                          </Text>
-                        </>
-                      )}
-                      <Text size="xs" c="dimmed" mt="xs">
-                        Uploaded: {formatDateTimeAU(selectedDocument.uploaded_at)}
-                      </Text>
                     </Box>
+                    {selectedDocument.document_date && (
+                      <Box style={{ flex: 1, textAlign: 'right' }}>
+                        <Text size="sm" c="dimmed" mb={4}>DOCUMENT DATE</Text>
+                        <Text size="sm" fw={500}>
+                          {formatDateOnlyAU(selectedDocument.document_date)}
+                        </Text>
+                      </Box>
+                    )}
                   </Group>
                   
                   {/* Document Viewer */}
@@ -520,6 +502,35 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                       })()}
                     </Box>
                   )}
+                  
+                  {/* Bottom: File Name and File Size */}
+                  <Box style={{ marginTop: 'auto', paddingTop: rem(16), borderTop: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
+                    <Stack gap="xs">
+                      <Box>
+                        <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
+                        <Text size="md" fw={500}>
+                          {selectedDocument.original_name}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
+                        <Text size="sm">
+                          {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
+                        </Text>
+                      </Box>
+                      {selectedDocument.description && (
+                        <Box>
+                          <Text size="sm" c="dimmed" mb={4} mt="md">DESCRIPTION</Text>
+                          <Text size="sm">
+                            {selectedDocument.description}
+                          </Text>
+                        </Box>
+                      )}
+                      <Text size="xs" c="dimmed" mt="xs">
+                        Uploaded: {formatDateTimeAU(selectedDocument.uploaded_at)}
+                      </Text>
+                    </Stack>
+                  </Box>
                   
                   <Group gap="xs">
                     {selectedDocument.download_url && (
