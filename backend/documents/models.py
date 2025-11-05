@@ -11,7 +11,7 @@ class Document(models.Model):
     Uses Generic Foreign Key to link to any model (Patient, Appointment, etc.)
     """
     
-            CATEGORY_CHOICES = [
+    CATEGORY_CHOICES = [
         ('erf', 'ERF'),
         ('purchase_order', 'Purchase Order'),
         ('referral', 'Referral'),
