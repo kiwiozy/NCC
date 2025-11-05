@@ -87,6 +87,16 @@ body {
   background-color: #1A1B1E !important;
 }
 
+/* Spin animation for reload icon */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 [data-mantine-color-scheme='dark'] .fc-day {
   background-color: #1A1B1E !important;
 }

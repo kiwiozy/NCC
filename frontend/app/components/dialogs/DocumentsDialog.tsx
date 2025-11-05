@@ -90,6 +90,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [reloadKey, setReloadKey] = useState(0); // Key to force reload of PDF viewer
+  const [isReloadingPDF, setIsReloadingPDF] = useState(false); // Loading state during reload
   
   // Upload form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -291,9 +292,23 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const handleReloadPDF = () => {
-    // Force reload by incrementing the key
+  const handleReloadPDF = async () => {
+    // Force a complete reload by temporarily hiding and then showing the viewer
+    setIsReloadingPDF(true);
+    
+    // Temporarily clear the reload key to force unmount
+    setReloadKey(0);
+    
+    // Wait a brief moment to ensure unmount
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Increment the key to force remount with fresh URL
     setReloadKey(prev => prev + 1);
+    
+    // Small delay to ensure remount completes
+    setTimeout(() => {
+      setIsReloadingPDF(false);
+    }, 300);
   };
 
   const getDownloadUrlWithCacheBust = (url: string | undefined): string => {
@@ -479,9 +494,21 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                         borderRadius: rem(8),
                         overflow: 'hidden',
                         backgroundColor: isDark ? '#1A1B1E' : '#ffffff',
+                        position: 'relative',
                       }}
                     >
-                      {(() => {
+                      {isReloadingPDF && reloadKey === 0 ? (
+                        <Box style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                          <IconRefresh 
+                            size={32} 
+                            style={{ 
+                              opacity: 0.5,
+                              animation: 'spin 1s linear infinite',
+                            }} 
+                          />
+                          <Text c="dimmed" size="sm">Reloading PDF...</Text>
+                        </Box>
+                      ) : (() => {
                         const mimeType = selectedDocument.mime_type || '';
                         const isPDF = mimeType === 'application/pdf' || selectedDocument.original_name.toLowerCase().endsWith('.pdf');
                         const isImage = mimeType.startsWith('image/') || 
@@ -495,13 +522,17 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                               <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
                                 <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4) }}>
                                   <object
-                                    key={`safari-pdf-${reloadKey}`}
+                                    key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
                                     data={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
                                     type="application/pdf"
                                     style={{
                                       width: '100%',
                                       height: '100%',
                                       minHeight: rem(400),
+                                    }}
+                                    onError={() => {
+                                      console.error('PDF failed to load in object tag');
+                                      setIsReloadingPDF(false);
                                     }}
                                   >
                                     <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
@@ -536,7 +567,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                             // For other browsers, use iframe
                             return (
                               <iframe
-                                key={`pdf-iframe-${reloadKey}`}
+                                key={`pdf-iframe-${selectedDocument.id}-${reloadKey}`}
                                 src={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
                                 style={{
                                   width: '100%',
@@ -545,6 +576,13 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                   minHeight: rem(400),
                                 }}
                                 title={selectedDocument.original_name}
+                                onError={() => {
+                                  console.error('PDF failed to load in iframe');
+                                  setIsReloadingPDF(false);
+                                }}
+                                onLoad={() => {
+                                  setIsReloadingPDF(false);
+                                }}
                               />
                             );
                           }
