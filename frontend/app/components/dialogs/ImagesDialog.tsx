@@ -302,6 +302,40 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
     setSelectedImage(selectedBatchImages[newIndex]);
   };
 
+  const handleCategoryChange = async (imageId: string, newCategory: string) => {
+    try {
+      const response = await fetch(`https://localhost:8000/api/images/${imageId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ category: newCategory }),
+      });
+
+      if (response.ok) {
+        notifications.show({
+          title: 'Success',
+          message: 'Category updated',
+          color: 'green',
+        });
+        // Reload batches to reflect the change
+        loadBatches();
+        // Update selectedImage if it's the one being edited
+        if (selectedImage && selectedImage.id === imageId) {
+          setSelectedImage({ ...selectedImage, category: newCategory });
+        }
+      } else {
+        throw new Error('Failed to update category');
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to update category',
+        color: 'red',
+      });
+    }
+  };
+
   const totalImages = batches.reduce((sum, b) => sum + b.image_count, 0);
 
   return (
@@ -594,48 +628,67 @@ function BatchContent({
                 style={{
                   border: '1px solid var(--mantine-color-dark-4)',
                   borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onClick={() => onImageClick(image)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'var(--mantine-color-dark-6)',
-                    borderColor: 'var(--mantine-color-blue-6)',
-                  },
                 }}
               >
-                <Group gap="sm" wrap="nowrap">
-                  <MantineImage
-                    src={image.thumbnail_url || image.download_url}
-                    alt={image.original_name}
-                    width={80}
-                    height={80}
-                    fit="cover"
-                    radius="sm"
-                    fallbackSrc="https://placehold.co/80x80?text=Image"
-                  />
+                <Group gap="xs" wrap="nowrap" align="flex-start">
+                  {/* Smaller Thumbnail */}
+                  <Box
+                    onClick={() => onImageClick(image)}
+                    style={{
+                      cursor: 'pointer',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s',
+                    }}
+                    sx={{
+                      '&:hover': {
+                        transform: 'scale(1.05)',
+                        boxShadow: '0 0 0 2px var(--mantine-color-blue-6)',
+                      },
+                    }}
+                  >
+                    <MantineImage
+                      src={image.thumbnail_url || image.download_url}
+                      alt={image.original_name}
+                      width={60}
+                      height={60}
+                      fit="cover"
+                      radius="sm"
+                      fallbackSrc="https://placehold.co/60x60?text=Image"
+                    />
+                  </Box>
+
+                  {/* Image Info + Category Dropdown */}
                   <Box style={{ flex: 1, minWidth: 0 }}>
-                    <Text size="sm" fw={500} truncate>{image.original_name}</Text>
-                    <Group gap={4} mt={2}>
-                      <Badge size="xs" variant="light">{image.category}</Badge>
-                      {image.thumbnail_size && (
-                        <Badge size="xs" color="green" variant="dot">Thumbnail</Badge>
-                      )}
-                    </Group>
-                    <Group gap="xs" mt={4}>
+                    <Text size="xs" fw={500} truncate mb={4}>{image.original_name}</Text>
+                    
+                    {/* Category Dropdown */}
+                    <Select
+                      size="xs"
+                      value={image.category}
+                      onChange={(value) => handleCategoryChange(image.id, value || 'other')}
+                      data={IMAGE_CATEGORY_GROUPS}
+                      placeholder="Select category"
+                      searchable
+                      clearable={false}
+                      styles={{
+                        input: { fontSize: '11px', height: '28px', minHeight: '28px' },
+                      }}
+                    />
+
+                    {/* Size Info */}
+                    <Group gap={4} mt={4}>
                       {image.thumbnail_size ? (
                         <>
+                          <Badge size="xs" color="green" variant="dot">Thumb</Badge>
                           <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
-                          <Text size="xs" c="green">
-                            {((1 - image.thumbnail_size / image.file_size) * 100).toFixed(0)}% smaller
-                          </Text>
+                          <Text size="xs" c="green">({((1 - (image.thumbnail_size / image.file_size)) * 100).toFixed(0)}% smaller)</Text>
                         </>
                       ) : (
-                        <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
-                      )}
-                      {image.width && image.height && (
-                        <Text size="xs" c="dimmed">{image.width} × {image.height}</Text>
+                        <>
+                          <Badge size="xs" variant="light">Original</Badge>
+                          <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
+                        </>
                       )}
                     </Group>
                   </Box>
