@@ -291,18 +291,49 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       <Grid gutter={0} style={{ height: rem(600) }}>
         {/* Left Column: Documents List */}
         <Grid.Col span={4} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-          <ScrollArea style={{ height: '100%' }}>
-            <Stack gap={0}>
-              {loading ? (
-                <Box p="md">
-                  <Text c="dimmed" size="sm">Loading documents...</Text>
-                </Box>
-              ) : documents.length === 0 ? (
-                <Box p="md">
-                  <Text c="dimmed" size="sm">No documents yet. Upload your first document!</Text>
-                </Box>
-              ) : (
-                documents.map((doc) => (
+          <Stack gap={0} style={{ height: '100%' }}>
+            {/* Header with Add Button */}
+            <Box p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
+              <Group justify="space-between" align="center">
+                <Text size="sm" fw={700} c="dimmed" tt="uppercase">Documents</Text>
+                <ActionIcon
+                  variant="light"
+                  color="blue"
+                  size="lg"
+                  onClick={() => {
+                    setSelectedDocument(null);
+                    resetForm();
+                  }}
+                  title="Add New Document"
+                >
+                  <IconPlus size={20} />
+                </ActionIcon>
+              </Group>
+            </Box>
+            
+            <ScrollArea style={{ flex: 1 }}>
+              <Stack gap={0}>
+                {loading ? (
+                  <Box p="md">
+                    <Text c="dimmed" size="sm">Loading documents...</Text>
+                  </Box>
+                ) : documents.length === 0 ? (
+                  <Box p="md" style={{ textAlign: 'center' }}>
+                    <Text c="dimmed" size="sm" mb="md">No documents yet</Text>
+                    <Button
+                      variant="light"
+                      leftSection={<IconPlus size={16} />}
+                      onClick={() => {
+                        setSelectedDocument(null);
+                        resetForm();
+                      }}
+                      fullWidth
+                    >
+                      Add First Document
+                    </Button>
+                  </Box>
+                ) : (
+                  documents.map((doc) => (
                   <Box
                     key={doc.id}
                     p="md"
