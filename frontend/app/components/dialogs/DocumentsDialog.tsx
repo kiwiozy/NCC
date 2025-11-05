@@ -155,18 +155,37 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       setPdfError(null);
       
       try {
-        // Use backend proxy endpoint to avoid CORS issues with S3
-        const proxyUrl = `http://localhost:8000/api/documents/${selectedDocument.id}/proxy/?t=${Date.now()}&reload=${reloadKey}`;
-        const res = await fetch(proxyUrl, {
+        // Validate download_url exists
+        if (!selectedDocument.download_url) {
+          throw new Error('No download URL available for this document');
+        }
+        
+        const url = getDownloadUrlWithCacheBust(selectedDocument.download_url);
+        console.log('Fetching PDF from S3:', url);
+        
+        const res = await fetch(url, {
           credentials: 'include',
           mode: 'cors',
         });
         
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          const errorText = await res.text().catch(() => res.statusText);
+          console.error('PDF fetch failed:', {
+            status: res.status,
+            statusText: res.statusText,
+            url: url,
+            errorText: errorText
+          });
+          throw new Error(`HTTP ${res.status}: ${res.statusText || errorText}`);
         }
         
         const blob = await res.blob();
+        
+        if (!blob || blob.size === 0) {
+          throw new Error('Received empty PDF blob');
+        }
+        
+        console.log('PDF blob loaded successfully:', blob.size, 'bytes');
         
         if (cancelled) {
           URL.revokeObjectURL(URL.createObjectURL(blob));
