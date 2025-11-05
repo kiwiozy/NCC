@@ -545,13 +545,14 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                       </Button>
                     )}
                     <Button
-                      variant="outline"
+                      variant="filled"
+                      leftSection={<IconPlus size={16} />}
                       onClick={() => {
                         setSelectedDocument(null);
                         resetForm();
                       }}
                     >
-                      Upload New Document
+                      Add Another Document
                     </Button>
                   </Group>
                 </Stack>
