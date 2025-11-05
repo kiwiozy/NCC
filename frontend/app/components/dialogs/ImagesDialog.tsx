@@ -630,8 +630,8 @@ function BatchContent({
                   borderRadius: '8px',
                 }}
               >
-                <Group gap="xs" wrap="nowrap" align="flex-start">
-                  {/* Smaller Thumbnail */}
+                <Stack gap="xs">
+                  {/* Thumbnail Image (Clickable) */}
                   <Box
                     onClick={() => onImageClick(image)}
                     style={{
@@ -639,10 +639,12 @@ function BatchContent({
                       borderRadius: '4px',
                       overflow: 'hidden',
                       transition: 'all 0.2s',
+                      width: '100%',
+                      aspectRatio: '1',
                     }}
                     sx={{
                       '&:hover': {
-                        transform: 'scale(1.05)',
+                        transform: 'scale(1.02)',
                         boxShadow: '0 0 0 2px var(--mantine-color-blue-6)',
                       },
                     }}
@@ -650,49 +652,46 @@ function BatchContent({
                     <MantineImage
                       src={image.thumbnail_url || image.download_url}
                       alt={image.original_name}
-                      width={60}
-                      height={60}
+                      height={120}
                       fit="cover"
                       radius="sm"
-                      fallbackSrc="https://placehold.co/60x60?text=Image"
+                      fallbackSrc="https://placehold.co/120x120?text=Image"
                     />
                   </Box>
 
-                  {/* Image Info + Category Dropdown */}
-                  <Box style={{ flex: 1, minWidth: 0 }}>
-                    <Text size="xs" fw={500} truncate mb={4}>{image.original_name}</Text>
-                    
-                    {/* Category Dropdown */}
-                    <Select
-                      size="xs"
-                      value={image.category}
-                      onChange={(value) => handleCategoryChange(image.id, value || 'other')}
-                      data={IMAGE_CATEGORY_GROUPS}
-                      placeholder="Select category"
-                      searchable
-                      clearable={false}
-                      styles={{
-                        input: { fontSize: '11px', height: '28px', minHeight: '28px' },
-                      }}
-                    />
+                  {/* Image Name */}
+                  <Text size="xs" fw={500} truncate>{image.original_name}</Text>
 
-                    {/* Size Info */}
-                    <Group gap={4} mt={4}>
-                      {image.thumbnail_size ? (
-                        <>
-                          <Badge size="xs" color="green" variant="dot">Thumb</Badge>
-                          <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
-                          <Text size="xs" c="green">({((1 - (image.thumbnail_size / image.file_size)) * 100).toFixed(0)}% smaller)</Text>
-                        </>
-                      ) : (
-                        <>
-                          <Badge size="xs" variant="light">Original</Badge>
-                          <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
-                        </>
-                      )}
-                    </Group>
-                  </Box>
-                </Group>
+                  {/* Category Dropdown (Below Image) */}
+                  <Select
+                    size="sm"
+                    value={image.category}
+                    onChange={(value) => handleCategoryChange(image.id, value || 'other')}
+                    data={IMAGE_CATEGORY_GROUPS}
+                    placeholder="Select category"
+                    searchable
+                    clearable={false}
+                    styles={{
+                      input: { fontSize: '13px', height: '32px', minHeight: '32px' },
+                    }}
+                  />
+
+                  {/* Size Info */}
+                  <Group gap={4} mt={2}>
+                    {image.thumbnail_size ? (
+                      <>
+                        <Badge size="xs" color="green" variant="dot">Thumb</Badge>
+                        <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
+                        <Text size="xs" c="green">({((1 - (image.thumbnail_size / image.file_size)) * 100).toFixed(0)}% smaller)</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Badge size="xs" variant="light">Original</Badge>
+                        <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
+                      </>
+                    )}
+                  </Group>
+                </Stack>
               </Box>
             ))}
           </Stack>
