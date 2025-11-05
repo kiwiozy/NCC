@@ -77,6 +77,7 @@ interface DocumentsDialogProps {
 
 export default function DocumentsDialog({ opened, onClose, patientId }: DocumentsDialogProps) {
   const { colorScheme } = useMantineColorScheme();
+  const browser = useBrowserDetection();
   const isDark = colorScheme === 'dark';
   
   const [documents, setDocuments] = useState<Document[]>([]);
