@@ -144,25 +144,34 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 
                 print(f"    🖼️  Generated thumbnail: {thumb_img.size[0]}x{thumb_img.size[1]} ({thumb_file.size} bytes)")
                 
-                # Upload full image to S3 (pass full key as filename, no folder prefix)
+                # Upload full image to S3 using boto3 directly (to control exact S3 key)
                 file.seek(0)
-                upload_result = s3_service.upload_file(file, s3_key, folder='')
-                
-                if not upload_result:
-                    errors.append(f"Failed to upload {file.name} to S3")
-                    print(f"    ❌ Full image upload failed")
+                try:
+                    s3_service.s3_client.put_object(
+                        Bucket=s3_service.bucket_name,
+                        Key=s3_key,
+                        Body=file.read(),
+                        ContentType=file.content_type or 'image/jpeg'
+                    )
+                    print(f"    ✅ Full image uploaded: {s3_key}")
+                except Exception as e:
+                    errors.append(f"Failed to upload {file.name} to S3: {str(e)}")
+                    print(f"    ❌ Full image upload failed: {str(e)}")
                     continue
                 
-                print(f"    ✅ Full image uploaded: {s3_key}")
-                
-                # Upload thumbnail to S3 (pass full key as filename, no folder prefix)
-                thumb_upload_result = s3_service.upload_file(thumb_file, s3_thumbnail_key, folder='')
-                
-                if not thumb_upload_result:
-                    print(f"    ⚠️  Thumbnail upload failed (continuing without thumbnail)")
-                    s3_thumbnail_key = None
-                else:
+                # Upload thumbnail to S3 using boto3 directly
+                thumb_file.seek(0)
+                try:
+                    s3_service.s3_client.put_object(
+                        Bucket=s3_service.bucket_name,
+                        Key=s3_thumbnail_key,
+                        Body=thumb_file.read(),
+                        ContentType=file.content_type or 'image/jpeg'
+                    )
                     print(f"    ✅ Thumbnail uploaded: {s3_thumbnail_key}")
+                except Exception as e:
+                    print(f"    ⚠️  Thumbnail upload failed: {str(e)}")
+                    s3_thumbnail_key = None
                 
                 # Create Image record
                 image = Image.objects.create(
