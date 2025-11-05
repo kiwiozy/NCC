@@ -73,7 +73,12 @@ class PatientListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Patient
-        fields = ['id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 'first_name', 'last_name', 'middle_names', 'title', 'health_number']
+        fields = [
+            'id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 
+            'first_name', 'last_name', 'middle_names', 'title', 'health_number',
+            'contact_json', 'address_json', 'plan_dates_json',  # Include JSON fields for communication/address
+            'coordinator_name', 'coordinator_date',  # Include coordinator info
+        ]
     
     def to_representation(self, instance):
         """Customize serialization to include related object names"""
