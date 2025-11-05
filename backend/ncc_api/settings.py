@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'settings',  # Settings management (Funding Sources, etc.)
     'reminders',  # Reminders for calendar waiting list
     'notes',  # Patient notes (clinical notes, clinic dates, etc.)
+    'images',  # Patient images (photos, x-rays, etc.)
 ]
 
 MIDDLEWARE = [

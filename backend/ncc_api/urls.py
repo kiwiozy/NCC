@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/sms/', include('sms_integration.urls')),
     path('gmail/', include('gmail_integration.urls')),
     path('api/', include('documents.urls')),  # S3 document management
+    path('api/images/', include('images.urls')),  # Patient images
     path('api/ai/', include('ai_services.urls')),  # AI services
     path('api/settings/', include('settings.urls')),  # Settings management (Funding Sources)
 ]
