@@ -155,8 +155,9 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       setPdfError(null);
       
       try {
-        const url = getDownloadUrlWithCacheBust(selectedDocument.download_url);
-        const res = await fetch(url, {
+        // Use backend proxy endpoint to avoid CORS issues with S3
+        const proxyUrl = `http://localhost:8000/api/documents/${selectedDocument.id}/proxy/?t=${Date.now()}&reload=${reloadKey}`;
+        const res = await fetch(proxyUrl, {
           credentials: 'include',
           mode: 'cors',
         });
@@ -180,8 +181,14 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
         blobUrl = URL.createObjectURL(blob);
         setPdfBlobUrl(blobUrl);
       } catch (err: any) {
-        console.error('PDF fetch failed:', err);
-        setPdfError(err.message || 'Failed to load PDF');
+        console.error('PDF fetch failed:', {
+          error: err,
+          message: err.message,
+          documentId: selectedDocument.id,
+          downloadUrl: selectedDocument.download_url,
+          stack: err.stack
+        });
+        setPdfError(err.message || 'Failed to load PDF. The document may not exist or the URL may have expired.');
         setPdfBlobUrl(null);
       } finally {
         if (!cancelled) {
