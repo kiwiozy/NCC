@@ -128,3 +128,24 @@ body {
   background-color: #1A1B1E !important;
 }
 
+/* DatePicker - Highlight Today's Date */
+.mantine-DatePicker-day--today {
+  background-color: var(--mantine-color-blue-6) !important;
+  color: var(--mantine-color-white) !important;
+  font-weight: 700 !important;
+  border-radius: var(--mantine-radius-md) !important;
+}
+
+.mantine-DatePicker-day--today:hover {
+  background-color: var(--mantine-color-blue-7) !important;
+}
+
+[data-mantine-color-scheme='dark'] .mantine-DatePicker-day--today {
+  background-color: var(--mantine-color-blue-6) !important;
+  color: var(--mantine-color-white) !important;
+}
+
+[data-mantine-color-scheme='dark'] .mantine-DatePicker-day--today:hover {
+  background-color: var(--mantine-color-blue-7) !important;
+}
+
