@@ -144,9 +144,9 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 
                 print(f"    🖼️  Generated thumbnail: {thumb_img.size[0]}x{thumb_img.size[1]} ({thumb_file.size} bytes)")
                 
-                # Upload full image to S3
+                # Upload full image to S3 (s3_key already includes full path)
                 file.seek(0)
-                upload_result = s3_service.upload_file(file, s3_key, folder='images')
+                upload_result = s3_service.upload_file(file, s3_key)
                 
                 if not upload_result:
                     errors.append(f"Failed to upload {file.name} to S3")
@@ -155,8 +155,8 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 
                 print(f"    ✅ Full image uploaded: {s3_key}")
                 
-                # Upload thumbnail to S3
-                thumb_upload_result = s3_service.upload_file(thumb_file, s3_thumbnail_key, folder='images')
+                # Upload thumbnail to S3 (s3_thumbnail_key already includes full path)
+                thumb_upload_result = s3_service.upload_file(thumb_file, s3_thumbnail_key)
                 
                 if not thumb_upload_result:
                     print(f"    ⚠️  Thumbnail upload failed (continuing without thumbnail)")
