@@ -20,6 +20,7 @@ import {
   Progress,
   FileButton,
   Textarea,
+  Tooltip,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import {
@@ -32,6 +33,7 @@ import {
   IconX,
   IconDownload,
   IconUpload,
+  IconRefresh,
 } from '@tabler/icons-react';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 import { DateValue } from '@mantine/dates';
@@ -87,6 +89,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [reloadKey, setReloadKey] = useState(0); // Key to force reload of PDF viewer
   
   // Upload form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -108,6 +111,13 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       resetForm();
     }
   }, [opened, patientId]);
+
+  // Reset reload key when document changes
+  useEffect(() => {
+    if (selectedDocument) {
+      setReloadKey(prev => prev + 1);
+    }
+  }, [selectedDocument?.id]);
 
   const resetForm = () => {
     setSelectedFile(null);
@@ -281,6 +291,18 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const handleReloadPDF = () => {
+    // Force reload by incrementing the key
+    setReloadKey(prev => prev + 1);
+  };
+
+  const getDownloadUrlWithCacheBust = (url: string | undefined): string => {
+    if (!url) return '';
+    // Add cache-busting parameter to force reload
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}t=${Date.now()}&reload=${reloadKey}`;
+  };
+
   return (
     <Modal
       opened={opened}
@@ -412,14 +434,39 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                         {DOCUMENT_TYPES.find(t => t.value === selectedDocument.category)?.label || selectedDocument.category}
                       </Badge>
                     </Box>
-                    {selectedDocument.document_date && (
-                      <Box style={{ flex: 1, textAlign: 'right' }}>
-                        <Text size="sm" c="dimmed" mb={4}>DOCUMENT DATE</Text>
-                        <Text size="sm" fw={500}>
-                          {formatDateOnlyAU(selectedDocument.document_date)}
-                        </Text>
-                      </Box>
-                    )}
+                    <Group gap="xs">
+                      {selectedDocument.document_date && (
+                        <Box style={{ flex: 1, textAlign: 'right' }}>
+                          <Text size="sm" c="dimmed" mb={4}>DOCUMENT DATE</Text>
+                          <Text size="sm" fw={500}>
+                            {formatDateOnlyAU(selectedDocument.document_date)}
+                          </Text>
+                        </Box>
+                      )}
+                      {/* Reload button for PDFs */}
+                      {selectedDocument.download_url && (
+                        (() => {
+                          const mimeType = selectedDocument.mime_type || '';
+                          const isPDF = mimeType === 'application/pdf' || selectedDocument.original_name.toLowerCase().endsWith('.pdf');
+                          if (isPDF) {
+                            return (
+                              <Tooltip label="Reload PDF">
+                                <ActionIcon
+                                  variant="light"
+                                  color="blue"
+                                  size="lg"
+                                  onClick={handleReloadPDF}
+                                  title="Reload PDF"
+                                >
+                                  <IconRefresh size={18} />
+                                </ActionIcon>
+                              </Tooltip>
+                            );
+                          }
+                          return null;
+                        })()
+                      )}
+                    </Group>
                   </Group>
                   
                   {/* Document Viewer */}
@@ -448,7 +495,8 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                               <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
                                 <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4) }}>
                                   <object
-                                    data={selectedDocument.download_url}
+                                    key={`safari-pdf-${reloadKey}`}
+                                    data={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
                                     type="application/pdf"
                                     style={{
                                       width: '100%',
@@ -464,7 +512,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                       <Button
                                         leftSection={<IconDownload size={16} />}
                                         onClick={() => {
-                                          window.open(selectedDocument.download_url, '_blank');
+                                          window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
                                         }}
                                       >
                                         Open PDF in New Window
@@ -477,7 +525,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                   fullWidth
                                   leftSection={<IconDownload size={16} />}
                                   onClick={() => {
-                                    window.open(selectedDocument.download_url, '_blank');
+                                    window.open(getDownloadUrlWithCacheBust(selectedDocument.download_url), '_blank');
                                   }}
                                 >
                                   Open PDF in Safari
@@ -488,7 +536,8 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                             // For other browsers, use iframe
                             return (
                               <iframe
-                                src={selectedDocument.download_url}
+                                key={`pdf-iframe-${reloadKey}`}
+                                src={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
                                 style={{
                                   width: '100%',
                                   height: '100%',
