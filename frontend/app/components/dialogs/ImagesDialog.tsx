@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   Grid,
@@ -11,32 +11,33 @@ import {
   Badge,
   Group,
   TextInput,
-  Textarea,
   ScrollArea,
   Box,
   Image as MantineImage,
   Accordion,
   rem,
   Loader,
-  FileButton,
+  Select,
 } from '@mantine/core';
 import {
   IconPlus,
   IconPhoto,
-  IconEdit,
   IconTrash,
-  IconX,
   IconUpload,
-  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconX,
 } from '@tabler/icons-react';
+import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
+import { DatePickerInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { DatePickerInput } from '@mantine/dates';
 
 interface Image {
   id: string;
   original_name: string;
   file_size: number;
+  thumbnail_size?: number;
   category: string;
   caption: string;
   date_taken: string | null;
@@ -44,6 +45,10 @@ interface Image {
   thumbnail_url: string | null;
   uploaded_at: string;
   order: number;
+  width?: number;
+  height?: number;
+  s3_key: string;
+  s3_thumbnail_key: string | null;
 }
 
 interface ImageBatch {
@@ -64,38 +69,85 @@ interface ImagesDialogProps {
   patientName: string;
 }
 
-// Image categories from BatchUpload
-const IMAGE_CATEGORIES = [
-  { value: 'medical', label: 'Medical Records' },
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'referral', label: 'Referral Letter' },
-  { value: 'xray', label: 'X-Ray / Imaging' },
-  { value: 'dorsal', label: 'Dorsal' },
-  { value: 'plantar', label: 'Plantar' },
-  { value: 'posterior', label: 'Posterior' },
-  { value: 'anterior', label: 'Anterior' },
-  { value: 'medial', label: 'Medial' },
-  { value: 'lateral', label: 'Lateral' },
-  { value: 'wound', label: 'Wound' },
-  { value: 'right_leg', label: 'Right Leg' },
-  { value: 'left_leg', label: 'Left Leg' },
-  { value: 'l_brannock', label: 'L-Brannock' },
-  { value: 'r_brannock', label: 'R-Brannock' },
-  { value: 'casts', label: 'Casts' },
-  { value: 'left_lat', label: 'Left Lat' },
-  { value: 'right_lat', label: 'Right Lat' },
-  { value: 'r_shoe', label: 'R-Shoe' },
-  { value: 'l_shoe', label: 'L-Shoe' },
-  { value: 'afo', label: 'AFO' },
-  { value: 'other', label: 'Other' },
+// Grouped image categories with sections
+const IMAGE_CATEGORY_GROUPS = [
+  {
+    group: 'Anatomical Views',
+    items: [
+      { value: 'dorsal', label: 'Dorsal' },
+      { value: 'plantar', label: 'Plantar' },
+      { value: 'posterior', label: 'Posterior' },
+      { value: 'anterior', label: 'Anterior' },
+      { value: 'medial', label: 'Medial' },
+      { value: 'lateral', label: 'Lateral' },
+      { value: 'wound', label: 'Wound' },
+    ],
+  },
+  {
+    group: 'Leg Views',
+    items: [
+      { value: 'right_leg', label: 'Right Leg' },
+      { value: 'left_leg', label: 'Left Leg' },
+    ],
+  },
+  {
+    group: 'Brannock Measurements',
+    items: [
+      { value: 'l_brannock', label: 'L-Brannock' },
+      { value: 'r_brannock', label: 'R-Brannock' },
+    ],
+  },
+  {
+    group: 'Foot Measurements',
+    items: [
+      { value: 'r_mfoot_length', label: 'R-MFoot Length' },
+      { value: 'r_mfoot_width', label: 'R-MFoot Width' },
+      { value: 'l_mfoot_length', label: 'L-MFoot Length' },
+      { value: 'l_mfoot_width', label: 'L-MFoot Width' },
+    ],
+  },
+  {
+    group: 'Casting',
+    items: [{ value: 'casts', label: 'Casts' }],
+  },
+  {
+    group: 'Lateral Views',
+    items: [
+      { value: 'left_lat', label: 'Left Lat' },
+      { value: 'right_lat', label: 'Right Lat' },
+    ],
+  },
+  {
+    group: 'Footwear & Devices',
+    items: [
+      { value: 'r_shoe', label: 'R-Shoe' },
+      { value: 'l_shoe', label: 'L-Shoe' },
+      { value: 'afo', label: 'AFO' },
+      { value: 'x_ray_doc', label: 'X-Ray' },
+    ],
+  },
+  {
+    group: 'Clinical',
+    items: [{ value: 'cmo', label: 'CMO' }],
+  },
+  {
+    group: 'Documentation',
+    items: [
+      { value: 'last_design', label: 'Last Design' },
+      { value: 'shoe', label: 'Shoe' },
+      { value: 'podbox', label: 'PodBox' },
+      { value: 'pension_card', label: 'Pension Card' },
+      { value: 'medicare_card', label: 'Medicare Card' },
+    ],
+  },
 ];
 
 export default function ImagesDialog({ opened, onClose, patientId, patientName }: ImagesDialogProps) {
   const [batches, setBatches] = useState<ImageBatch[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState<ImageBatch | null>(null);
+  const [openedBatchId, setOpenedBatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+  const [selectedBatchImages, setSelectedBatchImages] = useState<Image[]>([]);
 
   // Load batches when dialog opens
   useEffect(() => {
@@ -107,10 +159,12 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
   const loadBatches = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/images/batches/?patient_id=${patientId}`);
+      const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}`);
       if (response.ok) {
         const data = await response.json();
-        setBatches(data);
+        // API returns paginated results
+        const batchList = Array.isArray(data) ? data : (data.results || []);
+        setBatches(batchList);
       }
     } catch (error) {
       console.error('Error loading image batches:', error);
@@ -127,39 +181,47 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
   const handleCreateBatch = () => {
     modals.open({
       title: 'Create New Image Batch',
-      children: <CreateBatchForm patientId={patientId} onSuccess={loadBatches} />,
+      size: 'md',
+      children: <CreateBatchForm patientId={patientId} onSuccess={(batchId) => {
+        loadBatches();
+        // Auto-open the newly created batch
+        setTimeout(() => setOpenedBatchId(batchId), 500);
+      }} />,
     });
   };
 
-  const handleBatchClick = async (batch: ImageBatch) => {
-    // Load full batch with images
-    setLoading(true);
-    try {
-      const response = await fetch(`http://localhost:8000/api/images/batches/${batch.id}/`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedBatch(data);
+  const handleAccordionChange = async (value: string | null) => {
+    setOpenedBatchId(value);
+    
+    // Load full batch details when opened
+    if (value) {
+      try {
+        const response = await fetch(`https://localhost:8000/api/images/batches/${value}/`);
+        if (response.ok) {
+          const data = await response.json();
+          // Update the batch in our list with full details
+          setBatches(prev => prev.map(b => b.id === value ? data : b));
+        }
+      } catch (error) {
+        console.error('Error loading batch details:', error);
       }
-    } catch (error) {
-      console.error('Error loading batch:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleImageClick = (image: Image) => {
-    setSelectedImage(image);
-  };
-
-  const handleDeleteBatch = (batchId: string) => {
+  const handleDeleteBatch = (batchId: string, batchName: string) => {
     modals.openConfirmModal({
       title: 'Delete Image Batch',
-      children: <Text>Are you sure you want to delete this batch and all its images? This cannot be undone.</Text>,
+      children: (
+        <Text>
+          Are you sure you want to delete <strong>"{batchName}"</strong> and all its images? 
+          This cannot be undone.
+        </Text>
+      ),
       labels: { confirm: 'Delete', cancel: 'Cancel' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/images/batches/${batchId}/`, {
+          const response = await fetch(`https://localhost:8000/api/images/batches/${batchId}/`, {
             method: 'DELETE',
           });
           if (response.ok) {
@@ -169,8 +231,8 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
               color: 'green',
             });
             loadBatches();
-            if (selectedBatch?.id === batchId) {
-              setSelectedBatch(null);
+            if (openedBatchId === batchId) {
+              setOpenedBatchId(null);
             }
           }
         } catch (error) {
@@ -184,6 +246,64 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
     });
   };
 
+  const handleImageClick = (image: Image, batchImages: Image[]) => {
+    setSelectedImage(image);
+    setSelectedBatchImages(batchImages);
+  };
+
+  const handleDeleteImage = (imageId: string, imageName: string) => {
+    modals.openConfirmModal({
+      title: 'Delete Image',
+      children: (
+        <Text>
+          Are you sure you want to delete <strong>"{imageName}"</strong>? 
+          This cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`https://localhost:8000/api/images/${imageId}/`, {
+            method: 'DELETE',
+          });
+          if (response.ok) {
+            notifications.show({
+              title: 'Success',
+              message: 'Image deleted successfully',
+              color: 'green',
+            });
+            setSelectedImage(null);
+            loadBatches();
+          }
+        } catch (error) {
+          notifications.show({
+            title: 'Error',
+            message: 'Failed to delete image',
+            color: 'red',
+          });
+        }
+      },
+    });
+  };
+
+  const handleNavigateImage = (direction: 'prev' | 'next') => {
+    if (!selectedImage || selectedBatchImages.length === 0) return;
+    
+    const currentIndex = selectedBatchImages.findIndex(img => img.id === selectedImage.id);
+    let newIndex: number;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : selectedBatchImages.length - 1;
+    } else {
+      newIndex = currentIndex < selectedBatchImages.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setSelectedImage(selectedBatchImages[newIndex]);
+  };
+
+  const totalImages = batches.reduce((sum, b) => sum + b.image_count, 0);
+
   return (
     <>
       <Modal
@@ -193,7 +313,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
           <Group gap="xs">
             <IconPhoto size={24} />
             <Text fw={600}>Images - {patientName}</Text>
-            <Badge color="blue">{batches.reduce((sum, b) => sum + b.image_count, 0)} images</Badge>
+            <Badge color="blue">{totalImages} {totalImages === 1 ? 'image' : 'images'}</Badge>
           </Group>
         }
         size="95vw"
@@ -203,237 +323,499 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
         }}
       >
         <Grid gutter="md" style={{ height: '100%' }}>
-          {/* Left: Batch List */}
-          <Grid.Col span={4}>
+          {/* Left Panel (30%): Batch List with Accordions */}
+          <Grid.Col span={{ base: 12, md: 3.6 }}>
             <Stack gap="md" style={{ height: '100%' }}>
-              <Group justify="space-between">
-                <Text fw={600} size="sm">Image Batches</Text>
-                <Button
-                  size="xs"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={handleCreateBatch}
-                >
-                  New Batch
-                </Button>
-              </Group>
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={handleCreateBatch}
+                fullWidth
+              >
+                New Batch
+              </Button>
 
-              <ScrollArea style={{ flex: 1 }}>
-                {loading && !batches.length ? (
+              <ScrollArea style={{ flex: 1 }} type="auto">
+                {loading && batches.length === 0 ? (
                   <Stack align="center" py="xl">
                     <Loader size="sm" />
+                    <Text size="sm" c="dimmed">Loading batches...</Text>
                   </Stack>
                 ) : batches.length === 0 ? (
                   <Stack align="center" py="xl">
-                    <IconPhoto size={48} color="gray" />
-                    <Text c="dimmed" size="sm">No image batches yet</Text>
-                    <Button size="xs" onClick={handleCreateBatch}>Create First Batch</Button>
+                    <IconPhoto size={48} style={{ opacity: 0.3 }} />
+                    <Text c="dimmed" size="sm" ta="center">No image batches yet</Text>
+                    <Text size="xs" c="dimmed" ta="center">Click "New Batch" to get started</Text>
                   </Stack>
                 ) : (
-                  <Stack gap="xs">
+                  <Accordion
+                    value={openedBatchId}
+                    onChange={handleAccordionChange}
+                  >
                     {batches.map((batch) => (
-                      <Box
-                        key={batch.id}
-                        p="md"
-                        style={{
-                          border: `2px solid ${selectedBatch?.id === batch.id ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-dark-4)'}`,
-                          borderRadius: '8px',
-                          backgroundColor: selectedBatch?.id === batch.id ? 'var(--mantine-color-dark-6)' : 'transparent',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => handleBatchClick(batch)}
-                      >
-                        <Group justify="space-between" mb="xs">
-                          <Text fw={600} size="sm">{batch.name}</Text>
-                          <Group gap={4}>
+                      <Accordion.Item key={batch.id} value={batch.id}>
+                        <Accordion.Control>
+                          <Group justify="space-between" wrap="nowrap">
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Text fw={600} size="sm" truncate>{batch.name}</Text>
+                              <Group gap="xs" mt={4}>
+                                <Badge size="xs" variant="light">
+                                  {batch.image_count} {batch.image_count === 1 ? 'image' : 'images'}
+                                </Badge>
+                                <Text size="xs" c="dimmed">
+                                  {new Date(batch.uploaded_at).toLocaleDateString('en-AU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </Text>
+                              </Group>
+                            </div>
                             <ActionIcon
                               size="sm"
                               variant="subtle"
                               color="red"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteBatch(batch.id);
+                                handleDeleteBatch(batch.id, batch.name);
                               }}
                             >
                               <IconTrash size={16} />
                             </ActionIcon>
                           </Group>
-                        </Group>
-                        <Group gap="xs">
-                          <Badge size="sm" variant="light">{batch.image_count} images</Badge>
-                          <Text size="xs" c="dimmed">
-                            {new Date(batch.uploaded_at).toLocaleDateString('en-AU', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </Text>
-                        </Group>
-                        {batch.description && (
-                          <Text size="xs" c="dimmed" mt="xs" lineClamp={2}>{batch.description}</Text>
-                        )}
-                      </Box>
+                        </Accordion.Control>
+                        <Accordion.Panel>
+                          <BatchContent
+                            batch={batch}
+                            onUploadSuccess={() => {
+                              loadBatches();
+                              handleAccordionChange(batch.id);
+                            }}
+                            onImageClick={(image) => handleImageClick(image, batch.images)}
+                          />
+                        </Accordion.Panel>
+                      </Accordion.Item>
                     ))}
-                  </Stack>
+                  </Accordion>
                 )}
               </ScrollArea>
             </Stack>
           </Grid.Col>
 
-          {/* Right: Images Accordion */}
-          <Grid.Col span={8}>
-            {!selectedBatch ? (
+          {/* Right Panel (70%): Image Viewer */}
+          <Grid.Col span={{ base: 12, md: 8.4 }}>
+            {!selectedImage ? (
               <Stack align="center" justify="center" style={{ height: '100%' }}>
-                <IconPhoto size={64} color="gray" />
-                <Text c="dimmed">Select a batch to view images</Text>
+                <IconPhoto size={64} style={{ opacity: 0.2 }} />
+                <Text c="dimmed" size="lg">Select an image to view</Text>
+                <Text c="dimmed" size="sm">Click any thumbnail from the batches on the left</Text>
               </Stack>
             ) : (
-              <Stack gap="md" style={{ height: '100%' }}>
-                <Group justify="space-between">
-                  <div>
-                    <Text fw={600}>{selectedBatch.name}</Text>
-                    <Text size="sm" c="dimmed">{selectedBatch.image_count} images</Text>
-                  </div>
-                  <Button
-                    size="sm"
-                    leftSection={<IconUpload size={16} />}
-                    onClick={() => {
-                      modals.open({
-                        title: `Upload Images to "${selectedBatch.name}"`,
-                        size: 'lg',
-                        children: <UploadImagesForm batchId={selectedBatch.id} onSuccess={() => {
-                          loadBatches();
-                          handleBatchClick(selectedBatch);
-                        }} />,
-                      });
-                    }}
-                  >
-                    Upload Images
-                  </Button>
-                </Group>
-
-                <ScrollArea style={{ flex: 1 }}>
-                  {selectedBatch.images.length === 0 ? (
-                    <Stack align="center" py="xl">
-                      <Text c="dimmed">No images in this batch yet</Text>
-                    </Stack>
-                  ) : (
-                    <Accordion chevron={<IconChevronDown size={16} />}>
-                      <Accordion.Item value="images">
-                        <Accordion.Control>
-                          <Group gap="xs">
-                            <Text fw={500}>Images</Text>
-                            <Badge size="sm">{selectedBatch.images.length}</Badge>
-                          </Group>
-                        </Accordion.Control>
-                        <Accordion.Panel>
-                          <Stack gap="xs">
-                            {selectedBatch.images.map((image) => (
-                              <Group
-                                key={image.id}
-                                p="xs"
-                                style={{
-                                  border: '1px solid var(--mantine-color-dark-4)',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                }}
-                                onClick={() => handleImageClick(image)}
-                              >
-                                {image.thumbnail_url && (
-                                  <MantineImage
-                                    src={image.thumbnail_url}
-                                    alt={image.original_name}
-                                    width={60}
-                                    height={60}
-                                    fit="cover"
-                                    radius="sm"
-                                  />
-                                )}
-                                <div style={{ flex: 1 }}>
-                                  <Text size="sm" fw={500}>{image.original_name}</Text>
-                                  <Group gap="xs">
-                                    <Badge size="xs">{image.category}</Badge>
-                                    <Text size="xs" c="dimmed">
-                                      {(image.file_size / 1024 / 1024).toFixed(2)} MB
-                                    </Text>
-                                  </Group>
-                                  {image.caption && (
-                                    <Text size="xs" c="dimmed" lineClamp={1}>{image.caption}</Text>
-                                  )}
-                                </div>
-                              </Group>
-                            ))}
-                          </Stack>
-                        </Accordion.Panel>
-                      </Accordion.Item>
-                    </Accordion>
-                  )}
-                </ScrollArea>
-              </Stack>
+              <ImageViewer
+                image={selectedImage}
+                onClose={() => setSelectedImage(null)}
+                onDelete={() => handleDeleteImage(selectedImage.id, selectedImage.original_name)}
+                onPrev={() => handleNavigateImage('prev')}
+                onNext={() => handleNavigateImage('next')}
+                hasMultiple={selectedBatchImages.length > 1}
+              />
             )}
           </Grid.Col>
         </Grid>
       </Modal>
-
-      {/* Full-size Image Viewer */}
-      {selectedImage && (
-        <Modal
-          opened={!!selectedImage}
-          onClose={() => setSelectedImage(null)}
-          title={selectedImage.original_name}
-          size="xl"
-        >
-          <Stack>
-            <MantineImage
-              src={selectedImage.download_url}
-              alt={selectedImage.original_name}
-              fit="contain"
-              style={{ maxHeight: '70vh' }}
-            />
-            <Group gap="xs">
-              <Badge>{selectedImage.category}</Badge>
-              <Text size="sm" c="dimmed">
-                {new Date(selectedImage.uploaded_at).toLocaleDateString('en-AU', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </Text>
-            </Group>
-            {selectedImage.caption && (
-              <Text size="sm">{selectedImage.caption}</Text>
-            )}
-          </Stack>
-        </Modal>
-      )}
     </>
   );
 }
 
+// Batch Content Component (Dropzone + Thumbnails)
+function BatchContent({ 
+  batch, 
+  onUploadSuccess, 
+  onImageClick 
+}: { 
+  batch: ImageBatch; 
+  onUploadSuccess: () => void;
+  onImageClick: (image: Image) => void;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+
+  const handleUpload = async () => {
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress('Uploading images...');
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('images', file);
+        formData.append('categories', 'other'); // Default category
+        formData.append('captions', '');
+      });
+
+      const response = await fetch(`https://localhost:8000/api/images/batches/${batch.id}/upload/`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success > 0) {
+        notifications.show({
+          title: 'Success',
+          message: `${result.success} image(s) uploaded successfully`,
+          color: 'green',
+        });
+        setFiles([]);
+        onUploadSuccess();
+      }
+
+      if (result.errors && result.errors.length > 0) {
+        notifications.show({
+          title: 'Some uploads failed',
+          message: `${result.errors.length} image(s) failed to upload`,
+          color: 'orange',
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to upload images',
+        color: 'red',
+      });
+    } finally {
+      setUploading(false);
+      setUploadProgress('');
+    }
+  };
+
+  return (
+    <Stack gap="md">
+      {/* Dropzone */}
+      <Dropzone
+        onDrop={(droppedFiles) => setFiles([...files, ...droppedFiles])}
+        onReject={(files) => {
+          notifications.show({
+            title: 'Invalid file',
+            message: files[0]?.errors[0]?.message || 'File rejected',
+            color: 'red',
+          });
+        }}
+        maxSize={10 * 1024 * 1024} // 10MB
+        accept={IMAGE_MIME_TYPE}
+        multiple
+        loading={uploading}
+      >
+        <Group justify="center" gap="xl" mih={100} style={{ pointerEvents: 'none' }}>
+          <Dropzone.Accept>
+            <IconUpload
+              style={{ width: rem(52), height: rem(52), color: 'var(--mantine-color-blue-6)' }}
+              stroke={1.5}
+            />
+          </Dropzone.Accept>
+          <Dropzone.Reject>
+            <IconX
+              style={{ width: rem(52), height: rem(52), color: 'var(--mantine-color-red-6)' }}
+              stroke={1.5}
+            />
+          </Dropzone.Reject>
+          <Dropzone.Idle>
+            <IconPhoto
+              style={{ width: rem(52), height: rem(52), color: 'var(--mantine-color-dimmed)' }}
+              stroke={1.5}
+            />
+          </Dropzone.Idle>
+
+          <div>
+            <Text size="lg" inline>
+              Drag images here or click to select
+            </Text>
+            <Text size="sm" c="dimmed" inline mt={7}>
+              Max 10MB per image
+            </Text>
+          </div>
+        </Group>
+      </Dropzone>
+
+      {/* Selected Files */}
+      {files.length > 0 && (
+        <Box>
+          <Group justify="space-between" mb="xs">
+            <Text size="sm" fw={500}>{files.length} file(s) selected</Text>
+            <Button size="xs" variant="subtle" onClick={() => setFiles([])}>
+              Clear all
+            </Button>
+          </Group>
+          <Stack gap={4}>
+            {files.map((file, idx) => (
+              <Group key={idx} gap="xs" justify="space-between">
+                <Text size="xs" truncate style={{ flex: 1 }}>{file.name}</Text>
+                <Text size="xs" c="dimmed">{(file.size / 1024).toFixed(1)} KB</Text>
+                <ActionIcon
+                  size="xs"
+                  variant="subtle"
+                  color="red"
+                  onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                >
+                  <IconX size={12} />
+                </ActionIcon>
+              </Group>
+            ))}
+          </Stack>
+          <Button
+            fullWidth
+            mt="sm"
+            onClick={handleUpload}
+            loading={uploading}
+            leftSection={<IconUpload size={16} />}
+          >
+            Upload {files.length} Image{files.length > 1 ? 's' : ''}
+          </Button>
+          {uploadProgress && (
+            <Text size="xs" c="dimmed" ta="center" mt="xs">
+              {uploadProgress}
+            </Text>
+          )}
+        </Box>
+      )}
+
+      {/* Thumbnail Grid (Vertical Scroll) */}
+      {batch.images && batch.images.length > 0 && (
+        <Box>
+          <Text size="sm" fw={500} mb="xs">
+            {batch.images.length} image{batch.images.length > 1 ? 's' : ''} in batch
+          </Text>
+          <Stack gap="xs">
+            {batch.images.map((image) => (
+              <Box
+                key={image.id}
+                p="xs"
+                style={{
+                  border: '1px solid var(--mantine-color-dark-4)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onClick={() => onImageClick(image)}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'var(--mantine-color-dark-6)',
+                    borderColor: 'var(--mantine-color-blue-6)',
+                  },
+                }}
+              >
+                <Group gap="sm" wrap="nowrap">
+                  <MantineImage
+                    src={image.thumbnail_url || image.download_url}
+                    alt={image.original_name}
+                    width={80}
+                    height={80}
+                    fit="cover"
+                    radius="sm"
+                    fallbackSrc="https://placehold.co/80x80?text=Image"
+                  />
+                  <Box style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="sm" fw={500} truncate>{image.original_name}</Text>
+                    <Group gap={4} mt={2}>
+                      <Badge size="xs" variant="light">{image.category}</Badge>
+                      {image.thumbnail_size && (
+                        <Badge size="xs" color="green" variant="dot">Thumbnail</Badge>
+                      )}
+                    </Group>
+                    <Group gap="xs" mt={4}>
+                      {image.thumbnail_size ? (
+                        <>
+                          <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
+                          <Text size="xs" c="green">
+                            {((1 - image.thumbnail_size / image.file_size) * 100).toFixed(0)}% smaller
+                          </Text>
+                        </>
+                      ) : (
+                        <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
+                      )}
+                      {image.width && image.height && (
+                        <Text size="xs" c="dimmed">{image.width} × {image.height}</Text>
+                      )}
+                    </Group>
+                  </Box>
+                </Group>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
+    </Stack>
+  );
+}
+
+// Image Viewer Component
+function ImageViewer({
+  image,
+  onClose,
+  onDelete,
+  onPrev,
+  onNext,
+  hasMultiple,
+}: {
+  image: Image;
+  onClose: () => void;
+  onDelete: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  hasMultiple: boolean;
+}) {
+  return (
+    <Stack style={{ height: '100%' }}>
+      {/* Header */}
+      <Group justify="space-between">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text fw={600} size="lg" truncate>{image.original_name}</Text>
+          <Group gap="xs" mt={4}>
+            <Badge>{image.category}</Badge>
+            {image.thumbnail_size && (
+              <Badge color="green" variant="dot">Thumbnail Generated</Badge>
+            )}
+          </Group>
+        </div>
+        <Group gap="xs">
+          <ActionIcon variant="subtle" color="red" onClick={onDelete}>
+            <IconTrash size={20} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" onClick={onClose}>
+            <IconX size={20} />
+          </ActionIcon>
+        </Group>
+      </Group>
+
+      {/* Image Display */}
+      <Box style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <MantineImage
+          src={image.download_url}
+          alt={image.original_name}
+          fit="contain"
+          style={{ maxHeight: '100%', maxWidth: '100%' }}
+          fallbackSrc="https://placehold.co/800x600?text=Image+Not+Found"
+        />
+        
+        {/* Navigation Arrows */}
+        {hasMultiple && (
+          <>
+            <ActionIcon
+              size="xl"
+              variant="filled"
+              style={{
+                position: 'absolute',
+                left: 20,
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+              onClick={onPrev}
+            >
+              <IconChevronLeft size={24} />
+            </ActionIcon>
+            <ActionIcon
+              size="xl"
+              variant="filled"
+              style={{
+                position: 'absolute',
+                right: 20,
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+              onClick={onNext}
+            >
+              <IconChevronRight size={24} />
+            </ActionIcon>
+          </>
+        )}
+      </Box>
+
+      {/* Metadata */}
+      <Box
+        p="md"
+        style={{
+          borderTop: '1px solid var(--mantine-color-dark-4)',
+          backgroundColor: 'var(--mantine-color-dark-6)',
+        }}
+      >
+        <Grid gutter="xs">
+          <Grid.Col span={6}>
+            <Text size="xs" c="dimmed">Original Size</Text>
+            <Text size="sm" fw={500}>{(image.file_size / 1024).toFixed(1)} KB</Text>
+          </Grid.Col>
+          {image.thumbnail_size && (
+            <Grid.Col span={6}>
+              <Text size="xs" c="dimmed">Thumbnail Size</Text>
+              <Text size="sm" fw={500} c="green">
+                {(image.thumbnail_size / 1024).toFixed(1)} KB 
+                ({((1 - image.thumbnail_size / image.file_size) * 100).toFixed(0)}% reduction)
+              </Text>
+            </Grid.Col>
+          )}
+          {image.width && image.height && (
+            <Grid.Col span={6}>
+              <Text size="xs" c="dimmed">Dimensions</Text>
+              <Text size="sm" fw={500}>{image.width} × {image.height} px</Text>
+            </Grid.Col>
+          )}
+          <Grid.Col span={6}>
+            <Text size="xs" c="dimmed">Uploaded</Text>
+            <Text size="sm" fw={500}>
+              {new Date(image.uploaded_at).toLocaleDateString('en-AU', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Text>
+          </Grid.Col>
+          {image.caption && (
+            <Grid.Col span={12}>
+              <Text size="xs" c="dimmed">Caption</Text>
+              <Text size="sm">{image.caption}</Text>
+            </Grid.Col>
+          )}
+        </Grid>
+      </Box>
+    </Stack>
+  );
+}
+
 // Create Batch Form Component
-function CreateBatchForm({ patientId, onSuccess }: { patientId: string; onSuccess: () => void }) {
-  const [name, setName] = useState('');
+function CreateBatchForm({ 
+  patientId, 
+  onSuccess 
+}: { 
+  patientId: string; 
+  onSuccess: (batchId: string) => void;
+}) {
+  const [date, setDate] = useState<Date | null>(new Date());
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name.trim()) {
+    if (!date) {
       notifications.show({
         title: 'Error',
-        message: 'Batch name is required',
+        message: 'Please select a date',
         color: 'red',
       });
       return;
     }
 
+    const batchName = date.toLocaleDateString('en-AU', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }) + (description.trim() ? ` - ${description.trim()}` : '');
+
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/images/batches/', {
+      const response = await fetch('https://localhost:8000/api/images/batches/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
+          name: batchName,
           description: description.trim(),
           content_type: 'patients.patient',
           object_id: patientId,
@@ -441,13 +823,14 @@ function CreateBatchForm({ patientId, onSuccess }: { patientId: string; onSucces
       });
 
       if (response.ok) {
+        const data = await response.json();
         notifications.show({
           title: 'Success',
           message: 'Batch created successfully',
           color: 'green',
         });
         modals.closeAll();
-        onSuccess();
+        onSuccess(data.id);
       } else {
         throw new Error('Failed to create batch');
       }
@@ -464,108 +847,28 @@ function CreateBatchForm({ patientId, onSuccess }: { patientId: string; onSucces
 
   return (
     <Stack>
-      <TextInput
-        label="Batch Name"
-        placeholder="e.g., Pre-Surgery Photos, 6 Month Follow-up"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+      <DatePickerInput
+        label="Date"
+        placeholder="Select date"
+        value={date}
+        onChange={setDate}
         required
+        clearable={false}
       />
-      <Textarea
+      <TextInput
         label="Description (Optional)"
-        placeholder="Add notes about this batch..."
+        placeholder="e.g., Post-surgery follow-up, Initial assessment"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        rows={3}
       />
-      <Group justify="flex-end">
-        <Button variant="subtle" onClick={() => modals.closeAll()}>Cancel</Button>
-        <Button onClick={handleSubmit} loading={loading}>Create Batch</Button>
-      </Group>
-    </Stack>
-  );
-}
-
-// Upload Images Form Component
-function UploadImagesForm({ batchId, onSuccess }: { batchId: string; onSuccess: () => void }) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-
-  const handleUpload = async () => {
-    if (files.length === 0) {
-      notifications.show({
-        title: 'Error',
-        message: 'Please select at least one image',
-        color: 'red',
-      });
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      files.forEach((file) => {
-        formData.append('images', file);
-        formData.append('categories', 'other'); // Default category
-        formData.append('captions', '');
-      });
-
-      const response = await fetch(`http://localhost:8000/api/images/batches/${batchId}/upload/`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        notifications.show({
-          title: 'Success',
-          message: `${files.length} images uploaded successfully`,
-          color: 'green',
-        });
-        modals.closeAll();
-        onSuccess();
-      } else {
-        throw new Error('Upload failed');
-      }
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to upload images',
-        color: 'red',
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <Stack>
-      <FileButton onChange={setFiles} accept="image/*" multiple>
-        {(props) => (
-          <Button {...props} leftSection={<IconUpload size={16} />}>
-            Select Images
-          </Button>
-        )}
-      </FileButton>
-
-      {files.length > 0 && (
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>Selected: {files.length} images</Text>
-          {files.map((file, idx) => (
-            <Group key={idx} gap="xs">
-              <Text size="sm">{file.name}</Text>
-              <Text size="xs" c="dimmed">({(file.size / 1024 / 1024).toFixed(2)} MB)</Text>
-            </Group>
-          ))}
-        </Stack>
-      )}
-
-      <Group justify="flex-end">
-        <Button variant="subtle" onClick={() => modals.closeAll()}>Cancel</Button>
-        <Button onClick={handleUpload} loading={uploading} disabled={files.length === 0}>
-          Upload {files.length > 0 && `(${files.length})`}
+      <Group justify="flex-end" mt="md">
+        <Button variant="subtle" onClick={() => modals.closeAll()}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} loading={loading}>
+          Create Batch
         </Button>
       </Group>
     </Stack>
   );
 }
-
