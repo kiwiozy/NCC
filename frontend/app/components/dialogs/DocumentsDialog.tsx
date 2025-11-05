@@ -21,6 +21,8 @@ import {
   FileButton,
   Textarea,
   Tooltip,
+  Loader,
+  Anchor,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import {
@@ -91,6 +93,9 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [reloadKey, setReloadKey] = useState(0); // Key to force reload of PDF viewer
   const [isReloadingPDF, setIsReloadingPDF] = useState(false); // Loading state during reload
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null); // Blob URL for Safari PDF
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false); // Loading state for PDF blob
+  const [pdfError, setPdfError] = useState<string | null>(null); // PDF loading error
   
   // Upload form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -119,6 +124,81 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
       setReloadKey(prev => prev + 1);
     }
   }, [selectedDocument?.id]);
+
+  // Load PDF as blob URL for Safari (Option A: Fetch → Blob URL → object)
+  useEffect(() => {
+    if (!selectedDocument?.download_url) {
+      setPdfBlobUrl(null);
+      setPdfError(null);
+      return;
+    }
+
+    // Only use blob URL approach for Safari
+    if (!browser.isSafari) {
+      setPdfBlobUrl(null);
+      return;
+    }
+
+    // Check if it's a PDF
+    const mimeType = selectedDocument.mime_type || '';
+    const isPDF = mimeType === 'application/pdf' || selectedDocument.original_name.toLowerCase().endsWith('.pdf');
+    if (!isPDF) {
+      setPdfBlobUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    let blobUrl: string | null = null;
+
+    const loadPdf = async () => {
+      setIsLoadingPdf(true);
+      setPdfError(null);
+      
+      try {
+        const url = getDownloadUrlWithCacheBust(selectedDocument.download_url);
+        const res = await fetch(url, {
+          credentials: 'include',
+          mode: 'cors',
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const blob = await res.blob();
+        
+        if (cancelled) {
+          URL.revokeObjectURL(URL.createObjectURL(blob));
+          return;
+        }
+        
+        // Revoke previous blob URL if exists
+        if (blobUrl) {
+          URL.revokeObjectURL(blobUrl);
+        }
+        
+        blobUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(blobUrl);
+      } catch (err: any) {
+        console.error('PDF fetch failed:', err);
+        setPdfError(err.message || 'Failed to load PDF');
+        setPdfBlobUrl(null);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPdf(false);
+        }
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      cancelled = true;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [selectedDocument?.id, selectedDocument?.download_url, selectedDocument?.mime_type, selectedDocument?.original_name, browser.isSafari, reloadKey]);
 
   const resetForm = () => {
     setSelectedFile(null);
@@ -515,31 +595,22 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(selectedDocument.original_name);
                         
                         if (isPDF) {
-                          // Safari has issues with iframes for cross-origin PDFs
-                          // Use object tag which allows scrolling
+                          // Safari: Use blob URL approach (Option A) for reliable reloading
                           if (browser.isSafari) {
                             return (
                               <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
-                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4), overflow: 'hidden' }}>
-                                  <object
-                                    key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
-                                    data={getDownloadUrlWithCacheBust(selectedDocument.download_url)}
-                                    type="application/pdf"
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      minHeight: rem(400),
-                                      display: 'block',
-                                    }}
-                                    onError={() => {
-                                      console.error('PDF failed to load in object tag');
-                                      setIsReloadingPDF(false);
-                                    }}
-                                  >
+                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4), overflow: 'auto', minHeight: rem(400), maxHeight: '100%' }}>
+                                  {isLoadingPdf && (
+                                    <Box style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                      <Loader size="lg" />
+                                      <Text c="dimmed" size="sm">Loading PDF...</Text>
+                                    </Box>
+                                  )}
+                                  {pdfError && (
                                     <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                      <IconFile size={48} style={{ opacity: 0.5 }} />
-                                      <Text c="dimmed" size="sm" ta="center">
-                                        PDF viewer not available
+                                      <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
+                                      <Text c="red" size="sm" ta="center">
+                                        {pdfError}
                                       </Text>
                                       <Button
                                         leftSection={<IconDownload size={16} />}
@@ -550,7 +621,43 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                         Open PDF in New Window
                                       </Button>
                                     </Box>
-                                  </object>
+                                  )}
+                                  {pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                    <object
+                                      key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
+                                      data={pdfBlobUrl}
+                                      type="application/pdf"
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        minHeight: rem(400),
+                                        display: 'block',
+                                      }}
+                                      onError={() => {
+                                        console.error('PDF failed to load in object tag');
+                                        setIsReloadingPDF(false);
+                                        setPdfError('PDF failed to render');
+                                      }}
+                                    >
+                                      <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                        <IconFile size={48} style={{ opacity: 0.5 }} />
+                                        <Text c="dimmed" size="sm" ta="center">
+                                          PDF viewer not available
+                                        </Text>
+                                        <Anchor href={pdfBlobUrl} download={selectedDocument.original_name}>
+                                          Download PDF
+                                        </Anchor>
+                                      </Box>
+                                    </object>
+                                  )}
+                                  {!pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                    <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                      <IconFile size={48} style={{ opacity: 0.5 }} />
+                                      <Text c="dimmed" size="sm" ta="center">
+                                        Preparing PDF...
+                                      </Text>
+                                    </Box>
+                                  )}
                                 </Box>
                                 <Button
                                   variant="light"
