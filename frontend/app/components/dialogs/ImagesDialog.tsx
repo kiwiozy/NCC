@@ -647,7 +647,7 @@ function BatchContent({
                   borderRadius: '8px',
                 }}
               >
-                <Stack gap="xs">
+                <Stack gap={4}>
                   {/* Thumbnail Image (Clickable) */}
                   <Box
                     onClick={() => onImageClick(image)}
@@ -677,7 +677,7 @@ function BatchContent({
                   </Box>
 
                   {/* Image Name */}
-                  <Text size="xs" fw={500} truncate>{image.original_name}</Text>
+                  <Text size="xs" fw={500} truncate mb={4}>{image.original_name}</Text>
 
                   {/* Category Dropdown (Below Image) */}
                   <Select
