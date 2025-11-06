@@ -75,6 +75,7 @@ docs/
 
 ### **Getting Started**
 - [Quick Start Guide](QUICK_START.md) - Start servers and access app
+- [Google Authentication](features/GOOGLE_AUTHENTICATION.md) - OAuth login setup
 - [Project README](README.md) - Project overview
 - [Troubleshooting](architecture/TROUBLESHOOTING.md) - Common issues
 
@@ -109,6 +110,7 @@ docs/
 ## 🎯 **Key Features (Current State)**
 
 ### ✅ **Implemented**
+- **Google OAuth Authentication** - Seamless login with Google Workspace accounts
 - Patient management (list, search, filter, archive)
 - Contact types (patients, referrers, coordinators, etc.)
 - Multi-clinic calendar with drag-and-drop

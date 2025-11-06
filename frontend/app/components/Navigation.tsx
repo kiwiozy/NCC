@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon } from '@mantine/core';
+import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon, Menu, Avatar } from '@mantine/core';
 import ConsoleFilter from './ConsoleFilter';
 import { 
   IconLayoutDashboard, 
@@ -27,11 +27,13 @@ import {
   IconBell,
   IconPencil,
   IconFlask,
-  IconPhoto
+  IconPhoto,
+  IconLogout
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
 import { useBrowserDetection } from '../utils/browserDetection';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
   children: React.ReactNode;
@@ -130,6 +132,7 @@ export default function Navigation({ children }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { colorScheme } = useMantineColorScheme();
+  const { user, logout, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
   const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
@@ -297,8 +300,57 @@ export default function Navigation({ children }: NavigationProps) {
             ))}
           </Group>
 
-          {/* Right Section: Dark Mode Toggle and Close */}
+          {/* Right Section: User Menu, Dark Mode Toggle and Close */}
           <Group gap="md" style={{ position: 'absolute', right: 'var(--mantine-spacing-lg)' }}>
+            {/* User Menu */}
+            {isAuthenticated && user && (
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <UnstyledButton
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: rem(8),
+                      padding: `${rem(8)} ${rem(12)}`,
+                      borderRadius: rem(8),
+                      transition: 'background-color 0.2s ease',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = mounted && isDark 
+                        ? 'rgba(255, 255, 255, 0.05)' 
+                        : 'rgba(0, 0, 0, 0.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <Avatar size="sm" radius="xl" color="blue">
+                      {user.email?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || 'U'}
+                    </Avatar>
+                    <Text size="sm" fw={500} style={{ maxWidth: rem(120), overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email || user.username}
+                    </Text>
+                  </UnstyledButton>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Signed in as</Menu.Label>
+                  <Menu.Item disabled>
+                    <Text size="xs" c="dimmed">{user.email || user.username}</Text>
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item
+                    leftSection={<IconLogout size={16} />}
+                    onClick={async () => {
+                      await logout();
+                    }}
+                    color="red"
+                  >
+                    Sign out
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
             <DarkModeToggle />
             <UnstyledButton
               style={{

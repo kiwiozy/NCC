@@ -6,6 +6,181 @@
 
 ---
 
+## 🚨 **Google OAuth "Redirect URI Mismatch" Error**
+
+### **Symptoms:**
+- "Error 400: redirect_uri_mismatch" when clicking "Continue" on Google login
+- "Access blocked" page from Google
+- Login works on Gmail test page but not on main login page
+- OAuth flow fails after user grants permissions
+
+### **Causes & Solutions:**
+
+#### **1. Wrong Callback URL in Google Cloud Console** ⚠️ **MOST COMMON**
+
+**The Problem:**
+Allauth uses a different callback URL than the Gmail integration:
+- **Gmail OAuth**: `https://localhost:8000/gmail/oauth/callback/`
+- **Allauth Google**: `https://localhost:8000/accounts/google/login/callback/` ⚠️ **Note the `/login/` in the path!**
+
+**The Fix:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** > **Credentials**
+3. Edit your OAuth 2.0 Client ID
+4. In **"Authorized redirect URIs"**, ensure you have **BOTH**:
+   - `https://localhost:8000/gmail/oauth/callback/` (for Gmail integration)
+   - `https://localhost:8000/accounts/google/login/callback/` (for user authentication) ⚠️ **Must include `/login/`!**
+5. Click **"SAVE"**
+6. Wait 1-2 minutes for changes to propagate
+
+**Common Mistakes:**
+- ❌ `https://localhost:8000/accounts/google/callback/` (missing `/login/`)
+- ❌ `http://localhost:8000/accounts/google/login/callback/` (HTTP instead of HTTPS)
+- ❌ `https://127.0.0.1:8000/accounts/google/login/callback/` (127.0.0.1 instead of localhost)
+- ❌ Missing trailing slash `/`
+
+**Verify:**
+```bash
+# Check what allauth is actually using
+cd backend
+source venv/bin/activate
+python manage.py shell -c "
+from django.urls import reverse
+print('Allauth callback:', reverse('google_callback'))
+"
+```
+
+#### **2. Site Domain Mismatch**
+
+**Check Site configuration:**
+```bash
+cd backend
+source venv/bin/activate
+python manage.py shell -c "
+from django.contrib.sites.models import Site
+site = Site.objects.get(pk=1)
+print(f'Site Domain: {site.domain}')
+print('Should be: localhost:8000 (no protocol, no trailing slash)')
+"
+```
+
+**Fix if wrong:**
+```bash
+python manage.py shell -c "
+from django.contrib.sites.models import Site
+site = Site.objects.get(pk=1)
+site.domain = 'localhost:8000'
+site.name = 'Nexus Core Clinic'
+site.save()
+print('✅ Site updated')
+"
+```
+
+#### **3. SocialApp Not Linked to Site**
+
+**Check SocialApp:**
+```bash
+python manage.py shell -c "
+from allauth.socialaccount.models import SocialApp
+from django.contrib.sites.models import Site
+app = SocialApp.objects.filter(provider='google').first()
+site = Site.objects.get(pk=1)
+if app:
+    print(f'App: {app.name}')
+    print(f'Sites: {[s.domain for s in app.sites.all()]}')
+    print(f'Current Site: {site.domain}')
+    print(f'Linked: {site in app.sites.all()}')
+else:
+    print('❌ No SocialApp found')
+"
+```
+
+**Fix if not linked:**
+```bash
+python manage.py shell -c "
+from allauth.socialaccount.models import SocialApp
+from django.contrib.sites.models import Site
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+site = Site.objects.get(pk=1)
+client_id = os.getenv('GMAIL_CLIENT_ID')
+client_secret = os.getenv('GMAIL_CLIENT_SECRET')
+
+if client_id and client_secret:
+    app, created = SocialApp.objects.get_or_create(
+        provider='google',
+        defaults={
+            'name': 'Google OAuth',
+            'client_id': client_id,
+            'secret': client_secret,
+        }
+    )
+    app.sites.add(site)
+    print(f'✅ {\"Created\" if created else \"Updated\"} SocialApp')
+else:
+    print('❌ GMAIL_CLIENT_ID or GMAIL_CLIENT_SECRET not set')
+"
+```
+
+---
+
+## 🚨 **Google OAuth Intermediate Page Issue**
+
+### **Symptoms:**
+- After clicking "Sign in with Google", user sees intermediate "Sign In Via Google" page
+- User must click "Continue" button to proceed
+- Flow works but has unnecessary step
+
+### **Causes & Solutions:**
+
+#### **1. Missing `SOCIALACCOUNT_LOGIN_ON_GET` Setting** ⚠️ **MOST COMMON**
+
+**The Problem:**
+django-allauth by default shows an intermediate confirmation page for security (CSRF protection). This requires a POST request before starting OAuth.
+
+**The Fix:**
+Add this setting to `backend/ncc_api/settings.py`:
+
+```python
+# OAuth Provider Settings (django-allauth uses "SOCIALACCOUNT" prefix for OAuth providers)
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip intermediate page, start OAuth immediately on GET
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create user account on first login
+SOCIALACCOUNT_QUERY_EMAIL = True  # Request email from OAuth provider
+SOCIALACCOUNT_EMAIL_REQUIRED = True  # Require email for OAuth accounts
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Skip email verification for OAuth accounts
+```
+
+**What This Does:**
+- `SOCIALACCOUNT_LOGIN_ON_GET = True` - Skips the intermediate page and starts OAuth immediately on GET requests
+- `SOCIALACCOUNT_AUTO_SIGNUP = True` - Automatically creates user account without showing signup form
+- Other settings ensure seamless flow without extra verification steps
+
+**Verify:**
+1. Restart backend server after adding settings
+2. Try logging in again
+3. Should go directly to Google account selection (no intermediate page)
+
+#### **2. Using Wrong Endpoint**
+
+**The Problem:**
+Using `/accounts/google/login/` instead of custom `/api/auth/google/login/` endpoint.
+
+**The Fix:**
+Ensure frontend uses the custom endpoint:
+
+```typescript
+// frontend/app/login/page.tsx
+const handleGoogleLogin = () => {
+  window.location.href = 'https://localhost:8000/api/auth/google/login/';
+};
+```
+
+**Note:** The custom endpoint (`/api/auth/google/login/`) uses `OAuth2LoginView` which properly handles the seamless flow.
+
+---
+
 ## 🚨 **Patients Not Loading**
 
 ### **Symptoms:**

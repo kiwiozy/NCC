@@ -11,6 +11,7 @@ import ContactHeader from '../components/ContactHeader';
 import NotesDialog from '../components/dialogs/NotesDialog';
 import DocumentsDialog from '../components/dialogs/DocumentsDialog';
 import ImagesDialog from '../components/dialogs/ImagesDialog';
+import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
 import dayjs from 'dayjs';
 
@@ -387,6 +388,7 @@ export default function ContactsPage() {
   const [notesDialogOpened, setNotesDialogOpened] = useState(false);
   const [documentsDialogOpened, setDocumentsDialogOpened] = useState(false);
   const [imagesDialogOpened, setImagesDialogOpened] = useState(false);
+  const [smsDialogOpened, setSmsDialogOpened] = useState(false);
   
   // Helper to get coordinators array (handles both old single coordinator and new array)
   const getCoordinators = (contact: Contact | null): Array<{name: string; date: string}> => {
@@ -954,6 +956,7 @@ export default function ContactsPage() {
         onNotesClick={() => setNotesDialogOpened(true)}
         onDocumentsClick={() => setDocumentsDialogOpened(true)}
         onImagesClick={() => setImagesDialogOpened(true)}
+        onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
         onFilterApply={handleFilterApply}
         showFilters={true}
@@ -3094,6 +3097,14 @@ export default function ContactsPage() {
       <ImagesDialog
         opened={imagesDialogOpened}
         onClose={() => setImagesDialogOpened(false)}
+        patientId={selectedContact?.id || ''}
+        patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
+      />
+
+      {/* SMS Dialog */}
+      <SMSDialog
+        opened={smsDialogOpened}
+        onClose={() => setSmsDialogOpened(false)}
         patientId={selectedContact?.id || ''}
         patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
       />

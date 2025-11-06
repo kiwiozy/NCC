@@ -1,0 +1,63 @@
+/* Linked to new Walk Easy letterhead safe-zone rules (see Resources/letterhead-safezone.css) */
+/* frontend/styles/letterhead.css */
+:root {
+  --we-page-width: 210mm;
+  --we-page-height: 297mm;
+
+  /* Safer clinic spec */
+  --we-pad-top: 60mm;
+  --we-pad-right: 18mm;
+  --we-pad-bottom: 45mm;
+  --we-pad-left: 22mm;
+
+  --we-content-width: calc(var(--we-page-width) - var(--we-pad-left) - var(--we-pad-right));
+  --we-content-height: calc(var(--we-page-height) - var(--we-pad-top) - var(--we-pad-bottom));
+}
+
+.letter-editor-shell {
+  background: #f3f3f3;
+  min-height: 100vh;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.a4-page {
+  position: relative;
+  width: var(--we-page-width);
+  min-height: var(--we-page-height);
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0,0,0,.1);
+}
+
+.letterhead-overlay {
+  position: absolute;
+  inset: 0;
+  background: url('/letterhead.png') no-repeat 0 0 / 210mm 297mm;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.editor-content {
+  position: relative;
+  z-index: 1;
+  padding: var(--we-pad-top) var(--we-pad-right) var(--we-pad-bottom) var(--we-pad-left);
+  max-width: var(--we-content-width);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* show page break for page 1 */
+.editor-content::after {
+  content: "Page break (A4)";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--we-content-height);
+  border-top: 1px dashed rgba(210, 40, 40, 0.45);
+  font-size: 10px;
+  text-align: right;
+  color: rgba(210, 40, 40, 0.7);
+  pointer-events: none;
+}

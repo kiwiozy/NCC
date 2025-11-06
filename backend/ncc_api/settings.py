@@ -42,10 +42,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required for allauth
     'rest_framework',
     'corsheaders',
     'django_filters',
     'django_extensions',
+    # Allauth apps
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    # Project apps
     'patients',
     'appointments',
     'clinicians',
@@ -69,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Allauth middleware
 ]
 
 ROOT_URLCONF = 'ncc_api.urls'
@@ -173,7 +181,66 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',  # For browser-based auth
+        'rest_framework.authentication.BasicAuthentication',  # Fallback
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',  # Change to IsAuthenticated in production
+        # Note: SMS patient endpoints explicitly use IsAuthenticated for security
     ],
 }
+
+# Django Allauth Configuration
+SITE_ID = 1  # Required for allauth
+
+AUTHENTICATION_BACKENDS = [
+    # Django default authentication (username/password)
+    'django.contrib.auth.backends.ModelBackend',
+    # Allauth authentication (social accounts)
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Allauth settings
+ACCOUNT_LOGIN_METHODS = {'email'}  # Use email for login
+ACCOUNT_SIGNUP_FIELDS = ['email*']  # Only require email for signup
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Set to 'mandatory' in production
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'gmail_integration.adapters.GmailSocialAccountAdapter'  # Custom adapter to link Google OAuth login with Gmail
+
+# OAuth Provider Settings (django-allauth uses "SOCIALACCOUNT" prefix for OAuth providers)
+# Note: "SOCIALACCOUNT" is django-allauth's terminology for OAuth providers (Google, Microsoft, etc.)
+# It's used for business authentication, not just social media logins
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip intermediate "Sign In Via Google" page - start OAuth immediately on GET
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create user account on first login
+SOCIALACCOUNT_QUERY_EMAIL = True  # Request email from OAuth provider
+SOCIALACCOUNT_EMAIL_REQUIRED = True  # Require email for OAuth accounts
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Skip email verification for OAuth accounts
+
+# Google OAuth Provider Settings
+# Reuse the same OAuth credentials as Gmail integration for unified login
+# These should be set in .env file (same as Gmail):
+# GMAIL_CLIENT_ID=your_client_id (or GOOGLE_OAUTH2_CLIENT_ID)
+# GMAIL_CLIENT_SECRET=your_client_secret (or GOOGLE_OAUTH2_CLIENT_SECRET)
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+            'https://www.googleapis.com/auth/gmail.send',  # Gmail API scope for email sending
+            'https://www.googleapis.com/auth/gmail.readonly',  # Gmail API scope for reading
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'offline',  # Get refresh token for Gmail API
+            'prompt': 'consent',  # Force consent to get refresh token
+        },
+        # Note: APP credentials are stored in database (SocialApp model)
+        # Remove APP config here to use database SocialApp instead
+    }
+}
+
+# Login/Logout URLs
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'  # Will redirect to frontend via login_redirect view
+LOGOUT_REDIRECT_URL = 'https://localhost:3000/login/'

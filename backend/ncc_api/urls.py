@@ -22,6 +22,7 @@ from clinicians.views import ClinicViewSet, ClinicianViewSet
 from appointments.views import AppointmentViewSet, EncounterViewSet
 from reminders.views import ReminderViewSet
 from notes.views import NoteViewSet
+from . import auth_views
 
 # Create API router
 router = routers.DefaultRouter()
@@ -37,6 +38,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    # Authentication endpoints
+    path('api/auth/user/', auth_views.user_info, name='user-info'),
+    path('api/auth/logout/', auth_views.logout_view, name='logout-api'),  # Custom logout endpoint
+    path('api/auth/google/login/', auth_views.google_login_direct, name='google-login-direct'),  # Direct Google login (skips intermediate page) - not using @api_view decorator
+    # Login redirect (redirects to frontend after login)
+    path('', auth_views.login_redirect, name='login-redirect'),
+    # Allauth URLs (for Google OAuth)
+    path('accounts/', include('allauth.urls')),
+    # Project URLs
     path('xero/', include('xero_integration.urls')),
     path('api/sms/', include('sms_integration.urls')),
     path('gmail/', include('gmail_integration.urls')),

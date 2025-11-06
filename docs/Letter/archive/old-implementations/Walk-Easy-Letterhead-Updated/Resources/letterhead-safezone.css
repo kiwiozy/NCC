@@ -1,0 +1,81 @@
+/* Walk Easy Pedorthics - Letterhead Safe Zone
+   Generated: 2025-11-02 06:49:33
+   This CSS locks all page content into the Illustrator-defined white area.
+   Adjust the --we-safezone-* variables below if the AI file changes.
+*/
+:root {
+  --we-page-width: 210mm;
+  --we-page-height: 297mm;
+  /* These were the original values; update here if the AI white zone differs */
+  --we-safezone-top: 60mm;
+  --we-safezone-right: 18mm;
+  --we-safezone-bottom: 45mm;
+  --we-safezone-left: 22mm;
+}
+
+.we-page {
+  position: relative;
+  width: var(--we-page-width);
+  min-height: var(--we-page-height);
+  background: #fff;
+  /* background image should be the exported AI/PDF placed absolutely under this layer */
+  box-sizing: border-box;
+}
+
+.we-page-content {
+  position: absolute;
+  top: var(--we-safezone-top);
+  left: var(--we-safezone-left);
+  right: var(--we-safezone-right);
+  bottom: var(--we-safezone-bottom);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media print {
+  body,
+  html {
+    margin: 0;
+    padding: 0;
+  }
+  .we-page {
+    page-break-after: always;
+  }
+}
+
+/* --- Authoring-only page-break indicators (won't print) --- */
+@media screen {
+  .we-page {
+    border-bottom: 2px dashed rgba(0,0,0,0.2);
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  .we-page::after {
+    content: "— Page Break —";
+    position: absolute;
+    bottom: -0.8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: rgba(0,0,0,0.4);
+  }
+}
+
+/* Manual page break element for WYSIWYG editors */
+.page-break {
+  display: block;
+  border-top: 2px dashed #ccc;
+  margin: 20px 0;
+  text-align: center;
+  color: #999;
+}
+.page-break::before {
+  content: "Page Break";
+}
+@media print {
+  .page-break {
+    page-break-after: always;
+    border: none;
+    color: transparent;
+  }
+}

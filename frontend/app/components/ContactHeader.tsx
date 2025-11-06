@@ -13,6 +13,7 @@ interface ContactHeaderProps {
   onNotesClick?: () => void;
   onDocumentsClick?: () => void;
   onImagesClick?: () => void;
+  onSmsClick?: () => void;
   patientId?: string; // For getting note and document counts
   showFilters?: boolean;
   filterOptions?: {
@@ -36,6 +37,7 @@ export default function ContactHeader({
   onNotesClick,
   onDocumentsClick,
   onImagesClick,
+  onSmsClick,
   patientId,
   showFilters = true,
   filterOptions = {
@@ -240,7 +242,7 @@ export default function ContactHeader({
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
     { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => console.log('Letters') },
-    { icon: <IconMessageCircle size={20} />, label: 'SMS', onClick: () => console.log('SMS') },
+    { icon: <IconMessageCircle size={20} />, label: 'SMS', onClick: () => { onSmsClick?.(); setMenuOpened(false); } },
     { icon: <IconFileTypePdf size={20} />, label: "PDF's", onClick: () => console.log('PDFs') },
     { icon: <IconBrandNuxt size={20} />, label: 'NDIS', onClick: () => console.log('NDIS') },
     { icon: <IconTool size={20} />, label: 'Workshop Notes', onClick: () => console.log('Workshop') },

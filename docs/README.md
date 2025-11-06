@@ -10,6 +10,9 @@
 docs/
 ├── README.md                      # This file - documentation index
 │
+├── 🔐 features/                   # Feature documentation
+│   └── GOOGLE_AUTHENTICATION.md  # Google OAuth authentication system
+│
 ├── 📧 Email/                      # Email system documentation
 │   ├── README.md                  # Email system overview
 │   ├── GMAIL_QUICK_REFERENCE.md   # Quick start guide (⭐ Start here!)
@@ -65,13 +68,15 @@ docs/
 ### **Start Here (New Users)**
 
 1. **[backend/QUICK_START.md](backend/QUICK_START.md)** - Backend setup and overview
-2. **[Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md)** - Email system (5 minutes)
-3. **[AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md)** - AT Reports overview
+2. **[features/GOOGLE_AUTHENTICATION.md](features/GOOGLE_AUTHENTICATION.md)** - Google OAuth login setup (5 minutes)
+3. **[Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md)** - Email system (5 minutes)
+4. **[AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md)** - AT Reports overview
 
 ### **By Feature**
 
 | Feature | Quick Start Guide | Time |
 |---------|-------------------|------|
+| 🔐 **Authentication** | [features/GOOGLE_AUTHENTICATION.md](features/GOOGLE_AUTHENTICATION.md) | 5 min |
 | 📧 **Email (Gmail)** | [Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md) | 5 min |
 | 📋 **AT Reports** | [AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md) | 10 min |
 | 🔷 **Xero Invoicing** | [Xero Integration/XERO_SETUP_GUIDE.md](Xero Integration/XERO_SETUP_GUIDE.md) | 15 min |
@@ -341,6 +346,17 @@ WalkEasy Nexus
 
 ## 🎉 Latest Updates
 
+### **January 2025 - Google OAuth Authentication** 🔐
+
+✅ Seamless Google OAuth login (no intermediate page)  
+✅ Automatic Gmail connection on login  
+✅ Session-based authentication  
+✅ Protected routes (redirects to login if not authenticated)  
+✅ User menu with logout in Navigation  
+✅ Single Sign-On (one login works across entire system)  
+
+**See:** [features/GOOGLE_AUTHENTICATION.md](features/GOOGLE_AUTHENTICATION.md)
+
 ### **October 2025 - Navigation Improvements** 🧭
 
 ✅ Settings submenu with hover dropdown  
@@ -371,8 +387,9 @@ WalkEasy Nexus
 
 1. **Backend Setup:** [backend/QUICK_START.md](backend/QUICK_START.md)
 2. **Frontend Setup:** [frontend/SETUP.md](frontend/SETUP.md)
-3. **Email Setup:** [Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md)
-4. **AT Reports:** [AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md)
+3. **Authentication Setup:** [features/GOOGLE_AUTHENTICATION.md](features/GOOGLE_AUTHENTICATION.md) - Google OAuth login
+4. **Email Setup:** [Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md)
+5. **AT Reports:** [AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md)
 
 ### **Quick Commands**
 
@@ -385,6 +402,7 @@ cd frontend && npm run dev
 
 # Access the app
 open http://localhost:3000
+# Login page: http://localhost:3000/login
 ```
 
 ---

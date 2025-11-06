@@ -6,7 +6,7 @@
 
 > ⚠️ **IMPORTANT:** If this database schema documentation is updated, you **MUST** also update the "Database Schema Documentation" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
 
-**Last Updated:** 2025-01-15 (Added notes table)
+**Last Updated:** 2025-01-15 (Added django-allauth OAuth tables)
 
 ---
 
@@ -277,6 +277,139 @@
 
 ---
 
+### ✅ **7. `socialaccount_socialapp` Table** (django-allauth)
+
+**Model:** `allauth.socialaccount.models.SocialApp`  
+**Status:** ✅ Exists (Created by django-allauth migrations)
+
+**Fields:**
+- `id` - AutoField (primary key)
+- `provider` - CharField(30) - OAuth provider name (e.g., "google")
+- `name` - CharField(40) - Application name
+- `client_id` - CharField(191) - OAuth client ID
+- `secret` - CharField(191) - OAuth client secret
+- `key` - CharField(191) - Optional API key
+- `created_at` - DateTimeField (auto_now_add)
+- `updated_at` - DateTimeField (auto_now)
+
+**Relationships:**
+- **Many-to-Many:** `sites` → `django.contrib.sites.Site` (links app to sites)
+
+**Usage:**
+- Stores OAuth provider credentials (Google, Microsoft, etc.)
+- Linked to Django Sites framework
+- Created via Django admin or management command
+- Used by `google_login_direct` view to initiate OAuth flow
+
+---
+
+### ✅ **8. `socialaccount_socialaccount` Table** (django-allauth)
+
+**Model:** `allauth.socialaccount.models.SocialAccount`  
+**Status:** ✅ Exists (Created by django-allauth migrations)
+
+**Fields:**
+- `id` - AutoField (primary key)
+- `user` - **ForeignKey** → `auth.User` (CASCADE)
+  - Related name: `socialaccount_set`
+- `provider` - CharField(30) - OAuth provider name (e.g., "google")
+- `uid` - CharField(191) - Provider-specific user ID
+- `last_login` - DateTimeField - Last login via this provider
+- `date_joined` - DateTimeField - When account was linked
+- `extra_data` - JSONField - Additional provider-specific data
+
+**Relationships:**
+- `user` - **ForeignKey** → `auth.User` (CASCADE)
+- `socialtoken_set` - **One-to-Many** ← `socialaccount_socialtoken`
+
+**Indexes:**
+- `['provider', 'uid']` (unique together)
+
+**Usage:**
+- Links Django User accounts to OAuth provider accounts
+- Stores provider-specific user information
+- Created automatically when user logs in with OAuth provider
+
+---
+
+### ✅ **9. `socialaccount_socialtoken` Table** (django-allauth)
+
+**Model:** `allauth.socialaccount.models.SocialToken`  
+**Status:** ✅ Exists (Created by django-allauth migrations)
+
+**Fields:**
+- `id` - AutoField (primary key)
+- `app` - **ForeignKey** → `socialaccount_socialapp` (CASCADE)
+- `account` - **ForeignKey** → `socialaccount_socialaccount` (CASCADE)
+  - Related name: `socialtoken_set`
+- `token` - TextField - OAuth access token
+- `token_secret` - TextField - OAuth refresh token (for OAuth1) or stored here for OAuth2
+- `expires_at` - DateTimeField (nullable) - Token expiration time
+
+**Relationships:**
+- `app` - **ForeignKey** → `socialaccount_socialapp` (CASCADE)
+- `account` - **ForeignKey** → `socialaccount_socialaccount` (CASCADE)
+
+**Indexes:**
+- `['app', 'account']` (unique together)
+
+**Usage:**
+- Stores OAuth access and refresh tokens
+- Used by `GmailSocialAccountAdapter` to create/update `GmailConnection`
+- Tokens are encrypted before storing in `GmailConnection` model
+
+---
+
+### ✅ **10. `account_emailaddress` Table** (django-allauth)
+
+**Model:** `allauth.account.models.EmailAddress`  
+**Status:** ✅ Exists (Created by django-allauth migrations)
+
+**Fields:**
+- `id` - AutoField (primary key)
+- `user` - **ForeignKey** → `auth.User` (CASCADE)
+- `email` - EmailField - Email address
+- `verified` - BooleanField - Whether email is verified
+- `primary` - BooleanField - Whether this is the primary email
+
+**Relationships:**
+- `user` - **ForeignKey** → `auth.User` (CASCADE)
+- `emailconfirmation_set` - **One-to-Many** ← `account_emailconfirmation`
+
+**Indexes:**
+- `['email']` (unique)
+
+**Usage:**
+- Stores user email addresses
+- Tracks email verification status
+- Used for account management (not currently used for verification in this app)
+
+---
+
+### ✅ **11. `account_emailconfirmation` Table** (django-allauth)
+
+**Model:** `allauth.account.models.EmailConfirmation`  
+**Status:** ✅ Exists (Created by django-allauth migrations)
+
+**Fields:**
+- `id` - AutoField (primary key)
+- `email_address` - **ForeignKey** → `account_emailaddress` (CASCADE)
+- `created` - DateTimeField (auto_now_add)
+- `sent` - DateTimeField (nullable)
+- `key` - CharField(64) - Confirmation key (unique)
+
+**Relationships:**
+- `email_address` - **ForeignKey** → `account_emailaddress` (CASCADE)
+
+**Indexes:**
+- `['key']` (unique)
+
+**Usage:**
+- Stores email confirmation tokens
+- Not currently used (email verification disabled: `ACCOUNT_EMAIL_VERIFICATION = 'none'`)
+
+---
+
 ## 🔗 **Relationship Diagram**
 
 ```
@@ -306,6 +439,24 @@ reminders ✅
 
 documents
   └── Generic FK → Any model (content_type + object_id)
+
+socialaccount_socialapp ✅
+  └── sites → django.contrib.sites.Site (Many-to-Many)
+
+socialaccount_socialaccount ✅
+  ├── user → auth.User (FK, CASCADE)
+  └── socialtoken_set ← socialaccount_socialtoken (One-to-Many)
+
+socialaccount_socialtoken ✅
+  ├── app → socialaccount_socialapp (FK, CASCADE)
+  └── account → socialaccount_socialaccount (FK, CASCADE)
+
+account_emailaddress ✅
+  ├── user → auth.User (FK, CASCADE)
+  └── emailconfirmation_set ← account_emailconfirmation (One-to-Many)
+
+account_emailconfirmation ✅
+  └── email_address → account_emailaddress (FK, CASCADE)
 ```
 
 ---
@@ -363,6 +514,12 @@ documents
 - ✅ Added archive fields (`archived`, `archived_at`, `archived_by`)
 - ✅ Created `reminders` table with all fields and relationships
 - ✅ Created `notes` table for patient-specific notes (replaces localStorage)
+- ✅ Created django-allauth tables for OAuth authentication:
+  - `socialaccount_socialapp` - OAuth provider credentials
+  - `socialaccount_socialaccount` - Links users to OAuth providers
+  - `socialaccount_socialtoken` - OAuth access/refresh tokens
+  - `account_emailaddress` - User email addresses
+  - `account_emailconfirmation` - Email confirmation tokens (not used)
 
 ### Pending Migrations
 - ⚠️ **Multiple Coordinators:** Need to decide on JSONField vs separate table
