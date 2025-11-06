@@ -404,17 +404,31 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
                                 </Text>
                               </Group>
                             </div>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              color="red"
-                              onClick={(e) => {
+                            <Box
+                              component="div"
+                              onClick={(e: React.MouseEvent) => {
                                 e.stopPropagation();
                                 handleDeleteBatch(batch.id, batch.name);
                               }}
+                              style={{
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 28,
+                                height: 28,
+                                borderRadius: 4,
+                                color: 'var(--mantine-color-red-6)',
+                                transition: 'background-color 0.2s',
+                              }}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: 'var(--mantine-color-red-9)',
+                                },
+                              }}
                             >
                               <IconTrash size={16} />
-                            </ActionIcon>
+                            </Box>
                           </Group>
                         </Accordion.Control>
                         <Accordion.Panel>
