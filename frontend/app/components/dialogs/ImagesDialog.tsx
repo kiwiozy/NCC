@@ -352,7 +352,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
         }
         size="95vw"
         styles={{
-          body: { height: 'calc(90vh - 60px)' },
+          body: { height: 'calc(90vh - 60px)', overflow: 'hidden' },
           content: { height: '90vh' },
         }}
       >
@@ -633,8 +633,8 @@ function BatchContent({
 
       {/* Thumbnail Grid (Vertical Scroll) */}
       {batch.images && batch.images.length > 0 && (
-        <Box>
-          <Text size="sm" fw={500} mb="xs">
+        <Box style={{ maxHeight: '400px', overflow: 'auto' }}>
+          <Text size="sm" fw={500} mb="xs" style={{ position: 'sticky', top: 0, backgroundColor: 'var(--mantine-color-dark-7)', paddingBottom: '8px', zIndex: 1 }}>
             {batch.images.length} image{batch.images.length > 1 ? 's' : ''} in batch
           </Text>
           <Stack gap="xs">
@@ -656,8 +656,6 @@ function BatchContent({
                       borderRadius: '4px',
                       overflow: 'hidden',
                       transition: 'all 0.2s',
-                      width: '100%',
-                      aspectRatio: '1',
                     }}
                     sx={{
                       '&:hover': {
@@ -673,6 +671,7 @@ function BatchContent({
                       fit="cover"
                       radius="sm"
                       fallbackSrc="https://placehold.co/120x120?text=Image"
+                      style={{ display: 'block' }}
                     />
                   </Box>
 
