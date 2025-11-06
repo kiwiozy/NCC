@@ -224,9 +224,13 @@ def patient_conversation(request, patient_id):
         patient=patient
     ).order_by('received_at')
     
-    # Serialize messages
-    outbound_data = SMSMessageSerializer(outbound_messages, many=True).data
-    inbound_data = SMSInboundSerializer(inbound_messages, many=True).data
+    # Serialize messages - convert ReturnDict/ReturnList to regular Python dicts/lists
+    outbound_serializer = SMSMessageSerializer(outbound_messages, many=True)
+    inbound_serializer = SMSInboundSerializer(inbound_messages, many=True)
+    
+    # Convert to regular Python lists to avoid ReturnDict/ReturnList issues
+    outbound_data = [dict(msg.items()) for msg in outbound_serializer.data]
+    inbound_data = [dict(msg.items()) for msg in inbound_serializer.data]
     
     # Add phone_number_label to outbound messages
     for msg in outbound_data:
@@ -364,7 +368,19 @@ def patient_send_sms(request, patient_id):
             message=message
         )
         
-        if result.get('success'):
+        # Ensure result is a dict (SMSService might return a model instance)
+        if isinstance(result, SMSMessage):
+            # If result is an SMSMessage instance, convert to dict
+            result = {
+                'success': result.status == 'sent',
+                'message_id': result.external_message_id,
+                'sms_count': result.sms_count or 1,
+                'cost': result.cost,
+                'error': result.error_message
+            }
+        
+        # Now safely access dict properties
+        if isinstance(result, dict) and result.get('success'):
             sms_message.status = 'sent'
             sms_message.external_message_id = result.get('message_id')
             sms_message.sent_at = timezone.now()
@@ -372,7 +388,10 @@ def patient_send_sms(request, patient_id):
             sms_message.cost = result.get('cost')
         else:
             sms_message.status = 'failed'
-            sms_message.error_message = result.get('error', 'Unknown error')
+            error_msg = 'Unknown error'
+            if isinstance(result, dict):
+                error_msg = result.get('error', 'Unknown error')
+            sms_message.error_message = error_msg
         
         sms_message.save()
         
@@ -388,7 +407,9 @@ def patient_send_sms(request, patient_id):
     
     # Serialize response
     serializer = SMSMessageSerializer(sms_message)
-    response_data = serializer.data
+    
+    # Convert ReturnDict to regular dict to avoid .get() errors
+    response_data = dict(serializer.data.items())
     response_data['phone_number_label'] = phone_label or get_phone_number_label(patient, phone_number)
     
     return Response(response_data, status=status.HTTP_201_CREATED)

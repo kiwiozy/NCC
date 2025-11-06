@@ -41,6 +41,7 @@ urlpatterns = [
     # Authentication endpoints
     path('api/auth/user/', auth_views.user_info, name='user-info'),
     path('api/auth/logout/', auth_views.logout_view, name='logout-api'),  # Custom logout endpoint
+    path('api/auth/csrf-token/', auth_views.csrf_token, name='csrf-token'),  # CSRF token endpoint
     path('api/auth/google/login/', auth_views.google_login_direct, name='google-login-direct'),  # Direct Google login (skips intermediate page) - not using @api_view decorator
     # Login redirect (redirects to frontend after login)
     path('', auth_views.login_redirect, name='login-redirect'),

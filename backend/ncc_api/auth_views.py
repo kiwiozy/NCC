@@ -152,3 +152,16 @@ def logout_view(request):
         'location': 'https://localhost:3000/login/'
     })
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def csrf_token(request):
+    """
+    Get CSRF token for frontend POST requests
+    """
+    from django.middleware.csrf import get_token
+    token = get_token(request)
+    return Response({
+        'csrfToken': token
+    })
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   Stack,
@@ -23,6 +23,7 @@ import {
   IconCheck,
   IconAlertCircle,
   IconClock,
+  IconRefresh,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useMantineColorScheme } from '@mantine/core';
@@ -118,6 +119,8 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [defaultPhone, setDefaultPhone] = useState<PhoneNumber | null>(null);
+  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
+  const [checkingForNew, setCheckingForNew] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -136,13 +139,6 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
     }
   }, [opened, patientId]);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages]);
-
   const scrollToBottom = () => {
     setTimeout(() => {
       if (messagesEndRef.current) {
@@ -150,6 +146,76 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       }
     }, 100);
   };
+
+  const checkForNewMessages = useCallback(async () => {
+    if (!lastMessageTimestamp || !patientId) return;
+    
+    setCheckingForNew(true);
+    try {
+      const response = await fetch(
+        `https://localhost:8000/api/sms/patient/${patientId}/conversation/?t=${Date.now()}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const allMessages = data.messages || [];
+        
+        // Filter for messages newer than last known timestamp
+        const newMessages = allMessages.filter((msg: SMSMessage) => {
+          const msgTime = msg.timestamp || msg.received_at || msg.sent_at || msg.created_at;
+          return msgTime && new Date(msgTime) > new Date(lastMessageTimestamp);
+        });
+        
+        if (newMessages.length > 0) {
+          // Append new messages to existing ones
+          setMessages(prev => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNew = newMessages.filter((m: SMSMessage) => !existingIds.has(m.id));
+            return [...prev, ...uniqueNew].sort((a, b) => {
+              const timeA = a.timestamp || '';
+              const timeB = b.timestamp || '';
+              return timeA.localeCompare(timeB);
+            });
+          });
+          
+          // Update last message timestamp
+          const latestMsg = newMessages[newMessages.length - 1];
+          setLastMessageTimestamp(latestMsg.timestamp || latestMsg.received_at || latestMsg.sent_at || latestMsg.created_at || null);
+          
+          // Scroll to bottom to show new messages
+          scrollToBottom();
+        }
+      }
+    } catch (error) {
+      // Silently fail - don't show error for background polling
+      console.error('Error checking for new messages:', error);
+    } finally {
+      setCheckingForNew(false);
+    }
+  }, [patientId, lastMessageTimestamp]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  // Poll for new messages every 10 seconds when dialog is open
+  useEffect(() => {
+    if (!opened || !patientId || !lastMessageTimestamp) return;
+
+    const interval = setInterval(() => {
+      checkForNewMessages();
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [opened, patientId, lastMessageTimestamp, checkForNewMessages]);
 
   const loadConversation = async () => {
     setLoading(true);
@@ -165,11 +231,17 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       );
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const newMessages = data.messages || [];
+        setMessages(newMessages);
         setDefaultPhone(data.default_phone || null);
         // Set selected phone to default if available
         if (data.default_phone && !selectedPhone) {
           setSelectedPhone(data.default_phone);
+        }
+        // Update last message timestamp for polling
+        if (newMessages.length > 0) {
+          const lastMsg = newMessages[newMessages.length - 1];
+          setLastMessageTimestamp(lastMsg.timestamp || null);
         }
       } else {
         notifications.show({
@@ -236,6 +308,35 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
     }
   };
 
+  // Get CSRF token from cookies or API
+  const getCsrfToken = async (): Promise<string | null> => {
+    // Try to get from cookies first
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'csrftoken') {
+        return value;
+      }
+    }
+    
+    // If not in cookies, fetch from API
+    try {
+      const response = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.csrfToken || null;
+      }
+    } catch (error) {
+      console.error('Error fetching CSRF token:', error);
+    }
+    return null;
+  };
+
   const handleSend = async () => {
     if (!messageText.trim()) {
       notifications.show({
@@ -257,13 +358,23 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
 
     setSending(true);
     try {
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+      
       const response = await fetch(
         `https://localhost:8000/api/sms/patient/${patientId}/send/`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          credentials: 'include',
+          headers,
           body: JSON.stringify({
             phone_number: selectedPhone.value,
             phone_label: selectedPhone.label,
@@ -323,13 +434,29 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       opened={opened}
       onClose={onClose}
       title={
-        <Group gap="sm">
-          <Text fw={600}>SMS - {patientName}</Text>
-          {selectedPhone && (
-            <Badge size="sm" variant="light">
-              {formatPhoneNumber(selectedPhone.value)}
-            </Badge>
-          )}
+        <Group gap="sm" justify="space-between" style={{ width: '100%' }}>
+          <Group gap="sm">
+            <Text fw={600}>SMS - {patientName}</Text>
+            {selectedPhone && (
+              <Badge size="sm" variant="light">
+                {formatPhoneNumber(selectedPhone.value)}
+              </Badge>
+            )}
+          </Group>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => {
+              if (lastMessageTimestamp) {
+                checkForNewMessages();
+              } else {
+                loadConversation();
+              }
+            }}
+            loading={loading || checkingForNew}
+            title="Refresh messages"
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
         </Group>
       }
       size="lg"

@@ -580,7 +580,247 @@ If issues persist:
 
 ---
 
-**Last Updated:** 2025-11-05
+## 📱 **SMS Issues**
+
+### **403 Forbidden on Patient SMS**
+
+**Symptoms:**
+- Can't send SMS from patient page
+- Error: "Failed to load resource: 403 (Forbidden)"
+- Works in SMS test page but not patient dialog
+
+**Cause:**
+Patient SMS endpoints require authentication with CSRF tokens.
+
+**Solution:**
+1. **Backend:** Ensure CSRF token endpoint exists
+   ```bash
+   # Check endpoint exists
+   curl -X GET https://localhost:8000/api/auth/csrf-token/ \
+     -H "Accept: application/json" -k
+   ```
+
+2. **Frontend:** Include CSRF token in requests
+   - Must include `credentials: 'include'` in fetch calls
+   - Must include `X-CSRFToken` header in POST requests
+   - Token fetched from cookies or `/api/auth/csrf-token/` endpoint
+
+3. **Verify user is authenticated:**
+   ```bash
+   curl -X GET https://localhost:8000/api/auth/user/ \
+     -H "Accept: application/json" -k --cookie-jar cookies.txt
+   ```
+
+**Files to check:**
+- `backend/ncc_api/auth_views.py` - `csrf_token` view
+- `backend/ncc_api/urls.py` - `/api/auth/csrf-token/` route
+- `frontend/app/components/dialogs/SMSDialog.tsx` - `getCsrfToken()` function
+
+---
+
+### **"'SMSMessage' object has no attribute 'get'" Error**
+
+**Symptoms:**
+- SMS sends successfully but error notification appears
+- Error: `'SMSMessage' object has no attribute 'get'`
+- Message appears in database but frontend shows error
+
+**Cause:**
+Django REST Framework serializers return `ReturnDict` objects (not regular Python dicts). Also, `SMSService.send_sms()` might return model instances instead of dicts.
+
+**Solution:**
+
+1. **Convert serializer.data to regular dict:**
+   ```python
+   # In patient_views.py
+   serializer = SMSMessageSerializer(sms_message)
+   response_data = dict(serializer.data.items())  # Convert ReturnDict
+   ```
+
+2. **Check result type from SMSService:**
+   ```python
+   result = sms_service.send_sms(phone_number, message)
+   
+   # Ensure result is a dict
+   if isinstance(result, SMSMessage):
+       result = {
+           'success': result.status == 'sent',
+           'message_id': result.external_message_id,
+           'sms_count': result.sms_count or 1,
+           'cost': result.cost,
+           'error': result.error_message
+       }
+   
+   # Now safe to use .get()
+   if isinstance(result, dict) and result.get('success'):
+       # ...
+   ```
+
+**Files affected:**
+- `backend/sms_integration/patient_views.py` - `patient_send_sms()`
+- `backend/sms_integration/patient_views.py` - `patient_conversation()`
+
+**Prevention:**
+- Always convert `serializer.data` to regular dict before modifying
+- Always check instance type before calling `.get()` on results
+- Use `isinstance()` to verify dict vs model instance
+
+---
+
+### **Patient Not Found When Replying to SMS**
+
+**Symptoms:**
+- Inbound SMS received but not linked to patient
+- Message saved in `SMSInbound` but `patient` is `null`
+
+**Cause:**
+Phone number doesn't match any patient's communication data.
+
+**Solution:**
+1. **Check patient phone numbers:**
+   - Verify patient has phone in `contact_json.mobile` or `contact_json.phone`
+   - Check emergency contacts in `emergency_json`
+
+2. **Phone number normalization:**
+   - Strips spaces, +, leading 0
+   - Adds country code: `0412345678` → `61412345678`
+   - Format sent should be: `+61412345678`
+
+3. **Webhook searches:**
+   - `contact_json.mobile` (both string and nested dict formats)
+   - `contact_json.phone` (both string and nested dict formats)
+   - `emergency_json.mother.mobile`
+   - `emergency_json.father.mobile`
+   - `emergency_json.emergency.mobile`
+   - `emergency_json.guardian.mobile`
+
+**Files to check:**
+- `backend/sms_integration/webhook_views.py` - `find_patient_by_phone()`
+- `backend/sms_integration/webhook_views.py` - `normalize_phone()`
+
+---
+
+## 📱 **SMS Issues**
+
+### **403 Forbidden on Patient SMS**
+
+**Symptoms:**
+- Can't send SMS from patient page
+- Error: "Failed to load resource: 403 (Forbidden)"
+- Works in SMS test page but not patient dialog
+
+**Cause:**
+Patient SMS endpoints require authentication with CSRF tokens.
+
+**Solution:**
+1. **Backend:** Ensure CSRF token endpoint exists
+   ```bash
+   # Check endpoint exists
+   curl -X GET https://localhost:8000/api/auth/csrf-token/ \
+     -H "Accept: application/json" -k
+   ```
+
+2. **Frontend:** Include CSRF token in requests
+   - Must include `credentials: 'include'` in fetch calls
+   - Must include `X-CSRFToken` header in POST requests
+   - Token fetched from cookies or `/api/auth/csrf-token/` endpoint
+
+3. **Verify user is authenticated:**
+   ```bash
+   curl -X GET https://localhost:8000/api/auth/user/ \
+     -H "Accept: application/json" -k --cookie-jar cookies.txt
+   ```
+
+**Files to check:**
+- `backend/ncc_api/auth_views.py` - `csrf_token` view
+- `backend/ncc_api/urls.py` - `/api/auth/csrf-token/` route
+- `frontend/app/components/dialogs/SMSDialog.tsx` - `getCsrfToken()` function
+
+---
+
+### **"'SMSMessage' object has no attribute 'get'" Error**
+
+**Symptoms:**
+- SMS sends successfully but error notification appears
+- Error: `'SMSMessage' object has no attribute 'get'`
+- Message appears in database but frontend shows error
+
+**Cause:**
+Django REST Framework serializers return `ReturnDict` objects (not regular Python dicts). Also, `SMSService.send_sms()` might return model instances instead of dicts.
+
+**Solution:**
+
+1. **Convert serializer.data to regular dict:**
+   ```python
+   # In patient_views.py
+   serializer = SMSMessageSerializer(sms_message)
+   response_data = dict(serializer.data.items())  # Convert ReturnDict
+   ```
+
+2. **Check result type from SMSService:**
+   ```python
+   result = sms_service.send_sms(phone_number, message)
+   
+   # Ensure result is a dict
+   if isinstance(result, SMSMessage):
+       result = {
+           'success': result.status == 'sent',
+           'message_id': result.external_message_id,
+           'sms_count': result.sms_count or 1,
+           'cost': result.cost,
+           'error': result.error_message
+       }
+   
+   # Now safe to use .get()
+   if isinstance(result, dict) and result.get('success'):
+       # ...
+   ```
+
+**Files affected:**
+- `backend/sms_integration/patient_views.py` - `patient_send_sms()`
+- `backend/sms_integration/patient_views.py` - `patient_conversation()`
+
+**Prevention:**
+- Always convert `serializer.data` to regular dict before modifying
+- Always check instance type before calling `.get()` on results
+- Use `isinstance()` to verify dict vs model instance
+
+---
+
+### **Patient Not Found When Replying to SMS**
+
+**Symptoms:**
+- Inbound SMS received but not linked to patient
+- Message saved in `SMSInbound` but `patient` is `null`
+
+**Cause:**
+Phone number doesn't match any patient's communication data.
+
+**Solution:**
+1. **Check patient phone numbers:**
+   - Verify patient has phone in `contact_json.mobile` or `contact_json.phone`
+   - Check emergency contacts in `emergency_json`
+
+2. **Phone number normalization:**
+   - Strips spaces, +, leading 0
+   - Adds country code: `0412345678` → `61412345678`
+   - Format sent should be: `+61412345678`
+
+3. **Webhook searches:**
+   - `contact_json.mobile` (both string and nested dict formats)
+   - `contact_json.phone` (both string and nested dict formats)
+   - `emergency_json.mother.mobile`
+   - `emergency_json.father.mobile`
+   - `emergency_json.emergency.mobile`
+   - `emergency_json.guardian.mobile`
+
+**Files to check:**
+- `backend/sms_integration/webhook_views.py` - `find_patient_by_phone()`
+- `backend/sms_integration/webhook_views.py` - `normalize_phone()`
+
+---
+
+**Last Updated:** 2025-11-06
 
 **IMPORTANT:** If this troubleshooting guide is updated, you MUST also update the project rules at `.cursor/rules/projectrules.mdc` to keep them synchronized.
 
