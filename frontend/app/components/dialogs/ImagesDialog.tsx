@@ -425,6 +425,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
                               handleAccordionChange(batch.id);
                             }}
                             onImageClick={(image) => handleImageClick(image, batch.images)}
+                            onCategoryChange={handleCategoryChange}
                           />
                         </Accordion.Panel>
                       </Accordion.Item>
@@ -464,11 +465,13 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
 function BatchContent({ 
   batch, 
   onUploadSuccess, 
-  onImageClick 
+  onImageClick,
+  onCategoryChange
 }: { 
   batch: ImageBatch; 
   onUploadSuccess: () => void;
   onImageClick: (image: Image) => void;
+  onCategoryChange: (imageId: string, newCategory: string) => void;
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -666,7 +669,7 @@ function BatchContent({
                   <Select
                     size="sm"
                     value={image.category}
-                    onChange={(value) => handleCategoryChange(image.id, value || 'other')}
+                    onChange={(value) => onCategoryChange(image.id, value || 'other')}
                     data={IMAGE_CATEGORY_GROUPS}
                     placeholder="Select category"
                     searchable
