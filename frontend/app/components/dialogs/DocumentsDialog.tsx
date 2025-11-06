@@ -170,7 +170,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
           // Step 2: Not in cache, fetch from proxy endpoint (bypasses CORS)
           console.log('Fetching PDF from proxy endpoint:', selectedDocument.id);
           
-          const proxyUrl = `http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`;
+          const proxyUrl = `https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`;
           const res = await fetch(proxyUrl, {
             credentials: 'include',
             mode: 'cors',
@@ -267,7 +267,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     try {
       // Fetch documents for patient
       // Backend will filter by content_type__model=patient and object_id=patientId
-      const response = await fetch(`http://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+      const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
       if (response.ok) {
         const data = await response.json();
         const docsList = data.results || data;
@@ -379,7 +379,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
         setUploading(false);
       });
 
-      xhr.open('POST', 'http://localhost:8000/api/documents/upload/');
+      xhr.open('POST', 'https://localhost:8000/api/documents/upload/');
       xhr.send(formData);
 
     } catch (err: any) {
@@ -391,7 +391,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
 
   const deleteDocument = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/documents/${id}/`, {
+      const response = await fetch(`https://localhost:8000/api/documents/${id}/`, {
         method: 'DELETE',
       });
 
@@ -664,7 +664,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                     <Button
                                         leftSection={<IconDownload size={16} />}
                                         onClick={() => {
-                                            window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
+                                            window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                         }}
                                     >
                                         Open PDF in New Window
@@ -713,7 +713,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                   fullWidth
                                   leftSection={<IconDownload size={16} />}
                                   onClick={() => {
-                                    window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
+                                    window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                   }}
                                 >
                                   Open PDF in Safari
@@ -760,7 +760,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                   <Button
                                     leftSection={<IconDownload size={16} />}
                                     onClick={() => {
-                                      window.open(`http://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
+                                      window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                     }}
                                   >
                                     Open PDF in New Window

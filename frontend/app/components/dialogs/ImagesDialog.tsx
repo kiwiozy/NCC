@@ -18,6 +18,7 @@ import {
   rem,
   Loader,
   Select,
+  Checkbox,
 } from '@mantine/core';
 import {
   IconPlus,
@@ -27,6 +28,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconX,
+  IconDownload,
 } from '@tabler/icons-react';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { DatePickerInput } from '@mantine/dates';
@@ -208,6 +210,76 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
     }
   };
 
+  const handleDownloadBatch = async (batchId: string, batchName: string, selectedImageIds?: string[]) => {
+    try {
+      const imageCount = selectedImageIds ? selectedImageIds.length : 'all';
+      notifications.show({
+        title: 'Preparing download',
+        message: `Creating ZIP file for ${imageCount} image${imageCount === 'all' ? 's' : imageCount !== 1 ? 's' : ''}...`,
+        color: 'blue',
+      });
+
+      // Build URL with image IDs as query parameters if provided
+      let url = `https://localhost:8000/api/images/batches/${batchId}/download/`;
+      if (selectedImageIds && selectedImageIds.length > 0) {
+        const imageIdsParam = selectedImageIds.map(id => `image_ids=${id}`).join('&');
+        url += `?${imageIdsParam}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.statusText}`);
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${batchName.replace(/\s+/g, '_')}_${batchId.slice(0, 8)}.zip`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create a blob URL
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+
+      notifications.show({
+        title: 'Download started',
+        message: `Downloading ${filename}`,
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Download batch error:', error);
+      notifications.show({
+        title: 'Download failed',
+        message: 'Failed to download batch. Please try again.',
+        color: 'red',
+      });
+    }
+  };
+
   const handleDeleteBatch = (batchId: string, batchName: string) => {
     modals.openConfirmModal({
       title: 'Delete Image Batch',
@@ -352,14 +424,15 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
         }
         size="95vw"
         styles={{
-          body: { height: 'calc(90vh - 60px)', overflow: 'hidden' },
+          body: { height: 'calc(90vh - 60px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' },
           content: { height: '90vh' },
         }}
       >
-        <Grid gutter="md" style={{ height: '100%' }}>
-          {/* Left Panel (30%): Batch List with Accordions */}
-          <Grid.Col span={{ base: 12, md: 3.6 }}>
-            <Stack gap="md" style={{ height: '100%' }}>
+        <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Grid gutter="md" style={{ flex: 1, minHeight: 0 }}>
+            {/* Left Panel (30%): Batch List with Accordions */}
+            <Grid.Col span={{ base: 12, md: 3.6 }}>
+              <Stack gap="md" style={{ height: '100%' }}>
               <Button
                 leftSection={<IconPlus size={16} />}
                 onClick={handleCreateBatch}
@@ -404,31 +477,60 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
                                 </Text>
                               </Group>
                             </div>
-                            <Box
-                              component="div"
-                              onClick={(e: React.MouseEvent) => {
-                                e.stopPropagation();
-                                handleDeleteBatch(batch.id, batch.name);
-                              }}
-                              style={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 28,
-                                height: 28,
-                                borderRadius: 4,
-                                color: 'var(--mantine-color-red-6)',
-                                transition: 'background-color 0.2s',
-                              }}
-                              sx={{
-                                '&:hover': {
-                                  backgroundColor: 'var(--mantine-color-red-9)',
-                                },
-                              }}
-                            >
-                              <IconTrash size={16} />
-                            </Box>
+                            <Group gap={4}>
+                              <Box
+                                component="div"
+                                onClick={(e: React.MouseEvent) => {
+                                  e.stopPropagation();
+                                  handleDownloadBatch(batch.id, batch.name);
+                                }}
+                                style={{
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 4,
+                                  color: 'var(--mantine-color-blue-6)',
+                                  transition: 'background-color 0.2s',
+                                }}
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: 'var(--mantine-color-blue-9)',
+                                  },
+                                }}
+                                title="Download batch as ZIP"
+                              >
+                                <IconDownload size={16} />
+                              </Box>
+                              <Box
+                                component="div"
+                                onClick={(e: React.MouseEvent) => {
+                                  e.stopPropagation();
+                                  handleDeleteBatch(batch.id, batch.name);
+                                }}
+                                style={{
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 4,
+                                  color: 'var(--mantine-color-red-6)',
+                                  transition: 'background-color 0.2s',
+                                }}
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: 'var(--mantine-color-red-9)',
+                                  },
+                                }}
+                                title="Delete batch"
+                              >
+                                <IconTrash size={16} />
+                              </Box>
+                            </Group>
                           </Group>
                         </Accordion.Control>
                         <Accordion.Panel>
@@ -440,6 +542,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
                             }}
                             onImageClick={(image) => handleImageClick(image, batch.images)}
                             onCategoryChange={handleCategoryChange}
+                            onDownloadSelected={handleDownloadBatch}
                           />
                         </Accordion.Panel>
                       </Accordion.Item>
@@ -469,7 +572,8 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
               />
             )}
           </Grid.Col>
-        </Grid>
+          </Grid>
+        </Box>
       </Modal>
     </>
   );
@@ -480,16 +584,19 @@ function BatchContent({
   batch, 
   onUploadSuccess, 
   onImageClick,
-  onCategoryChange
+  onCategoryChange,
+  onDownloadSelected
 }: { 
   batch: ImageBatch; 
   onUploadSuccess: () => void;
   onImageClick: (image: Image) => void;
   onCategoryChange: (imageId: string, newCategory: string) => void;
+  onDownloadSelected: (batchId: string, batchName: string, selectedImageIds: string[]) => void;
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
 
   const handleUpload = async () => {
     if (files.length === 0) return;
@@ -633,50 +740,87 @@ function BatchContent({
 
       {/* Thumbnail Grid (Vertical Scroll) */}
       {batch.images && batch.images.length > 0 && (
-        <Box style={{ maxHeight: '400px', overflow: 'auto' }}>
-          <Text size="sm" fw={500} mb="xs" style={{ position: 'sticky', top: 0, backgroundColor: 'var(--mantine-color-dark-7)', paddingBottom: '8px', zIndex: 1 }}>
-            {batch.images.length} image{batch.images.length > 1 ? 's' : ''} in batch
-          </Text>
+        <Box style={{ maxHeight: '600px', overflow: 'auto' }}>
+          <Group justify="space-between" mb="xs" style={{ position: 'sticky', top: 0, backgroundColor: 'var(--mantine-color-dark-7)', paddingBottom: '8px', zIndex: 1 }}>
+            <Text size="sm" fw={500}>
+              {batch.images.length} image{batch.images.length > 1 ? 's' : ''} in batch
+            </Text>
+            {selectedImages.size > 0 && (
+              <Button
+                size="xs"
+                variant="light"
+                color="blue"
+                leftSection={<IconDownload size={14} />}
+                onClick={() => {
+                  onDownloadSelected(batch.id, batch.name, Array.from(selectedImages));
+                }}
+              >
+                Download {selectedImages.size} Selected
+              </Button>
+            )}
+          </Group>
           <Stack gap="xs">
             {batch.images.map((image) => (
               <Box
                 key={image.id}
                 p="xs"
                 style={{
-                  border: '1px solid var(--mantine-color-dark-4)',
+                  border: selectedImages.has(image.id) 
+                    ? '2px solid var(--mantine-color-blue-6)' 
+                    : '1px solid var(--mantine-color-dark-4)',
                   borderRadius: '8px',
+                  backgroundColor: selectedImages.has(image.id) 
+                    ? 'var(--mantine-color-blue-9)' 
+                    : 'transparent',
                 }}
               >
                 <Stack gap={0}>
-                  {/* Thumbnail Image (Clickable) */}
-                  <Box
-                    onClick={() => onImageClick(image)}
-                    style={{
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s',
-                    }}
-                    sx={{
-                      '&:hover': {
-                        transform: 'scale(1.02)',
-                        boxShadow: '0 0 0 2px var(--mantine-color-blue-6)',
-                      },
-                    }}
-                  >
-                    <MantineImage
-                      src={image.thumbnail_url || image.download_url}
-                      alt={image.original_name}
-                      height={120}
-                      fit="cover"
-                      radius="sm"
-                      fallbackSrc="https://placehold.co/120x120?text=Image"
-                      style={{ display: 'block' }}
+                  {/* Checkbox and Thumbnail Row */}
+                  <Group gap="xs" mb={4}>
+                    <Checkbox
+                      checked={selectedImages.has(image.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        const newSelected = new Set(selectedImages);
+                        if (e.currentTarget.checked) {
+                          newSelected.add(image.id);
+                        } else {
+                          newSelected.delete(image.id);
+                        }
+                        setSelectedImages(newSelected);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                     />
-                  </Box>
+                    <Box
+                      onClick={() => onImageClick(image)}
+                      style={{
+                        cursor: 'pointer',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s',
+                        flex: 1,
+                      }}
+                      sx={{
+                        '&:hover': {
+                          transform: 'scale(1.02)',
+                          boxShadow: '0 0 0 2px var(--mantine-color-blue-6)',
+                        },
+                      }}
+                    >
+                      <MantineImage
+                        src={image.thumbnail_url || image.download_url}
+                        alt={image.original_name}
+                        height={80}
+                        fit="cover"
+                        radius="sm"
+                        fallbackSrc="https://placehold.co/80x80?text=Image"
+                        style={{ display: 'block' }}
+                      />
+                    </Box>
+                  </Group>
 
                   {/* Image Name */}
-                  <Text size="xs" fw={500} truncate mt={4} mb={4}>{image.original_name}</Text>
+                  <Text size="xs" fw={500} truncate mb={4}>{image.original_name}</Text>
 
                   {/* Category Dropdown (Below Image) */}
                   <Select
@@ -695,16 +839,9 @@ function BatchContent({
                   {/* Size Info */}
                   <Group gap={4} mt={2}>
                     {image.thumbnail_size ? (
-                      <>
-                        <Badge size="xs" color="green" variant="dot">Thumb</Badge>
-                        <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
-                        <Text size="xs" c="green">({((1 - (image.thumbnail_size / image.file_size)) * 100).toFixed(0)}% smaller)</Text>
-                      </>
+                      <Text size="xs" c="dimmed">{(image.thumbnail_size / 1024).toFixed(1)} KB</Text>
                     ) : (
-                      <>
-                        <Badge size="xs" variant="light">Original</Badge>
-                        <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
-                      </>
+                      <Text size="xs" c="dimmed">{(image.file_size / 1024).toFixed(1)} KB</Text>
                     )}
                   </Group>
                 </Stack>
@@ -733,31 +870,103 @@ function ImageViewer({
   onNext: () => void;
   hasMultiple: boolean;
 }) {
+  const handleDownload = async () => {
+    try {
+      // Use backend proxy endpoint to bypass CORS issues
+      const response = await fetch(`https://localhost:8000/api/images/${image.id}/download/`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.statusText}`);
+      }
+      
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a blob URL
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = image.original_name;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+      
+      notifications.show({
+        title: 'Download started',
+        message: `Downloading ${image.original_name}`,
+        color: 'blue',
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      notifications.show({
+        title: 'Download failed',
+        message: 'Failed to download image. Please try again.',
+        color: 'red',
+      });
+    }
+  };
+
   return (
-    <Stack style={{ height: '100%' }}>
-      {/* Header */}
-      <Group justify="space-between">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Text fw={600} size="lg" truncate>{image.original_name}</Text>
-          <Group gap="xs" mt={4}>
-            <Badge>{image.category}</Badge>
-            {image.thumbnail_size && (
-              <Badge color="green" variant="dot">Thumbnail Generated</Badge>
-            )}
+    <Stack style={{ height: '100%' }} gap="md">
+      {/* Header with Metadata */}
+      <Box
+        p="sm"
+        style={{
+          borderBottom: '1px solid var(--mantine-color-dark-4)',
+          backgroundColor: 'var(--mantine-color-dark-6)',
+        }}
+      >
+        <Group justify="space-between" mb="xs">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text fw={700} size="xl" truncate tt="uppercase">{image.category}</Text>
+          </div>
+          <Group gap="xs">
+            <ActionIcon variant="subtle" color="red" onClick={onDelete}>
+              <IconTrash size={20} />
+            </ActionIcon>
+            <ActionIcon variant="subtle" color="blue" onClick={handleDownload} title="Download image">
+              <IconDownload size={20} />
+            </ActionIcon>
+            <ActionIcon variant="subtle" onClick={onClose}>
+              <IconX size={20} />
+            </ActionIcon>
           </Group>
-        </div>
-        <Group gap="xs">
-          <ActionIcon variant="subtle" color="red" onClick={onDelete}>
-            <IconTrash size={20} />
-          </ActionIcon>
-          <ActionIcon variant="subtle" onClick={onClose}>
-            <IconX size={20} />
-          </ActionIcon>
         </Group>
-      </Group>
+
+        {/* Metadata Grid */}
+        <Grid gutter="xs">
+          {image.width && image.height && (
+            <Grid.Col span={6}>
+              <Text size="xs" c="dimmed">Dimensions</Text>
+              <Text size="sm" fw={500}>{image.width} × {image.height} px</Text>
+            </Grid.Col>
+          )}
+          <Grid.Col span={6}>
+            <Text size="xs" c="dimmed">Uploaded</Text>
+            <Text size="sm" fw={500}>
+              {new Date(image.uploaded_at).toLocaleDateString('en-AU', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Text>
+          </Grid.Col>
+        </Grid>
+      </Box>
 
       {/* Image Display */}
-      <Box style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
         <MantineImage
           src={image.download_url}
           alt={image.original_name}
@@ -797,53 +1006,6 @@ function ImageViewer({
             </ActionIcon>
           </>
         )}
-      </Box>
-
-      {/* Metadata */}
-      <Box
-        p="md"
-        style={{
-          borderTop: '1px solid var(--mantine-color-dark-4)',
-          backgroundColor: 'var(--mantine-color-dark-6)',
-        }}
-      >
-        <Grid gutter="xs">
-          <Grid.Col span={6}>
-            <Text size="xs" c="dimmed">Original Size</Text>
-            <Text size="sm" fw={500}>{(image.file_size / 1024).toFixed(1)} KB</Text>
-          </Grid.Col>
-          {image.thumbnail_size && (
-            <Grid.Col span={6}>
-              <Text size="xs" c="dimmed">Thumbnail Size</Text>
-              <Text size="sm" fw={500} c="green">
-                {(image.thumbnail_size / 1024).toFixed(1)} KB 
-                ({((1 - image.thumbnail_size / image.file_size) * 100).toFixed(0)}% reduction)
-              </Text>
-            </Grid.Col>
-          )}
-          {image.width && image.height && (
-            <Grid.Col span={6}>
-              <Text size="xs" c="dimmed">Dimensions</Text>
-              <Text size="sm" fw={500}>{image.width} × {image.height} px</Text>
-            </Grid.Col>
-          )}
-          <Grid.Col span={6}>
-            <Text size="xs" c="dimmed">Uploaded</Text>
-            <Text size="sm" fw={500}>
-              {new Date(image.uploaded_at).toLocaleDateString('en-AU', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </Text>
-          </Grid.Col>
-          {image.caption && (
-            <Grid.Col span={12}>
-              <Text size="xs" c="dimmed">Caption</Text>
-              <Text size="sm">{image.caption}</Text>
-            </Grid.Col>
-          )}
-        </Grid>
       </Box>
     </Stack>
   );

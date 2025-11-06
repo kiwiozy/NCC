@@ -58,6 +58,7 @@ export default function ContactHeader({
   const [notesCount, setNotesCount] = useState<number>(0);
   const [documentsCount, setDocumentsCount] = useState<number>(0);
   const [imagesCount, setImagesCount] = useState<number>(0);
+  const [batchesCount, setBatchesCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
@@ -70,18 +71,23 @@ export default function ContactHeader({
     const getImagesCount = async () => {
       try {
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
-          const response = await fetch(`http://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
-            const batches = await response.json();
-            const totalImages = batches.reduce((sum: number, batch: any) => sum + batch.image_count, 0);
+            const data = await response.json();
+            const batches = data.results || data;
+            const batchesArray = Array.isArray(batches) ? batches : [];
+            const totalImages = batchesArray.reduce((sum: number, batch: any) => sum + batch.image_count, 0);
             setImagesCount(totalImages);
+            setBatchesCount(batchesArray.length);
           } else {
             setImagesCount(0);
+            setBatchesCount(0);
           }
         }
       } catch (err) {
         console.error('Error loading images count:', err);
         setImagesCount(0);
+        setBatchesCount(0);
       }
     };
 
@@ -95,7 +101,7 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific notes
-          const response = await fetch(`http://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             const notesList = data.results || data;
@@ -157,7 +163,7 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific documents
-          const response = await fetch(`http://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             const docsList = data.results || data;
@@ -228,7 +234,7 @@ export default function ContactHeader({
   const menuItems = [
     { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); }, count: notesCount },
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
-    { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount },
+    { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => console.log('Appointments') },
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
@@ -480,6 +486,7 @@ export default function ContactHeader({
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
                           {item.label}
                         </Text>
+                        {/* Badges for Notes and Documents */}
                         {(item.label === 'Notes' && notesCount > 0) || (item.label === 'Documents' && documentsCount > 0) ? (
                           <Badge
                             size="xs"
@@ -505,6 +512,49 @@ export default function ContactHeader({
                               : (documentsCount > 99 ? '99+' : documentsCount)
                             }
                           </Badge>
+                        ) : null}
+                        {/* Badges for Images: Blue (batches) and Red (images) */}
+                        {item.label === 'Images' && (imagesCount > 0 || batchesCount > 0) ? (
+                          <Group gap={24} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: 0 }}>
+                            {batchesCount > 0 && (
+                              <Badge
+                                size="xs"
+                                color="blue"
+                                variant="filled"
+                                style={{
+                                  minWidth: rem(18),
+                                  height: rem(18),
+                                  padding: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: rem(10),
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {batchesCount > 99 ? '99+' : batchesCount}
+                              </Badge>
+                            )}
+                            {imagesCount > 0 && (
+                              <Badge
+                                size="xs"
+                                color="red"
+                                variant="filled"
+                                style={{
+                                  minWidth: rem(18),
+                                  height: rem(18),
+                                  padding: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: rem(10),
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {imagesCount > 99 ? '99+' : imagesCount}
+                              </Badge>
+                            )}
+                          </Group>
                         ) : null}
                       </Grid.Col>
                     </Grid>

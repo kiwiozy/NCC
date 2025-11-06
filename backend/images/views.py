@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.db.models import Q
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.http import HttpResponse
 
 from .models import ImageBatch, Image
 from .serializers import ImageBatchSerializer, ImageBatchListSerializer, ImageSerializer
@@ -16,6 +17,9 @@ from datetime import datetime
 from PIL import Image as PILImage
 from io import BytesIO
 import sys
+import requests
+import zipfile
+from zipfile import ZipFile
 
 
 class ImageBatchViewSet(viewsets.ModelViewSet):
@@ -217,6 +221,146 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
             'errors': errors,
             'batch': ImageBatchSerializer(batch).data
         }, status=status.HTTP_201_CREATED if uploaded_images else status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """
+        Download all images in a batch as a ZIP file.
+        
+        GET /api/images/batches/{id}/download/
+        """
+        try:
+            # Get batch
+            batch = self.get_object()
+            
+            # Get image IDs from query parameters if provided
+            image_ids_param = request.query_params.getlist('image_ids')
+            
+            if image_ids_param:
+                # Filter to only selected images
+                images = batch.images.filter(id__in=image_ids_param).order_by('order', 'uploaded_at')
+                print(f"📦 Starting ZIP creation for batch '{batch.name}' with {len(image_ids_param)} selected images")
+            else:
+                # Include all images
+                images = batch.images.all().order_by('order', 'uploaded_at')
+                print(f"📦 Starting ZIP creation for batch '{batch.name}' with all images")
+            
+            total_images = images.count()
+            
+            if total_images == 0:
+                return Response(
+                    {'error': 'No images selected' if image_ids_param else 'No images in this batch'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Create ZIP file in memory
+            zip_buffer = BytesIO()
+            s3_service = S3Service()
+            images_added = 0
+            
+            try:
+                with ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                    for image in images:
+                        try:
+                            # Generate presigned URL for image
+                            presigned_url = s3_service.generate_presigned_url(
+                                image.s3_key,
+                                expiration=3600,
+                                filename=image.original_name
+                            )
+                            
+                            if not presigned_url:
+                                print(f"⚠️  No presigned URL for image {image.id}")
+                                continue
+                            
+                            # Fetch image from S3
+                            response = requests.get(presigned_url, stream=True, timeout=30)
+                            response.raise_for_status()
+                            
+                            # Read content from stream
+                            image_content = b''.join(response.iter_content(chunk_size=8192))
+                            
+                            if not image_content:
+                                print(f"⚠️  Empty content for image {image.id}")
+                                continue
+                            
+                            print(f"📦 Fetched {len(image_content)} bytes for {image.original_name}")
+                            
+                            # Add image to ZIP with original filename
+                            zip_file.writestr(image.original_name, image_content)
+                            images_added += 1
+                            print(f"✅ Added {image.original_name} to ZIP ({images_added}/{total_images})")
+                            
+                        except Exception as e:
+                            import traceback
+                            print(f"❌ Error adding image {image.id} to ZIP: {str(e)}")
+                            traceback.print_exc()
+                            continue
+                
+                # Close the ZIP file explicitly
+                zip_buffer.seek(0)
+                zip_content = zip_buffer.getvalue()
+                zip_buffer.close()
+                
+            except Exception as e:
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"❌ ZIP creation error: {str(e)}")
+                print(error_trace)
+                zip_buffer.close()
+                raise
+            
+            # Check if ZIP file has content
+            if len(zip_content) == 0 or images_added == 0:
+                return Response(
+                    {'error': f'No images could be added to ZIP file (tried {total_images} images)'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            print(f"✅ ZIP file created: {len(zip_content)} bytes with {images_added} images")
+            
+            # Create Django response
+            django_response = HttpResponse(
+                zip_content,
+                content_type='application/zip'
+            )
+            
+            # Generate filename: sanitize batch name
+            safe_name = ''.join(c for c in batch.name if c.isalnum() or c in (' ', '-', '_', '.'))
+            safe_name = safe_name.replace(' ', '_')[:50]  # Limit length
+            batch_id_str = str(batch.id)[:8]  # Convert UUID to string first
+            zip_filename = f"{safe_name}_{batch_id_str}.zip"
+            
+            # Set headers for download
+            django_response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+            django_response['Content-Length'] = str(len(zip_content))
+            django_response['Cache-Control'] = 'public, max-age=3600'
+            
+            return django_response
+            
+        except ImageBatch.DoesNotExist:
+            return Response(
+                {'error': 'Batch not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except requests.RequestException as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"❌ S3 request error: {str(e)}")
+            print(error_trace)
+            return Response(
+                {'error': f'Failed to fetch images from S3: {str(e)}'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"❌ Download batch error: {str(e)}")
+            print(error_trace)
+            return Response(
+                {'error': f'Internal error: {str(e)}', 'trace': error_trace},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ImageViewSet(viewsets.ModelViewSet):
@@ -306,4 +450,72 @@ class ImageViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'Batch not found'},
                 status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """
+        Download image from S3 via Django backend to bypass CORS issues.
+        This proxies the image through Django with proper download headers.
+        
+        GET /api/images/{id}/download/
+        """
+        try:
+            # Get image
+            image = self.get_object()
+            
+            # Generate presigned URL
+            s3_service = S3Service()
+            presigned_url = s3_service.generate_presigned_url(
+                image.s3_key,
+                expiration=3600,
+                filename=image.original_name
+            )
+            
+            if not presigned_url:
+                return Response(
+                    {'error': 'Failed to generate download URL'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Fetch from S3
+            response = requests.get(presigned_url, stream=True, timeout=30)
+            response.raise_for_status()
+            
+            # Determine content type from original filename
+            content_type = 'image/jpeg'  # default
+            if image.original_name.lower().endswith('.png'):
+                content_type = 'image/png'
+            elif image.original_name.lower().endswith('.gif'):
+                content_type = 'image/gif'
+            elif image.original_name.lower().endswith('.webp'):
+                content_type = 'image/webp'
+            
+            # Create Django response with appropriate headers for download
+            django_response = HttpResponse(
+                response.content,
+                content_type=content_type
+            )
+            
+            # Set headers for proper download (attachment forces download in Safari)
+            django_response['Content-Disposition'] = f'attachment; filename="{image.original_name}"'
+            django_response['Content-Length'] = str(image.file_size)
+            django_response['Cache-Control'] = 'public, max-age=3600'
+            
+            return django_response
+            
+        except Image.DoesNotExist:
+            return Response(
+                {'error': 'Image not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except requests.RequestException as e:
+            return Response(
+                {'error': f'Failed to fetch image from S3: {str(e)}'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Internal error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
