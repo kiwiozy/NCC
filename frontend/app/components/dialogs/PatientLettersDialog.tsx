@@ -63,6 +63,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   
   // Load letters when dialog opens
   useEffect(() => {
@@ -266,10 +268,10 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       if (response.ok) {
         const blob = await response.blob();
         console.log('✅ PDF blob received, size:', blob.size);
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        console.log('🎉 Opening PDF in new tab');
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        const url = URL.createObjectURL(blob);
+        console.log('🎉 Setting PDF URL for modal preview');
+        setPdfUrl(url);
+        setPdfPreviewOpen(true);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('❌ PDF generation failed:', errorData);
@@ -384,6 +386,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   );
   
   return (
+    <>
     <Modal
       opened={opened}
       onClose={onClose}
@@ -622,6 +625,37 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
           </Box>
         </Box>
     </Modal>
+    
+    {/* PDF Preview Modal */}
+    <Modal
+      opened={pdfPreviewOpen}
+      onClose={() => {
+        setPdfPreviewOpen(false);
+        if (pdfUrl) {
+          URL.revokeObjectURL(pdfUrl);
+          setPdfUrl(null);
+        }
+      }}
+      title="PDF Preview"
+      size="90vw"
+      styles={{
+        body: { height: '85vh', overflow: 'hidden' },
+        content: { height: '90vh' },
+      }}
+    >
+      {pdfUrl && (
+        <iframe
+          src={pdfUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+          }}
+          title="PDF Preview"
+        />
+      )}
+    </Modal>
+    </>
   );
 }
 
