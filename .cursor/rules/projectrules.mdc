@@ -4,6 +4,53 @@ alwaysApply: true
 
 # WalkEasy Nexus - Project Rules
 
+## 📚 Quick Reference Links
+
+### 🚀 Development Scripts (Start Here!)
+- **[QUICK_COMMANDS.md](../../QUICK_COMMANDS.md)** - Copy-paste command reference ⭐
+- **[SETUP_COMPLETE.md](../../SETUP_COMPLETE.md)** - Complete setup summary
+- **[DEV_SCRIPTS_README.md](../../DEV_SCRIPTS_README.md)** - Detailed script documentation
+- **[ARCHITECTURE_DEV.md](../../ARCHITECTURE_DEV.md)** - System architecture & diagrams
+
+### 📖 Key Documentation
+- **[docs/INDEX.md](../../docs/INDEX.md)** - Main documentation index
+- **[docs/architecture/DATABASE_SCHEMA.md](../../docs/architecture/DATABASE_SCHEMA.md)** - Database tables & fields
+- **[docs/architecture/TROUBLESHOOTING.md](../../docs/architecture/TROUBLESHOOTING.md)** - Common issues & solutions
+- **[docs/architecture/PAGES_INDEX.md](../../docs/architecture/PAGES_INDEX.md)** - All pages & dialogs
+
+### 🔌 Integration Guides
+- **[docs/integrations/SMS.md](../../docs/integrations/SMS.md)** - SMS Broadcast integration
+- **[docs/integrations/GMAIL.md](../../docs/integrations/GMAIL.md)** - Gmail OAuth & email
+- **[docs/integrations/XERO.md](../../docs/integrations/XERO.md)** - Xero accounting sync
+- **[docs/integrations/S3.md](../../docs/integrations/S3.md)** - AWS S3 document storage
+- **[docs/integrations/OPENAI.md](../../docs/integrations/OPENAI.md)** - AI-powered features
+
+### 🎯 Daily Commands
+```bash
+# Start all services (Django + Next.js + ngrok)
+./start-dev.sh
+
+# Check what's running
+./status-dev.sh
+
+# Restart everything
+./restart-dev.sh
+
+# View logs
+tail -f logs/django.log
+```
+
+### 🌐 Development URLs
+- Frontend: https://localhost:3000 (HTTPS - accept cert warning)
+- Backend API: https://localhost:8000 (HTTPS - accept cert warning)
+- Admin: https://localhost:8000/admin
+- ngrok Dashboard: http://localhost:4040
+- **SMS Webhook:** https://ignacio-interposable-uniformly.ngrok-free.dev/api/sms/webhook/inbound/
+
+**⚠️ Important:** App requires HTTPS for local development (OAuth, webhooks). Accept browser certificate warnings on first access.
+
+---
+
 ## CRITICAL: Protected Files (NEVER modify without explicit permission)
 
 ### Backend Protected Files:

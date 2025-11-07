@@ -4,21 +4,60 @@ Modern cloud-native patient management system for Walk Easy Pedorthics.
 
 ## 🚀 Quick Start
 
+### ⭐ One-Command Startup (Recommended)
+
+**Start all services (Django + Next.js + ngrok tunnel):**
+```bash
+./start-dev.sh
+```
+
+This starts:
+- ✅ Django Backend (https://localhost:8000)
+- ✅ Next.js Frontend (https://localhost:3000)
+- ✅ ngrok Tunnel for SMS webhooks (permanent URL)
+
+**⚠️ Note:** App requires HTTPS. Accept certificate warnings in browser on first access.
+
+**Check status:**
+```bash
+./status-dev.sh
+```
+
+**Stop all services:**
+```bash
+./stop-dev.sh
+# Or press Ctrl+C in the start-dev.sh terminal
+```
+
+📖 **[See DEV_SCRIPTS_README.md for full guide](DEV_SCRIPTS_README.md)**
+
+---
+
+### Manual Startup (Individual Services)
+
 **Backend (Django):**
 ```bash
 cd backend
-source venv/bin/activate
-python manage.py runserver
-# Access: http://localhost:8000/admin
+venv/bin/python manage.py runserver_plus --cert-file cert.pem --key-file key.pem 0.0.0.0:8000
+# Access: https://localhost:8000/admin
 # Login: admin / admin123
 ```
 
 **Frontend (Next.js):**
 ```bash
 cd frontend
-npm run dev
-# Access: http://localhost:3000
+npm run dev -- -p 3001 &
+npx local-ssl-proxy --source 3000 --target 3001 --cert localhost+2.pem --key localhost+2-key.pem
+# Access: https://localhost:3000
 ```
+
+**ngrok Tunnel (for SMS webhooks):**
+```bash
+./start-ngrok-tunnel.sh
+# Permanent URL: https://ignacio-interposable-uniformly.ngrok-free.dev
+```
+
+**Note:** Manual startup requires accepting browser certificate warnings.
 
 ## 📁 Project Structure
 

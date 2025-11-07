@@ -820,7 +820,338 @@ Phone number doesn't match any patient's communication data.
 
 ---
 
-**Last Updated:** 2025-11-06
+## 🌐 **Development Environment Issues**
+
+### **Frontend Not Loading - "Could not connect to the server"**
+
+**Symptoms:**
+- Frontend loads but shows multiple "TypeError: Load failed" errors
+- Cannot load patients, clinics, funding sources, user data
+- Auth check failing
+- Console shows: `Failed to load resource: Could not connect to the server`
+
+**Root Cause:**
+Django backend is not running on port 8000.
+
+**Solution:**
+
+1. **Check if Django is running:**
+   ```bash
+   ./status-dev.sh
+   # or
+   lsof -i :8000
+   ```
+
+2. **Start Django backend:**
+   ```bash
+   # Option 1: Use startup script (recommended)
+   ./start-dev.sh
+   
+   # Option 2: Manual start
+   cd backend
+   venv/bin/python manage.py runserver 8000
+   ```
+
+3. **Verify backend is responding:**
+   ```bash
+   curl http://localhost:8000/api/patients/
+   # Should return JSON data or 401 (auth required)
+   ```
+
+**Prevention:**
+- Always use `./start-dev.sh` to start all services together
+- Check `./status-dev.sh` before starting work
+- Keep Django and Next.js running in the same session
+
+---
+
+### **Django ModuleNotFoundError: No module named 'django'**
+
+**Symptoms:**
+- Django won't start
+- Error: `ModuleNotFoundError: No module named 'django'`
+- Error: `Couldn't import Django. Are you sure it's installed?`
+- Error: `Did you forget to activate a virtual environment?`
+
+**Root Cause:**
+Python virtual environment is not being used, so Django packages aren't available.
+
+**Solution:**
+
+1. **Check if venv exists:**
+   ```bash
+   ls -la backend/venv
+   ```
+
+2. **If venv exists, use it directly:**
+   ```bash
+   # Start Django with venv Python
+   cd backend
+   venv/bin/python manage.py runserver 8000
+   ```
+
+3. **If no venv, create one:**
+   ```bash
+   cd backend
+   python3 -m venv venv
+   venv/bin/pip install -r requirements.txt
+   venv/bin/python manage.py runserver 8000
+   ```
+
+**Automatic Fix:**
+The `start-dev.sh` script automatically uses `backend/venv/bin/python` if it exists:
+```bash
+./start-dev.sh
+# Will automatically use venv/bin/python
+```
+
+**Verification:**
+```bash
+# Check which Python is being used
+backend/venv/bin/python --version
+
+# Check if Django is installed
+backend/venv/bin/python -c "import django; print(django.get_version())"
+```
+
+**Files affected:**
+- `start-dev.sh` (lines 74-86) - Auto-detects and uses venv
+
+---
+
+### **ngrok Authentication Failed - "authtoken does not look like a proper ngrok authtoken"**
+
+**Symptoms:**
+- ngrok won't start
+- Error: `authentication failed: The authtoken you specified does not look like a proper ngrok authtoken`
+- Error: `ERR_NGROK_105`
+- Tunnel not appearing in `./status-dev.sh`
+
+**Root Cause:**
+- ngrok authtoken is invalid, expired, or corrupted
+- Token may have been truncated when copied
+- Token format changed (newer tokens are ~40+ characters)
+
+**Solution:**
+
+1. **Get fresh token from ngrok dashboard:**
+   - Visit: https://dashboard.ngrok.com/get-started/your-authtoken
+   - Copy the ENTIRE token (make sure it's not truncated)
+
+2. **Reconfigure ngrok:**
+   ```bash
+   ngrok config add-authtoken YOUR_FULL_TOKEN_HERE
+   ```
+
+3. **Verify configuration:**
+   ```bash
+   ngrok config check
+   # Should show: Valid configuration file
+   ```
+
+4. **Test tunnel:**
+   ```bash
+   ngrok http 8000
+   # Should start successfully
+   # Press Ctrl+C to stop
+   ```
+
+5. **Start with permanent domain:**
+   ```bash
+   ngrok http --domain=ignacio-interposable-uniformly.ngrok-free.dev 8000
+   ```
+
+**Configuration Location:**
+- Config file: `~/Library/Application Support/ngrok/ngrok.yml` (macOS)
+- Config file: `~/.config/ngrok/ngrok.yml` (Linux)
+
+**Common Mistakes:**
+- ❌ Token truncated when copying (ensure full 40+ character token)
+- ❌ Using old token after regenerating in dashboard
+- ❌ Spaces or newlines in token
+- ❌ Putting token in `.env` file instead of using `ngrok config add-authtoken`
+
+**Verification:**
+```bash
+# Check token is saved
+cat ~/Library/Application\ Support/ngrok/ngrok.yml
+# Should show: authtoken: YOUR_TOKEN
+
+# Test tunnel
+curl -s http://localhost:4040/api/tunnels
+# Should return JSON with tunnel info (after starting ngrok)
+```
+
+**Note:** ngrok authtoken goes in ngrok's config file, NOT in your project's `.env` file.
+
+---
+
+## 🔐 **HTTPS / Certificate Issues**
+
+### **Browser Shows "This Connection Is Not Private" or Certificate Warning**
+
+**Symptoms:**
+- Safari: "This Connection Is Not Private"
+- Chrome: "Your connection is not private"
+- Firefox: "Warning: Potential Security Risk Ahead"
+- Accessing https://localhost:3000 or https://localhost:8000
+
+**Root Cause:**
+The app uses self-signed SSL certificates for local development. This is **normal and expected**.
+
+**Why HTTPS is Required:**
+- Google OAuth requires HTTPS callback URLs
+- Xero OAuth requires HTTPS redirect URLs
+- SMS webhooks via ngrok tunnel to HTTPS backend
+- Browser security features require secure connections
+
+**Solution:**
+
+1. **Safari:**
+   - Click **"Show Details"**
+   - Click **"visit this website"**
+   - Click **"Visit Website"** again to confirm
+
+2. **Chrome:**
+   - Click **"Advanced"**
+   - Click **"Proceed to localhost (unsafe)"**
+
+3. **Firefox:**
+   - Click **"Advanced"**
+   - Click **"Accept the Risk and Continue"**
+
+**Note:** You only need to accept the certificate once per browser session.
+
+**Verification:**
+```bash
+# Check services are running with HTTPS
+./status-dev.sh
+
+# Should show:
+# ✅ Django Backend (Port 8000 HTTPS): Running
+# ✅ Next.js Frontend (Port 3000 HTTPS): Running
+```
+
+**Certificate Locations:**
+- Django: `backend/cert.pem` and `backend/key.pem`
+- Next.js: `frontend/localhost+2.pem` and `frontend/localhost+2-key.pem`
+
+---
+
+### **"Cannot GET /" or Blank Page After Accepting Certificate**
+
+**Symptoms:**
+- Accepted certificate warning but page is blank
+- Browser shows "Cannot GET /"
+- No content loads
+
+**Root Cause:**
+Next.js or Django not running properly with HTTPS.
+
+**Solution:**
+
+1. **Check both services are running:**
+   ```bash
+   ./status-dev.sh
+   ```
+
+2. **Check logs for errors:**
+   ```bash
+   tail -50 logs/django.log
+   tail -50 logs/nextjs.log
+   tail -50 logs/nextjs-ssl.log
+   ```
+
+3. **Verify SSL proxy is running:**
+   ```bash
+   ps aux | grep local-ssl-proxy
+   # Should see process on ports 3000 → 3001
+   ```
+
+4. **Restart services:**
+   ```bash
+   ./restart-dev.sh
+   ```
+
+---
+
+### **SSL Proxy Not Starting (Next.js)**
+
+**Symptoms:**
+- Port 3000 not responding
+- Error: "local-ssl-proxy" command not found
+- Frontend accessible on http://localhost:3001 but not https://localhost:3000
+
+**Root Cause:**
+SSL proxy process not started or crashed.
+
+**Solution:**
+
+1. **Check if SSL proxy is running:**
+   ```bash
+   lsof -i :3000
+   # Should show local-ssl-proxy process
+   ```
+
+2. **Check SSL proxy logs:**
+   ```bash
+   tail -f logs/nextjs-ssl.log
+   ```
+
+3. **Verify certificates exist:**
+   ```bash
+   ls -la frontend/localhost+2*.pem
+   # Should show:
+   # localhost+2.pem
+   # localhost+2-key.pem
+   ```
+
+4. **Manually start SSL proxy:**
+   ```bash
+   cd frontend
+   npx local-ssl-proxy --source 3000 --target 3001 \
+     --cert localhost+2.pem --key localhost+2-key.pem
+   ```
+
+---
+
+### **Django "runserver_plus: command not found"**
+
+**Symptoms:**
+- Django won't start with HTTPS
+- Error: `Unknown command: 'runserver_plus'`
+- Error: `django-extensions not installed`
+
+**Root Cause:**
+`django-extensions` package not installed in virtual environment.
+
+**Solution:**
+
+1. **Check if installed:**
+   ```bash
+   cd backend
+   venv/bin/pip list | grep django-extensions
+   ```
+
+2. **Install if missing:**
+   ```bash
+   venv/bin/pip install django-extensions
+   ```
+
+3. **Verify in settings:**
+   ```bash
+   grep django_extensions backend/ncc_api/settings.py
+   # Should see: 'django_extensions', in INSTALLED_APPS
+   ```
+
+4. **Restart Django:**
+   ```bash
+   ./restart-dev.sh
+   ```
+
+---
+
+**Last Updated:** 2025-11-08
 
 **IMPORTANT:** If this troubleshooting guide is updated, you MUST also update the project rules at `.cursor/rules/projectrules.mdc` to keep them synchronized.
 
