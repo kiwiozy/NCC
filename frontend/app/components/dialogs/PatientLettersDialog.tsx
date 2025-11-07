@@ -84,6 +84,22 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     return () => clearInterval(autoSaveInterval);
   }, [selectedLetter, opened]);
   
+  // Auto-focus editor when letter is selected
+  useEffect(() => {
+    if (!selectedLetter) return;
+    
+    // Small delay to ensure editor is mounted
+    const timer = setTimeout(() => {
+      const editorElement = document.querySelector('.we-page-content .ProseMirror') as HTMLElement;
+      if (editorElement) {
+        editorElement.focus();
+        console.log('✅ Editor auto-focused');
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [selectedLetter]);
+  
   const loadLetters = async () => {
     setLoading(true);
     try {
