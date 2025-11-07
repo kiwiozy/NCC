@@ -331,31 +331,43 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         content: { height: '90vh' },
       }}
     >
-      <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <Grid gutter="md" style={{ flex: 1, minHeight: 0 }}>
-          {/* Left Panel (20%): Letter List */}
-          <Grid.Col span={{ base: 12, md: 2.4 }} style={{ height: '100%', display: 'flex' }}>
-            <Stack gap="md" style={{ height: '100%', width: '100%' }}>
-              {/* New Letter Button */}
-              <Button
-                fullWidth
-                leftSection={<IconPlus size={18} />}
-                onClick={handleCreateLetter}
-                color="blue"
-              >
-                New Letter
-              </Button>
-              
-              {/* Search */}
-              <TextInput
-                placeholder="Search letters..."
-                leftSection={<IconSearch size={16} />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-              />
-              
-              {/* Letter List */}
-              <ScrollArea style={{ flex: 1 }} type="auto">
+      {/* Main Container - Flex Row */}
+      <Box style={{ 
+        flex: 1, 
+        minHeight: 0, 
+        display: 'flex', 
+        flexDirection: 'row',
+        gap: '16px',
+      }}>
+        {/* Left Panel (20%): Letter List */}
+        <Box style={{ 
+          width: '20%', 
+          minWidth: '250px',
+          height: '100%',
+          display: 'flex', 
+          flexDirection: 'column',
+        }}>
+          <Stack gap="md" style={{ height: '100%' }}>
+            {/* New Letter Button */}
+            <Button
+              fullWidth
+              leftSection={<IconPlus size={18} />}
+              onClick={handleCreateLetter}
+              color="blue"
+            >
+              New Letter
+            </Button>
+            
+            {/* Search */}
+            <TextInput
+              placeholder="Search letters..."
+              leftSection={<IconSearch size={16} />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+            />
+            
+            {/* Letter List */}
+            <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto">
                 {loading ? (
                   <Stack align="center" justify="center" style={{ height: 200 }}>
                     <Loader size="md" />
@@ -440,18 +452,29 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 )}
               </ScrollArea>
             </Stack>
-          </Grid.Col>
+          </Box>
           
           {/* Right Panel (80%): Letter Editor */}
-          <Grid.Col span={{ base: 12, md: 9.6 }} style={{ height: '100%', display: 'flex' }}>
+          <Box style={{ 
+            flex: 1,
+            height: '100%',
+            display: 'flex', 
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
             {!selectedLetter ? (
-              <Stack align="center" justify="center" style={{ height: '100%', width: '100%' }}>
+              <Stack align="center" justify="center" style={{ height: '100%' }}>
                 <IconFileText size={64} style={{ opacity: 0.2 }} />
                 <Text c="dimmed" size="lg">Select a letter to view</Text>
                 <Text c="dimmed" size="sm">Click any letter from the list on the left</Text>
               </Stack>
             ) : (
-              <Box style={{ height: '100%', width: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+              <Box style={{ 
+                height: '100%',
+                overflow: 'auto',
+                display: 'flex', 
+                flexDirection: 'column',
+              }}>
                 {/* Metadata Section - Scrolls away */}
                 <Box p="md" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 'var(--mantine-radius-md)', flexShrink: 0 }}>
                   <Grid>
@@ -539,9 +562,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 </Box>
               </Box>
             )}
-          </Grid.Col>
-        </Grid>
-      </Box>
+          </Box>
+        </Box>
     </Modal>
   );
 }
