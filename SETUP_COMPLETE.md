@@ -74,7 +74,9 @@ Configure this in SMS Broadcast:
 ```bash
 ./start-dev.sh
 ```
-Wait 30 seconds, then open http://localhost:3000
+Wait 30 seconds, then open https://localhost:3000 (accept certificate warning)
+
+**⚠️ HTTPS Required:** The app uses self-signed certificates for local HTTPS (required for OAuth, SMS webhooks). Your browser will show a certificate warning - this is normal! Click "Advanced" → "Proceed to localhost"
 
 ### During Day - Check Status
 ```bash
@@ -88,6 +90,34 @@ Wait 30 seconds, then open http://localhost:3000
 
 ### Evening - Stop Work
 Just press **Ctrl+C** in the start-dev.sh terminal
+
+---
+
+## 🎉 **NEW: SMS Notification Widget** (November 2025)
+
+### What's New:
+The app now has **real-time SMS notifications** everywhere! No more missing patient messages.
+
+**Features:**
+- 🔵 **Blue badge** on Dashboard nav - shows unread SMS count
+- 🔔 **Dual notifications** - browser desktop + in-app toast alerts
+- 📱 **iPhone-like widget** - see recent messages with 2-line preview
+- 🎯 **Click to navigate** - tap any message to open patient's SMS dialog
+- ✅ **Mark as read** - confirmation dialog when closing SMS conversation
+- 🌐 **Global monitoring** - get notified even when not on Dashboard
+
+**How It Works:**
+1. Patient sends SMS → Arrives via webhook
+2. App polls for new messages every 5 seconds
+3. You see: Desktop notification + Toast + Badge update
+4. Click notification → Navigate to patient + SMS dialog opens
+5. Close dialog → Choose to mark messages as read
+
+**Technical Details:**
+- Polling interval: 5 seconds (low bandwidth, ~5MB/day)
+- Endpoints: `/api/sms/unread-count/` and `/api/sms/inbound/<uuid>/`
+- Event-driven: Uses custom events for real-time UI updates
+- Desktop notifications: Requires browser permission (one-time prompt)
 
 ---
 

@@ -87,6 +87,32 @@ tail -50 logs/django.log
 
 ---
 
+## 🎉 New Features
+
+### 📱 SMS Notification Widget (November 2025)
+**Real-time SMS notifications everywhere in the app!**
+
+**What it does:**
+- 🔵 Blue badge on Dashboard shows unread SMS count
+- 🔔 Browser + in-app notifications when SMS arrives
+- 📱 iPhone-like widget with message previews
+- 🎯 Click message → Navigate to patient + open SMS dialog
+- ✅ Mark-as-read confirmation when closing dialog
+- 🌐 Works globally (get notified on any page)
+
+**How to use:**
+1. Send SMS to clinic number
+2. Watch for notification (toast + desktop + badge)
+3. Click notification or widget message
+4. SMS dialog opens automatically
+5. When closing, choose to mark as read
+
+**Endpoints:**
+- `GET /api/sms/unread-count/` - Global unread count
+- `GET /api/sms/inbound/<uuid>/` - Message details
+
+---
+
 ## 🔧 Troubleshooting
 
 ### Services won't start
