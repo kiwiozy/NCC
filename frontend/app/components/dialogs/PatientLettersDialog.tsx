@@ -222,6 +222,66 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     }
   };
   
+  const handlePreviewPDF = async () => {
+    if (!selectedLetter) {
+      notifications.show({
+        title: 'Error',
+        message: 'No letter selected to preview',
+        color: 'red',
+      });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Get current editor content from DOM (TipTap's ProseMirror structure)
+      const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+      let combinedHTML: string;
+
+      if (editorElements.length > 0) {
+        const domContent = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
+        combinedHTML = domContent.join('<hr class="page-break">');
+      } else {
+        // Fallback to state if DOM query fails
+        combinedHTML = selectedLetter.pages.join('<hr class="page-break">');
+        notifications.show({
+          title: 'Warning',
+          message: 'Could not get live editor content, using last saved version.',
+          color: 'orange',
+        });
+      }
+
+      const response = await fetch('/api/letters/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: combinedHTML }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        notifications.show({
+          title: 'Error',
+          message: `PDF generation failed: ${errorData.details || errorData.error}`,
+          color: 'red',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Error generating PDF. Check console for details.',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleDelete = async (letterId: string) => {
     modals.openConfirmModal({
       title: 'Delete Letter',
@@ -518,7 +578,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                       <Button size="xs" variant="light" onClick={() => handleSave(false)} loading={saving}>
                         Save
                       </Button>
-                      <Button size="xs" variant="light" leftSection={<IconFileTypePdf size={14} />}>
+                      <Button size="xs" variant="light" leftSection={<IconFileTypePdf size={14} />} onClick={handlePreviewPDF} loading={loading}>
                         Preview PDF
                       </Button>
                       <Button size="xs" variant="light" leftSection={<IconDownload size={14} />}>
