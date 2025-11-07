@@ -1139,15 +1139,19 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
               {isLinkActive() ? <IconLinkOff size={18} /> : <IconLink size={18} />}
             </ActionIcon>
 
-            <Divider orientation="vertical" ml="auto" />
+            {!isDialog && (
+              <>
+                <Divider orientation="vertical" ml="auto" />
 
-            <Button
-              leftSection={<IconFileTypePdf size={18} />}
-              onClick={handlePreviewPDF}
-              loading={pdfLoading}
-            >
-              Preview PDF
-            </Button>
+                <Button
+                  leftSection={<IconFileTypePdf size={18} />}
+                  onClick={handlePreviewPDF}
+                  loading={pdfLoading}
+                >
+                  Preview PDF
+                </Button>
+              </>
+            )}
           </Group>
         </Paper>
       </div>
