@@ -333,8 +333,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     >
       <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Grid gutter="md" style={{ flex: 1, minHeight: 0 }}>
-          {/* Left Panel (30%): Letter List */}
-          <Grid.Col span={{ base: 12, md: 3.6 }}>
+          {/* Left Panel (20%): Letter List */}
+          <Grid.Col span={{ base: 12, md: 2.4 }}>
             <Stack gap="md" style={{ height: '100%' }}>
               {/* New Letter Button */}
               <Button
@@ -442,8 +442,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
             </Stack>
           </Grid.Col>
           
-          {/* Right Panel (70%): Letter Editor */}
-          <Grid.Col span={{ base: 12, md: 8.4 }}>
+          {/* Right Panel (80%): Letter Editor */}
+          <Grid.Col span={{ base: 12, md: 9.6 }}>
             {!selectedLetter ? (
               <Stack align="center" justify="center" style={{ height: '100%' }}>
                 <IconFileText size={64} style={{ opacity: 0.2 }} />
@@ -451,9 +451,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 <Text c="dimmed" size="sm">Click any letter from the list on the left</Text>
               </Stack>
             ) : (
-              <Stack style={{ height: '100%' }} gap="md">
-                {/* Metadata Section */}
-                <Box p="md" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 'var(--mantine-radius-md)' }}>
+              <Stack style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} gap="md">{/* Metadata Section */}
+                <Box p="md" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 'var(--mantine-radius-md)', flexShrink: 0 }}>
                   <Grid>
                     <Grid.Col span={6}>
                       <TextInput
@@ -512,12 +511,14 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 </Box>
                 
                 {/* Letter Editor (Your existing LetterEditor component) */}
-                <Box style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                <Box style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
                   <div
                     style={{
                       colorScheme: 'light',
                       color: '#000000',
                       '--mantine-color-text': '#000000',
+                      height: '100%',
+                      overflow: 'auto',
                     } as React.CSSProperties}
                     data-mantine-color-scheme="light"
                     data-force-light-mode="true"
