@@ -1091,6 +1091,57 @@ The plan is now **100% accurate** with:
 
 ---
 
+## 🚧 **IMPLEMENTATION PROGRESS**
+
+### ✅ **Step 1: Global SMS Monitoring System - COMPLETE**
+
+**Frontend:**
+- ✅ Created `frontend/app/contexts/SMSContext.tsx`
+- ⏳ **TODO:** Add `<SMSProvider>` to `frontend/app/layout.tsx` (protected file - manual edit)
+
+**Backend:**
+- ⏳ **TODO:** Add `global_unread_count()` function to `backend/sms_integration/views.py`
+- ⏳ **TODO:** Add URL route to `backend/sms_integration/urls.py`: `path('unread-count/', views.global_unread_count)`
+
+**Testing:**
+- ⏳ Once backend & layout added, check Network tab for polling every 5s
+- ⏳ Verify `/api/sms/unread-count/` returns `{unread_count, latest_message_id}`
+
+---
+
+### ✅ **Step 2: Notification System - COMPLETE (Frontend)**
+
+**Frontend:**
+- ✅ Created `frontend/app/hooks/useSMSNotifications.tsx`
+- ✅ Updated `frontend/app/components/Navigation.tsx`:
+  - Added imports for `useSMS`, `useSMSNotifications`, `Badge`
+  - Added `unreadBadge` prop to `NavButtonProps`
+  - Updated `NavButton` to display blue badge
+  - Added `unreadCount` and `useSMSNotifications()` hooks to Navigation component
+  - Added `unreadBadge` to Dashboard nav item
+  - Passed `unreadBadge` prop to `NavButton` in mapping
+
+**Backend:**
+- ⏳ **TODO:** Update `backend/sms_integration/serializers.py`:
+  - Import `PatientSerializer`
+  - Add `patient = PatientSerializer(read_only=True)` to `SMSInboundSerializer`
+- ⏳ **TODO:** Add `get_inbound_message()` function to `backend/sms_integration/views.py`
+- ⏳ **TODO:** Add URL route to `backend/sms_integration/urls.py`: `path('inbound/<uuid:message_id>/', views.get_inbound_message)`
+
+**Testing:**
+- ⏳ Send test SMS and verify toast notification appears
+- ⏳ Check if desktop notification permission is requested
+- ⏳ Verify blue badge appears on Dashboard when unread SMS exist
+- ⏳ Click notification and verify navigation works
+
+---
+
+### ⏸️ **Step 3: Make Widget Clickable - PENDING**
+### ⏸️ **Step 4: Mark as Read Dialog - PENDING**
+### ⏸️ **Step 5: Testing & Polish - PENDING**
+
+---
+
 ## 🎯 **Current State**
 
 ### **What Exists:**

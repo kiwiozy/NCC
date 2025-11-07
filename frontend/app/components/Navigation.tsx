@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon, Menu, Avatar } from '@mantine/core';
+import { AppShell, Group, UnstyledButton, Text, rem, useMantineColorScheme, Paper, ActionIcon, Menu, Avatar, Badge } from '@mantine/core';
 import ConsoleFilter from './ConsoleFilter';
 import { 
   IconLayoutDashboard, 
@@ -34,6 +34,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
 import { useBrowserDetection } from '../utils/browserDetection';
 import { useAuth } from '../contexts/AuthContext';
+import { useSMS } from '../contexts/SMSContext';
+import { useSMSNotifications } from '../hooks/useSMSNotifications';
 
 interface NavigationProps {
   children: React.ReactNode;
@@ -47,9 +49,10 @@ interface NavButtonProps {
   onClick: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  unreadBadge?: number;
 }
 
-function NavButton({ icon, label, href, active, onClick, onMouseEnter, onMouseLeave }: NavButtonProps) {
+function NavButton({ icon, label, href, active, onClick, onMouseEnter, onMouseLeave, unreadBadge }: NavButtonProps) {
   const { colorScheme } = useMantineColorScheme();
   const [mounted, setMounted] = useState(false);
   
@@ -112,8 +115,31 @@ function NavButton({ icon, label, href, active, onClick, onMouseEnter, onMouseLe
         justifyContent: 'center',
         height: rem(28),
         width: '100%',
+        position: 'relative',
       }}>
         {icon}
+        {/* Unread badge */}
+        {unreadBadge && unreadBadge > 0 && (
+          <Badge
+            size="sm"
+            variant="filled"
+            color="blue"
+            circle
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: rem(12),
+              minWidth: rem(18),
+              height: rem(18),
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {unreadBadge > 99 ? '99+' : unreadBadge}
+          </Badge>
+        )}
       </div>
       <Text 
         size="xs" 
@@ -133,6 +159,8 @@ export default function Navigation({ children }: NavigationProps) {
   const pathname = usePathname();
   const { colorScheme } = useMantineColorScheme();
   const { user, logout, isAuthenticated } = useAuth();
+  const { unreadCount } = useSMS(); // Get unread SMS count
+  useSMSNotifications(); // Enable global notifications
   const [mounted, setMounted] = useState(false);
   const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
@@ -151,7 +179,7 @@ export default function Navigation({ children }: NavigationProps) {
   const subIconSize = 24;
 
   const navItems = [
-    { icon: <IconLayoutDashboard size={iconSize} stroke={1.5} />, label: 'Dashboard', href: '/' },
+    { icon: <IconLayoutDashboard size={iconSize} stroke={1.5} />, label: 'Dashboard', href: '/', unreadBadge: unreadCount > 0 ? unreadCount : undefined },
     { icon: <IconUsers size={iconSize} stroke={1.5} />, label: 'Contacts', href: '/patients', hasSubmenu: true, submenuType: 'contacts' },
     { icon: <IconCalendar size={iconSize} stroke={1.5} />, label: 'Calendar', href: '/calendar' },
     { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/accounts' },
@@ -296,6 +324,7 @@ export default function Navigation({ children }: NavigationProps) {
                 onClick={() => handleNavClick(item.href, item.hasSubmenu)}
                 onMouseEnter={item.hasSubmenu ? () => handleMenuEnter(item.submenuType!) : undefined}
                 onMouseLeave={item.hasSubmenu ? handleMenuLeave : undefined}
+                unreadBadge={item.unreadBadge}
               />
             ))}
           </Group>
