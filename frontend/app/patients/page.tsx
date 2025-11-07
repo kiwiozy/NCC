@@ -717,7 +717,24 @@ export default function ContactsPage() {
     if (type) {
       setActiveType(type);
     }
-  }, [searchParams]);
+    
+    // Handle patientId and openSMS parameters
+    const patientId = searchParams.get('patientId');
+    const openSMS = searchParams.get('openSMS');
+    
+    if (patientId && allContacts.length > 0) {
+      // Find and select the patient
+      const patient = allContacts.find(c => c.id === patientId);
+      if (patient) {
+        setSelectedContact(patient);
+        
+        // Open SMS dialog if requested
+        if (openSMS === 'true') {
+          setSmsDialogOpened(true);
+        }
+      }
+    }
+  }, [searchParams, allContacts]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);

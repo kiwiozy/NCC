@@ -122,6 +122,8 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
   const [defaultPhone, setDefaultPhone] = useState<PhoneNumber | null>(null);
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<string | null>(null);
   const [checkingForNew, setCheckingForNew] = useState(false);
+  const [markAsReadConfirmOpened, setMarkAsReadConfirmOpened] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -132,17 +134,17 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       loadConversation();
       loadPhoneNumbers();
       loadTemplates();
-      // Mark all unread messages as read (processed)
-      markMessagesAsRead();
+      // DON'T automatically mark as read - wait for user to close dialog
     } else {
       // Reset when dialog closes
       setMessages([]);
       setMessageText('');
       setSelectedTemplate(null);
+      setHasUnreadMessages(false);
     }
   }, [opened, patientId]);
 
-  // Mark all unread SMS messages as read when dialog opens
+  // Mark all unread SMS messages as read
   const markMessagesAsRead = async () => {
     try {
       // Get CSRF token
@@ -166,10 +168,12 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       );
       
       if (response.ok) {
-        // Dispatch event to update badge count in ContactHeader
+        // Dispatch event to update global unread count
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('smsRead'));
+          window.dispatchEvent(new Event('smsMarkedRead')); // Changed from 'smsRead'
         }
+        // Update local state
+        setHasUnreadMessages(false);
       }
     } catch (error) {
       // Silently fail - don't interrupt user experience
@@ -292,6 +296,12 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
           const lastMsg = newMessages[newMessages.length - 1];
           setLastMessageTimestamp(lastMsg.timestamp || null);
         }
+        
+        // Check if there are any unread inbound messages
+        const hasUnread = newMessages.some((msg: SMSMessage) => 
+          msg.direction === 'inbound' && msg.is_processed === false
+        );
+        setHasUnreadMessages(hasUnread);
       } else {
         notifications.show({
           title: 'Error',
@@ -478,11 +488,35 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
   const smsSegments = calculateSMSSegments(messageText);
   const charCount = messageText.length;
 
+  // Handle dialog close - check for unread messages
+  const handleClose = () => {
+    if (hasUnreadMessages) {
+      // Show confirmation dialog
+      setMarkAsReadConfirmOpened(true);
+    } else {
+      // No unread messages, close directly
+      onClose();
+    }
+  };
+
+  // Handle mark as read confirmation
+  const handleMarkAsReadYes = async () => {
+    setMarkAsReadConfirmOpened(false);
+    await markMessagesAsRead();
+    onClose();
+  };
+
+  const handleMarkAsReadNo = () => {
+    setMarkAsReadConfirmOpened(false);
+    onClose();
+  };
+
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={
+    <>
+      <Modal
+        opened={opened}
+        onClose={handleClose}
+        title={
         <Group gap="sm" justify="space-between" style={{ width: '100%' }}>
           <Group gap="sm">
             <Text fw={600}>SMS - {patientName}</Text>
@@ -621,6 +655,30 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
         </Box>
       </Stack>
     </Modal>
+    
+    {/* Mark as Read Confirmation Modal */}
+    <Modal
+      opened={markAsReadConfirmOpened}
+      onClose={handleMarkAsReadNo}
+      title="Mark messages as read?"
+      size="sm"
+      centered
+    >
+      <Stack gap="md">
+        <Text size="sm">
+          You have unread messages in this conversation. Would you like to mark them as read?
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="default" onClick={handleMarkAsReadNo}>
+            No
+          </Button>
+          <Button color="blue" onClick={handleMarkAsReadYes}>
+            Yes, Mark as Read
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Paper, Title, Stack, Text, Group, Badge, ScrollArea, Box, rem, Loader, Center } from '@mantine/core';
 import { IconMessageCircle, IconClock, IconUser } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
+import { useRouter } from 'next/navigation';
 
 interface SMSInbound {
   id: string;
@@ -52,6 +53,7 @@ function formatTimeAgo(timestamp: string): string {
 export default function SMSNotificationWidget() {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const [messages, setMessages] = useState<SMSInbound[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,6 +92,13 @@ export default function SMSNotificationWidget() {
     return () => clearInterval(interval);
   }, []);
 
+  // Handle message click - navigate to patient
+  const handleMessageClick = (message: SMSInbound) => {
+    if (message.patient) {
+      router.push(`/patients?type=patients&patientId=${message.patient.id}&openSMS=true`);
+    }
+  };
+
   return (
     <Paper p="xl" shadow="sm" radius="md" style={{ height: 'calc(100vh - 400px)', minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
       <Group justify="space-between" mb="md">
@@ -123,17 +132,25 @@ export default function SMSNotificationWidget() {
               const patientName = msg.patient 
                 ? `${msg.patient.first_name} ${msg.patient.last_name}`
                 : 'Unknown';
+              const hasPatient = !!msg.patient;
               
               return (
                 <Box
                   key={msg.id}
                   p="md"
-                  style={{
+                  onClick={() => handleMessageClick(msg)}
+                  sx={(theme) => ({
                     borderRadius: rem(8),
                     backgroundColor: isDark ? '#25262b' : '#f8f9fa',
                     border: isUnread ? `2px solid #228BE6` : 'none',
                     position: 'relative',
-                  }}
+                    cursor: hasPatient ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease',
+                    '&:hover': hasPatient ? {
+                      backgroundColor: isDark ? '#2c2e33' : '#e9ecef',
+                      transform: 'translateX(4px)',
+                    } : {},
+                  })}
                 >
                   {/* Unread indicator */}
                   {isUnread && (

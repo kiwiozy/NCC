@@ -1136,8 +1136,51 @@ The plan is now **100% accurate** with:
 
 ---
 
-### ⏸️ **Step 3: Make Widget Clickable - PENDING**
-### ⏸️ **Step 4: Mark as Read Dialog - PENDING**
+### ✅ **Step 3: Make Widget Clickable - COMPLETE**
+
+**Frontend:**
+- ✅ Updated `frontend/app/components/SMSNotificationWidget.tsx`:
+  - Added `useRouter` hook
+  - Added `handleMessageClick` function
+  - Made message boxes clickable with `onClick` handler
+  - Added hover effects using Mantine `sx` prop
+  - Added cursor pointer for messages with patients
+  - Added slide-right animation on hover
+- ✅ Updated `frontend/app/patients/page.tsx`:
+  - Added URL parameter handling for `patientId` and `openSMS`
+  - Auto-selects patient when `patientId` param present
+  - Auto-opens SMS dialog when `openSMS=true`
+
+**Testing:**
+- ⏳ Click message in widget → should navigate to patients page
+- ⏳ Patient should be auto-selected
+- ⏳ SMS dialog should auto-open
+- ⏳ Verify hover effect works (slide right + darker background)
+
+---
+
+### ✅ **Step 4: Mark as Read Dialog - COMPLETE**
+
+**Frontend:**
+- ✅ Updated `frontend/app/components/dialogs/SMSDialog.tsx`:
+  - Added `markAsReadConfirmOpened` and `hasUnreadMessages` state
+  - Removed automatic mark-as-read on dialog open
+  - Added unread message detection in `loadConversation()`
+  - Added custom `handleClose()` function
+  - Added confirmation modal with "Yes"/"No" buttons
+  - Updated `markMessagesAsRead()` to dispatch `'smsMarkedRead'` event (not `'smsRead'`)
+  - Added `handleMarkAsReadYes` and `handleMarkAsReadNo` functions
+  - Wrapped return in `<>` fragment for multiple modals
+
+**Testing:**
+- ⏳ Open SMS dialog with unread messages → no auto mark-as-read
+- ⏳ Close dialog → confirmation appears: "Mark messages as read?"
+- ⏳ Click "Yes" → messages marked as read, badge updates
+- ⏳ Click "No" → messages stay unread, dialog closes
+- ⏳ Open SMS dialog with no unread → closes directly (no confirmation)
+
+---
+
 ### ⏸️ **Step 5: Testing & Polish - PENDING**
 
 ---
