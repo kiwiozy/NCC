@@ -232,18 +232,22 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       return;
     }
     
+    console.log('🔍 Preview PDF clicked for letter:', selectedLetter.id);
     setLoading(true);
     try {
       // Get current editor content from DOM (TipTap's ProseMirror structure)
       const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+      console.log('📄 Found editor elements:', editorElements.length);
       let combinedHTML: string;
 
       if (editorElements.length > 0) {
         const domContent = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
         combinedHTML = domContent.join('<hr class="page-break">');
+        console.log('✅ Using live editor content, pages:', domContent.length);
       } else {
         // Fallback to state if DOM query fails
         combinedHTML = selectedLetter.pages.join('<hr class="page-break">');
+        console.log('⚠️ Using saved content, pages:', selectedLetter.pages.length);
         notifications.show({
           title: 'Warning',
           message: 'Could not get live editor content, using last saved version.',
@@ -251,19 +255,24 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         });
       }
 
-      const response = await fetch('/api/letters/pdf', {
+      console.log('🚀 Sending HTML to PDF API, length:', combinedHTML.length);
+      const response = await fetch('https://localhost:3000/api/letters/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: combinedHTML }),
       });
 
+      console.log('📡 API Response status:', response.status);
       if (response.ok) {
         const blob = await response.blob();
+        console.log('✅ PDF blob received, size:', blob.size);
         const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        console.log('🎉 Opening PDF in new tab');
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 100);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ PDF generation failed:', errorData);
         notifications.show({
           title: 'Error',
           message: `PDF generation failed: ${errorData.details || errorData.error}`,
@@ -271,7 +280,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         });
       }
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('❌ Error generating PDF:', error);
       notifications.show({
         title: 'Error',
         message: 'Error generating PDF. Check console for details.',
