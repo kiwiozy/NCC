@@ -815,6 +815,9 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
               styles={{
                 input: {
                   fontSize: '13px',
+                  backgroundColor: 'var(--mantine-color-dark-6)',
+                  color: 'var(--mantine-color-gray-0)',
+                  borderColor: 'var(--mantine-color-dark-4)',
                 },
               }}
             />
@@ -831,6 +834,9 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
               styles={{
                 input: {
                   fontSize: '13px',
+                  backgroundColor: 'var(--mantine-color-dark-6)',
+                  color: 'var(--mantine-color-gray-0)',
+                  borderColor: 'var(--mantine-color-dark-4)',
                 },
               }}
             />
