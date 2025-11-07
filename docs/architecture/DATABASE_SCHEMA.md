@@ -6,7 +6,7 @@
 
 > ⚠️ **IMPORTANT:** If this database schema documentation is updated, you **MUST** also update the "Database Schema Documentation" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
 
-**Last Updated:** 2025-01-15 (Added django-allauth OAuth tables and Patient Letters)
+**Last Updated:** 2025-01-15 (Added django-allauth OAuth tables, Patient Letters, and Badge Count feature)
 
 ---
 
@@ -621,12 +621,18 @@ account_emailconfirmation ✅
 **Ordering:** `-updated_at` (most recent first)
 
 **Usage:**
-- **Patient Letters Dialog:** 30/70 split - letter list on left, editor on right (like Images dialog)
-- **Auto-save:** Every 10 seconds with "Saved at X" indicator
-- **Actions:** Create, Edit, Save, Delete, Duplicate, Preview PDF, Download PDF, Email PDF, Print
+- **Patient Letters Dialog:** 20/80 split - letter list on left (20%), editor on right (80%)
+- **Auto-save Removed:** Manual save only with unsaved changes detection via MutationObserver
+- **Unsaved Changes Detection:** Tracks both metadata changes and content changes across all pages
+- **Actions:** Create, Edit, Save, Delete, Duplicate, Preview PDF, Download PDF, Email PDF (future), Print
 - **Search/Filter:** By letter type, recipient name, or subject
 - **Editor:** Full TipTap WYSIWYG editor with Walk Easy letterhead at 25% opacity
-- **PDF Generation:** Uses existing Puppeteer-based system with letterhead on all pages
+- **Multi-Page Support:** Add/remove pages, all pages monitored for changes
+- **PDF Generation:** Uses Puppeteer with letterhead on all pages
+- **PDF Download:** Filename format: `PatientName_LetterName.pdf`
+- **Print (Safari):** Opens PDF in new tab (⌘+P to print)
+- **Print (Chrome/Firefox/Edge):** Auto-print dialog via hidden iframe
+- **Badge Count:** Red badge on "Letters" menu item shows count, updates via event + polling
 
 **API Endpoints:**
 - `GET /api/letters/?patient_id={uuid}` - List all letters for a patient (lightweight serializer, no full pages)
@@ -638,8 +644,23 @@ account_emailconfirmation ✅
 
 **Frontend Integration:**
 - Accessed from patient hamburger menu → "Letters"
+- Red badge shows letter count (max 99+)
+- Badge updates on create/delete (event-driven) + polling (every 2s)
 - Reuses existing `LetterEditor.tsx` component (full TipTap editor with all formatting tools)
 - Modal dialog with same width as Images dialog (95vw)
+- Sticky toolbar scrolls with content, metadata scrolls away
+- Unsaved changes prompt on close/switch letters
+- Safari-compatible printing (new tab + ⌘+P)
+
+**Performance Optimizations:**
+- `getCurrentColor` memoized with state + useEffect (100+ calls → 0)
+- Multi-page MutationObserver watches all pages
+- Badge count uses polling + event-driven updates
+
+**Documentation:**
+- Full feature docs: `docs/features/PATIENT_LETTERS_FEATURE.md`
+- Quick reference: `docs/features/PATIENT_LETTERS_QUICK_REFERENCE.md`
+- Safari print guide: `docs/features/SAFARI_PRINT_IMPLEMENTATION.md`
 
 ---
 

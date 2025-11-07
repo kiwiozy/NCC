@@ -157,8 +157,8 @@
 
 /* Force light mode text color for all content - AGGRESSIVE OVERRIDES */
 /* Note: font-family is NOT forced here - let inline styles from TipTap take precedence */
+/* Note: color is NOT forced on elements with inline color styles */
 .we-page-content .ProseMirror,
-.we-page-content .ProseMirror *,
 .we-page-content .ProseMirror p,
 .we-page-content .ProseMirror li,
 .we-page-content .ProseMirror h1,
@@ -167,7 +167,6 @@
 .we-page-content .ProseMirror h4,
 .we-page-content .ProseMirror h5,
 .we-page-content .ProseMirror h6,
-.we-page-content .ProseMirror span,
 .we-page-content .ProseMirror div,
 .we-page-content .ProseMirror strong,
 .we-page-content .ProseMirror em,
@@ -181,6 +180,17 @@
   color: #000000 !important;
 }
 
+/* DON'T force color on spans - they use inline styles for colors */
+.we-page-content .ProseMirror span:not([style*="color"]) {
+  color: #000000 !important;
+}
+
+/* Allow TipTap's inline color styles to work */
+.we-page-content .ProseMirror span[style*="color"],
+.we-page-content .ProseMirror [style*="color"] {
+  /* Inline color styles from TipTap should take precedence */
+}
+
 /* Allow TipTap's inline font-family styles to work - don't override them */
 .we-page-content .ProseMirror span[style*="font-family"],
 .we-page-content .ProseMirror p[style*="font-family"],
@@ -189,10 +199,9 @@
 }
 
 /* Override any Mantine theme colors - ULTRA AGGRESSIVE */
+/* But allow inline color styles to work */
 [data-mantine-color-scheme="dark"] .we-page-content,
-[data-mantine-color-scheme="dark"] .we-page-content *,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
-[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror *,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror p,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ul,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror ol,
@@ -203,7 +212,6 @@
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h4,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h5,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror h6,
-[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror span,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror div,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror strong,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror em,
@@ -215,11 +223,15 @@
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror code,
 [data-mantine-color-scheme="dark"] .we-page-content .ProseMirror pre,
 html[data-mantine-color-scheme="dark"] .we-page-content,
-html[data-mantine-color-scheme="dark"] .we-page-content *,
-html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror,
-html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror * {
+html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror {
   color: #000000 !important;
   --mantine-color-text: #000000 !important;
+}
+
+/* DON'T force color on elements with inline color styles */
+[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror span:not([style*="color"]),
+html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror span:not([style*="color"]) {
+  color: #000000 !important;
 }
 
 /* Override CSS variables that might affect text color */
@@ -298,7 +310,6 @@ html[data-mantine-color-scheme="dark"] .we-page-content .ProseMirror * {
   position: relative !important;
   padding-left: 20px !important;
   margin: 4px 0 !important;
-  color: #000000 !important;
   list-style: none !important;
   list-style-type: none !important;
 }
@@ -357,7 +368,6 @@ div[class*="we-page"] .ProseMirror ul li::before {
   position: relative !important;
   padding-left: 24px !important;
   margin: 4px 0 !important;
-  color: #000000 !important;
   list-style: none !important;
   list-style-type: none !important;
 }

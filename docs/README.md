@@ -13,6 +13,11 @@ docs/
 ├── 🔐 features/                   # Feature documentation
 │   └── GOOGLE_AUTHENTICATION.md  # Google OAuth authentication system
 │
+├── ✉️ Letter/                     # Patient Letters system
+│   ├── PATIENT_LETTERS_COMPLETE.md      # Complete letter system guide ⭐ NEW
+│   ├── PATIENT_LETTERS_QUICK_REFERENCE.md # Quick reference
+│   └── SAFARI_PRINT_IMPLEMENTATION.md   # Safari-compatible printing
+│
 ├── 📧 Email/                      # Email system documentation
 │   ├── README.md                  # Email system overview
 │   ├── GMAIL_QUICK_REFERENCE.md   # Quick start guide (⭐ Start here!)
@@ -77,12 +82,44 @@ docs/
 | Feature | Quick Start Guide | Time |
 |---------|-------------------|------|
 | 🔐 **Authentication** | [features/GOOGLE_AUTHENTICATION.md](features/GOOGLE_AUTHENTICATION.md) | 5 min |
+| ✉️ **Patient Letters** | [Letter/PATIENT_LETTERS_QUICK_REFERENCE.md](Letter/PATIENT_LETTERS_QUICK_REFERENCE.md) | 5 min |
 | 📧 **Email (Gmail)** | [Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md) | 5 min |
 | 📋 **AT Reports** | [AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md) | 10 min |
 | 🔷 **Xero Invoicing** | [Xero Integration/XERO_SETUP_GUIDE.md](Xero Integration/XERO_SETUP_GUIDE.md) | 15 min |
 | 📱 **SMS Messages** | [SMS Integration/SMS_SETUP_GUIDE.md](SMS Integration/SMS_SETUP_GUIDE.md) | 10 min |
 | ☁️ **S3 Storage** | [S3 Integration/S3_SETUP_GUIDE.md](S3 Integration/S3_SETUP_GUIDE.md) | 15 min |
 | 🤖 **AI Services** | [OpenAI Integration/OPENAI_SETUP_GUIDE.md](OpenAI Integration/OPENAI_SETUP_GUIDE.md) | 5 min |
+
+---
+
+## ✉️ Patient Letters System (NEW! ✨)
+
+### **Complete Letter Management**
+
+Full-featured WYSIWYG letter editor with PDF generation, multi-page support, and Safari-compatible printing.
+
+### **Documentation**
+
+- **Quick Start:** [Letter/PATIENT_LETTERS_QUICK_REFERENCE.md](Letter/PATIENT_LETTERS_QUICK_REFERENCE.md) ⚡
+- **Complete Guide:** [Letter/PATIENT_LETTERS_COMPLETE.md](Letter/PATIENT_LETTERS_COMPLETE.md) 📖
+- **Safari Printing:** [Letter/SAFARI_PRINT_IMPLEMENTATION.md](Letter/SAFARI_PRINT_IMPLEMENTATION.md) 🖨️
+
+### **Features**
+✅ Full TipTap WYSIWYG editor  
+✅ Multi-page support (add/remove pages)  
+✅ Rich text formatting (fonts, colors, lists, alignment)  
+✅ PDF preview, download, and print  
+✅ Safari-compatible printing (new tab + ⌘+P)  
+✅ Chrome/Firefox auto-print dialog  
+✅ Unsaved changes detection  
+✅ Walk Easy letterhead (25% opacity)  
+✅ Badge count on patient menu  
+✅ Dynamic PDF filename: `PatientName_LetterName.pdf`  
+
+### **Access**
+- Patient Menu → Letters (hamburger icon)
+- 20/80 split: Letter list (left) / Editor (right)
+- Manual save with "Saved at HH:MM:SS" indicator
 
 ---
 
@@ -335,6 +372,7 @@ WalkEasy Nexus
 
 | Task | Documentation |
 |------|---------------|
+| Write patient letters | [Letter/PATIENT_LETTERS_QUICK_REFERENCE.md](Letter/PATIENT_LETTERS_QUICK_REFERENCE.md) |
 | Send emails | [Email/GMAIL_QUICK_REFERENCE.md](Email/GMAIL_QUICK_REFERENCE.md) |
 | Create AT Report | [AT Report/AT_REPORT_GUIDE.md](AT Report/AT_REPORT_GUIDE.md) |
 | Connect Xero | [Xero Integration/XERO_SETUP_GUIDE.md](Xero Integration/XERO_SETUP_GUIDE.md) |
@@ -345,6 +383,21 @@ WalkEasy Nexus
 ---
 
 ## 🎉 Latest Updates
+
+### **January 2025 - Patient Letters System** ✉️
+
+✅ Full WYSIWYG letter editor with TipTap  
+✅ Multi-page support (add/remove pages)  
+✅ Rich text formatting (fonts, colors, lists, alignment)  
+✅ PDF preview, download, and print  
+✅ Safari-compatible printing (new tab method)  
+✅ Chrome/Firefox auto-print dialog  
+✅ Unsaved changes detection (metadata + content)  
+✅ Badge count on patient menu  
+✅ Dynamic PDF filenames: `PatientName_LetterName.pdf`  
+✅ Walk Easy letterhead integration (25% opacity)  
+
+**See:** [Letter/PATIENT_LETTERS_COMPLETE.md](Letter/PATIENT_LETTERS_COMPLETE.md)
 
 ### **January 2025 - Google OAuth Authentication** 🔐
 

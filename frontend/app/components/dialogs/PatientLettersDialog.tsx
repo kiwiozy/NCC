@@ -6,9 +6,17 @@ import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import dynamic from 'next/dynamic';
+import { isSafari } from '../../utils/isSafari';
 
 // Dynamically import LetterEditor to avoid SSR issues
 const LetterEditor = dynamic(() => import('../../letters/LetterEditor'), { ssr: false });
+
+// Helper to dispatch lettersUpdated event
+const dispatchLettersUpdated = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('lettersUpdated'));
+  }
+};
 
 // Helper to get CSRF token
 const getCsrfToken = async (): Promise<string> => {
@@ -47,6 +55,7 @@ interface PatientLettersDialogProps {
 
 interface PatientLetter {
   id: string;
+  patient: string; // Patient UUID
   letter_type: string;
   recipient_name: string;
   subject: string;
@@ -65,24 +74,150 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfMode, setPdfMode] = useState<'preview' | 'print'>('preview'); // Track if we're previewing or printing
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [originalMetadata, setOriginalMetadata] = useState<{letter_type: string, recipient_name: string, subject: string} | null>(null);
+  
+  // Store original metadata when a letter is selected
+  useEffect(() => {
+    if (selectedLetter) {
+      setOriginalMetadata({
+        letter_type: selectedLetter.letter_type,
+        recipient_name: selectedLetter.recipient_name,
+        subject: selectedLetter.subject,
+      });
+    } else {
+      setOriginalMetadata(null);
+    }
+  }, [selectedLetter?.id]); // Only run when letter ID changes, not on every metadata edit
+  
+  // Check if metadata has changed
+  useEffect(() => {
+    if (!selectedLetter || !originalMetadata) return;
+    
+    const metadataChanged = 
+      selectedLetter.letter_type !== originalMetadata.letter_type ||
+      selectedLetter.recipient_name !== originalMetadata.recipient_name ||
+      selectedLetter.subject !== originalMetadata.subject;
+    
+    if (metadataChanged) {
+      console.log('📝 Metadata changed - setting unsaved flag');
+      setHasUnsavedChanges(true);
+    }
+  }, [selectedLetter?.letter_type, selectedLetter?.recipient_name, selectedLetter?.subject, originalMetadata]);
+  
+  // Track content changes to detect unsaved changes
+  useEffect(() => {
+    if (!selectedLetter) {
+      setHasUnsavedChanges(false);
+      return;
+    }
+
+    console.log('🔍 Setting up change detection for letter:', selectedLetter.id);
+
+    let currentObserver: MutationObserver | null = null;
+    let retryTimer: NodeJS.Timeout | null = null;
+    let recheckInterval: NodeJS.Timeout | null = null;
+    let lastPageCount = 0;
+
+    // Set up a MutationObserver to detect changes in ALL editor pages
+    const setupObservers = () => {
+      const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+      if (editorElements.length === 0) {
+        console.warn('⚠️ Editor elements not found, retrying...');
+        return false;
+      }
+
+      console.log('✅ Editor elements found:', editorElements.length, 'pages, setting up observers');
+      lastPageCount = editorElements.length;
+
+      // Flag to ignore initial mutations from setup/focus
+      let isInitialSetup = true;
+      setTimeout(() => {
+        isInitialSetup = false;
+        console.log('🎯 Observer now active, will detect real changes');
+      }, 1000); // Wait 1 second after setup before tracking changes
+
+      const observer = new MutationObserver((mutations) => {
+        // Ignore mutations during initial setup
+        if (isInitialSetup) {
+          return;
+        }
+        
+        // Filter out mutations that are just from cursor/selection changes
+        const hasRealChanges = mutations.some(mutation => {
+          // Ignore attribute changes (usually selection/cursor)
+          if (mutation.type === 'attributes') {
+            return false;
+          }
+          // Ignore changes to empty text nodes
+          if (mutation.type === 'characterData' && (!mutation.target.textContent || mutation.target.textContent.trim() === '')) {
+            return false;
+          }
+          return true;
+        });
+        
+        if (hasRealChanges) {
+          console.log('📝 Content changed - setting unsaved flag');
+          setHasUnsavedChanges(true);
+        }
+      });
+
+      // Observe ALL editor elements (all pages)
+      editorElements.forEach((editorElement, index) => {
+        console.log(`   📄 Observing page ${index + 1}`);
+        observer.observe(editorElement, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true,
+        });
+      });
+
+      currentObserver = observer;
+      return observer;
+    };
+
+    // Try immediately
+    setupObservers();
+    
+    // Retry if not found
+    retryTimer = setTimeout(() => {
+      setupObservers();
+    }, 500);
+
+    // Check every 2 seconds if new pages were added
+    recheckInterval = setInterval(() => {
+      const currentPageCount = document.querySelectorAll('.we-page-content .ProseMirror').length;
+      if (currentPageCount !== lastPageCount) {
+        console.log('📄 Page count changed:', lastPageCount, '→', currentPageCount, '- re-setting up observers');
+        // Disconnect old observer
+        if (currentObserver) {
+          currentObserver.disconnect();
+        }
+        // Setup new observers for all pages
+        setupObservers();
+      }
+    }, 2000);
+
+    return () => {
+      if (currentObserver) currentObserver.disconnect();
+      if (retryTimer) clearTimeout(retryTimer);
+      if (recheckInterval) clearInterval(recheckInterval);
+    };
+  }, [selectedLetter?.id]); // Only re-run when letter ID changes, not on metadata edits
   
   // Load letters when dialog opens
   useEffect(() => {
     if (opened && patientId) {
       loadLetters();
+    } else if (!opened) {
+      // Clear letters and selection when dialog closes to prevent stale data
+      setLetters([]);
+      setSelectedLetter(null);
     }
   }, [opened, patientId]);
-  
-  // Auto-save every 10 seconds
-  useEffect(() => {
-    if (!selectedLetter || !opened) return;
-    
-    const autoSaveInterval = setInterval(() => {
-      handleSave(true); // true = silent save
-    }, 10000); // 10 seconds
-    
-    return () => clearInterval(autoSaveInterval);
-  }, [selectedLetter, opened]);
   
   // Auto-focus editor when letter is selected
   useEffect(() => {
@@ -98,9 +233,10 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [selectedLetter]);
+  }, [selectedLetter?.id]); // Only re-focus when letter ID changes, not on metadata edits
   
   const loadLetters = async () => {
+    console.log('📂 Loading letters for patient:', patientId);
     setLoading(true);
     try {
       const response = await fetch(`https://localhost:8000/api/letters/?patient_id=${patientId}`, {
@@ -111,7 +247,20 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       });
       if (response.ok) {
         const data = await response.json();
-        setLetters(Array.isArray(data) ? data : (data.results || []));
+        const freshLetters = Array.isArray(data) ? data : (data.results || []);
+        console.log('✅ Loaded letters:', freshLetters.length, freshLetters.map(l => l.id));
+        setLetters(freshLetters);
+        
+        // If currently selected letter is not in the fresh list, clear selection
+        if (selectedLetter) {
+          const stillExists = freshLetters.some(l => l.id === selectedLetter.id);
+          if (!stillExists) {
+            console.warn('⚠️ Selected letter no longer exists, clearing selection');
+            console.log('Selected letter ID:', selectedLetter.id);
+            console.log('Fresh letters:', freshLetters.map(l => l.id));
+            setSelectedLetter(null);
+          }
+        }
       } else {
         console.error('Failed to load letters:', response.status, response.statusText);
         notifications.show({
@@ -132,7 +281,102 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     }
   };
   
+  const handleCloseDialog = () => {
+    console.log('🚪 Closing dialog - unsaved changes:', hasUnsavedChanges);
+    
+    // Check for unsaved changes before closing
+    if (hasUnsavedChanges && selectedLetter) {
+      console.log('⚠️ Prompting to save unsaved changes');
+      modals.openConfirmModal({
+        title: 'Unsaved Changes',
+        children: (
+          <Text>
+            You have unsaved changes. Do you want to save before closing?
+          </Text>
+        ),
+        labels: { confirm: 'Save & Close', cancel: 'Discard Changes' },
+        confirmProps: { color: 'blue' },
+        cancelProps: { variant: 'subtle', color: 'red' },
+        onConfirm: async () => {
+          console.log('💾 Saving before close...');
+          await handleSave();
+          console.log('✅ Save complete, closing dialog');
+          setHasUnsavedChanges(false);
+          // Small delay to ensure save completes
+          setTimeout(() => {
+            onClose();
+          }, 100);
+        },
+        onCancel: () => {
+          console.log('🗑️ Discarding changes, closing dialog');
+          setHasUnsavedChanges(false);
+          onClose();
+        },
+      });
+      return;
+    }
+    
+    onClose();
+  };
+  
+  const handleSelectLetter = (letter: PatientLetter) => {
+    // Check for unsaved changes before switching letters
+    if (hasUnsavedChanges && selectedLetter && selectedLetter.id !== letter.id) {
+      modals.openConfirmModal({
+        title: 'Unsaved Changes',
+        children: (
+          <Text>
+            You have unsaved changes in the current letter. Do you want to save before switching?
+          </Text>
+        ),
+        labels: { confirm: 'Save & Switch', cancel: 'Discard Changes' },
+        confirmProps: { color: 'blue' },
+        cancelProps: { variant: 'subtle' },
+        onConfirm: async () => {
+          await handleSave();
+          setHasUnsavedChanges(false);
+          setSelectedLetter(letter);
+        },
+        onCancel: () => {
+          setHasUnsavedChanges(false);
+          setSelectedLetter(letter);
+        },
+      });
+      return;
+    }
+    
+    setSelectedLetter(letter);
+  };
+  
   const handleCreateLetter = async () => {
+    // Check for unsaved changes before creating new letter
+    if (hasUnsavedChanges && selectedLetter) {
+      modals.openConfirmModal({
+        title: 'Unsaved Changes',
+        children: (
+          <Text>
+            You have unsaved changes in the current letter. Do you want to save before creating a new letter?
+          </Text>
+        ),
+        labels: { confirm: 'Save & Continue', cancel: 'Discard Changes' },
+        confirmProps: { color: 'blue' },
+        cancelProps: { variant: 'subtle' },
+        onConfirm: async () => {
+          await handleSave();
+          createNewLetter();
+        },
+        onCancel: () => {
+          setHasUnsavedChanges(false);
+          createNewLetter();
+        },
+      });
+      return;
+    }
+    
+    createNewLetter();
+  };
+  
+  const createNewLetter = async () => {
     try {
       const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/letters/`, {
@@ -155,6 +399,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         const newLetter = await response.json();
         await loadLetters();
         setSelectedLetter(newLetter);
+        dispatchLettersUpdated(); // Update badge count
         notifications.show({
           title: 'Success',
           message: 'New letter created',
@@ -182,37 +427,87 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   const handleSave = async (silent = false) => {
     if (!selectedLetter) return;
     
+    // Check if letter still exists in the current list (prevent saving deleted letters)
+    const letterStillExists = letters.some(l => l.id === selectedLetter.id);
+    if (!letterStillExists) {
+      console.warn('⚠️ Cannot save: letter no longer in list, clearing selection');
+      console.log('Selected letter ID:', selectedLetter.id);
+      console.log('Current letters in list:', letters.map(l => l.id));
+      setSelectedLetter(null);
+      return;
+    }
+    
+    console.log('💾 Saving letter:', selectedLetter.id, silent ? '(silent)' : '');
     setSaving(true);
     try {
       // Get current editor content from DOM (like your existing LetterEditor does)
       const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
-      const pages = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
+      console.log('📝 Found', editorElements.length, 'editor elements');
+      const pages = Array.from(editorElements).map((el, idx) => {
+        const html = (el as HTMLElement).innerHTML || '';
+        console.log(`📄 Page ${idx + 1} HTML (first 200 chars):`, html.substring(0, 200));
+        return html;
+      });
       
       const csrfToken = await getCsrfToken();
-      const response = await fetch(`https://localhost:8000/api/letters/${selectedLetter.id}/`, {
+      const saveUrl = `https://localhost:8000/api/letters/${selectedLetter.id}/`;
+      console.log('📡 PUT request to:', saveUrl);
+      
+      const payload = {
+        patient: selectedLetter.patient,
+        letter_type: selectedLetter.letter_type,
+        recipient_name: selectedLetter.recipient_name,
+        subject: selectedLetter.subject,
+        pages,
+      };
+      console.log('📦 Payload:', payload);
+      
+      const response = await fetch(saveUrl, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({
-          ...selectedLetter,
-          pages,
-        }),
+        body: JSON.stringify(payload),
       });
+      
+      console.log('📡 Response status:', response.status, response.statusText);
       
       if (response.ok) {
         const updated = await response.json();
-        setSelectedLetter(updated);
+        // Don't update selectedLetter - it causes infinite loop with useEffect
+        // The editor already has the current content
         setLastSaved(new Date());
-        await loadLetters();
+        setHasUnsavedChanges(false);  // Clear unsaved changes flag
+        
+        // Update original metadata to new saved values
+        setOriginalMetadata({
+          letter_type: updated.letter_type,
+          recipient_name: updated.recipient_name,
+          subject: updated.subject,
+        });
+        
+        // Update the letter in the list without reloading everything
+        setLetters(prev => prev.map(l => l.id === updated.id ? updated : l));
         
         if (!silent) {
           notifications.show({
             title: 'Success',
             message: 'Letter saved',
             color: 'green',
+          });
+        }
+      } else if (response.status === 404) {
+        // Letter was deleted or doesn't exist anymore
+        console.warn('⚠️ Letter not found, clearing selection');
+        setSelectedLetter(null);
+        await loadLetters();
+        if (!silent) {
+          notifications.show({
+            title: 'Error',
+            message: 'Letter no longer exists. It may have been deleted.',
+            color: 'orange',
           });
         }
       } else {
@@ -286,6 +581,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         console.log('✅ PDF blob received, size:', blob.size);
         const url = URL.createObjectURL(blob);
         console.log('🎉 Setting PDF URL for modal preview');
+        setPdfMode('preview');
         setPdfUrl(url);
         setPdfPreviewOpen(true);
       } else {
@@ -309,6 +605,189 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     }
   };
   
+  const handleDownloadPDF = async () => {
+    if (!selectedLetter) {
+      notifications.show({
+        title: 'Error',
+        message: 'No letter selected to download',
+        color: 'red',
+      });
+      return;
+    }
+    
+    console.log('💾 Download PDF clicked for letter:', selectedLetter.id);
+    setLoading(true);
+    try {
+      // Get current editor content from DOM
+      const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+      let combinedHTML: string;
+
+      if (editorElements.length > 0) {
+        const domContent = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
+        combinedHTML = domContent.join('<hr class="page-break">');
+      } else {
+        combinedHTML = selectedLetter.pages.join('<hr class="page-break">');
+      }
+
+      const response = await fetch('https://localhost:3000/api/letters/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: combinedHTML }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        
+        // Generate filename: PatientName_LetterName.pdf
+        const patientNameClean = patientName.replace(/[^a-z0-9]/gi, '_');
+        const letterNameClean = (selectedLetter.subject || selectedLetter.letter_type || 'Letter').replace(/[^a-z0-9]/gi, '_');
+        const filename = `${patientNameClean}_${letterNameClean}.pdf`;
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        notifications.show({
+          title: 'Success',
+          message: `PDF downloaded as ${filename}`,
+          color: 'green',
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        notifications.show({
+          title: 'Error',
+          message: `PDF generation failed: ${errorData.details || errorData.error}`,
+          color: 'red',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error downloading PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Error downloading PDF',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handlePrintPDF = async () => {
+    if (!selectedLetter) {
+      notifications.show({
+        title: 'Error',
+        message: 'No letter selected to print',
+        color: 'red',
+      });
+      return;
+    }
+    
+    console.log('🖨️ Print PDF clicked for letter:', selectedLetter.id);
+    setLoading(true);
+    
+    try {
+      // Get current editor content from DOM
+      const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
+      let combinedHTML: string;
+
+      if (editorElements.length > 0) {
+        const domContent = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
+        combinedHTML = domContent.join('<hr class="page-break">');
+      } else {
+        combinedHTML = selectedLetter.pages.join('<hr class="page-break">');
+      }
+
+      // Generate PDF
+      const response = await fetch('https://localhost:3000/api/letters/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: combinedHTML }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      // Show preview in modal
+      setPdfMode('print');
+      setPdfUrl(url);
+      setPdfPreviewOpen(true);
+
+      // Safari: Open PDF in new tab for printing
+      if (isSafari()) {
+        console.log('🍎 Safari detected - opening PDF in new tab');
+        const win = window.open(url, '_blank');
+        
+        if (!win) {
+          console.warn('⚠️ Safari blocked window.open - user will print from modal');
+          notifications.show({
+            title: 'Print Instructions',
+            message: 'Press ⌘+P (or Ctrl+P) to print the PDF from the preview.',
+            color: 'blue',
+          });
+        }
+        
+        setLoading(false);
+        return;
+      }
+
+      // Non-Safari: Hidden iframe printing
+      console.log('🖨️ Non-Safari - using hidden iframe print method');
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.src = url;
+
+      iframe.onload = () => {
+        try {
+          console.log('✅ PDF loaded in iframe, triggering print');
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (err) {
+          console.error('❌ Error printing iframe:', err);
+          notifications.show({
+            title: 'Print Error',
+            message: 'Could not trigger print. Please use the Print button in the preview.',
+            color: 'orange',
+          });
+        } finally {
+          // Clean up after print dialog closes
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+            URL.revokeObjectURL(url);
+          }, 1000);
+        }
+      };
+
+      document.body.appendChild(iframe);
+      setLoading(false);
+      
+    } catch (error) {
+      console.error('❌ Error printing PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Error printing PDF',
+        color: 'red',
+      });
+      setLoading(false);
+    }
+  };
+  
   const handleDelete = async (letterId: string) => {
     modals.openConfirmModal({
       title: 'Delete Letter',
@@ -316,6 +795,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       labels: { confirm: 'Delete', cancel: 'Cancel' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
+        setLoading(true);
         try {
           const csrfToken = await getCsrfToken();
           const response = await fetch(`https://localhost:8000/api/letters/${letterId}/`, {
@@ -326,16 +806,35 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
             credentials: 'include',
           });
           
-          if (response.ok) {
-            await loadLetters();
+          if (response.ok || response.status === 404) {
+            // Clear selection FIRST to stop auto-save immediately
             if (selectedLetter?.id === letterId) {
               setSelectedLetter(null);
             }
-            notifications.show({
-              title: 'Success',
-              message: 'Letter deleted',
-              color: 'green',
-            });
+            
+            // Then remove from UI
+            setLetters(prev => prev.filter(l => l.id !== letterId));
+            
+            // Then refresh list from server to ensure consistency
+            await loadLetters();
+            
+            dispatchLettersUpdated(); // Update badge count
+            
+            if (response.ok) {
+              notifications.show({
+                title: 'Success',
+                message: 'Letter deleted',
+                color: 'green',
+              });
+            } else {
+              // 404 - already deleted
+              console.warn('⚠️ Letter already deleted, removed from UI');
+              notifications.show({
+                title: 'Info',
+                message: 'Letter was already deleted',
+                color: 'blue',
+              });
+            }
           } else {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
             console.error('Failed to delete letter:', response.status, errorData);
@@ -352,6 +851,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
             message: 'Failed to delete letter',
             color: 'red',
           });
+        } finally {
+          setLoading(false);
         }
       },
     });
@@ -405,7 +906,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     <>
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={handleCloseDialog}
       title={
         <Group gap="xs">
           <IconFileText size={24} />
@@ -480,7 +981,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                           backgroundColor: selectedLetter?.id === letter.id ? 'var(--mantine-color-blue-light)' : 'transparent',
                           transition: 'all 0.2s',
                         }}
-                        onClick={() => setSelectedLetter(letter)}
+                        onClick={() => handleSelectLetter(letter)}
                       >
                         <Group justify="space-between" mb="xs">
                           <Text fw={600} size="sm" style={{ flex: 1 }} truncate>
@@ -584,8 +1085,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                     </Grid.Col>
                     <Grid.Col span={12}>
                       <TextInput
-                        label="Subject"
-                        placeholder="Letter subject (optional)"
+                        label="Name"
+                        placeholder="e.g., Support Letter for NDIS"
                         value={selectedLetter.subject}
                         onChange={(e) => setSelectedLetter({ ...selectedLetter, subject: e.currentTarget.value })}
                       />
@@ -609,13 +1110,13 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                       <Button size="xs" variant="light" leftSection={<IconFileTypePdf size={14} />} onClick={handlePreviewPDF} loading={loading}>
                         Preview PDF
                       </Button>
-                      <Button size="xs" variant="light" leftSection={<IconDownload size={14} />}>
+                      <Button size="xs" variant="light" leftSection={<IconDownload size={14} />} onClick={handleDownloadPDF} loading={loading}>
                         Download
                       </Button>
                       <Button size="xs" variant="light" leftSection={<IconMail size={14} />}>
                         Email
                       </Button>
-                      <Button size="xs" variant="light" leftSection={<IconPrinter size={14} />}>
+                      <Button size="xs" variant="light" leftSection={<IconPrinter size={14} />} onClick={handlePrintPDF} loading={loading}>
                         Print
                       </Button>
                     </Group>
@@ -642,7 +1143,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
         </Box>
     </Modal>
     
-    {/* PDF Preview Modal */}
+    {/* PDF Preview/Print Modal */}
     <Modal
       opened={pdfPreviewOpen}
       onClose={() => {
@@ -651,8 +1152,9 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
           URL.revokeObjectURL(pdfUrl);
           setPdfUrl(null);
         }
+        setPdfMode('preview'); // Reset to preview mode
       }}
-      title="PDF Preview"
+      title={pdfMode === 'print' ? 'Print Letter' : 'PDF Preview'}
       size="90vw"
       styles={{
         body: { height: '85vh', overflow: 'hidden' },
@@ -660,15 +1162,44 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       }}
     >
       {pdfUrl && (
-        <iframe
-          src={pdfUrl}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-          }}
-          title="PDF Preview"
-        />
+        <>
+          {pdfMode === 'print' && (
+            <Group justify="space-between" mb="md">
+              {isSafari() ? (
+                <Text size="sm" c="dimmed">
+                  Press <strong>⌘+P</strong> (or <strong>Ctrl+P</strong>) to print the PDF, or use the button below.
+                </Text>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  The print dialog should open automatically. If it doesn't, click the Print button below.
+                </Text>
+              )}
+              <Button 
+                leftSection={<IconPrinter size={16} />}
+                onClick={() => {
+                  // For Safari, try to print the iframe
+                  const iframe = document.querySelector('iframe[title="PDF Preview"]') as HTMLIFrameElement;
+                  if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.print();
+                  } else {
+                    window.print();
+                  }
+                }}
+              >
+                Print
+              </Button>
+            </Group>
+          )}
+          <iframe
+            src={pdfUrl}
+            style={{
+              width: '100%',
+              height: pdfMode === 'print' ? 'calc(100% - 60px)' : '100%',
+              border: 'none',
+            }}
+            title="PDF Preview"
+          />
+        </>
       )}
     </Modal>
     </>

@@ -40,9 +40,11 @@ class PatientLetterListSerializer(serializers.ModelSerializer):
         model = PatientLetter
         fields = [
             'id',
+            'patient',  # Added - needed for updates
             'letter_type',
             'recipient_name',
             'subject',
+            'pages',  # Added - needed for editor content
             'preview_text',
             'created_at',
             'updated_at',

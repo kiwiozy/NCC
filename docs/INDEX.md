@@ -90,6 +90,7 @@ docs/
 - [Documents Dialog](architecture/dialogs/DocumentsDialog.md) - S3 document management
 - [Notes Dialog](architecture/dialogs/NotesDialog.md) - Clinical notes with AI
 - [Reminder Dialog](architecture/dialogs/ReminderDialog.md) - Patient reminders
+- [Patient Letters](Letter/PATIENT_LETTERS_COMPLETE.md) - Letter management system ✅ NEW
 
 ### **Integrations** (Production-Ready ✅)
 - [Gmail Integration](integrations/GMAIL.md) - OAuth2 email sending
@@ -111,6 +112,7 @@ docs/
 
 ### ✅ **Implemented**
 - **Google OAuth Authentication** - Seamless login with Google Workspace accounts
+- **Patient Letters System** - Full WYSIWYG editor with PDF generation and Safari-compatible printing ✅ NEW
 - Patient management (list, search, filter, archive)
 - Contact types (patients, referrers, coordinators, etc.)
 - Multi-clinic calendar with drag-and-drop

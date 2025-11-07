@@ -63,6 +63,7 @@ export default function ContactHeader({
   const [documentsCount, setDocumentsCount] = useState<number>(0);
   const [imagesCount, setImagesCount] = useState<number>(0);
   const [batchesCount, setBatchesCount] = useState<number>(0);
+  const [lettersCount, setLettersCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
@@ -199,6 +200,50 @@ export default function ContactHeader({
     return () => {
       clearInterval(interval);
       window.removeEventListener('documentsUpdated', handleDocumentsChange);
+    };
+  }, [patientId, menuOpened]);
+
+  // Get letters count for patient
+  useEffect(() => {
+    const getLettersCount = async () => {
+      try {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+          // Load from API for patient-specific letters
+          const response = await fetch(`https://localhost:8000/api/letters/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const lettersList = data.results || data;
+            setLettersCount(Array.isArray(lettersList) ? lettersList.length : 0);
+          } else {
+            setLettersCount(0);
+          }
+        } else {
+          setLettersCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading letters count:', err);
+        setLettersCount(0);
+      }
+    };
+
+    getLettersCount();
+    
+    // Listen for custom event when letters change
+    const handleLettersChange = () => {
+      getLettersCount();
+    };
+    
+    window.addEventListener('lettersUpdated', handleLettersChange);
+    
+    // Refresh count periodically
+    const interval = setInterval(getLettersCount, 2000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('lettersUpdated', handleLettersChange);
     };
   }, [patientId, menuOpened]);
 
@@ -490,8 +535,10 @@ export default function ContactHeader({
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
                           {item.label}
                         </Text>
-                        {/* Badges for Notes and Documents */}
-                        {(item.label === 'Notes' && notesCount > 0) || (item.label === 'Documents' && documentsCount > 0) ? (
+                        {/* Badges for Notes, Documents, and Letters */}
+                        {((item.label === 'Notes' && notesCount > 0) || 
+                          (item.label === 'Documents' && documentsCount > 0) || 
+                          (item.label === 'Letters' && lettersCount > 0)) ? (
                           <Badge
                             size="xs"
                             color="red"
@@ -513,7 +560,9 @@ export default function ContactHeader({
                           >
                             {item.label === 'Notes' 
                               ? (notesCount > 99 ? '99+' : notesCount)
-                              : (documentsCount > 99 ? '99+' : documentsCount)
+                              : item.label === 'Documents'
+                              ? (documentsCount > 99 ? '99+' : documentsCount)
+                              : (lettersCount > 99 ? '99+' : lettersCount)
                             }
                           </Badge>
                         ) : null}

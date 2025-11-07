@@ -17,11 +17,18 @@ class PatientLetterViewSet(viewsets.ModelViewSet):
     serializer_class = PatientLetterSerializer
     
     def get_queryset(self):
-        """Filter letters by patient_id from query params"""
-        patient_id = self.request.query_params.get('patient_id')
-        if patient_id:
-            return PatientLetter.objects.filter(patient_id=patient_id)
-        return PatientLetter.objects.none()
+        """Filter letters by patient_id from query params for list view only"""
+        queryset = PatientLetter.objects.all()
+        
+        # Only filter by patient_id for list actions
+        if self.action == 'list':
+            patient_id = self.request.query_params.get('patient_id')
+            if patient_id:
+                return queryset.filter(patient_id=patient_id)
+            return PatientLetter.objects.none()
+        
+        # For detail actions (retrieve, update, destroy), return all letters
+        return queryset
     
     def get_serializer_class(self):
         """Use lightweight serializer for list view"""

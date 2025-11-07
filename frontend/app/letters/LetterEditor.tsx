@@ -93,7 +93,7 @@ function LetterPage({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        style: 'color: #000000 !important; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif !important;',
+        style: 'font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif !important;',
         'data-force-light-mode': 'true',
       },
     },
@@ -112,6 +112,21 @@ function LetterPage({
       onEditorReady(editor);
     }
   }, [editor, onEditorReady]);
+
+  // Update editor content when initialContent prop changes
+  useEffect(() => {
+    if (editor && initialContent) {
+      const currentContent = editor.getHTML();
+      // Only update if content is actually different to avoid cursor jumps
+      if (currentContent !== initialContent) {
+        console.log('🔄 Updating editor content');
+        console.log('   Current:', currentContent.substring(0, 100));
+        console.log('   New:', initialContent.substring(0, 100));
+        editor.commands.setContent(initialContent, false);
+        console.log('   After setContent:', editor.getHTML().substring(0, 100));
+      }
+    }
+  }, [editor, initialContent]);
 
   // Ensure list items have position:relative and inject bullet styles
   useEffect(() => {
@@ -233,6 +248,7 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
       : [`<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`]
   );
   const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
+  const [currentColor, setCurrentColor] = useState<string>('#000000');
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
   const [highlightPickerOpened, setHighlightPickerOpened] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -243,6 +259,13 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
   const [aiProcessingAllPages, setAiProcessingAllPages] = useState(false);
   const [originalContentForAI, setOriginalContentForAI] = useState<string>('');
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string>('');
+  
+  // Update pages when initialPages prop changes (e.g., when selecting a different letter)
+  useEffect(() => {
+    if (initialPages && initialPages.length > 0) {
+      setPages(initialPages);
+    }
+  }, [initialPages]);
   
   // Font families available for selection
   const fontFamilies = [
@@ -286,12 +309,31 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
     return attrs.fontSize || '';
   };
 
-  // Get current text color
-  const getCurrentColor = (): string => {
-    if (!activeEditor) return '#000000';
-    const attrs = activeEditor.getAttributes('textStyle');
-    return attrs.color || '#000000';
-  };
+  // Update current color when active editor or selection changes
+  useEffect(() => {
+    if (!activeEditor) {
+      setCurrentColor('#000000');
+      return;
+    }
+    
+    // Update color when selection changes
+    const updateColor = () => {
+      const attrs = activeEditor.getAttributes('textStyle');
+      const newColor = attrs.color || '#000000';
+      // Only update if color actually changed
+      setCurrentColor(prevColor => prevColor !== newColor ? newColor : prevColor);
+    };
+    
+    // Initial update
+    updateColor();
+    
+    // Listen for selection updates only (more efficient than transaction)
+    activeEditor.on('selectionUpdate', updateColor);
+    
+    return () => {
+      activeEditor.off('selectionUpdate', updateColor);
+    };
+  }, [activeEditor]);
 
   // Get current highlight color
   const getCurrentHighlight = (): string => {
@@ -365,11 +407,20 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
 
   // Handle color change
   const handleColorChange = (color: string) => {
-    if (!activeEditor) return;
+    console.log('🎨 handleColorChange called with:', color);
+    console.log('   activeEditor:', activeEditor ? 'exists' : 'null');
+    if (!activeEditor) {
+      console.error('❌ No active editor!');
+      return;
+    }
     if (color === '#000000' || color === '') {
+      console.log('   Unsetting color (black/empty)');
       activeEditor.chain().focus().unsetColor().run();
     } else {
-      activeEditor.chain().focus().setColor(color).run();
+      console.log('   Setting color to:', color);
+      const result = activeEditor.chain().focus().setColor(color).run();
+      console.log('   Command result:', result);
+      console.log('   HTML after:', activeEditor.getHTML().substring(0, 200));
     }
   };
 
@@ -809,7 +860,7 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
               value={getCurrentFontFamily()}
               onChange={handleFontFamilyChange}
               data={fontFamilies}
-              size="compact-sm"
+              size="xs"
               disabled={!activeEditor}
               w={150}
               styles={{
@@ -818,6 +869,8 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
                   backgroundColor: 'var(--mantine-color-dark-6)',
                   color: 'var(--mantine-color-gray-0)',
                   borderColor: 'var(--mantine-color-dark-4)',
+                  height: '36px',
+                  minHeight: '36px',
                 },
               }}
             />
@@ -828,7 +881,7 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
               value={getCurrentFontSize()}
               onChange={handleFontSizeChange}
               data={fontSizes}
-              size="compact-sm"
+              size="xs"
               disabled={!activeEditor}
               w={90}
               styles={{
@@ -837,6 +890,8 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
                   backgroundColor: 'var(--mantine-color-dark-6)',
                   color: 'var(--mantine-color-gray-0)',
                   borderColor: 'var(--mantine-color-dark-4)',
+                  height: '36px',
+                  minHeight: '36px',
                 },
               }}
             />
@@ -1037,20 +1092,20 @@ export default function LetterEditor({ initialPages, isDialog }: { initialPages?
             >
               <Popover.Target>
                 <ActionIcon
-                  variant={activeEditor?.isActive('textStyle') && getCurrentColor() !== '#000000' ? 'filled' : 'default'}
+                  variant={activeEditor?.isActive('textStyle') && currentColor !== '#000000' ? 'filled' : 'default'}
                   onClick={() => setColorPickerOpened(!colorPickerOpened)}
                   disabled={!activeEditor}
                   size="lg"
                   style={{
-                    backgroundColor: getCurrentColor() !== '#000000' ? getCurrentColor() : undefined,
+                    backgroundColor: currentColor !== '#000000' ? currentColor : undefined,
                   }}
                 >
-                  <IconColorPicker size={18} style={{ color: getCurrentColor() === '#000000' ? undefined : '#fff' }} />
+                  <IconColorPicker size={18} style={{ color: currentColor === '#000000' ? undefined : '#fff' }} />
                 </ActionIcon>
               </Popover.Target>
               <Popover.Dropdown>
                 <ColorPicker
-                  value={getCurrentColor()}
+                  value={currentColor}
                   onChange={(color) => {
                     handleColorChange(color);
                     setColorPickerOpened(false);
