@@ -25,5 +25,7 @@ urlpatterns = [
     # Webhook endpoints (CSRF exempt - called by SMS Broadcast)
     path('webhook/dlr/', views.sms_delivery_receipt, name='sms-delivery-receipt'),
     path('webhook/inbound/', webhook_views.sms_inbound, name='sms-inbound'),
+    # Global SMS notification widget endpoints
+    path('unread-count/', views.global_unread_count, name='global-unread-count'),
+    path('inbound/<uuid:message_id>/', views.get_inbound_message, name='get-inbound-message'),
 ]
-

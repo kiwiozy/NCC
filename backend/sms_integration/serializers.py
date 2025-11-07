@@ -3,6 +3,7 @@ SMS Integration Serializers
 """
 from rest_framework import serializers
 from .models import SMSMessage, SMSTemplate, SMSInbound
+from patients.serializers import PatientSerializer
 
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
@@ -66,6 +67,7 @@ class SMSMessageSerializer(serializers.ModelSerializer):
 
 class SMSInboundSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
+    patient = PatientSerializer(read_only=True)  # Full patient details for notifications
     
     class Meta:
         model = SMSInbound

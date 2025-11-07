@@ -381,3 +381,59 @@ def sms_inbound(request):
         # Still return OK to prevent SMS Broadcast from retrying
     
     return HttpResponse('OK')
+
+
+# New endpoints for SMS Notification Widget
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def global_unread_count(request):
+    """
+    Get total count of unread SMS messages across all patients
+    Returns count + latest message ID (for change detection)
+    """
+    try:
+        # Count all unread inbound messages
+        unread_count = SMSInbound.objects.filter(is_processed=False).count()
+        
+        # Get latest message ID
+        latest_message = SMSInbound.objects.order_by('-received_at').first()
+        latest_id = str(latest_message.id) if latest_message else None
+        
+        return Response({
+            'unread_count': unread_count,
+            'latest_message_id': latest_id
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_inbound_message(request, message_id):
+    """
+    Get details of a single inbound SMS message
+    Includes full patient details for notification display
+    """
+    try:
+        message = SMSInbound.objects.get(id=message_id)
+        serializer = SMSInboundSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except SMSInbound.DoesNotExist:
+        return Response(
+            {'error': 'Message not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

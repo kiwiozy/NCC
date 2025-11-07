@@ -6,6 +6,7 @@ import './globals.css';
 import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from '@mantine/modals';
+import { SMSProvider } from './contexts/SMSContext';
 
 // Custom theme for Walk Easy with dark mode support
 const theme = createTheme({
@@ -54,12 +55,13 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <MantineProvider theme={theme} defaultColorScheme="dark">
           <ModalsProvider>
-            <Notifications />
-            {children}
+            <SMSProvider>
+              <Notifications />
+              {children}
+            </SMSProvider>
           </ModalsProvider>
         </MantineProvider>
       </body>
     </html>
   );
 }
-
