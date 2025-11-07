@@ -13,6 +13,7 @@ interface ContactHeaderProps {
   onNotesClick?: () => void;
   onDocumentsClick?: () => void;
   onImagesClick?: () => void;
+  onLettersClick?: () => void;
   onSmsClick?: () => void;
   patientId?: string; // For getting note and document counts
   showFilters?: boolean;
@@ -37,6 +38,7 @@ export default function ContactHeader({
   onNotesClick,
   onDocumentsClick,
   onImagesClick,
+  onLettersClick,
   onSmsClick,
   patientId,
   showFilters = true,
@@ -241,7 +243,7 @@ export default function ContactHeader({
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
-    { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => console.log('Letters') },
+    { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => { onLettersClick?.(); setMenuOpened(false); } },
     { icon: <IconMessageCircle size={20} />, label: 'SMS', onClick: () => { onSmsClick?.(); setMenuOpened(false); } },
     { icon: <IconFileTypePdf size={20} />, label: "PDF's", onClick: () => console.log('PDFs') },
     { icon: <IconBrandNuxt size={20} />, label: 'NDIS', onClick: () => console.log('NDIS') },

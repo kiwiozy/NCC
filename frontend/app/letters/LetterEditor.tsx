@@ -219,7 +219,7 @@ function LetterPage({
   );
 }
 
-export default function LetterEditor() {
+export default function LetterEditor({ initialPages }: { initialPages?: string[] } = {}) {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [urlPromptOpened, setUrlPromptOpened] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -227,9 +227,11 @@ export default function LetterEditor() {
   const [errorMessage, setErrorMessage] = useState('');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [pages, setPages] = useState<string[]>([
-    `<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`
-  ]);
+  const [pages, setPages] = useState<string[]>(
+    initialPages && initialPages.length > 0
+      ? initialPages
+      : [`<p>Dear [Name],</p><p></p><p>Write your letter here...</p><p></p><p>Sincerely,</p><p>Walk Easy Pedorthics</p>`]
+  );
   const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
   const [colorPickerOpened, setColorPickerOpened] = useState(false);
   const [highlightPickerOpened, setHighlightPickerOpened] = useState(false);

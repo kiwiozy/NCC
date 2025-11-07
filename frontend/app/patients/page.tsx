@@ -11,6 +11,7 @@ import ContactHeader from '../components/ContactHeader';
 import NotesDialog from '../components/dialogs/NotesDialog';
 import DocumentsDialog from '../components/dialogs/DocumentsDialog';
 import ImagesDialog from '../components/dialogs/ImagesDialog';
+import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
 import dayjs from 'dayjs';
@@ -388,6 +389,7 @@ export default function ContactsPage() {
   const [notesDialogOpened, setNotesDialogOpened] = useState(false);
   const [documentsDialogOpened, setDocumentsDialogOpened] = useState(false);
   const [imagesDialogOpened, setImagesDialogOpened] = useState(false);
+  const [lettersDialogOpened, setLettersDialogOpened] = useState(false);
   const [smsDialogOpened, setSmsDialogOpened] = useState(false);
   
   // Helper to get coordinators array (handles both old single coordinator and new array)
@@ -956,6 +958,7 @@ export default function ContactsPage() {
         onNotesClick={() => setNotesDialogOpened(true)}
         onDocumentsClick={() => setDocumentsDialogOpened(true)}
         onImagesClick={() => setImagesDialogOpened(true)}
+        onLettersClick={() => setLettersDialogOpened(true)}
         onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
         onFilterApply={handleFilterApply}
@@ -3097,6 +3100,14 @@ export default function ContactsPage() {
       <ImagesDialog
         opened={imagesDialogOpened}
         onClose={() => setImagesDialogOpened(false)}
+        patientId={selectedContact?.id || ''}
+        patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
+      />
+
+      {/* Letters Dialog */}
+      <PatientLettersDialog
+        opened={lettersDialogOpened}
+        onClose={() => setLettersDialogOpened(false)}
         patientId={selectedContact?.id || ''}
         patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
       />

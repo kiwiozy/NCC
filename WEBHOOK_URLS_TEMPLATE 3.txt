@@ -1,0 +1,13 @@
+# SMS Broadcast Webhook URLs Template
+# Replace YOUR-NGROK-URL with your actual ngrok URL
+
+# Delivery Receipt URL (for message delivery status):
+https://YOUR-NGROK-URL.ngrok-free.app/api/sms/webhook/dlr/
+
+# Inbound Message URL (for patient replies):
+https://YOUR-NGROK-URL.ngrok-free.app/api/sms/webhook/inbound/
+
+# Example (if your ngrok URL is https://abc123.ngrok-free.app):
+# Delivery Receipt: https://abc123.ngrok-free.app/api/sms/webhook/dlr/
+# Inbound Message: https://abc123.ngrok-free.app/api/sms/webhook/inbound/
+

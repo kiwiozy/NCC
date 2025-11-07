@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'reminders',  # Reminders for calendar waiting list
     'notes',  # Patient notes (clinical notes, clinic dates, etc.)
     'images',  # Patient images (photos, x-rays, etc.)
+    'letters',  # Patient letters (correspondence, support letters, etc.)
 ]
 
 MIDDLEWARE = [
