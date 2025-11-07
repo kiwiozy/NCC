@@ -410,6 +410,113 @@
 
 ---
 
+### ✅ **12. `sms_integration_smsmessage` Table**
+
+**Model:** `sms_integration.models.SMSMessage`  
+**Status:** ✅ Exists (Production Ready)
+
+**Fields:**
+
+#### Primary & Identifiers
+- `id` - UUID (primary key)
+- `external_message_id` - CharField(100) - SMS Broadcast message ID
+
+#### Message Content
+- `message` - TextField - SMS message content
+- `phone_number` - CharField(20) - Recipient phone number (normalized: +61XXXXXXXXX)
+
+#### Status & Delivery
+- `status` - CharField(20) - Choices: sent, delivered, failed, pending
+  - Default: 'sent'
+- `sent_at` - DateTimeField (auto_now_add) - When message was sent
+- `delivered_at` - DateTimeField (nullable) - When delivery was confirmed
+
+#### Relationships
+- `patient` - **ForeignKey** → `patients.Patient` (nullable, CASCADE)
+  - Related name: `sms_messages`
+- `user` - **ForeignKey** → `auth.User` (nullable, SET_NULL)
+  - Related name: `sent_sms_messages`
+  - Tracks who sent the message
+
+#### Additional Fields
+- `error_message` - TextField (blank) - Error details if delivery failed
+- `cost` - DecimalField(10, 4) (nullable) - Cost in credits
+
+**Indexes:**
+- `['patient']`
+- `['status']`
+- `['sent_at']`
+- `['external_message_id']`
+
+**Usage:**
+- Tracks all outbound SMS messages sent via SMSService
+- Updated by delivery status webhook when status changes
+- Displayed in patient SMS dialog (blue bubbles on right)
+
+---
+
+### ✅ **13. `sms_integration_smsinbound` Table**
+
+**Model:** `sms_integration.models.SMSInbound`  
+**Status:** ✅ Exists (Production Ready)
+
+**Fields:**
+
+#### Primary & Identifiers
+- `id` - UUID (primary key)
+- `external_message_id` - CharField(100) - SMS Broadcast message ID
+
+#### Message Content
+- `from_number` - CharField(20) - Sender phone number (normalized: +61XXXXXXXXX)
+- `to_number` - CharField(20) - Our number that received the message
+- `message` - TextField - SMS message content
+
+#### Status & Processing
+- `is_processed` - BooleanField - Whether message has been handled
+  - Default: False
+- `received_at` - DateTimeField - When message was received
+- `notes` - TextField (blank) - Auto-detected notes (e.g., "Auto-detected: Confirmation")
+
+#### Relationships
+- `patient` - **ForeignKey** → `patients.Patient` (nullable, SET_NULL)
+  - Related name: `sms_inbound`
+  - Auto-matched by phone number via webhook
+
+**Indexes:**
+- `['patient']`
+- `['from_number']`
+- `['received_at']`
+- `['is_processed']`
+
+**Usage:**
+- Tracks all inbound SMS messages (replies from patients)
+- Created by inbound webhook when SMS Broadcast receives a reply
+- Auto-matches patient by phone number (searches contact_json and emergency_json)
+- Phone numbers normalized: strips +, spaces, leading 0, adds country code (61)
+- Displayed in patient SMS dialog (gray bubbles on left)
+
+---
+
+### ✅ **14. `sms_integration_smstemplate` Table**
+
+**Model:** `sms_integration.models.SMSTemplate`  
+**Status:** ✅ Exists
+
+**Fields:**
+- `id` - UUID (primary key)
+- `name` - CharField(100) - Template name
+- `content` - TextField - Template message content
+- `is_active` - BooleanField - Whether template is active
+- `created_at` - DateTimeField (auto_now_add)
+- `updated_at` - DateTimeField (auto_now)
+
+**Usage:**
+- Stores reusable SMS message templates
+- Managed through Settings page
+- Used in patient SMS dialog for quick message selection
+
+---
+
 ## 🔗 **Relationship Diagram**
 
 ```

@@ -12,6 +12,7 @@ from patients.models import Patient
 from .models import SMSMessage, SMSInbound
 import re
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,11 @@ def sms_inbound(request):
     - smsref: SMS Broadcast message ID
     - secret: Optional secret token for security
     """
+    print(f"[SMS Webhook] ===== WEBHOOK RECEIVED =====")
+    print(f"[SMS Webhook] Method: {request.method}")
+    print(f"[SMS Webhook] Content-Type: {request.content_type}")
+    print(f"[SMS Webhook] Body: {request.body[:500]}")  # First 500 chars
+    
     try:
         # Get parameters from GET or POST
         if request.method == 'GET':
@@ -115,12 +121,19 @@ def sms_inbound(request):
             smsref = request.GET.get('smsref') or request.GET.get('externalId')
         else:
             # POST - try JSON body first, then form data
-            if hasattr(request, 'data'):
-                from_number = request.data.get('from') or request.data.get('sourceAddress')
-                to_number = request.data.get('to') or request.data.get('destinationAddress')
-                message_text = request.data.get('message') or request.data.get('messageText')
-                ref = request.data.get('ref') or request.data.get('msgref')
-                smsref = request.data.get('smsref') or request.data.get('externalId')
+            data = None
+            if request.content_type == 'application/json':
+                try:
+                    data = json.loads(request.body.decode('utf-8'))
+                except (ValueError, UnicodeDecodeError) as e:
+                    logger.warning(f"[SMS Webhook] Failed to parse JSON body: {e}")
+            
+            if data:
+                from_number = data.get('from') or data.get('sourceAddress')
+                to_number = data.get('to') or data.get('destinationAddress')
+                message_text = data.get('message') or data.get('messageText')
+                ref = data.get('ref') or data.get('msgref')
+                smsref = data.get('smsref') or data.get('externalId')
             else:
                 from_number = request.POST.get('from') or request.POST.get('sourceAddress')
                 to_number = request.POST.get('to') or request.POST.get('destinationAddress')
@@ -146,12 +159,15 @@ def sms_inbound(request):
         linked_message = None
         if ref:
             try:
+                # Validate that ref is a UUID before querying
+                import uuid
+                uuid.UUID(ref)
                 linked_message = SMSMessage.objects.get(id=ref)
                 if not patient and linked_message.patient:
                     # Use patient from linked message if not found by phone
                     patient = linked_message.patient
-            except SMSMessage.DoesNotExist:
-                logger.warning(f"[SMS Webhook] Linked message not found: {ref}")
+            except (SMSMessage.DoesNotExist, ValueError):
+                print(f"[SMS Webhook] Linked message not found or invalid UUID: {ref}")
         
         # Create SMSInbound record
         sms_inbound = SMSInbound.objects.create(

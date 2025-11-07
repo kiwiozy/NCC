@@ -83,11 +83,115 @@ SMS integration provides SMS sending via SMS Broadcast API. Send individual mess
    SMS_SENDER_ID=YourSenderID  # Optional, default: "WalkEasy"
    ```
 
-3. **Webhook Setup (Optional):**
-   - Use ngrok for local development: `ngrok http 8000`
-   - Set webhook URL in SMS Broadcast dashboard
+3. **Webhook Setup (Required for receiving SMS replies):**
+   - **Production:** Use your domain: `https://your-domain.com/api/sms/webhook/inbound/`
+   - **Development:** Use Cloudflare Tunnel (see **Webhook Development Setup** below)
    - DLR Endpoint: `https://your-domain.com/api/sms/webhook/dlr/`
    - Inbound Endpoint: `https://your-domain.com/api/sms/webhook/inbound/`
+
+---
+
+## 🌐 **Webhook Development Setup** (CRITICAL for receiving SMS replies)
+
+To receive SMS replies in development, you need to expose your local HTTPS backend to the internet using Cloudflare Tunnel.
+
+### **Why This Setup?**
+
+- Frontend needs HTTPS (`https://localhost:3000`)
+- Backend needs HTTPS (`https://localhost:8000`) 
+- Webhook needs public URL that accepts self-signed certificates
+- **Solution:** Cloudflare Tunnel with `--no-tls-verify` flag
+
+### **Quick Start**
+
+1. **Start Backend HTTPS:**
+   ```bash
+   cd backend
+   ./start-https.sh
+   # Backend will run on https://localhost:8000
+   ```
+
+2. **Start Frontend HTTPS:**
+   ```bash
+   cd frontend
+   ./start-https.sh
+   # Frontend will run on https://localhost:3000
+   ```
+
+3. **Start Cloudflare Tunnel:**
+   ```bash
+   cloudflared tunnel --url https://localhost:8000 --no-tls-verify
+   ```
+   
+   This will output a URL like:
+   ```
+   https://random-words-here.trycloudflare.com
+   ```
+
+4. **Update SMS Broadcast Webhook:**
+   - Go to SMS Broadcast dashboard → Webhooks
+   - Click "Create Webhook" or edit existing
+   - **Event:** Select **"SMS → Receive an SMS"** (NOT just "SMS")
+   - **Method:** POST
+   - **URL:** `https://random-words-here.trycloudflare.com/api/sms/webhook/inbound/`
+   - **Add Parameters:** (use JSON format)
+     - `from` → `$esc.json($!sourceAddress)`
+     - `to` → `$esc.json($!destinationAddress)`
+     - `message` → `$esc.json($!moContent)`
+     - `ref` → `$esc.json($!metadata.apiClientRef)`
+     - `msgref` → `$esc.json($!metadata.apiSmsRef)`
+   - Click **Save**
+
+5. **Test:**
+   - Send an SMS from your app
+   - Reply from your phone
+   - Reply should appear in the SMS dialog within 10-15 seconds!
+
+### **The Critical Flag: `--no-tls-verify`**
+
+**Why it's needed:**
+- Django `runserver_plus` uses self-signed SSL certificates
+- Cloudflare Tunnel normally rejects self-signed certs (502 Bad Gateway)
+- `--no-tls-verify` tells Cloudflare to accept self-signed certificates
+
+**Without this flag:** Webhooks fail with 502 errors  
+**With this flag:** Everything works on HTTPS! ✅
+
+### **SMS Broadcast Webhook Configuration**
+
+⚠️ **IMPORTANT:** SMS Broadcast requires selecting the correct sub-event:
+
+**Correct:**
+- Event: **"SMS → Receive an SMS"** ✅
+
+**Incorrect:**
+- Event: **"SMS"** only (parent checkbox) ❌
+- This won't send inbound messages!
+
+**Parameter Format:**
+- Use `$esc.json(...)` (NOT `$esc.url(...)`)
+- JSON encoding prevents issues with special characters
+
+### **Troubleshooting Webhook Setup**
+
+**Problem:** Webhook URL returns 502 Bad Gateway
+- **Cause:** Cloudflare can't reach HTTPS backend with self-signed cert
+- **Fix:** Add `--no-tls-verify` flag to `cloudflared` command
+
+**Problem:** Webhook returns 200 OK but messages aren't saved
+- **Cause:** UUID validation error (webhook trying to link to non-existent message)
+- **Fix:** Already fixed in code - validates UUID before querying database
+
+**Problem:** Replies appear in SMS Broadcast dashboard but not in app
+- **Cause:** Webhook not configured or wrong event type selected
+- **Fix:** Ensure "SMS → Receive an SMS" is selected (not just "SMS")
+
+**Problem:** Frontend shows certificate errors
+- **Cause:** Safari doesn't trust self-signed cert
+- **Fix:** 
+  1. Open `https://localhost:8000/api/auth/user/` in Safari
+  2. Click "Show Details" → "visit this website" → "Visit Website"
+  3. Refresh your app - certificate now trusted!
 
 ---
 
@@ -224,4 +328,13 @@ Detailed setup guides and implementation docs are in:
 - Fixed CSRF token handling for patient SMS (Nov 2025)
 - Fixed ReturnDict serialization issue (Nov 2025)
 - Added smart message refresh to avoid dialog reload (Nov 2025)
+- **Fixed webhook HTTPS setup with `--no-tls-verify` flag (Nov 2025)** ⭐
+- **Fixed UUID validation bug causing webhook failures (Nov 2025)**
+- **Added complete webhook development setup documentation (Nov 2025)**
+
+**Key Learnings:**
+- Cloudflare Tunnel requires `--no-tls-verify` to work with self-signed SSL certificates
+- SMS Broadcast requires selecting "SMS → Receive an SMS" sub-event (not just parent "SMS" checkbox)
+- Always validate UUIDs before database queries to prevent silent failures
+- Use `$esc.json(...)` format for SMS Broadcast webhook parameters (not `$esc.url(...)`)
 
