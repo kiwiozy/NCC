@@ -1181,7 +1181,179 @@ The plan is now **100% accurate** with:
 
 ---
 
-### ⏸️ **Step 5: Testing & Polish - PENDING**
+### ✅ **Step 5: Testing & Polish - IN PROGRESS**
+
+**⚠️ BACKEND CHANGES REQUIRED (Protected Files):**
+
+You'll need to manually add these backend endpoints to complete the implementation:
+
+---
+
+**1. Update `backend/sms_integration/serializers.py`:**
+
+Add this import at the top:
+```python
+from patients.serializers import PatientSerializer
+```
+
+Update `SMSInboundSerializer` to include full patient details:
+```python
+class SMSInboundSerializer(serializers.ModelSerializer):
+    patient_name = serializers.SerializerMethodField()
+    patient = PatientSerializer(read_only=True)  # ← Add this line
+    
+    class Meta:
+        model = SMSInbound
+        fields = [
+            'id',
+            'from_number',
+            'to_number',
+            'message',
+            'external_message_id',
+            'received_at',
+            'patient',  # Full patient object
+            'patient_name',  # Legacy field
+            'is_processed',
+            'processed_at',
+            'processed_by',
+            'notes'
+        ]
+    
+    def get_patient_name(self, obj):
+        return obj.patient.get_full_name() if obj.patient else None
+```
+
+---
+
+**2. Add to `backend/sms_integration/views.py`:**
+
+Add these two new functions:
+
+```python
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def global_unread_count(request):
+    """
+    Get total count of unread SMS messages across all patients
+    Returns count + latest message ID (for change detection)
+    """
+    try:
+        # Count all unread inbound messages
+        unread_count = SMSInbound.objects.filter(is_processed=False).count()
+        
+        # Get latest message ID
+        latest_message = SMSInbound.objects.order_by('-received_at').first()
+        latest_id = str(latest_message.id) if latest_message else None
+        
+        return Response({
+            'unread_count': unread_count,
+            'latest_message_id': latest_id
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_inbound_message(request, message_id):
+    """
+    Get details of a single inbound SMS message
+    Includes full patient details for notification display
+    """
+    try:
+        message = SMSInbound.objects.get(id=message_id)
+        serializer = SMSInboundSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except SMSInbound.DoesNotExist:
+        return Response(
+            {'error': 'Message not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+```
+
+---
+
+**3. Add to `backend/sms_integration/urls.py`:**
+
+Add these two URL routes to the `urlpatterns` list:
+
+```python
+urlpatterns = [
+    # ... existing routes ...
+    
+    # Global unread count endpoint
+    path('unread-count/', views.global_unread_count, name='global_unread_count'),
+    
+    # Get single inbound message endpoint
+    path('inbound/<uuid:message_id>/', views.get_inbound_message, name='get_inbound_message'),
+]
+```
+
+---
+
+**4. Update `frontend/app/layout.tsx`:**
+
+Add this import:
+```typescript
+import { SMSProvider } from './contexts/SMSContext';
+```
+
+Wrap your app's children with `SMSProvider`:
+```typescript
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <MantineProvider>
+          <AuthProvider>
+            <SMSProvider>  {/* ← Add this wrapper */}
+              {children}
+            </SMSProvider>
+          </AuthProvider>
+        </MantineProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+---
+
+**Testing Checklist:**
+- ⏳ **After Backend Setup:**
+  - Test global polling (Network tab → `/api/sms/unread-count/` every 5s)
+  - Test blue badge appears on Dashboard with unread count
+  - Send test SMS → verify toast notification
+  - Send test SMS → verify desktop notification (if permitted)
+  - Click toast → verify navigation to patient + SMS dialog opens
+  - Click desktop notification → verify same
+  - Click message in widget → verify navigation works
+  - Test hover effects on widget messages
+  - Test mark-as-read confirmation (Yes/No)
+  - Test no confirmation when no unread messages
+
+- ⏳ **Edge Case Testing:**
+  - Unknown sender messages (no patient) → not clickable
+  - Multiple unread messages → all counted correctly
+  - Mark as read → badge updates immediately
+  - Close dialog without marking → count stays same
+  - Multiple conversations with unread → correct counts
+
+- ⏳ **Polish:**
+  - Verify all animations are smooth
+  - Check dark mode styling
+  - Test on different screen sizes
+  - Verify accessibility (keyboard navigation, screen readers)
 
 ---
 
