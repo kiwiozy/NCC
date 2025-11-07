@@ -40,6 +40,7 @@ interface SMSMessage {
   sent_at?: string;
   received_at?: string;
   error_message?: string;
+  is_processed?: boolean; // For inbound messages: false = unread, true = read
 }
 
 interface PhoneNumber {
@@ -131,6 +132,8 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       loadConversation();
       loadPhoneNumbers();
       loadTemplates();
+      // Mark all unread messages as read (processed)
+      markMessagesAsRead();
     } else {
       // Reset when dialog closes
       setMessages([]);
@@ -138,6 +141,41 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       setSelectedTemplate(null);
     }
   }, [opened, patientId]);
+
+  // Mark all unread SMS messages as read when dialog opens
+  const markMessagesAsRead = async () => {
+    try {
+      // Get CSRF token
+      const csrfToken = await getCsrfToken();
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+      
+      const response = await fetch(
+        `https://localhost:8000/api/sms/patient/${patientId}/mark-read/`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        }
+      );
+      
+      if (response.ok) {
+        // Dispatch event to update badge count in ContactHeader
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('smsRead'));
+        }
+      }
+    } catch (error) {
+      // Silently fail - don't interrupt user experience
+      console.error('Error marking messages as read:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -148,7 +186,7 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
   };
 
   const checkForNewMessages = useCallback(async () => {
-    if (!lastMessageTimestamp || !patientId) return;
+    if (!patientId) return;
     
     setCheckingForNew(true);
     try {
@@ -165,7 +203,18 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
         const data = await response.json();
         const allMessages = data.messages || [];
         
-        // Filter for messages newer than last known timestamp
+        // If no messages exist yet, load all (fresh start)
+        if (!lastMessageTimestamp) {
+          if (allMessages.length > 0) {
+            setMessages(allMessages);
+            const latestMsg = allMessages[allMessages.length - 1];
+            setLastMessageTimestamp(latestMsg.timestamp || latestMsg.received_at || latestMsg.sent_at || latestMsg.created_at || null);
+            scrollToBottom();
+          }
+          return;
+        }
+        
+        // Filter for messages newer than last known timestamp (incremental update)
         const newMessages = allMessages.filter((msg: SMSMessage) => {
           const msgTime = msg.timestamp || msg.received_at || msg.sent_at || msg.created_at;
           return msgTime && new Date(msgTime) > new Date(lastMessageTimestamp);
@@ -586,6 +635,8 @@ function MessageBubble({
   defaultPhoneLabel?: string | null;
 }) {
   const isOutbound = message.direction === 'outbound';
+  const isUnread = !isOutbound && message.is_processed === false; // Unread inbound message
+  
   const showPhoneLabel =
     isOutbound &&
     message.phone_number_label &&
@@ -613,8 +664,23 @@ function MessageBubble({
         display: 'flex',
         justifyContent: isOutbound ? 'flex-end' : 'flex-start',
         marginBottom: rem(8),
+        alignItems: 'center',
+        gap: rem(8),
       }}
     >
+      {/* Unread indicator (blue dot) - only for inbound messages */}
+      {isUnread && (
+        <Box
+          style={{
+            width: rem(8),
+            height: rem(8),
+            borderRadius: '50%',
+            backgroundColor: '#228BE6',
+            flexShrink: 0,
+          }}
+        />
+      )}
+      
       <Box
         style={{
           maxWidth: '75%',
@@ -628,6 +694,8 @@ function MessageBubble({
             ? '#373A40'
             : '#E9ECEF',
           color: isOutbound ? '#FFFFFF' : isDark ? '#C1C2C5' : '#495057',
+          fontWeight: isUnread ? 600 : 400, // Bold text for unread messages
+          boxShadow: isUnread ? `0 0 0 2px ${isDark ? '#228BE6' : '#228BE6'}` : 'none', // Subtle border for unread
         }}
       >
         {/* Phone Label (if different from default) */}

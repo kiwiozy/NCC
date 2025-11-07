@@ -1,8 +1,9 @@
 'use client';
 
-import { Container, Title, Text, Paper, SimpleGrid, Group, ThemeIcon } from '@mantine/core';
+import { Container, Title, Text, Paper, SimpleGrid, Group, ThemeIcon, Grid } from '@mantine/core';
 import { IconCalendar, IconUsers, IconCheckupList, IconClock } from '@tabler/icons-react';
 import Navigation from './components/Navigation';
+import SMSNotificationWidget from './components/SMSNotificationWidget';
 
 function StatCard({ title, value, icon, color }: any) {
   return (
@@ -57,12 +58,20 @@ export default function Home() {
           />
         </SimpleGrid>
 
-        <Paper p="xl" shadow="sm" radius="md">
-          <Title order={2} size="h3" mb="md">Welcome to WalkEasy Nexus</Title>
-          <Text c="dimmed">
-            Your patient management dashboard. Use the navigation above to access different sections of the application.
-          </Text>
-        </Paper>
+        <Grid gutter="lg" mb="xl">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Paper p="xl" shadow="sm" radius="md" style={{ height: 'calc(100vh - 400px)', minHeight: '400px' }}>
+              <Title order={2} size="h3" mb="md">Welcome to WalkEasy Nexus</Title>
+              <Text c="dimmed">
+                Your patient management dashboard. Use the navigation above to access different sections of the application.
+              </Text>
+            </Paper>
+          </Grid.Col>
+          
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <SMSNotificationWidget />
+          </Grid.Col>
+        </Grid>
       </Container>
     </Navigation>
   );

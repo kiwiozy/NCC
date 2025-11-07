@@ -64,6 +64,7 @@ export default function ContactHeader({
   const [imagesCount, setImagesCount] = useState<number>(0);
   const [batchesCount, setBatchesCount] = useState<number>(0);
   const [lettersCount, setLettersCount] = useState<number>(0);
+  const [smsUnreadCount, setSmsUnreadCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
@@ -244,6 +245,49 @@ export default function ContactHeader({
     return () => {
       clearInterval(interval);
       window.removeEventListener('lettersUpdated', handleLettersChange);
+    };
+  }, [patientId, menuOpened]);
+
+  // Get unread SMS count for patient
+  useEffect(() => {
+    const getSmsUnreadCount = async () => {
+      try {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+          // Load from API for patient-specific unread SMS
+          const response = await fetch(`https://localhost:8000/api/sms/patient/${patientId}/unread-count/?t=${Date.now()}`, {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSmsUnreadCount(data.unread_count || 0);
+          } else {
+            setSmsUnreadCount(0);
+          }
+        } else {
+          setSmsUnreadCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading SMS unread count:', err);
+        setSmsUnreadCount(0);
+      }
+    };
+
+    getSmsUnreadCount();
+    
+    // Listen for custom event when SMS messages are read
+    const handleSmsRead = () => {
+      getSmsUnreadCount();
+    };
+    
+    window.addEventListener('smsRead', handleSmsRead);
+    
+    // Refresh count periodically
+    const interval = setInterval(getSmsUnreadCount, 5000); // Every 5 seconds for SMS
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('smsRead', handleSmsRead);
     };
   }, [patientId, menuOpened]);
 
@@ -535,10 +579,11 @@ export default function ContactHeader({
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
                           {item.label}
                         </Text>
-                        {/* Badges for Notes, Documents, and Letters */}
+                        {/* Badges for Notes, Documents, Letters, and SMS */}
                         {((item.label === 'Notes' && notesCount > 0) || 
                           (item.label === 'Documents' && documentsCount > 0) || 
-                          (item.label === 'Letters' && lettersCount > 0)) ? (
+                          (item.label === 'Letters' && lettersCount > 0) ||
+                          (item.label === 'SMS' && smsUnreadCount > 0)) ? (
                           <Badge
                             size="xs"
                             color="red"
@@ -562,7 +607,9 @@ export default function ContactHeader({
                               ? (notesCount > 99 ? '99+' : notesCount)
                               : item.label === 'Documents'
                               ? (documentsCount > 99 ? '99+' : documentsCount)
-                              : (lettersCount > 99 ? '99+' : lettersCount)
+                              : item.label === 'Letters'
+                              ? (lettersCount > 99 ? '99+' : lettersCount)
+                              : (smsUnreadCount > 99 ? '99+' : smsUnreadCount)
                             }
                           </Badge>
                         ) : null}

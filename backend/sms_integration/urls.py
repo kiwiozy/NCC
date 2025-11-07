@@ -20,6 +20,8 @@ urlpatterns = [
     path('patient/<uuid:patient_id>/conversation/', patient_views.patient_conversation, name='patient-sms-conversation'),
     path('patient/<uuid:patient_id>/phones/', patient_views.patient_phone_numbers, name='patient-phone-numbers'),
     path('patient/<uuid:patient_id>/send/', patient_views.patient_send_sms, name='patient-send-sms'),
+    path('patient/<uuid:patient_id>/unread-count/', patient_views.patient_unread_count, name='patient-sms-unread-count'),
+    path('patient/<uuid:patient_id>/mark-read/', patient_views.patient_mark_read, name='patient-sms-mark-read'),
     # Webhook endpoints (CSRF exempt - called by SMS Broadcast)
     path('webhook/dlr/', views.sms_delivery_receipt, name='sms-delivery-receipt'),
     path('webhook/inbound/', webhook_views.sms_inbound, name='sms-inbound'),

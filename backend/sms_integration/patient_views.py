@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from django.db.models import Q
 from patients.models import Patient
 from .models import SMSMessage, SMSInbound
 from .serializers import SMSMessageSerializer, SMSInboundSerializer
@@ -414,3 +415,72 @@ def patient_send_sms(request, patient_id):
     
     return Response(response_data, status=status.HTTP_201_CREATED)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def patient_unread_count(request, patient_id):
+    """
+    Get count of unread SMS messages for a specific patient
+    Returns count of inbound messages where is_processed=False
+    """
+    try:
+        # Validate patient exists
+        patient = Patient.objects.get(id=patient_id)
+        
+        # Count unread inbound messages for this patient
+        unread_count = SMSInbound.objects.filter(
+            patient=patient,
+            is_processed=False
+        ).count()
+        
+        return Response({
+            'patient_id': str(patient.id),
+            'unread_count': unread_count
+        }, status=status.HTTP_200_OK)
+        
+    except Patient.DoesNotExist:
+        return Response(
+            {'error': 'Patient not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def patient_mark_read(request, patient_id):
+    """
+    Mark all unread SMS messages as read (is_processed=True) for a specific patient
+    """
+    try:
+        # Validate patient exists
+        patient = Patient.objects.get(id=patient_id)
+        
+        # Update all unread inbound messages for this patient
+        updated_count = SMSInbound.objects.filter(
+            patient=patient,
+            is_processed=False
+        ).update(
+            is_processed=True,
+            processed_at=timezone.now()
+        )
+        
+        return Response({
+            'patient_id': str(patient.id),
+            'marked_read': updated_count
+        }, status=status.HTTP_200_OK)
+        
+    except Patient.DoesNotExist:
+        return Response(
+            {'error': 'Patient not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

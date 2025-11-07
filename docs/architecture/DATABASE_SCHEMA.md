@@ -472,8 +472,10 @@
 - `message` - TextField - SMS message content
 
 #### Status & Processing
-- `is_processed` - BooleanField - Whether message has been handled
-  - Default: False
+- `is_processed` - BooleanField - **Unread/Read status** (False = Unread, True = Read)
+  - Default: False (unread)
+  - Set to True when user opens SMS dialog
+  - Used for unread SMS badge count in patient menu
 - `received_at` - DateTimeField - When message was received
 - `notes` - TextField (blank) - Auto-detected notes (e.g., "Auto-detected: Confirmation")
 
@@ -494,6 +496,12 @@
 - Auto-matches patient by phone number (searches contact_json and emergency_json)
 - Phone numbers normalized: strips +, spaces, leading 0, adds country code (61)
 - Displayed in patient SMS dialog (gray bubbles on left)
+- **Unread Badge Feature:**
+  - Red badge on "SMS" menu item shows count of unread messages (is_processed=False)
+  - Auto-marks as read when user opens SMS dialog
+  - Badge updates in real-time via 'smsRead' event
+  - API endpoint: `/api/sms/patient/{patient_id}/unread-count/`
+  - Mark as read endpoint: `/api/sms/patient/{patient_id}/mark-read/`
 
 ---
 
