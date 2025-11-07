@@ -475,7 +475,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 display: 'flex', 
                 flexDirection: 'column',
               }}>
-                {/* Metadata Section - Scrolls away */}
+                {/* Metadata + Toolbar Section - Scrolls away together */}
                 <Box p="md" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 'var(--mantine-radius-md)', flexShrink: 0 }}>
                   <Grid>
                     <Grid.Col span={6}>
@@ -503,21 +503,9 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                       />
                     </Grid.Col>
                   </Grid>
-                </Box>
-                
-                {/* Sticky Toolbar Section - Sticks to top when scrolling */}
-                <Box 
-                  p="md" 
-                  style={{ 
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10,
-                    background: 'var(--mantine-color-body, #fff)',
-                    borderBottom: '1px solid var(--mantine-color-default-border)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Group justify="space-between">
+                  
+                  {/* Action Buttons - Inside metadata box so they scroll away together */}
+                  <Group justify="space-between" mt="md" pt="md" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
                     <Group gap="xs">
                       {saving && <Loader size="xs" />}
                       {lastSaved && !saving && (
