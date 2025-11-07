@@ -451,7 +451,8 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                 <Text c="dimmed" size="sm">Click any letter from the list on the left</Text>
               </Stack>
             ) : (
-              <Stack style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} gap="md">{/* Metadata Section */}
+              <Box style={{ height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+                {/* Metadata Section - Scrolls away */}
                 <Box p="md" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 'var(--mantine-radius-md)', flexShrink: 0 }}>
                   <Grid>
                     <Grid.Col span={6}>
@@ -479,9 +480,21 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                       />
                     </Grid.Col>
                   </Grid>
-                  
-                  {/* Save Status & Actions */}
-                  <Group justify="space-between" mt="md">
+                </Box>
+                
+                {/* Sticky Toolbar Section - Sticks to top when scrolling */}
+                <Box 
+                  p="md" 
+                  style={{ 
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10,
+                    background: 'var(--mantine-color-body, #fff)',
+                    borderBottom: '1px solid var(--mantine-color-default-border)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Group justify="space-between">
                     <Group gap="xs">
                       {saving && <Loader size="xs" />}
                       {lastSaved && !saving && (
@@ -510,15 +523,13 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                   </Group>
                 </Box>
                 
-                {/* Letter Editor (Your existing LetterEditor component) */}
-                <Box style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+                {/* Letter Editor - Scrolls normally */}
+                <Box style={{ flex: 1, minHeight: 0 }}>
                   <div
                     style={{
                       colorScheme: 'light',
                       color: '#000000',
                       '--mantine-color-text': '#000000',
-                      height: '100%',
-                      overflow: 'auto',
                     } as React.CSSProperties}
                     data-mantine-color-scheme="light"
                     data-force-light-mode="true"
@@ -526,7 +537,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                     <LetterEditor initialPages={selectedLetter.pages} />
                   </div>
                 </Box>
-              </Stack>
+              </Box>
             )}
           </Grid.Col>
         </Grid>
