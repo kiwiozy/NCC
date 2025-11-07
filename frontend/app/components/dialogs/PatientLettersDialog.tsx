@@ -10,6 +10,34 @@ import dynamic from 'next/dynamic';
 // Dynamically import LetterEditor to avoid SSR issues
 const LetterEditor = dynamic(() => import('../../letters/LetterEditor'), { ssr: false });
 
+// Helper to get CSRF token
+const getCsrfToken = async (): Promise<string> => {
+  // Try to get from cookie first
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+  
+  if (cookieValue) {
+    return cookieValue;
+  }
+  
+  // Fallback: fetch from backend
+  try {
+    const response = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+      credentials: 'include',
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.csrfToken || '';
+    }
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+  }
+  
+  return '';
+};
+
 interface PatientLettersDialogProps {
   opened: boolean;
   onClose: () => void;
@@ -59,10 +87,20 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
     try {
       const response = await fetch(`https://localhost:8000/api/letters/?patient_id=${patientId}`, {
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       if (response.ok) {
         const data = await response.json();
         setLetters(Array.isArray(data) ? data : (data.results || []));
+      } else {
+        console.error('Failed to load letters:', response.status, response.statusText);
+        notifications.show({
+          title: 'Error',
+          message: `Failed to load letters: ${response.status}`,
+          color: 'red',
+        });
       }
     } catch (error) {
       console.error('Error loading letters:', error);
@@ -78,9 +116,13 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   
   const handleCreateLetter = async () => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/letters/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         credentials: 'include',
         body: JSON.stringify({
           patient: patientId,
@@ -99,6 +141,14 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
           title: 'Success',
           message: 'New letter created',
           color: 'green',
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to create letter:', response.status, errorData);
+        notifications.show({
+          title: 'Error',
+          message: `Failed to create letter: ${errorData.error || response.statusText}`,
+          color: 'red',
         });
       }
     } catch (error) {
@@ -120,9 +170,13 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       const editorElements = document.querySelectorAll('.we-page-content .ProseMirror');
       const pages = Array.from(editorElements).map(el => (el as HTMLElement).innerHTML || '');
       
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/letters/${selectedLetter.id}/`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         credentials: 'include',
         body: JSON.stringify({
           ...selectedLetter,
@@ -141,6 +195,16 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
             title: 'Success',
             message: 'Letter saved',
             color: 'green',
+          });
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to save letter:', response.status, errorData);
+        if (!silent) {
+          notifications.show({
+            title: 'Error',
+            message: `Failed to save letter: ${errorData.error || response.statusText}`,
+            color: 'red',
           });
         }
       }
@@ -166,8 +230,12 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
       confirmProps: { color: 'red' },
       onConfirm: async () => {
         try {
+          const csrfToken = await getCsrfToken();
           const response = await fetch(`https://localhost:8000/api/letters/${letterId}/`, {
             method: 'DELETE',
+            headers: {
+              'X-CSRFToken': csrfToken,
+            },
             credentials: 'include',
           });
           
@@ -180,6 +248,14 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
               title: 'Success',
               message: 'Letter deleted',
               color: 'green',
+            });
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('Failed to delete letter:', response.status, errorData);
+            notifications.show({
+              title: 'Error',
+              message: `Failed to delete letter: ${errorData.error || response.statusText}`,
+              color: 'red',
             });
           }
         } catch (error) {
@@ -196,8 +272,13 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
   
   const handleDuplicate = async (letterId: string) => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/letters/${letterId}/duplicate/`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         credentials: 'include',
       });
       
@@ -207,6 +288,14 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
           title: 'Success',
           message: 'Letter duplicated',
           color: 'green',
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to duplicate letter:', response.status, errorData);
+        notifications.show({
+          title: 'Error',
+          message: `Failed to duplicate letter: ${errorData.error || response.statusText}`,
+          color: 'red',
         });
       }
     } catch (error) {
