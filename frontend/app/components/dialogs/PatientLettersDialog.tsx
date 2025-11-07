@@ -545,7 +545,7 @@ export default function PatientLettersDialog({ opened, onClose, patientId, patie
                     data-mantine-color-scheme="light"
                     data-force-light-mode="true"
                   >
-                    <LetterEditor initialPages={selectedLetter.pages} />
+                    <LetterEditor initialPages={selectedLetter.pages} isDialog={true} />
                   </div>
                 </Box>
               </Box>

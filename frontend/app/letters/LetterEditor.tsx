@@ -219,7 +219,7 @@ function LetterPage({
   );
 }
 
-export default function LetterEditor({ initialPages }: { initialPages?: string[] } = {}) {
+export default function LetterEditor({ initialPages, isDialog }: { initialPages?: string[]; isDialog?: boolean } = {}) {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [urlPromptOpened, setUrlPromptOpened] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -785,7 +785,7 @@ export default function LetterEditor({ initialPages }: { initialPages?: string[]
     <>
       {/* Toolbar (now sticky) - hide when preview modal is open */}
       <div 
-        className="letters-toolbar-sticky"
+        className={isDialog ? "letters-toolbar-sticky-dialog" : "letters-toolbar-sticky"}
         style={{ 
           display: previewModalOpen ? 'none' : 'block',
         }}

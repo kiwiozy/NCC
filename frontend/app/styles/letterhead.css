@@ -36,6 +36,17 @@
   margin-bottom: 16px; /* replaces previous Paper mb if desired */
 }
 
+/* Sticky toolbar for modal dialogs (no app header offset) */
+.letters-toolbar-sticky-dialog {
+  position: sticky;
+  position: -webkit-sticky; /* Safari */
+  top: 0;
+  z-index: 10;
+  background: var(--mantine-color-body, #fff);
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+  margin-bottom: 16px;
+}
+
 /* Editor shell - gray background - FORCE LIGHT MODE */
 .letter-editor-shell {
   background: #f3f3f3;
