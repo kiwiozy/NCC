@@ -133,7 +133,7 @@ class SMSService:
             if not self.sender_id:
                 print(f"[SMS Service] ⚠️ No sender ID set - using SMS Broadcast default (may be rejected if no default configured)")
             
-            response = requests.get(self.api_url, params=params, timeout=30)
+            response = requests.post(self.api_url, data=params, timeout=30)
             response.raise_for_status()
             
             # Parse response
