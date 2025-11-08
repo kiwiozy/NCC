@@ -17,8 +17,19 @@
 - **Storage:** Use existing S3 infrastructure (already in use for documents)
 - **Cost:** TBD (need to check SMS Broadcast pricing)
 - **Complexity:** Medium (build on SMS notification widget experience)
+- **HEIC Support:** ✅ iPhone photos fully supported (dual conversion strategy)
 
 **Recommendation:** ✅ Proceed with implementation using SMS Broadcast (no provider change needed)
+
+**Key Decisions Made:**
+- ✅ Preview location: Below textarea
+- ✅ Preview size: 150x150px (medium)
+- ✅ Text requirement: Optional with suggestion
+- ✅ Multiple images: One only (Phase 1)
+- ✅ Drag & drop: Full overlay feedback
+- ✅ Validation: Immediate on select
+- ✅ Auto-resize: Backend (any size accepted)
+- ✅ HEIC handling: Dual conversion (frontend preview + backend final)
 
 ---
 
@@ -294,36 +305,272 @@ Most carriers impose these limits:
 
 ---
 
-### **Frontend Validation**
+### **Frontend Validation & HEIC Handling**
 
 ```typescript
 // Validate image before upload
 function validateMMSImage(file: File): boolean {
-  // Check file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-  if (!allowedTypes.includes(file.type)) {
+  // Check file type (including HEIC from iPhones)
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/heic', 'image/heif'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.heic', '.heif'];
+  
+  const fileType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+  const hasValidType = allowedTypes.includes(fileType);
+  const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+  
+  if (!hasValidType && !hasValidExtension) {
     showNotification({
       title: 'Invalid File Type',
-      message: 'Please select a JPEG, PNG, or GIF image',
+      message: 'Please select an image file (JPEG, PNG, GIF, or iPhone photos)',
       color: 'red'
     });
     return false;
   }
   
-  // Check file size (600 KB)
-  const maxSize = 600 * 1024; // 600 KB in bytes
-  if (file.size > maxSize) {
-    showNotification({
-      title: 'File Too Large',
-      message: `Image must be under 600 KB (current: ${Math.round(file.size / 1024)} KB)`,
-      color: 'red'
-    });
-    return false;
-  }
+  // Note: File size check removed - backend will auto-resize any size
+  // Large files will show "Processing..." during upload
   
   return true;
 }
 ```
+
+---
+
+## 📱 **HEIC/HEIF Support (iPhone Photos)**
+
+### **The HEIC Problem**
+
+**What is HEIC?**
+- Apple's modern image format (High Efficiency Image Container)
+- Default on iPhone since iOS 11 (2017)
+- Much smaller files than JPEG (~50% smaller)
+- **Problem:** Browsers cannot display HEIC natively
+
+**What happens without HEIC support?**
+- Staff selects iPhone photo → Can't preview it
+- Upload fails or sends broken image
+- Poor user experience
+
+---
+
+### **✅ Our Solution: Dual Conversion Strategy**
+
+We use a **two-stage approach** for best UX and reliability:
+
+1. **Frontend:** Convert HEIC → JPEG for preview (user can see what they're sending)
+2. **Backend:** Convert HEIC → JPEG for actual sending (reliable, consistent quality)
+
+---
+
+### **Frontend: HEIC Preview Conversion**
+
+**Library:** `heic2any` (dynamically imported)
+
+**Why dynamic import?**
+- Only loads library when HEIC file selected (~1-2MB)
+- Zero bundle size impact for JPEG/PNG users
+- Smart, modern approach
+
+**Process:**
+1. User selects HEIC file
+2. Show loading spinner: "Converting HEIC image..."
+3. Dynamic import `heic2any` (first time only, then cached)
+4. Convert HEIC → JPEG in browser (100-800ms)
+5. Compress JPEG to <200KB using Canvas API
+6. Show preview thumbnail
+7. **Upload original HEIC file** (smaller, faster upload)
+
+**Performance:**
+- Desktop: 100-400ms conversion
+- Mobile: 300-1000ms conversion
+- Non-blocking (uses Web Workers)
+
+**Installation:**
+```bash
+npm install heic2any
+```
+
+**TypeScript declarations:**
+```typescript
+// /types/heic2any.d.ts
+declare module 'heic2any' {
+  export interface Heic2AnyOptions {
+    blob: Blob;
+    toType?: string;
+    quality?: number;
+    multiple?: boolean;
+  }
+  
+  export default function heic2any(
+    options: Heic2AnyOptions
+  ): Promise<Blob | Blob[]>;
+}
+```
+
+**Implementation (simplified):**
+```typescript
+async function handleHeicPreview(file: File) {
+  const isHeic = file.name.toLowerCase().endsWith('.heic') || 
+                 file.name.toLowerCase().endsWith('.heif') ||
+                 file.type === 'image/heic' ||
+                 file.type === 'image/heif';
+  
+  if (!isHeic) {
+    // Regular JPEG/PNG - show preview immediately
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
+    return;
+  }
+  
+  // HEIC file - convert for preview
+  setIsConverting(true);
+  
+  try {
+    // Dynamic import - only loads when needed
+    const { default: heic2any } = await import('heic2any');
+    
+    // Convert to JPEG
+    const jpegBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.7,
+    }) as Blob;
+    
+    // Compress for preview (<200KB)
+    const compressedBlob = await compressImageToTarget(jpegBlob, 200);
+    
+    // Show preview
+    const url = URL.createObjectURL(compressedBlob);
+    setImagePreview(url);
+  } catch (error) {
+    // Fallback: show generic icon
+    console.error('HEIC conversion failed:', error);
+    setImagePreview(null); // Show generic 📷 icon
+  } finally {
+    setIsConverting(false);
+  }
+}
+```
+
+**User Experience:**
+```
+[Staff selects iPhone photo]
+↓
+"Converting HEIC image..." [spinner] (500ms)
+↓
+[Preview appears - 150x150px thumbnail]
+↓
+Staff types caption
+↓
+Clicks "Send MMS"
+↓
+Uploads original HEIC file (fast - only 245KB)
+```
+
+---
+
+### **Backend: HEIC Final Conversion**
+
+**Library:** `Pillow` + `pillow-heif` (Python)
+
+**Why backend conversion too?**
+- Ensures consistent quality for all devices
+- Handles edge cases (corrupted files, unusual formats)
+- Optimizes for MMS carriers (600KB, 1024px)
+- Creates reliable S3 storage
+
+**Installation:**
+```bash
+pip install Pillow pillow-heif
+```
+
+**Process:**
+1. Receive uploaded HEIC file (original, unmodified)
+2. Detect format: `.heic/.heif` extension or MIME type
+3. Convert HEIC → JPEG using Pillow
+4. Resize to 1024x1024px max dimension
+5. Compress to 600KB target
+6. Upload JPEG to S3
+7. Send S3 URL to SMS Broadcast
+
+**Implementation (simplified):**
+```python
+from PIL import Image
+from pillow_heif import register_heif_opener
+
+# Register HEIF support
+register_heif_opener()
+
+def process_mms_image(uploaded_file):
+    # Open image (works for JPEG, PNG, GIF, HEIC)
+    image = Image.open(uploaded_file)
+    
+    # Convert HEIC to RGB (JPEG doesn't support transparency)
+    if image.mode in ('RGBA', 'LA', 'P'):
+        image = image.convert('RGB')
+    
+    # Resize to max 1024px
+    image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+    
+    # Save as JPEG with target quality
+    output = BytesIO()
+    quality = 85
+    image.save(output, 'JPEG', quality=quality, optimize=True)
+    
+    # Check size, reduce quality if needed
+    while output.tell() > 600 * 1024 and quality > 50:
+        output = BytesIO()
+        quality -= 5
+        image.save(output, 'JPEG', quality=quality, optimize=True)
+    
+    return output.getvalue()
+```
+
+---
+
+### **Why Two Conversions?**
+
+**Frontend conversion:**
+- ✅ User sees preview immediately
+- ✅ Confirms it's the right photo
+- ✅ Better UX than generic icon
+
+**Backend conversion:**
+- ✅ Original file uploaded (smaller, faster)
+- ✅ Reliable, consistent quality
+- ✅ Handles all edge cases
+- ✅ Optimized for SMS carriers
+
+**Result:** Best of both worlds! 🎉
+
+---
+
+### **Supported Formats Summary**
+
+| Format | Extension | Frontend Preview | Backend Processing | SMS Sending |
+|--------|-----------|------------------|-------------------|-------------|
+| JPEG | .jpg, .jpeg | ✅ Native | ✅ Resize only | ✅ Yes |
+| PNG | .png | ✅ Native | ✅ Resize only | ✅ Yes |
+| GIF | .gif | ✅ Native | ✅ Resize only | ✅ Yes |
+| HEIC | .heic, .heif | ✅ Converted (heic2any) | ✅ Convert + Resize | ✅ Yes (as JPEG) |
+| PDF | .pdf | ❌ Rejected | ❌ Rejected | ❌ No |
+| Other | .doc, .zip, etc | ❌ Rejected | ❌ Rejected | ❌ No |
+
+---
+
+### **Error Handling**
+
+**If HEIC preview conversion fails:**
+1. Show generic 📷 icon with filename
+2. Allow upload to proceed
+3. Backend conversion will handle it
+4. User feedback: "Preview unavailable, upload will still work"
+
+**If backend conversion fails:**
+1. Return error to frontend
+2. Show error notification
+3. Suggest: "Please try a different image or contact support"
 
 ---
 
