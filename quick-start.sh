@@ -51,7 +51,7 @@ else
     echo -e "${YELLOW}⚠️  No virtual environment found, using system python3${NC}"
 fi
 
-$PYTHON_CMD manage.py runserver_plus --cert-file cert.pem --key-file key.pem 0.0.0.0:8000 > "$SCRIPT_DIR/logs/django.log" 2>&1 &
+$PYTHON_CMD -u manage.py runserver_plus --cert-file cert.pem --key-file key.pem 0.0.0.0:8000 > "$SCRIPT_DIR/logs/django.log" 2>&1 &
 DJANGO_PID=$!
 echo $DJANGO_PID >> "$PID_FILE"
 cd "$SCRIPT_DIR"
