@@ -296,12 +296,13 @@ def patient_phone_numbers(request, patient_id):
 @permission_classes([IsAuthenticated])
 def patient_send_sms(request, patient_id):
     """
-    Send SMS from patient context
+    Send SMS or MMS from patient context
     Body: {
         "phone_number": "+61412345678",
         "phone_label": "Default Mobile",  // optional, for display
         "message": "Your message here",
-        "template_id": "uuid"  // optional
+        "template_id": "uuid",  // optional
+        "media_url": "https://s3.../mms/outbound/uuid.jpg"  // optional, for MMS
     }
     """
     try:
@@ -316,6 +317,7 @@ def patient_send_sms(request, patient_id):
     message = request.data.get('message')
     template_id = request.data.get('template_id')
     phone_label = request.data.get('phone_label')
+    media_url = request.data.get('media_url')  # MMS support
     
     if not phone_number:
         return Response(
@@ -323,9 +325,9 @@ def patient_send_sms(request, patient_id):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if not message:
+    if not message and not media_url:
         return Response(
-            {'error': 'message is required'},
+            {'error': 'message or media_url is required'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -351,13 +353,16 @@ def patient_send_sms(request, patient_id):
         except SMSTemplate.DoesNotExist:
             pass
     
-    # Create SMS message
+    # Create SMS/MMS message
     sms_message = SMSMessage.objects.create(
         patient=patient,
         phone_number=phone_number,
-        message=message,
+        message=message or '',  # Allow empty message for MMS
         template=template,
-        status='pending'
+        status='pending',
+        # MMS support
+        has_media=bool(media_url),
+        media_url=media_url or '',
     )
     
     # Try to send via SMS service (if available)
@@ -366,7 +371,8 @@ def patient_send_sms(request, patient_id):
         sms_service = SMSService()
         result = sms_service.send_sms(
             phone_number=phone_number,
-            message=message
+            message=message or '',
+            media_url=media_url  # MMS support
         )
         
         # Ensure result is a dict (SMSService might return a model instance)
@@ -482,5 +488,56 @@ def patient_mark_read(request, patient_id):
     except Exception as e:
         return Response(
             {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_mms_media(request):
+    """
+    Upload image for MMS sending
+    
+    POST /api/sms/upload-media/
+    
+    Body (multipart/form-data):
+        - file: Image file (JPEG, PNG, GIF, HEIC)
+    
+    Returns:
+        {
+            'media_url': 'https://s3.../mms/outbound/uuid.jpg',
+            'media_type': 'image/jpeg',
+            'media_size': 12345,
+            'media_filename': 'image.jpg',
+            's3_key': 'mms/outbound/uuid.jpg',
+            'width': 800,
+            'height': 600
+        }
+    """
+    from .mms_service import mms_service
+    
+    # Get uploaded file
+    file = request.FILES.get('file')
+    if not file:
+        return Response(
+            {'error': 'No file provided'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Upload to S3 (handles HEIC conversion, resizing, validation)
+        result = mms_service.upload_media_for_sending(file, file.name)
+        
+        return Response(result, status=status.HTTP_201_CREATED)
+        
+    except ValueError as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        print(f"❌ MMS upload error: {str(e)}")
+        return Response(
+            {'error': 'Failed to upload media'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

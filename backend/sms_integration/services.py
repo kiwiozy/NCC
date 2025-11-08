@@ -44,17 +44,19 @@ class SMSService:
         message: str,
         patient_id: Optional[uuid.UUID] = None,
         appointment_id: Optional[uuid.UUID] = None,
-        template_id: Optional[uuid.UUID] = None
+        template_id: Optional[uuid.UUID] = None,
+        media_url: Optional[str] = None  # MMS support
     ) -> SMSMessage:
         """
-        Send an SMS message
+        Send an SMS or MMS message
         
         Args:
             phone_number: Recipient phone number (format: 61412345678 or +61412345678)
-            message: Message content
+            message: Message content (optional if media_url provided)
             patient_id: Optional patient UUID
             appointment_id: Optional appointment UUID
             template_id: Optional template UUID
+            media_url: Optional media URL for MMS (public S3 URL)
         
         Returns:
             SMSMessage object with send status
@@ -74,7 +76,10 @@ class SMSService:
             template_id=template_id,
             phone_number=phone_number,
             message=message,
-            status='pending'
+            status='pending',
+            # MMS support
+            has_media=bool(media_url),
+            media_url=media_url or ''
         )
         
         try:
@@ -87,6 +92,11 @@ class SMSService:
                 'maxsplit': '10',  # Allow up to 10 SMS segments
                 'ref': str(sms_message.id)  # Our internal reference
             }
+            
+            # Add media URL for MMS
+            if media_url:
+                params['media'] = media_url
+                print(f"[SMS Service] Sending MMS with media: {media_url}")
             
             # Only include 'from' parameter if sender_id is set and approved
             # If sender_id is None or empty, SMS Broadcast will use account default
