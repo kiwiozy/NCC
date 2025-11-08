@@ -2,6 +2,7 @@
 SMS Service
 Handles SMS sending via SMS Broadcast API
 """
+import logging
 import os
 import requests
 import uuid
@@ -10,6 +11,8 @@ from django.utils import timezone
 from django.conf import settings
 from .models import SMSMessage, SMSTemplate
 
+
+logger = logging.getLogger(__name__)
 
 class SMSService:
     """
@@ -98,7 +101,7 @@ class SMSService:
             
             # Add media for MMS (SMS Broadcast requires base64-encoded media)
             if media_url:
-                print(f"[SMS Service] Sending MMS with media: {media_url}")
+                logger.info(f"[SMS Service] Sending MMS with media: {media_url}")
                 
                 # Download image from S3 and encode to base64
                 import requests
@@ -122,9 +125,10 @@ class SMSService:
                     params['type0'] = content_type
                     params['name0'] = filename
                     
-                    print(f"[SMS Service] Encoded image: {len(media_base64)} chars, type={content_type}, name={filename}")
+                    logger.info(f"[SMS Service] Encoded image: {len(media_base64)} chars, type={content_type}, name={filename}")
+                    logger.debug(f"[SMS Service] Attachment params: attachment0 length={len(media_base64)}, type0={content_type}, name0={filename}")
                 except Exception as e:
-                    print(f"[SMS Service] ❌ Failed to download/encode media: {e}")
+                    logger.error(f"[SMS Service] ❌ Failed to download/encode media: {e}")
                     # Continue without media - send as SMS
             
             # Only include 'from' parameter if sender_id is set and approved
@@ -146,7 +150,7 @@ class SMSService:
             result = response.text.strip()
             
             # Log the raw response for debugging
-            print(f"[SMS Service] API Response: {result}")
+            logger.info(f"[SMS Service] API Response: {result}")
             print(f"[SMS Service] Phone: {phone_number}, Message: {message[:50]}...")
             
             if result.startswith('OK'):
