@@ -21,13 +21,25 @@
 
 **Recommendation:** ✅ Proceed with implementation using SMS Broadcast (no provider change needed)
 
-**Key Decisions Made:**
-- ✅ Preview location: Below textarea
-- ✅ Preview size: 150x150px (medium)
-- ✅ Text requirement: Optional with suggestion
-- ✅ Multiple images: One only (Phase 1)
-- ✅ Drag & drop: Full overlay feedback
-- ✅ Validation: Immediate on select
+**Key UX Decisions Made:**
+1. ✅ **Preview location:** Below textarea (natural flow)
+2. ✅ **Preview size:** 150x150px medium (good visibility)
+3. ✅ **Text requirement:** Optional with suggestion "Add a caption (optional)"
+4. ✅ **Multiple images:** One only for Phase 1 (keep simple)
+5. ✅ **Drag & drop:** Full overlay feedback (clear drop zone)
+6. ✅ **Validation:** Immediate on select (fail fast)
+7. ✅ **Send button:** Changes to "Send MMS" in purple/grape color
+8. ✅ **Remove image:** X button on top-right of preview
+9. ✅ **Conversation display:** Small thumbnail (80-120px, clickable)
+10. ✅ **Full-size modal:** Image + context + Save to Images button
+
+**Save to Images Feature:**
+- ✅ **Save method:** Manual button in full-size modal
+- ✅ **Category selection:** Ask staff to choose category when saving
+- ✅ **After saved:** Button shows "✅ Saved to Images" (disabled)
+- ✅ **SMS context:** Show "From SMS: [date/time]" on saved images
+
+**Technical Decisions:**
 - ✅ Auto-resize: Backend (any size accepted)
 - ✅ HEIC handling: Dual conversion (frontend preview + backend final)
 
@@ -1084,6 +1096,384 @@ function MessageBubble({ message }: { message: SMSMessage }) {
     </Group>
   )}
 </Box>
+```
+
+---
+
+##### **2.3 Full-Size Image Modal with Save to Images**
+
+**File:** `frontend/app/components/dialogs/MMSImageModal.tsx` (New Component)
+
+**Purpose:** Display full-size MMS image with context and save functionality
+
+**Features:**
+1. Show full-size image
+2. Display context (sender, date, time)
+3. Show message caption (if any)
+4. **Save to Images button** - saves to patient's Images folder
+5. Category selection when saving
+6. Prevent duplicate saves
+
+**Component structure:**
+```typescript
+interface MMSImageModalProps {
+  opened: boolean;
+  onClose: () => void;
+  message: SMSMessage; // Contains image URL, patient, timestamp
+  patientId: string;
+  patientName: string;
+}
+
+export function MMSImageModal({
+  opened,
+  onClose,
+  message,
+  patientId,
+  patientName,
+}: MMSImageModalProps) {
+  const [saving, setSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Check if image already saved to patient's Images
+  useEffect(() => {
+    // Query: Is this SMS image already in patient's Images?
+    // Check by: message.id or message.media_url
+    checkIfSaved();
+  }, [message.id]);
+  
+  const handleSaveToImages = async () => {
+    if (!selectedCategory) {
+      notifications.show({
+        title: 'Select Category',
+        message: 'Please choose a category for this image',
+        color: 'orange',
+      });
+      return;
+    }
+    
+    setSaving(true);
+    
+    try {
+      // Call API to save MMS image to patient's Images
+      await fetch(`/api/sms/mms/${message.id}/save-to-images/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: patientId,
+          category: selectedCategory,
+        }),
+      });
+      
+      setIsSaved(true);
+      notifications.show({
+        title: 'Saved!',
+        message: 'Image saved to patient\'s Images folder',
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Save Failed',
+        message: 'Could not save image',
+        color: 'red',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      size="xl"
+      title={`Image from ${patientName}`}
+      centered
+    >
+      <Stack gap="md">
+        {/* Context Bar */}
+        <Group justify="space-between">
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              From: {message.direction === 'inbound' ? patientName : 'You'}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {formatDateTime(message.timestamp)}
+            </Text>
+          </Stack>
+        </Group>
+        
+        {/* Full-Size Image */}
+        <Box>
+          <Image
+            src={message.media_url}
+            alt="MMS Image"
+            fit="contain"
+            style={{ maxHeight: '60vh' }}
+          />
+        </Box>
+        
+        {/* Message Caption (if any) */}
+        {message.message && (
+          <Text size="sm" c="dimmed">
+            "{message.message}"
+          </Text>
+        )}
+        
+        {/* Save to Images Section */}
+        {message.direction === 'inbound' && (
+          <Stack gap="sm">
+            <Divider label="Save to Patient Images" labelPosition="center" />
+            
+            <Select
+              label="Category"
+              placeholder="Choose image category"
+              data={[
+                { value: 'prescription', label: 'Prescriptions' },
+                { value: 'device', label: 'Devices' },
+                { value: 'xray', label: 'X-rays' },
+                { value: 'report', label: 'Reports' },
+                { value: 'other', label: 'Other' },
+              ]}
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              disabled={isSaved}
+            />
+            
+            <Button
+              leftSection={isSaved ? <IconCheck size={16} /> : <IconDownload size={16} />}
+              onClick={handleSaveToImages}
+              disabled={isSaved}
+              loading={saving}
+              color={isSaved ? 'green' : 'blue'}
+              variant={isSaved ? 'light' : 'filled'}
+            >
+              {isSaved ? '✅ Saved to Images' : 'Save to Images'}
+            </Button>
+          </Stack>
+        )}
+      </Stack>
+    </Modal>
+  );
+}
+```
+
+**Usage in SMSDialog:**
+```typescript
+// In SMSDialog.tsx
+const [imageModalOpened, setImageModalOpened] = useState(false);
+const [selectedImageMessage, setSelectedImageMessage] = useState<SMSMessage | null>(null);
+
+// When clicking thumbnail in conversation
+const handleImageClick = (message: SMSMessage) => {
+  setSelectedImageMessage(message);
+  setImageModalOpened(true);
+};
+
+// In message bubble rendering
+{message.has_media && message.media_url && (
+  <Image
+    src={message.media_url}
+    alt="MMS"
+    width={100}
+    height={100}
+    fit="cover"
+    radius="md"
+    style={{ cursor: 'pointer' }}
+    onClick={() => handleImageClick(message)}
+  />
+)}
+
+// Modal component
+<MMSImageModal
+  opened={imageModalOpened}
+  onClose={() => setImageModalOpened(false)}
+  message={selectedImageMessage}
+  patientId={patientId}
+  patientName={patientName}
+/>
+```
+
+---
+
+##### **2.4 Backend: Save MMS to Patient Images**
+
+**New API Endpoint:** `POST /api/sms/mms/<message_id>/save-to-images/`
+
+**File:** `backend/sms_integration/views.py`
+
+```python
+from images.models import Image
+from images.services import image_service
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_mms_to_images(request, message_id):
+    """
+    Save MMS image to patient's Images folder
+    Creates link between SMS message and Image record
+    """
+    try:
+        # Get MMS message
+        sms_message = SMSInbound.objects.get(id=message_id)
+        
+        if not sms_message.has_media or not sms_message.media_downloaded_url:
+            return Response(
+                {'error': 'No image available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        patient_id = request.data.get('patient_id')
+        category = request.data.get('category')
+        
+        # Check if already saved
+        existing = Image.objects.filter(
+            patient_id=patient_id,
+            source_sms_message_id=message_id,  # New field to track
+        ).first()
+        
+        if existing:
+            return Response(
+                {'error': 'Image already saved', 'image_id': existing.id},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Copy S3 file to patient's images folder
+        # S3: mms/inbound/{message_id}/ → images/{patient_id}/
+        new_s3_key = image_service.copy_s3_file(
+            source_key=sms_message.s3_key,
+            dest_folder=f'images/{patient_id}/',
+            filename=sms_message.media_filename or 'sms_image.jpg'
+        )
+        
+        # Create Image record
+        image = Image.objects.create(
+            patient_id=patient_id,
+            uploaded_by=request.user,
+            filename=sms_message.media_filename or 'sms_image.jpg',
+            file_size=sms_message.media_size,
+            content_type=sms_message.media_type,
+            s3_key=new_s3_key,
+            category=category,
+            source='sms',  # Track that it came from SMS
+            source_sms_message_id=message_id,  # Link back to SMS
+            source_sms_date=sms_message.received_at,  # Preserve SMS date
+            notes=f'From SMS: {sms_message.received_at.strftime("%b %d, %Y at %I:%M %p")}'
+        )
+        
+        return Response({
+            'success': True,
+            'image_id': image.id,
+            'message': 'Image saved successfully'
+        }, status=status.HTTP_201_CREATED)
+        
+    except SMSInbound.DoesNotExist:
+        return Response(
+            {'error': 'Message not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+```
+
+**Check if already saved endpoint:** `GET /api/sms/mms/<message_id>/is-saved/`
+
+```python
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_mms_saved(request, message_id):
+    """
+    Check if MMS image has been saved to patient's Images
+    """
+    patient_id = request.GET.get('patient_id')
+    
+    exists = Image.objects.filter(
+        patient_id=patient_id,
+        source_sms_message_id=message_id,
+    ).exists()
+    
+    return Response({'is_saved': exists})
+```
+
+---
+
+##### **2.5 Database Model Updates for Save to Images**
+
+**File:** `backend/images/models.py`
+
+**Add new fields to Image model:**
+```python
+class Image(models.Model):
+    # ... existing fields ...
+    
+    # Track source of image
+    source = models.CharField(
+        max_length=20,
+        choices=[
+            ('upload', 'Direct Upload'),
+            ('sms', 'From SMS/MMS'),
+            ('email', 'From Email'),
+        ],
+        default='upload'
+    )
+    
+    # Link to SMS message (if from MMS)
+    source_sms_message_id = models.UUIDField(blank=True, null=True)
+    source_sms_date = models.DateTimeField(blank=True, null=True)
+    
+    # Category for organization
+    category = models.CharField(
+        max_length=50,
+        choices=[
+            ('prescription', 'Prescriptions'),
+            ('device', 'Devices'),
+            ('xray', 'X-rays'),
+            ('report', 'Reports'),
+            ('other', 'Other'),
+        ],
+        blank=True
+    )
+```
+
+**Migration:** `python manage.py makemigrations images`
+
+---
+
+##### **2.6 Frontend: Display SMS Context in Images**
+
+**File:** `frontend/app/components/images/ImageCard.tsx` (or similar)
+
+**Show SMS context for images from MMS:**
+```typescript
+{image.source === 'sms' && (
+  <Group gap="xs">
+    <IconMessage size={14} color="blue" />
+    <Text size="xs" c="dimmed">
+      From SMS: {formatDate(image.source_sms_date)}
+    </Text>
+  </Group>
+)}
+```
+
+**Optional: Click to view original SMS conversation:**
+```typescript
+{image.source === 'sms' && image.source_sms_message_id && (
+  <Button
+    size="xs"
+    variant="subtle"
+    leftSection={<IconMessage size={14} />}
+    onClick={() => {
+      // Open SMS dialog and scroll to this message
+      openSMSDialog(image.patient_id, image.source_sms_message_id);
+    }}
+  >
+    View in SMS
+  </Button>
+)}
 ```
 
 ---
