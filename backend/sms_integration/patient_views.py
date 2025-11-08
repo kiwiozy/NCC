@@ -494,7 +494,6 @@ def patient_mark_read(request, patient_id):
         )
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_mms_media(request):
