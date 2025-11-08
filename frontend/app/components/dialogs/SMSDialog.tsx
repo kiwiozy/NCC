@@ -16,6 +16,8 @@ import {
   Loader,
   Center,
   rem,
+  FileButton,
+  Image,
 } from '@mantine/core';
 import {
   IconSend,
@@ -24,6 +26,7 @@ import {
   IconAlertCircle,
   IconClock,
   IconRefresh,
+  IconPhoto,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useMantineColorScheme } from '@mantine/core';
@@ -41,6 +44,10 @@ interface SMSMessage {
   received_at?: string;
   error_message?: string;
   is_processed?: boolean; // For inbound messages: false = unread, true = read
+  // MMS support
+  has_media?: boolean;
+  media_url?: string;
+  media_type?: string;
 }
 
 interface PhoneNumber {
@@ -124,6 +131,12 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
   const [checkingForNew, setCheckingForNew] = useState(false);
   const [markAsReadConfirmOpened, setMarkAsReadConfirmOpened] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  
+  // MMS state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -396,6 +409,144 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
     return null;
   };
 
+  // MMS image handling
+  const handleImageSelect = async (file: File | null) => {
+    if (!file) return;
+    
+    setSelectedImage(file);
+    
+    // Check if HEIC and convert for preview
+    const isHEIC = file.type === 'image/heic' || file.type === 'image/heif' || 
+                   file.name.toLowerCase().endsWith('.heic') || 
+                   file.name.toLowerCase().endsWith('.heif');
+    
+    if (isHEIC) {
+      try {
+        // Dynamic import to avoid bundle bloat
+        const heic2any = (await import('heic2any')).default;
+        
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8,
+        });
+        
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target?.result as string);
+        reader.readAsDataURL(convertedBlob as Blob);
+      } catch (error) {
+        console.error('HEIC conversion failed:', error);
+        // Show generic preview
+        setImagePreview('/icons/image-placeholder.png');
+      }
+    } else {
+      // Normal image preview
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+  
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files[0] && files[0].type.startsWith('image/')) {
+      handleImageSelect(files[0]);
+    }
+  };
+  
+  const handleSendMMS = async () => {
+    if (!selectedImage || !selectedPhone) return;
+    
+    setUploading(true);
+    
+    try {
+      // 1. Upload image to get S3 URL
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+      
+      const uploadResponse = await fetch('https://localhost:8000/api/sms/upload-media/', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Image upload failed');
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      
+      // 2. Send MMS with media URL
+      setSending(true);
+      const response = await fetch(`https://localhost:8000/api/sms/patient/${patientId}/send/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: selectedPhone.value,
+          phone_label: selectedPhone.label,
+          message: messageText.trim() || '',  // Allow empty message for MMS
+          media_url: uploadResult.media_url,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('MMS send failed');
+      }
+      
+      // Clear form
+      setMessageText('');
+      setSelectedImage(null);
+      setImagePreview(null);
+      setSelectedTemplate(null);
+      
+      // Reload conversation
+      await loadConversation();
+      
+      notifications.show({
+        title: 'MMS Sent',
+        message: 'Your image message was sent successfully',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('MMS send error:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to send MMS',
+        color: 'red',
+      });
+    } finally {
+      setUploading(false);
+      setSending(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!messageText.trim()) {
       notifications.show({
@@ -637,23 +788,102 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
               disabled={!selectedPhone || sending}
             />
 
+            {/* Image Preview (MMS) */}
+            {imagePreview && (
+              <Box pos="relative" style={{ width: 'fit-content' }}>
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={150}
+                  height={150}
+                  fit="cover"
+                  radius="md"
+                />
+                <ActionIcon
+                  pos="absolute"
+                  top={5}
+                  right={5}
+                  size="sm"
+                  color="red"
+                  variant="filled"
+                  onClick={handleRemoveImage}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <IconX size={14} />
+                </ActionIcon>
+              </Box>
+            )}
+
             {/* Character Counter and Send Button */}
             <Group justify="space-between" align="center">
-              <Text size="xs" c="dimmed">
-                {charCount} characters ({smsSegments} {smsSegments === 1 ? 'SMS' : 'SMS'})
-              </Text>
-              <Button
-                leftSection={<IconSend size={16} />}
-                onClick={handleSend}
-                disabled={!messageText.trim() || !selectedPhone || sending}
-                loading={sending}
-              >
-                Send SMS
-              </Button>
+              <Group gap="xs">
+                {!selectedImage && (
+                  <Text size="xs" c="dimmed">
+                    {charCount} characters ({smsSegments} {smsSegments === 1 ? 'SMS' : 'SMS'})
+                  </Text>
+                )}
+                {selectedImage && (
+                  <Text size="xs" c="dimmed">
+                    Image attached
+                  </Text>
+                )}
+              </Group>
+              <Group gap="xs">
+                {/* Image attach button */}
+                <FileButton
+                  accept="image/png,image/jpeg,image/gif,image/heic,image/heif"
+                  onChange={handleImageSelect}
+                  disabled={!selectedPhone || sending || uploading}
+                >
+                  {(props) => (
+                    <ActionIcon {...props} size="lg" variant="light" color="grape">
+                      <IconPhoto size={20} />
+                    </ActionIcon>
+                  )}
+                </FileButton>
+                
+                {/* Send button */}
+                <Button
+                  leftSection={selectedImage ? <IconPhoto size={16} /> : <IconSend size={16} />}
+                  onClick={selectedImage ? handleSendMMS : handleSend}
+                  disabled={(!messageText.trim() && !selectedImage) || !selectedPhone || sending || uploading}
+                  loading={sending || uploading}
+                  color={selectedImage ? 'grape' : 'blue'}
+                >
+                  {selectedImage ? 'Send MMS' : 'Send SMS'}
+                </Button>
+              </Group>
             </Group>
           </Stack>
         </Box>
       </Stack>
+      
+      {/* Drag & Drop Overlay */}
+      {isDragging && (
+        <Box
+          pos="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(94, 53, 177, 0.1)"
+          style={{
+            border: '3px dashed var(--mantine-color-grape-5)',
+            borderRadius: '8px',
+            zIndex: 1000,
+            pointerEvents: 'none',
+          }}
+        >
+          <Center h="100%">
+            <Stack align="center" gap="xs">
+              <IconPhoto size={48} style={{ color: 'var(--mantine-color-grape-6)' }} />
+              <Text size="lg" fw={500} c="grape">
+                Drop image here
+              </Text>
+            </Stack>
+          </Center>
+        </Box>
+      )}
     </Modal>
     
     {/* Mark as Read Confirmation Modal */}
@@ -764,9 +994,26 @@ function MessageBubble({
         )}
 
         {/* Message Text */}
-        <Text size="sm" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {message.message}
-        </Text>
+        {message.message && (
+          <Text size="sm" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {message.message}
+          </Text>
+        )}
+
+        {/* MMS Image Thumbnail */}
+        {message.has_media && message.media_url && (
+          <Box mt={message.message ? "xs" : 0}>
+            <Image
+              src={message.media_url}
+              alt="MMS"
+              width={100}
+              height={100}
+              fit="cover"
+              radius="md"
+              style={{ cursor: 'pointer' }}
+            />
+          </Box>
+        )}
 
         {/* Timestamp and Status */}
         <Group gap={4} mt={4} style={{ justifyContent: isOutbound ? 'flex-end' : 'flex-start' }}>
