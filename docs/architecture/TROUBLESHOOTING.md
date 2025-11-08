@@ -1151,6 +1151,86 @@ SSL proxy process not started or crashed.
 
 ---
 
+## 📱 MMS Issues
+
+### **MMS Not Sending - 414 Request-URI Too Large Error**
+
+**Symptoms:**
+- MMS with image fails to send
+- Error in Django logs: `414 Client Error: Request-URI Too Large`
+- SMS works fine, but MMS fails
+- System shows "sent" but message never arrives
+
+**Root Cause:**
+Base64-encoded image data was being sent as URL query parameters (GET request), exceeding maximum URL length supported by SMS Broadcast API.
+
+**Solution:**
+✅ **Fixed in latest version** - MMS now uses POST request with data in request body.
+
+**Verify Fix:**
+```bash
+cd backend
+grep "requests.post(self.api_url, data=params" sms_integration/services.py
+# Should see: response = requests.post(self.api_url, data=params, timeout=30)
+```
+
+**If you see old code:**
+```bash
+# Update the API call to use POST instead of GET
+# Change: requests.get(self.api_url, params=params, timeout=30)
+# To:     requests.post(self.api_url, data=params, timeout=30)
+```
+
+**Test MMS:**
+1. Upload image in SMS dialog (drag & drop or click photo icon)
+2. Send MMS
+3. Check Django logs: `tail -f logs/django.log`
+4. Look for: `[SMS Service] Sending MMS with base64 encoded media`
+
+---
+
+### **Startup Scripts Hanging**
+
+**Symptoms:**
+- `./restart-dev.sh` never completes
+- Terminal hangs after starting services
+- Can't get control back after restart
+
+**Root Cause:**
+`restart-dev.sh` was calling `start-dev.sh` which has an infinite monitoring loop, causing the script to never return.
+
+**Solution:**
+✅ **Fixed in latest version** - Scripts now run in background.
+
+**Use Quick Start (Recommended):**
+```bash
+./quick-start.sh
+# Starts all services and returns immediately
+# Services run in background
+```
+
+**Or Use Restart:**
+```bash
+./restart-dev.sh
+# Now completes in ~8 seconds
+# Starts services in background with nohup
+```
+
+**Check Status:**
+```bash
+./status-dev.sh
+# Verify all services are running
+```
+
+**Scripts Available:**
+- `./quick-start.sh` - Fast start, returns immediately (recommended for daily use)
+- `./start-dev.sh` - Interactive monitoring (use for debugging)
+- `./restart-dev.sh` - Stop and restart in background
+- `./stop-dev.sh` - Stop all services
+- `./status-dev.sh` - Check what's running
+
+---
+
 **Last Updated:** 2025-11-08
 
 **IMPORTANT:** If this troubleshooting guide is updated, you MUST also update the project rules at `.cursor/rules/projectrules.mdc` to keep them synchronized.
