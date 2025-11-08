@@ -522,7 +522,10 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
       const response = await fetch(`https://localhost:8000/api/sms/patient/${patientId}/send/`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+        },
         body: JSON.stringify({
           phone_number: selectedPhone.value,
           phone_label: selectedPhone.label,

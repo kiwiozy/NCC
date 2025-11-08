@@ -527,19 +527,25 @@ def upload_mms_media(request):
         )
     
     try:
+        print(f"[MMS Upload] Received file: {file.name}, size: {file.size}, type: {file.content_type}")
+        
         # Upload to S3 (handles HEIC conversion, resizing, validation)
         result = mms_service.upload_media_for_sending(file, file.name)
         
+        print(f"[MMS Upload] ✅ Upload successful: {result['s3_key']}")
         return Response(result, status=status.HTTP_201_CREATED)
         
     except ValueError as e:
+        print(f"[MMS Upload] ❌ Validation error: {str(e)}")
         return Response(
             {'error': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception as e:
-        print(f"❌ MMS upload error: {str(e)}")
+        print(f"[MMS Upload] ❌ Upload error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return Response(
-            {'error': 'Failed to upload media'},
+            {'error': f'Failed to upload media: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

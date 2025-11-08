@@ -208,13 +208,15 @@ class MMSService:
             Bucket=self.s3_service.bucket_name,
             Key=s3_key,
             Body=resized_content,
-            ContentType=mime_type,
-            # Make publicly readable for SMS Broadcast to fetch
-            ACL='public-read'
+            ContentType=mime_type
+            # Note: No ACL needed - using presigned URL instead
         )
         
-        # Generate public URL
-        media_url = f"https://{self.s3_service.bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{s3_key}"
+        # Generate presigned URL (valid for 7 days - long enough for SMS sending)
+        media_url = self.s3_service.generate_presigned_url(
+            s3_key,
+            expiration=3600 * 24 * 7  # 7 days
+        )
         
         print(f"  ✅ Upload complete: {media_url}")
         
