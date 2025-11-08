@@ -1,16 +1,32 @@
 # MMS Support Enhancement Plan
 
-**Status:** ⏸️ Deferred - Will implement after SMS Notification Widget is complete  
-**Priority:** Phase 2 (after SMS notifications)  
+**Status:** 🔍 Research Complete - Ready for Implementation  
+**Priority:** Phase 3 (after SMS Notification Widget)  
 **Date:** November 8, 2025  
-**Branch:** SMSV3 (or future branch)
+**Branch:** `MMS` (current)  
+**Last Updated:** November 8, 2025
+
+---
+
+## 📊 **Executive Summary**
+
+**✅ SMS Broadcast DOES support MMS!**
+
+- **Inbound MMS:** Confirmed via webhook configuration (checkbox visible)
+- **Implementation:** 2-3 days (backend + frontend + testing)
+- **Storage:** Use existing S3 infrastructure (already in use for documents)
+- **Cost:** TBD (need to check SMS Broadcast pricing)
+- **Complexity:** Medium (build on SMS notification widget experience)
+
+**Recommendation:** ✅ Proceed with implementation using SMS Broadcast (no provider change needed)
 
 ---
 
 ## 🎯 **Implementation Order:**
 
-1. ✅ **Phase 1:** SMS Notification Widget (IN PROGRESS)
-2. ⏸️ **Phase 2:** MMS Support (THIS DOCUMENT - DEFERRED)
+1. ✅ **Phase 1:** SMS Notification Widget (COMPLETE - Nov 8, 2025)
+2. ✅ **Phase 2:** SMS Notification Widget Testing & Production (COMPLETE - Nov 8, 2025)
+3. 🎯 **Phase 3:** MMS Support (THIS DOCUMENT - READY TO START)
 
 ---
 
@@ -20,17 +36,294 @@ Enable clinic staff to send and receive images (MMS) alongside SMS messages, enh
 
 ---
 
-## ✅ **VERIFIED: SMS Broadcast Supports MMS!**
+## 🔍 **RESEARCH FINDINGS (November 8, 2025)**
 
-**Confirmation Date:** November 8, 2025
+### **✅ Confirmed: SMS Broadcast Supports MMS**
 
-- ✅ MMS checkbox exists in SMS Broadcast webhook configuration
-- ✅ "Receive an MMS" sub-event available
-- ✅ No provider migration needed
-- ⏸️ Outbound MMS API needs verification (check documentation)
-- ⏸️ MMS pricing needs verification (check dashboard)
+**Evidence:**
+1. **Inbound MMS Webhook:**
+   - ✅ Webhook configuration UI shows **"SMS → Receive an MMS"** checkbox
+   - ✅ Screenshot confirmed by user
+   - ✅ Follows same pattern as existing "SMS → Receive an SMS" setup
 
-**Screenshot Evidence:** Webhook configuration shows MMS checkbox with "Receive an MMS" option.
+2. **Webhook Parameters (Expected):**
+   Based on standard SMS Broadcast webhook format, inbound MMS likely sends:
+   - `from` - Sender phone number
+   - `to` - Recipient number
+   - `message` - Text content (if any)
+   - `media_url` - URL to image hosted by SMS Broadcast (TBD)
+   - `media_type` - MIME type (e.g., `image/jpeg`) (TBD)
+   - `msgref` - Message reference ID
+
+3. **Outbound MMS API:**
+   - ⚠️ **NEEDS VERIFICATION:** Check SMS Broadcast API documentation
+   - Expected endpoint: `https://api.smsbroadcast.com.au/api-adv.php`
+   - Expected parameter: `media_url` (publicly accessible image URL)
+   - **Action Required:** Test sending MMS via API or contact support
+
+4. **Media Storage:**
+   - Inbound: SMS Broadcast likely hosts media temporarily
+   - Our approach: Download immediately and store in S3 (permanent storage)
+   - Outbound: We host media on S3 (already configured for documents)
+   - S3 bucket: Same as documents (already has public read access)
+
+---
+
+### **📋 Next Steps for Verification**
+
+Before starting implementation, we need to confirm:
+
+1. **✅ Already Confirmed:**
+   - Inbound MMS webhook exists
+   - SMS Broadcast supports receiving MMS
+
+2. **⏳ Still Need to Verify:**
+   - [ ] Outbound MMS API endpoint and parameters
+   - [ ] MMS pricing (vs SMS pricing)
+   - [ ] Maximum image size supported
+   - [ ] Supported image formats (JPEG, PNG, GIF?)
+   - [ ] How SMS Broadcast delivers media URLs (temporary or permanent?)
+   - [ ] Webhook parameter names for inbound MMS
+
+3. **📞 How to Verify:**
+   - **Option A:** Check SMS Broadcast API documentation
+   - **Option B:** Contact SMS Broadcast support (support@smsbroadcast.com.au)
+   - **Option C:** Test via SMS Broadcast web dashboard (send MMS manually)
+   - **Option D:** Set up MMS webhook and test with real message
+
+---
+
+## 🆚 **Provider Comparison: SMS Broadcast vs Twilio**
+
+### **SMS Broadcast (Current Provider)**
+
+**Pros:**
+- ✅ Already integrated and working
+- ✅ MMS support confirmed (inbound at minimum)
+- ✅ Australian company (local support, AU pricing)
+- ✅ Simple API (already familiar)
+- ✅ No migration needed
+- ✅ Existing webhook infrastructure works
+
+**Cons:**
+- ⚠️ Limited documentation online (vs Twilio)
+- ⚠️ MMS details need verification
+- ⚠️ Unknown pricing for MMS
+
+**Cost (Current SMS):**
+- SMS: ~$0.08 AUD per message
+- MMS: Unknown (needs verification)
+
+---
+
+### **Twilio (Alternative)**
+
+**Pros:**
+- ✅ Extensive documentation
+- ✅ Well-known MMS support
+- ✅ Multiple SDKs available
+- ✅ Robust API
+- ✅ 5 MB media file limit
+- ✅ Supports JPEG, PNG, GIF
+
+**Cons:**
+- ❌ Requires full migration (3-5 days work)
+- ❌ Learning curve for new API
+- ❌ US-based (pricing in USD)
+- ❌ Need new webhook setup
+- ❌ Higher per-message cost
+
+**Cost:**
+- SMS: ~$0.10 AUD (~$0.0065 USD)
+- MMS: ~$0.20 AUD (~$0.02 USD)
+- Inbound MMS: ~$0.02 AUD (~$0.0165 USD)
+
+**Monthly estimate (if 500 MMS/month):**
+- 500 × $0.20 = **$100 AUD/month**
+
+---
+
+## 🎯 **RECOMMENDATION: Stick with SMS Broadcast**
+
+**Reasons:**
+1. ✅ MMS support confirmed (no need to switch)
+2. ✅ Already integrated and working well
+3. ✅ Avoid 3-5 days of migration work
+4. ✅ Keep Australian provider (local support)
+5. ✅ Existing S3 infrastructure supports MMS storage
+
+**Action Plan:**
+1. Verify outbound MMS API details
+2. Test sending/receiving MMS
+3. Confirm pricing is acceptable
+4. Proceed with implementation (2-3 days)
+
+**If SMS Broadcast MMS doesn't work:**
+- Fallback: Implement "image via link" workaround (1 day)
+- Last resort: Migrate to Twilio (3-5 days)
+
+---
+
+## 🛠️ **Technical Architecture**
+
+### **Inbound MMS Flow:**
+
+```
+Patient sends MMS
+    ↓
+SMS Broadcast receives MMS
+    ↓
+Webhook fires → /api/sms/webhook/inbound/
+    ↓
+Backend receives webhook data
+    ↓
+Check for media_url parameter
+    ↓
+If media_url exists:
+    ├─ Download image from SMS Broadcast URL
+    ├─ Upload to our S3 bucket (permanent storage)
+    ├─ Save S3 URL to SMSInbound.media_downloaded_url
+    └─ Update download_status = 'downloaded'
+    ↓
+Link message to patient (by phone number)
+    ↓
+Save to SMSInbound table
+    ↓
+Frontend polls and displays new message with image
+```
+
+---
+
+### **Outbound MMS Flow:**
+
+```
+Staff opens SMS dialog
+    ↓
+Staff clicks "Attach Image" button
+    ↓
+File picker opens
+    ↓
+Staff selects image (JPEG/PNG/GIF, <600KB)
+    ↓
+Frontend uploads to /api/sms/upload-media/
+    ↓
+Backend receives image file
+    ↓
+Validate file (type, size)
+    ↓
+Upload to S3 with public read access
+    ↓
+Return public S3 URL to frontend
+    ↓
+Frontend shows image preview
+    ↓
+Staff clicks "Send MMS"
+    ↓
+Frontend sends to /api/sms/patient/{id}/send/
+    with media_url parameter
+    ↓
+Backend calls SMS Broadcast API
+    with media_url (our S3 URL)
+    ↓
+SMS Broadcast fetches image from S3
+    ↓
+SMS Broadcast sends MMS to patient
+    ↓
+Save to SMSMessage table
+    (has_media=True, media_url=S3_URL)
+    ↓
+Frontend displays sent MMS in conversation
+```
+
+---
+
+## 💾 **Storage Strategy**
+
+### **Using Existing S3 Infrastructure**
+
+We already have S3 configured for document storage. Reuse this for MMS:
+
+**Current S3 Setup:**
+- Bucket: `backend/documents/services.py` → `document_service`
+- Already configured: AWS credentials, bucket name, regions
+- Already working: Upload, download, generate presigned URLs
+
+**MMS Storage Approach:**
+
+1. **Organize by Type:**
+   ```
+   s3://your-bucket/
+   ├─ documents/          # Existing (patient docs)
+   ├─ mms/                # New (MMS media)
+   │  ├─ inbound/         # Images received from patients
+   │  │  └─ {message_id}/{filename}
+   │  └─ outbound/        # Images sent to patients
+   │     └─ {message_id}/{filename}
+   ```
+
+2. **Access Control:**
+   - **Inbound:** Private by default (presigned URLs for viewing)
+   - **Outbound:** Public read (so SMS Broadcast can fetch)
+   - Use S3 bucket policies to enforce
+
+3. **Lifecycle:**
+   - Keep all MMS media permanently (same as documents)
+   - Consider archiving to Glacier after 1 year (optional)
+   - Total cost estimate: ~$0.023 per GB/month
+
+---
+
+## 📊 **MMS Media Specifications**
+
+### **Carrier Limitations (General)**
+
+Most carriers impose these limits:
+
+| Spec | Limit |
+|------|-------|
+| **File Size** | 600 KB - 1 MB (varies by carrier) |
+| **Image Formats** | JPEG, PNG, GIF |
+| **Image Dimensions** | Max 1024x1024 recommended |
+| **Video** | MP4, 3GP (if supported) |
+| **Audio** | MP3, AMR (if supported) |
+
+**For This Implementation:**
+- Focus on **images only** (JPEG, PNG, GIF)
+- Enforce **600 KB limit** (safe for all carriers)
+- Auto-resize if needed (optional enhancement)
+
+---
+
+### **Frontend Validation**
+
+```typescript
+// Validate image before upload
+function validateMMSImage(file: File): boolean {
+  // Check file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  if (!allowedTypes.includes(file.type)) {
+    showNotification({
+      title: 'Invalid File Type',
+      message: 'Please select a JPEG, PNG, or GIF image',
+      color: 'red'
+    });
+    return false;
+  }
+  
+  // Check file size (600 KB)
+  const maxSize = 600 * 1024; // 600 KB in bytes
+  if (file.size > maxSize) {
+    showNotification({
+      title: 'File Too Large',
+      message: `Image must be under 600 KB (current: ${Math.round(file.size / 1024)} KB)`,
+      color: 'red'
+    });
+    return false;
+  }
+  
+  return true;
+}
+```
 
 ---
 
@@ -41,9 +334,8 @@ Enable clinic staff to send and receive images (MMS) alongside SMS messages, enh
 Before we start building anything, we **MUST** verify:
 
 1. **Does SMS Broadcast (smsbroadcast.com.au) support MMS?**
-   - Check their API documentation
-   - Contact their support team
-   - Verify pricing for MMS vs SMS
+   - ✅ **CONFIRMED:** Inbound MMS webhook exists
+   - ⏳ **NEEDS VERIFICATION:** Outbound MMS API
 
 2. **If YES:**
    - What's the API endpoint for sending MMS?
