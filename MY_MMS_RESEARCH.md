@@ -5,14 +5,33 @@
 
 ---
 
+## 🚨 **CRITICAL REQUIREMENT: Single Number for Two-Way Communication**
+
+**The most important factor in our decision:**
+
+✅ **MUST HAVE:** Patients can send AND receive on **ONE number** (`61488868772`)
+
+**Why this is non-negotiable:**
+1. **Patient UX:** One number saved in phone as "WalkEasy Nexus Clinic"
+2. **Reply routing:** Replies automatically go to the right place
+3. **Professional:** Consistent sender ID builds trust
+4. **Staff workflow:** One inbox to monitor, not multiple
+
+**This immediately rules out any solution where:**
+- ❌ SMS comes from one number, MMS from another
+- ❌ Patients need to save multiple clinic numbers
+- ❌ Staff need to check separate inboxes
+
+---
+
 ## 📊 Quick Comparison Table
 
-| Option | Setup Time | Monthly Cost | Per MMS Cost | Complexity | Dedicated Number |
-|--------|-----------|--------------|--------------|------------|------------------|
-| **Twilio MMS Only** | 1-2 days | ~$2-5 USD | ~$0.06 USD | Medium | ✅ Yes (~$1-2/mo) |
-| **MessageMedia REST** | 3-5 days | Variable | Unknown | High | ✅ Yes (can keep existing) |
-| **Link Workaround** | 1 day | $0 | SMS cost only | Low | ✅ Keep current |
-| **Full Twilio Switch** | 5-7 days | ~$2-5 USD | SMS: $0.04, MMS: $0.06 | High | ✅ Yes (~$1-2/mo) |
+| Option | Setup Time | Monthly Cost | Per MMS Cost | Complexity | Same Number? |
+|--------|-----------|--------------|--------------|------------|--------------|
+| **Twilio MMS Only** | 1-2 days | ~$2-5 USD | ~$0.06 USD | Medium | ❌ **NO** - Different sender |
+| **MessageMedia REST** | 3-5 days | Variable | Unknown | High | ✅ **YES** - Can port existing |
+| **Link Workaround** | 1 day | $0 | SMS cost only | Low | ✅ **YES** - Keep current |
+| **Full Twilio Switch** | 5-7 days | ~$2-5 USD | SMS: $0.04, MMS: $0.06 | High | ✅ **YES** - Port or new number |
 
 ---
 
@@ -266,12 +285,18 @@ sms_service.send_sms(
 - Migration process (must be smooth)
 - Timeline (can't afford long downtime)
 
-### ❌ Not Recommended: **Option 1 (Twilio Parallel)**
+### ❌ Not Recommended: **Option 1 (Twilio Parallel)** ⛔
 
-**Why:**
-- Different sender ID = confusing for patients
+**Why this is NOW RULED OUT:**
+- **FATAL FLAW:** Different sender ID = confusing for patients
+  - SMS from `61488868772` (SMS Broadcast)  
+  - MMS from `61XXXXXXXXX` (Twilio)
+  - **Patients see TWO different numbers!**
+- **Reply problem:** Patient replies to Twilio number = separate inbox
 - Two providers = more complexity
 - Not worth the hassle for "real MMS"
+
+**This option violates our critical requirement of single-number two-way communication.**
 
 ---
 
