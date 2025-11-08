@@ -96,18 +96,38 @@ Before we write any code, we need to know:
 
 ### **Step 1.1: Export FileMaker Schema**
 
-**Actions:**
-1. Use Data API to list all layouts
-2. For each layout, get field definitions
-3. Document field types and validations
-4. Identify relationships between tables
+**✅ AUTOMATED SCHEMA DISCOVERY SCRIPT AVAILABLE!**
 
-**Deliverable:** `filemaker_schema.json` with complete schema
+**Run the automated discovery script:**
 
-**Script:** `scripts/01_discover_schema.py`
+```bash
+cd scripts/filemaker
+cp .env.example .env
+# Edit .env with your FileMaker credentials
+python3 01_discover_schema.py
+```
 
-**Questions:**
-- Do we need to access FileMaker Server admin to get full schema?
+**What the script does:**
+- 🔍 Connects to FileMaker Data API
+- 📋 Lists all available layouts (tables)
+- 📊 Gets field definitions (names, types, metadata)
+- 📝 Counts records in each layout
+- 💾 Retrieves sample data for analysis
+- 📄 Saves complete schema to `data/discovery/filemaker_schema_YYYYMMDD_HHMMSS.json`
+
+**Output includes:**
+- Layout names and record counts
+- Field names, types, and properties
+- Sample values for type inference
+- Relationships and field metadata
+- Formatted summary report
+
+**Deliverable:** `data/discovery/filemaker_schema_*.json`
+
+**Script:** `scripts/filemaker/01_discover_schema.py` ✅ READY TO RUN
+
+**After running, answer:**
+- Which layouts are "real tables" vs "calculated layouts"?
 - Can Data API provide relationship information?
 - Should we export to JSON or directly to database table?
 
