@@ -1,0 +1,31 @@
+# Protected Backend Files (Production Ready)
+backend/gmail_integration/services.py
+backend/gmail_integration/models.py
+backend/gmail_integration/views.py
+backend/xero_integration/services.py
+backend/xero_integration/models.py
+backend/xero_integration/views.py
+backend/sms_integration/services.py
+backend/sms_integration/models.py
+backend/sms_integration/views.py
+backend/documents/services.py
+backend/documents/models.py
+backend/documents/views.py
+backend/ai_services/services.py
+backend/ai_services/pdf_generator.py
+backend/ai_services/at_report_email.py
+backend/patients/models.py
+backend/appointments/models.py
+backend/clinicians/models.py
+
+# Protected Frontend Files (Production Ready)
+frontend/app/components/settings/GmailIntegration.tsx
+frontend/app/components/settings/XeroIntegration.tsx
+frontend/app/components/settings/SMSIntegration.tsx
+frontend/app/components/settings/S3Integration.tsx
+frontend/app/components/settings/ATReport.tsx
+frontend/app/components/Navigation.tsx
+frontend/app/components/ClinicCalendar.tsx
+frontend/app/layout.tsx
+frontend/next.config.js
+
