@@ -93,10 +93,36 @@ class SMSService:
                 'ref': str(sms_message.id)  # Our internal reference
             }
             
-            # Add media URL for MMS
+            # Add media for MMS (SMS Broadcast requires base64-encoded media)
             if media_url:
-                params['media'] = media_url
                 print(f"[SMS Service] Sending MMS with media: {media_url}")
+                
+                # Download image from S3 and encode to base64
+                import requests
+                import base64
+                from urllib.parse import urlparse
+                
+                try:
+                    # Download image from S3
+                    response = requests.get(media_url, timeout=30)
+                    response.raise_for_status()
+                    
+                    # Get content type and filename
+                    content_type = response.headers.get('Content-Type', 'image/jpeg')
+                    filename = media_url.split('/')[-1].split('?')[0]  # Extract filename from URL
+                    
+                    # Encode to base64
+                    media_base64 = base64.b64encode(response.content).decode('utf-8')
+                    
+                    # SMS Broadcast MMS API format
+                    params['attachment0'] = media_base64
+                    params['type0'] = content_type
+                    params['name0'] = filename
+                    
+                    print(f"[SMS Service] Encoded image: {len(media_base64)} chars, type={content_type}, name={filename}")
+                except Exception as e:
+                    print(f"[SMS Service] ❌ Failed to download/encode media: {e}")
+                    # Continue without media - send as SMS
             
             # Only include 'from' parameter if sender_id is set and approved
             # If sender_id is None or empty, SMS Broadcast will use account default
