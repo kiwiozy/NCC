@@ -2,7 +2,11 @@
 
 ## Context
 
-We're building a clinic management system in Australia that needs to send **MMS (images via SMS)** to patients. We've discovered that our current provider (SMS Broadcast Australia) **does not support outbound MMS** through their HTTP API.
+We're building a clinic management system in Australia that needs **two-way MMS capability**:
+- **Send MMS to patients:** Staff sends images (X-rays, diagrams) to patients
+- **Receive MMS from patients:** Patients send images (wound photos, documents) to clinic
+
+We've discovered that our current provider (SMS Broadcast Australia) **does not support outbound MMS** through their HTTP API, but **does support inbound MMS** via webhooks.
 
 ## Current Setup
 
@@ -10,6 +14,7 @@ We're building a clinic management system in Australia that needs to send **MMS 
 - **API:** Advanced HTTP API (`api-adv.php`) - SMS only, no MMS support
 - **Inbound MMS:** ✅ Works (webhook receives MMS from patients)
 - **Outbound MMS:** ❌ Not supported (attachments silently ignored)
+- **Sender ID:** `61488868772` (our dedicated Australian number)
 - **Tech Stack:** Django backend, Next.js frontend, AWS S3 for storage
 - **Location:** Australia
 - **Volume:** Low-to-medium (clinic use case)
@@ -20,17 +25,20 @@ We're building a clinic management system in Australia that needs to send **MMS 
 - Same parent company as SMS Broadcast (recently acquired)
 - Modern REST API with MMS support
 - Would need to migrate entire SMS integration
+- **Question:** Does this support both sending AND receiving MMS?
 
 ### Option 2: Add Twilio for MMS Only
-- Keep SMS Broadcast for SMS
-- Use Twilio only for MMS
+- Keep SMS Broadcast for SMS (and inbound MMS via webhook)
+- Use Twilio only for **outbound MMS**
 - Run two providers in parallel
+- **Question:** Can we receive MMS to Twilio number AND forward to our webhook?
 
-### Option 3: Link-Based Workaround
+### Option 3: Link-Based Workaround (for sending only)
 - Upload image to S3 with secure, time-limited link
 - Send SMS with link: "View your image: https://clinic.com/i/abc123"
 - Patient clicks link to view image in browser
 - No additional provider needed
+- **Note:** For receiving, would still use SMS Broadcast inbound MMS webhook
 
 ### Option 4: Switch Entirely to Twilio
 - Replace SMS Broadcast completely
@@ -38,6 +46,27 @@ We're building a clinic management system in Australia that needs to send **MMS 
 - Complete rewrite of integration
 
 ## Questions for Comparison:
+
+### ⚠️ **CRITICAL REQUIREMENT: Two-Way Communication on Same Number**
+
+**This is our most important requirement:**
+
+Patients must be able to:
+1. **Receive** SMS/MMS from clinic on **one consistent number**: `61488868772`
+2. **Reply/Send** SMS/MMS back to **the same number**: `61488868772`
+
+**Why this matters:**
+- Patients save ONE number in their phone: "WalkEasy Nexus Clinic"
+- Replies go to the right place automatically
+- Professional appearance (not different numbers for different message types)
+- No confusion about which number to text
+
+**This rules out solutions where:**
+- ❌ Outbound MMS comes from a different number than SMS
+- ❌ Patients would need to save/text two different numbers
+- ❌ Staff would need to check multiple inboxes
+
+---
 
 ### 1. **Cost Comparison (Australia)**
 
@@ -151,15 +180,22 @@ response = requests.post(
 ### 6. **Recommendation**
 
 Based on:
+- **CRITICAL:** Two-way communication on single number (`61488868772`)
 - **Australian context** (compliance, patient expectations)
 - **Clinic use case** (low-to-medium volume, medical images)
 - **Budget considerations** (small business)
 - **Technical complexity** (small dev team)
 - **Time to implement** (quick vs. slow)
+- **Professional appearance** (consistent sender ID)
 
 **Which option would YOU recommend and why?**
 
 Rank them: Best → Worst
+
+**Specifically address:**
+- Which options allow using the same number for both sending AND receiving?
+- If Option 2 (Twilio parallel) is considered, how can we handle the different sender ID problem?
+- Is link-based workaround acceptable for a medical clinic?
 
 Explain the tradeoffs for each.
 
