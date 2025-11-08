@@ -93,10 +93,20 @@ Just press **Ctrl+C** in the start-dev.sh terminal
 
 ---
 
-## 🎉 **NEW: SMS Notification Widget** (November 2025)
+## 🎉 **Features Update** (November 2025)
 
-### What's New:
+### ✅ SMS Notification Widget
 The app now has **real-time SMS notifications** everywhere! No more missing patient messages.
+
+### ✅ Console Filter
+**Clean development console!** Grammarly errors and source map 404s are now automatically suppressed. You'll see `🔇 Console Filter Active` in your console.
+
+### ❌ MMS Deferred
+**Outbound MMS** (sending images to patients) has been **intentionally not implemented**. 
+- **Reason:** Feature "hardly used" - not worth the cost ($6,192-$12,924/year)
+- **What works:** SMS send/receive, inbound MMS (patients can send you images)
+- **What doesn't:** Clinic can't send images to patients
+- **Research:** All MMS research preserved in `docs/research/` for future reference
 
 **Features:**
 - 🔵 **Blue badge** on Dashboard nav - shows unread SMS count

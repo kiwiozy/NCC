@@ -13,16 +13,38 @@ SMS integration provides SMS sending via SMS Broadcast API. Send individual mess
 
 ## 🎯 **Features**
 
+### **SMS (Working)**
 - ✅ Send individual SMS
 - ✅ Bulk SMS broadcasts
 - ✅ Message templates
 - ✅ Delivery status webhooks
 - ✅ Inbound message webhooks
+- ✅ **Receive images from patients** (inbound MMS)
 - ✅ Sender ID customization
 - ✅ Character count and message splitting
 - ✅ **Patient SMS conversations** - View unified message threads for each patient
 - ✅ **Multi-phone support** - Send to any phone number in patient's communication list
 - ✅ **Auto-refresh** - Check for new messages without full dialog reload
+- ✅ **Real-time notifications** - Dashboard widget + browser notifications
+
+### **MMS (Deferred)**
+- ❌ **Outbound MMS** (sending images to patients) - **Intentionally not implemented**
+  - **Reason:** Feature "hardly used" - not worth $6,192-$12,924/year cost
+  - **Status:** Comprehensive research completed and preserved in `docs/research/`
+  - **Reconsider if:** Sending 100+ images/week or explicit patient requests
+
+---
+
+## 📱 **What Works & What Doesn't**
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Send SMS (text) | ✅ Working | All SMS features fully functional |
+| Receive SMS (text) | ✅ Working | Real-time webhooks |
+| Receive MMS (images) | ✅ Working | Patients can send you images |
+| Send MMS (images) | ❌ Deferred | Clinic cannot send images to patients |
+| SMS notifications | ✅ Working | Dashboard widget + browser alerts |
+| SMS conversations | ✅ Working | Full message history per patient |
 
 ---
 

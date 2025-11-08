@@ -38,6 +38,20 @@ docs/
 │   └── settings/
 │       └── SETTINGS_REQUIREMENTS.md
 │
+├── features/                     # ⭐ Feature documentation
+│   ├── SMS_NOTIFICATION_WIDGET_PLAN.md  # SMS notifications
+│   └── MMS_SUPPORT_PLAN.md              # MMS research (deferred)
+│
+├── research/                     # ⭐ Research & decisions
+│   ├── README.md                         # Research index
+│   ├── MMS_DECISION_DEFER.md            # MMS deferral decision
+│   ├── MMS_BRANCH_SUMMARY.md            # Complete MMS investigation
+│   ├── MMS_COMPARISON_FINAL.md          # Provider comparison
+│   ├── MY_MMS_RESEARCH.md               # Detailed analysis
+│   ├── MMS_RESEARCH_SUMMARY.md          # Initial findings
+│   ├── MMS_IMPLEMENTATION_REVIEW.md     # Technical review
+│   └── CHATGPT_QUESTION_*.md            # Research questions
+│
 ├── integrations/                 # ⭐ Integration guides
 │   ├── GMAIL.md                 # Gmail OAuth & email sending
 │   ├── XERO.md                  # Xero OAuth & accounting
@@ -85,12 +99,18 @@ docs/
 - [Patients Page](architecture/pages/PatientsPage.md) - Main patient management page
 
 ### **Feature Documentation**
+- [SMS Notification Widget](features/SMS_NOTIFICATION_WIDGET_PLAN.md) - Real-time SMS notifications ✅ NEW
 - [Communication Dialog](architecture/dialogs/CommunicationDialog.md) - Patient contact info
 - [Coordinator Dialogs](architecture/dialogs/CoordinatorDialogs.md) - NDIS coordinators
 - [Documents Dialog](architecture/dialogs/DocumentsDialog.md) - S3 document management
 - [Notes Dialog](architecture/dialogs/NotesDialog.md) - Clinical notes with AI
 - [Reminder Dialog](architecture/dialogs/ReminderDialog.md) - Patient reminders
-- [Patient Letters](Letter/PATIENT_LETTERS_COMPLETE.md) - Letter management system ✅ NEW
+- [Patient Letters](Letter/PATIENT_LETTERS_COMPLETE.md) - Letter management system ✅
+
+### **Research & Decisions**
+- [Research Index](research/README.md) - All research documentation
+- [MMS Decision](research/MMS_DECISION_DEFER.md) - Why MMS was deferred
+- [MMS Research](research/MMS_BRANCH_SUMMARY.md) - Complete MMS investigation
 
 ### **Integrations** (Production-Ready ✅)
 - [Gmail Integration](integrations/GMAIL.md) - OAuth2 email sending

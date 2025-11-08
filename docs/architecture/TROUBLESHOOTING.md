@@ -181,6 +181,105 @@ const handleGoogleLogin = () => {
 
 ---
 
+## 🚨 **SMS Sending Fails with Database Error**
+
+### **Symptoms:**
+- SMS send fails with `500 Internal Server Error`
+- Console shows: `Origin https://localhost:3000 is not allowed by Access-Control-Allow-Origin`
+- Django logs show: `django.db.utils.IntegrityError: NOT NULL constraint failed: sms_messages.has_media`
+- Error occurs after reverting MMS code changes
+
+### **Root Cause:**
+Database schema has MMS fields (like `has_media`, `media_url`) but the code was reverted to pre-MMS state, causing a mismatch.
+
+### **Solution: Apply Migration to Remove MMS Fields**
+
+**1. Check if migration exists:**
+```bash
+cd backend/sms_integration/migrations
+ls -la | grep "0003_remove_mms"
+```
+
+**2. If migration file exists, apply it:**
+```bash
+cd backend
+python manage.py migrate sms_integration
+```
+
+**3. If migration doesn't exist, create it:**
+
+Create `backend/sms_integration/migrations/0003_remove_mms_fields.py`:
+```python
+from django.db import migrations
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ('sms_integration', '0002_alter_smsmessage_patient'),
+    ]
+    operations = [
+        # Remove MMS fields from SMSMessage
+        migrations.RemoveField(model_name='smsmessage', name='has_media'),
+        migrations.RemoveField(model_name='smsmessage', name='media_url'),
+        migrations.RemoveField(model_name='smsmessage', name='media_type'),
+        migrations.RemoveField(model_name='smsmessage', name='media_size'),
+        migrations.RemoveField(model_name='smsmessage', name='media_filename'),
+        migrations.RemoveField(model_name='smsmessage', name='s3_key'),
+        # Remove MMS fields from SMSInbound
+        migrations.RemoveField(model_name='smsinbound', name='has_media'),
+        migrations.RemoveField(model_name='smsinbound', name='media_url'),
+        migrations.RemoveField(model_name='smsinbound', name='media_downloaded_url'),
+        migrations.RemoveField(model_name='smsinbound', name='media_type'),
+        migrations.RemoveField(model_name='smsinbound', name='media_size'),
+        migrations.RemoveField(model_name='smsinbound', name='s3_key'),
+        migrations.RemoveField(model_name='smsinbound', name='download_status'),
+    ]
+```
+
+Then run: `python manage.py migrate sms_integration`
+
+**4. Restart services:**
+```bash
+./restart-dev.sh
+```
+
+**5. Verify:**
+- Django startup should show no migration warnings
+- SMS sending should work without errors
+
+### **Alternative: Manual SQLite Fix (If Migration Fails)**
+
+If the migration fails, you can manually fix the SQLite database:
+
+```bash
+cd backend
+sqlite3 db.sqlite3 << 'EOF'
+-- Recreate sms_messages table without MMS fields
+CREATE TABLE sms_messages_new AS SELECT 
+  id, phone_number, message, status, external_message_id, created_at,
+  scheduled_at, sent_at, delivered_at, error_message, retry_count,
+  sms_count, cost, notes, appointment_id, patient_id, template_id
+FROM sms_messages;
+
+DROP TABLE sms_messages;
+ALTER TABLE sms_messages_new RENAME TO sms_messages;
+
+-- Recreate sms_inbound table without MMS fields  
+CREATE TABLE sms_inbound_new AS SELECT
+  id, from_number, to_number, message, external_message_id, received_at,
+  is_processed, processed_at, processed_by, notes, patient_id
+FROM sms_inbound;
+
+DROP TABLE sms_inbound;
+ALTER TABLE sms_inbound_new RENAME TO sms_inbound;
+
+-- Mark migration as applied
+INSERT INTO django_migrations (app, name, applied) 
+VALUES ('sms_integration', '0003_remove_mms_fields', datetime('now'));
+EOF
+```
+
+---
+
 ## 🚨 **Patients Not Loading**
 
 ### **Symptoms:**

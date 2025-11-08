@@ -126,6 +126,20 @@ tail -50 logs/django.log
 
 ## 🔧 Troubleshooting
 
+### Console Errors (Grammarly, Source Maps)
+**Console showing Grammarly errors or missing .map files?**
+
+✅ **These are automatically suppressed!** The console filter is active.
+
+You'll see: `🔇 Console Filter Active` in your console.
+
+**What's suppressed:**
+- Grammarly extension errors (grm ERROR)
+- Missing source maps (404 .map files)
+- Safari extension style errors
+
+**Your app errors still show normally!**
+
 ### Services won't start
 ```bash
 ./stop-dev.sh    # Force stop everything
