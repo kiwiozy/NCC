@@ -3,6 +3,8 @@ import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import './globals.css';
 
+import './utils/consoleFilter';
+
 import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from '@mantine/modals';
