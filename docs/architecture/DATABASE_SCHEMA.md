@@ -684,15 +684,16 @@ account_emailconfirmation ✅
 
 ---
 
-## 🔄 **FileMaker Migration - New Tables (Planned)**
+## 🔄 **FileMaker Migration - New Tables (Built ✅)**
 
-**Status:** Architecture defined, ready for implementation  
+**Status:** ✅ **All 9 tables created and migrated successfully!**  
+**Date Built:** November 9, 2025  
 **Source:** `docs/integrations/FILEMAKER.md`
 
-### 1. **`referrers` Table**
+### 1. **`referrers` Table** ✅
 
-**Model:** `referrers.models.Referrer` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `referrers.models.Referrer`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 98 from FileMaker `API_Referrer`
 
 **Purpose:** Medical professionals who refer patients (GPs, specialists, podiatrists, etc.)
@@ -717,10 +718,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 2. **`coordinators` Table**
+### 2. **`coordinators` Table** ✅
 
-**Model:** `coordinators.models.Coordinator` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `coordinators.models.Coordinator`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** ~50 (extracted from `patients.coordinator_name`)
 
 **Purpose:** NDIS Support Coordinators and LAC (Local Area Coordinators)
@@ -745,10 +746,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 3. **`companies` Table**
+### 3. **`companies` Table** ✅
 
-**Model:** `companies.models.Company` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `companies.models.Company`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 44 from FileMaker `API_Company`
 
 **Purpose:** Medical practices, NDIS providers, organizations
@@ -759,20 +760,25 @@ account_emailconfirmation ✅
 - `abn` - CharField(20) - Australian Business Number (nullable)
 - `contact_json` - JSONField - Phone, email, fax
 - `address_json` - JSONField - Address details
-- `company_type` - CharField(50) - Choices: "Medical Practice", "NDIS Provider", "Other"
+- `company_type` - CharField(50) - **Choices:** Medical Practice, NDIS Provider, Other ⚠️ **Implementation Note:** Using Django choices instead of FK to lookup table
 - `filemaker_id` - UUIDField (unique, nullable) - Original FileMaker ID
 - `created_at` - DateTimeField
 - `updated_at` - DateTimeField
+
+**⚠️ Implementation Difference:**
+- Original design had separate `company_types` lookup table
+- **Built with:** Django CharField with choices (simpler, fewer queries)
+- **Missing:** Archive support (archived, archived_at, archived_by) - can add later if needed
 
 **Relationships:**
 - One-to-Many with `referrers` (practice → referrers)
 
 ---
 
-### 4. **`general_contacts` Table**
+### 4. **`general_contacts` Table** ✅
 
-**Model:** `contacts.models.GeneralContact` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `contacts.models.GeneralContact`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 0 initially (new feature)
 
 **Purpose:** Non-medical contacts (carers, family, emergency contacts, plumbers, accountants, etc.)
@@ -793,10 +799,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 5. **`specialties` Table (Lookup)**
+### 5. **`specialties` Table (Lookup)** ✅
 
-**Model:** `referrers.models.Specialty` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `referrers.models.Specialty`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** ~20 unique values from FileMaker `API_Referrer.Specialty`
 
 **Purpose:** Medical specialties lookup table
@@ -811,10 +817,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 6. **`patient_referrers` Table (Join)**
+### 6. **`patient_referrers` Table (Join)** ✅
 
-**Model:** `referrers.models.PatientReferrer` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `referrers.models.PatientReferrer`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 255 from FileMaker `API_ContactToReferrer`
 
 **Purpose:** Links patients to referrers with referral metadata
@@ -834,10 +840,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 7. **`patient_coordinators` Table (Join - Historical)**
+### 7. **`patient_coordinators` Table (Join - Historical)** ✅
 
-**Model:** `coordinators.models.PatientCoordinator` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `coordinators.models.PatientCoordinator`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 2,845 (one per patient with coordinator_name)
 
 **Purpose:** Tracks patient-coordinator relationships over time (historical tracking)
@@ -862,10 +868,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 8. **`referrer_companies` Table (Join)**
+### 8. **`referrer_companies` Table (Join)** ✅
 
-**Model:** `referrers.models.ReferrerCompany` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `referrers.models.ReferrerCompany`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 73 from FileMaker `API_ReferrerToCompany_Join`
 
 **Purpose:** Links referrers to companies (many-to-many - a doctor can work at multiple practices)
@@ -884,10 +890,10 @@ account_emailconfirmation ✅
 
 ---
 
-### 9. **`contact_relationships` Table (Generic Relationships)** ⭐
+### 9. **`contact_relationships` Table (Generic Relationships)** ⭐ ✅
 
-**Model:** `contacts.models.ContactRelationship` (to be created)  
-**Status:** ❌ Not yet built  
+**Model:** `contacts.models.ContactRelationship`  
+**Status:** ✅ **Built and migrated**  
 **Records to Import:** 0 initially (new feature)
 
 **Purpose:** Link ANY contact to ANY other contact to track relationships (carers, family, emergency contacts, dual roles)
@@ -929,6 +935,28 @@ account_emailconfirmation ✅
 3. Link family members who are also patients
 4. Store emergency contacts
 5. Track any relationship between any two contacts
+
+---
+
+### ✅ **Implementation Summary (November 9, 2025)**
+
+**All 9 FileMaker migration tables successfully built and migrated!**
+
+**Tables Created:**
+1. ✅ `specialties` - Lookup table for medical specialties
+2. ✅ `referrers` - Medical professionals (GPs, specialists, etc.)
+3. ✅ `coordinators` - NDIS Support Coordinators and LAC
+4. ✅ `companies` - Medical practices, NDIS providers
+5. ✅ `general_contacts` - Non-medical contacts (carers, family, etc.)
+6. ✅ `patient_referrers` - Join table (patient ↔ referrer)
+7. ✅ `patient_coordinators` - Join table with historical tracking
+8. ✅ `referrer_companies` - Join table (referrer ↔ company)
+9. ✅ `contact_relationships` - GenericForeignKey for ANY-to-ANY relationships
+
+**Implementation Notes:**
+- **Companies.company_type:** Used Django CharField with choices instead of separate lookup table (simpler, fewer queries)
+- **Archive support:** Not implemented on `companies` table yet (can add: archived, archived_at, archived_by if needed)
+- **Next Step:** Import data from FileMaker into these tables
 
 ---
 
