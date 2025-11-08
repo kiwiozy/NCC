@@ -1,0 +1,232 @@
+{
+  "export_date": "2025-11-08T19:23:13.473575",
+  "total_patients": 3,
+  "patients": [
+    {
+      "patient": {
+        "id": "8B045521-3157-4ED8-A68B-E432AD4F3A06",
+        "title": "Mrs.",
+        "first_name": "Jacqueline",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "06/27/1968",
+        "gender": "",
+        "health_number": "",
+        "ndis_plan_start": "",
+        "ndis_plan_end": "",
+        "ndis_coordinator_name": "",
+        "ndis_coordinator_phone": "",
+        "ndis_coordinator_email": "",
+        "clinic_id": "95BD76C6-5591-48C1-8C1A-D88776933504",
+        "clinic_name": "Tamworth",
+        "xero_contact_id": "",
+        "created": "11/22/2016 07:33:02",
+        "modified": "09/05/2025 09:03:14"
+      },
+      "contact_details": [
+        {
+          "id": "770C1854-4DCF-443B-93AF-C1F2E93CE60F",
+          "type": "Mobile",
+          "name": "Work",
+          "phone": "0431478238",
+          "sms_phone": 1,
+          "email": 0,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        }
+      ]
+    },
+    {
+      "patient": {
+        "id": "EB1CF8AC-284D-43F0-8558-8353C58457FD",
+        "title": "Mr.",
+        "first_name": "Craig",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "01/21/1968",
+        "gender": "",
+        "health_number": "3333222",
+        "ndis_plan_start": "11/12/2017",
+        "ndis_plan_end": "11/13/2017",
+        "ndis_coordinator_name": "Craig Laird",
+        "ndis_coordinator_phone": "684360936",
+        "ndis_coordinator_email": "craig@walkeasypedorthics.com.au",
+        "clinic_id": "37382741-6E1C-44EE-98F8-C28F6B332A36",
+        "clinic_name": "Newcastle",
+        "xero_contact_id": "a273d6b9-2aa7-4ad0-8a13-023279a42d75",
+        "created": "11/22/2016 07:34:53",
+        "modified": "07/24/2024 15:50:58"
+      },
+      "contact_details": [
+        {
+          "id": "9D4D4FD8-C503-4123-BE9C-B01036311941",
+          "type": "Mobile",
+          "name": "Home",
+          "phone": "0487 000 872",
+          "sms_phone": 1,
+          "email": 0,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        },
+        {
+          "id": "1AD76427-EDDA-4745-87BF-3DF816E01489",
+          "type": "Address",
+          "name": "Home",
+          "phone": "",
+          "sms_phone": 0,
+          "email": 0,
+          "address_1": "40 Orley Drive",
+          "address_2": "",
+          "suburb": "Tamworth",
+          "state": "NSW",
+          "postcode": "2340",
+          "location": "40 Orley Drive, Tamworth, NSW 2340"
+        },
+        {
+          "id": "8EA9C79A-9DDC-49A6-97AF-30A2D89C6B48",
+          "type": "Address",
+          "name": "Work",
+          "phone": "",
+          "sms_phone": 0,
+          "email": 0,
+          "address_1": "21 Dowe Street",
+          "address_2": "",
+          "suburb": "Tamworth",
+          "state": "NSW",
+          "postcode": "2340",
+          "location": "21 Dowe Street, Tamworth, NSW 2340"
+        },
+        {
+          "id": "9C2B1406-006A-4418-89D2-DC7EF1DA887C",
+          "type": "Address",
+          "name": "Postal",
+          "phone": "",
+          "sms_phone": 0,
+          "email": 0,
+          "address_1": "PO Box 210",
+          "address_2": "",
+          "suburb": "Tamworth",
+          "state": "NSW",
+          "postcode": "2340",
+          "location": "PO Box 210, Tamworth, NSW 2340"
+        },
+        {
+          "id": "F7795E2A-5B19-4464-8B5D-6BBE3113C712",
+          "type": "Email",
+          "name": "Home",
+          "phone": "hjkhla@hjkhkl.com.au",
+          "sms_phone": 0,
+          "email": 1,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        },
+        {
+          "id": "B871C6AB-BC7A-4FA5-B3FC-C48262EAF7FC",
+          "type": "Phone",
+          "name": "Work",
+          "phone": "02 6536 3153",
+          "sms_phone": 1,
+          "email": 0,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        },
+        {
+          "id": "869404B3-D5A3-4CDE-BCD1-3DC339B653AC",
+          "type": "Mobile",
+          "name": "Work",
+          "phone": "82359520532",
+          "sms_phone": 0,
+          "email": 0,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        }
+      ]
+    },
+    {
+      "patient": {
+        "id": "19ACA9D7-013D-4703-9E6D-94762E004892",
+        "title": "Mr.",
+        "first_name": "Scott",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "08/16/1994",
+        "gender": "",
+        "health_number": "430372789",
+        "ndis_plan_start": "08/25/2020",
+        "ndis_plan_end": "08/25/2021",
+        "ndis_coordinator_name": "Jackie Laird",
+        "ndis_coordinator_phone": "‭0431 478 238‬",
+        "ndis_coordinator_email": "jackie.lai",
+        "clinic_id": "95BD76C6-5591-48C1-8C1A-D88776933504",
+        "clinic_name": "Tamworth",
+        "xero_contact_id": "156dddc2-3ab5-4d71-878a-ab2ddafcc6bb",
+        "created": "12/04/2016 07:39:38",
+        "modified": "10/31/2025 12:47:49"
+      },
+      "contact_details": [
+        {
+          "id": "DAD72957-ACD5-472C-94C7-3567D294BF3D",
+          "type": "Mobile",
+          "name": "Jackie (Mum)",
+          "phone": "‭0431 478 238",
+          "sms_phone": 1,
+          "email": 0,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        },
+        {
+          "id": "F06130F7-E9A1-41C0-B568-5EBC4C079EE8",
+          "type": "Address",
+          "name": "Home",
+          "phone": "",
+          "sms_phone": 0,
+          "email": 0,
+          "address_1": "8 Sherborne Street",
+          "address_2": "",
+          "suburb": "North Tamworth",
+          "state": "NSW",
+          "postcode": "2340",
+          "location": "8 Sherborne Street, North Tamworth, NSW 2340"
+        },
+        {
+          "id": "5EA681FA-2420-4493-A589-685D2BCC6D99",
+          "type": "Email",
+          "name": "Home",
+          "phone": "scottlaird.ndis@icloud.com",
+          "sms_phone": 0,
+          "email": 1,
+          "address_1": "",
+          "address_2": "",
+          "suburb": "",
+          "state": "",
+          "postcode": "",
+          "location": ""
+        }
+      ]
+    }
+  ]
+}

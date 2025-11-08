@@ -6,7 +6,26 @@ Documentation for FileMaker Server Data API connectivity and data migration.
 
 ## 📚 Documentation Files
 
-### 1. **[Test_FileMaker_Data_API.md](./Test_FileMaker_Data_API.md)** 🧪 **API TESTING GUIDE**
+### 1. **[PRODUCTION_IMPORT_SUCCESS.md](./PRODUCTION_IMPORT_SUCCESS.md)** 🎉 **IMPORT COMPLETE** ⭐⭐⭐
+   - **ALL 2,845 patients successfully imported!**
+   - Production import completed November 9, 2025
+   - OData API breakthrough and results
+   - Final metrics and validation
+
+### 2. **[IMPORT_IMPROVEMENTS_TODO.md](./IMPORT_IMPROVEMENTS_TODO.md)** 📋 **TODO LIST** ⭐
+   - **Checklist of import script improvements**
+   - Completed improvements (date parsing, phone cleaning)
+   - Pending improvements (contact details, validation)
+   - Priority order and testing checklist
+   - Current data quality metrics
+
+### 3. **[IMPORT_COMPLETE_GUIDE.md](./IMPORT_COMPLETE_GUIDE.md)** 🎯 **COMPREHENSIVE GUIDE** ⭐
+   - Complete guide for importing FileMaker data into Nexus
+   - Field mappings, data transformations, scripts & commands
+   - Updated with OData API information
+   - Production-tested and verified
+
+### 4. **[Test_FileMaker_Data_API.md](./Test_FileMaker_Data_API.md)** 🧪 **API TESTING GUIDE**
    - Complete FileMaker Data API testing guide
    - Authentication (get API token)
    - cURL examples for all operations
@@ -14,6 +33,18 @@ Documentation for FileMaker Server Data API connectivity and data migration.
    - Python examples
    - Container field operations (file upload/download)
    - Troubleshooting common issues
+
+### 3. **[FILEMAKER_IMPORT_PLAN.md](./FILEMAKER_IMPORT_PLAN.md)** 📋 **PLANNING DOC**
+   - Original planning document for FileMaker import
+   - 6-phase approach with detailed steps
+   - Schema discovery and mapping templates
+   - Field mapping reference
+
+### 4. **[CONTACT_DETAILS_ANALYSIS.md](./CONTACT_DETAILS_ANALYSIS.md)** 📞 **CONTACT DATA STRUCTURE**
+   - Details about FileMaker contact details structure
+   - One-to-many relationship with patients
+   - Multi-type records (phone, email, address)
+   - Transformation logic to Nexus JSON fields
 
 ---
 

@@ -1,0 +1,489 @@
+{
+  "discovery_date": "2025-11-09T09:14:35.431293",
+  "server": "https://walkeasy.fmcloud.fm",
+  "database": "WEP-DatabaseV2",
+  "tables": {
+    "API_Company_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "id",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Name",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "ABN",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "id.key",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Type",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Location",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "%_sortBy",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "summaryListOfNames",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Link",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "SEARCH",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "KEYS",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kf_XeroContactID",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "LastAPIResult",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "XeroContactPOSTCalc",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "zv_Pivot_gt",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Email_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Mobile_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Address_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Phone_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Work_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "_kz_Postal_gc",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "sortListKey",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Sort Selection",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Xero address",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        }
+      ],
+      "keys": [
+        "id"
+      ],
+      "navigation_properties": [],
+      "field_count": 30,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Referrer_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "id",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "title",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "nameFirst",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "nameMiddle",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "nameLast",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "gender",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Initial",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "contactType",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "QuickFind",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Name",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Name for Labels",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "id_Clinic",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Name Full",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "%_sortBy",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "RECORD_ACTIVE_INDICATOR",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "summaryListOfLastName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "Link",
+          "type": "Edm.Decimal",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "SEARCH",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "KEYS",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        }
+      ],
+      "keys": [
+        "id"
+      ],
+      "navigation_properties": [],
+      "field_count": 25,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_ContactToReferrer_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "id_Contact",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "id_Perscriber",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "date",
+          "type": "Edm.Date",
+          "nullable": true,
+          "max_length": null
+        }
+      ],
+      "keys": [],
+      "navigation_properties": [],
+      "field_count": 9,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_ReferrerToCompany_Join_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "id_Company",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "creationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationAccountName",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "modificationHostTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "id_Referrer",
+          "type": "Edm.String",
+          "nullable": true,
+          "max_length": null
+        },
+        {
+          "name": "date",
+          "type": "Edm.Date",
+          "nullable": true,
+          "max_length": null
+        }
+      ],
+      "keys": [],
+      "navigation_properties": [],
+      "field_count": 9,
+      "sample_records": [],
+      "sample_count": 0
+    }
+  }
+}

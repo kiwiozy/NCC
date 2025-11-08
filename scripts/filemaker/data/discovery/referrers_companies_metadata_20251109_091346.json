@@ -1,0 +1,23 @@
+{
+  "discovery_date": "2025-11-09T09:13:46.705516",
+  "server": "https://walkeasy.fmcloud.fm",
+  "database": "WEP-DatabaseV2",
+  "tables": {
+    "API_Company": {
+      "found": false,
+      "fields": []
+    },
+    "API_Referrer": {
+      "found": false,
+      "fields": []
+    },
+    "API_ContactToReferrer": {
+      "found": false,
+      "fields": []
+    },
+    "API_ReferrerToCompany_Join": {
+      "found": false,
+      "fields": []
+    }
+  }
+}

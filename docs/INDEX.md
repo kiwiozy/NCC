@@ -42,6 +42,20 @@ docs/
 │   ├── SMS_NOTIFICATION_WIDGET_PLAN.md  # SMS notifications
 │   └── MMS_SUPPORT_PLAN.md              # MMS research (deferred)
 │
+├── FileMaker/                    # ⭐ FileMaker data migration (2,845 patients imported ✅)
+│   ├── README.md                        # FileMaker integration index
+│   ├── API_TABLES_COMPLETE_OVERVIEW.md  # All 9 API tables documented ✅ NEW
+│   ├── IMPORT_COMPLETE_GUIDE.md         # Complete import guide ✅
+│   ├── PRODUCTION_IMPORT_SUCCESS.md     # Import success summary (2,845 patients) ✅
+│   ├── ODATA_TABLE_ACCESS_SUCCESS.md    # OData troubleshooting & solution ✅
+│   ├── SESSION_SUMMARY_2025-11-09.md    # Today's session summary ✅
+│   ├── IMPORT_IMPROVEMENTS_TODO.md      # Next improvements checklist
+│   ├── FILEMAKER_IMPORT_PLAN.md         # Planning document
+│   ├── CONTACT_DETAILS_ANALYSIS.md      # Contact data structure
+│   ├── CHATGPT_ODATA_SOLUTION.md        # OData best practices analysis
+│   ├── CHATGPT_ODATA_ROOT_TABLE_ACCESS.md # OData research question
+│   └── Test_FileMaker_Data_API.md       # API testing guide
+│
 ├── research/                     # ⭐ Research & decisions
 │   ├── README.md                         # Research index
 │   ├── MMS_DECISION_DEFER.md            # MMS deferral decision
@@ -118,6 +132,8 @@ docs/
 - [SMS Integration](integrations/SMS.md) - SMS Broadcast messaging
 - [S3 Integration](integrations/S3.md) - AWS document storage
 - [OpenAI Integration](integrations/OPENAI.md) - AI-powered features
+- [FileMaker Migration](integrations/FILEMAKER.md) - OData data import (2,845 patients imported ✅)
+  - [Contact Relationships Architecture](FileMaker/CONTACT_RELATIONSHIPS_ARCHITECTURE.md) - How we link contacts together ⭐ NEW
 
 ### **Setup & Configuration**
 - [Code Organization Strategy](setup/CODE_ORGANIZATION_STRATEGY.md) - Protected files
@@ -181,6 +197,7 @@ docs/
 - Xero API (accounting)
 - SMS Broadcast API (messaging)
 - OpenAI API (AI features)
+- FileMaker OData API (data migration) - 4 tables accessible ✅
 
 ---
 

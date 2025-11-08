@@ -179,21 +179,42 @@ scripts/filemaker/
 
 ## 📚 Documentation
 
-- **Main Plan:** `docs/FileMaker/FILEMAKER_IMPORT_PLAN.md`
-- **FileMaker API Guide:** `docs/FileMaker/README.md`
-- **API Testing:** `docs/FileMaker/Test_FileMaker_Data_API.md`
-- **Database Schema:** `docs/architecture/DATABASE_SCHEMA.md`
+### **Complete Guides**
+- **[Import Complete Guide](../../docs/FileMaker/IMPORT_COMPLETE_GUIDE.md)** - Complete FileMaker import documentation ✅
+- **[Production Import Success](../../docs/FileMaker/PRODUCTION_IMPORT_SUCCESS.md)** - 2,845 patients imported successfully ✅
+- **[OData Table Access Success](../../docs/FileMaker/ODATA_TABLE_ACCESS_SUCCESS.md)** - OData troubleshooting & solution ✅ NEW
+- **[Import Improvements TODO](../../docs/FileMaker/IMPORT_IMPROVEMENTS_TODO.md)** - Next improvements checklist
+
+### **Planning & Research**
+- **[FileMaker Import Plan](../../docs/FileMaker/FILEMAKER_IMPORT_PLAN.md)** - Overall migration strategy
+- **[Contact Details Analysis](../../docs/FileMaker/CONTACT_DETAILS_ANALYSIS.md)** - Communication data structure
+- **[ChatGPT OData Solution](../../docs/FileMaker/CHATGPT_ODATA_SOLUTION.md)** - OData best practices
+- **[FileMaker API Guide](../../docs/FileMaker/README.md)** - API documentation
+- **[API Testing](../../docs/FileMaker/Test_FileMaker_Data_API.md)** - Testing guide
+
+### **Database**
+- **[Database Schema](../../docs/architecture/DATABASE_SCHEMA.md)** - Nexus PostgreSQL schema
 
 ---
 
 ## 🎯 Current Status
 
-**✅ PHASE 1: DISCOVERY - Ready to run!**
+**✅ PRODUCTION IMPORT COMPLETE!**
 
-**Next Steps:**
-1. Configure `.env` with FileMaker credentials
-2. Run `python3 01_discover_schema.py`
-3. Review schema output in `data/discovery/`
-4. Create field mapping document
-5. Build remaining scripts (Phase 2-6)
+### Completed
+- ✅ **2,845 patients** imported from FileMaker
+- ✅ **Communication details** (phone, email, address) imported
+- ✅ **OData API access** - All 4 tables accessible
+  - `API_Contacts` (75 fields)
+  - `API_Contact_Details` (30 fields)
+  - `API_Clinic_Name` (16 fields)
+  - `API_Clinics_Details` (26 fields)
+- ✅ **Data transformation** - FileMaker → Nexus format working
+- ✅ **Frontend display** - All imported data visible in UI
+
+### Next Steps
+1. Review `docs/FileMaker/IMPORT_IMPROVEMENTS_TODO.md` for enhancement checklist
+2. Optionally import clinic data (`API_Clinic_Name`)
+3. Optionally import clinic sessions (`API_Clinics_Details`)
+4. Consider importing funding, referrers, and documents when ready
 

@@ -1,0 +1,75 @@
+{
+  "export_date": "2025-11-08T19:19:08.275960",
+  "total_patients": 3,
+  "patients": [
+    {
+      "patient": {
+        "id": "8B045521-3157-4ED8-A68B-E432AD4F3A06",
+        "title": "Mrs.",
+        "first_name": "Jacqueline",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "06/27/1968",
+        "gender": "",
+        "health_number": "",
+        "ndis_plan_start": "",
+        "ndis_plan_end": "",
+        "ndis_coordinator_name": "",
+        "ndis_coordinator_phone": "",
+        "ndis_coordinator_email": "",
+        "clinic_id": "95BD76C6-5591-48C1-8C1A-D88776933504",
+        "clinic_name": "Tamworth",
+        "xero_contact_id": "",
+        "created": "11/22/2016 07:33:02",
+        "modified": "09/05/2025 09:03:14"
+      },
+      "contact_details": []
+    },
+    {
+      "patient": {
+        "id": "EB1CF8AC-284D-43F0-8558-8353C58457FD",
+        "title": "Mr.",
+        "first_name": "Craig",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "01/21/1968",
+        "gender": "",
+        "health_number": "3333222",
+        "ndis_plan_start": "11/12/2017",
+        "ndis_plan_end": "11/13/2017",
+        "ndis_coordinator_name": "Craig Laird",
+        "ndis_coordinator_phone": "684360936",
+        "ndis_coordinator_email": "craig@walkeasypedorthics.com.au",
+        "clinic_id": "37382741-6E1C-44EE-98F8-C28F6B332A36",
+        "clinic_name": "Newcastle",
+        "xero_contact_id": "a273d6b9-2aa7-4ad0-8a13-023279a42d75",
+        "created": "11/22/2016 07:34:53",
+        "modified": "07/24/2024 15:50:58"
+      },
+      "contact_details": []
+    },
+    {
+      "patient": {
+        "id": "19ACA9D7-013D-4703-9E6D-94762E004892",
+        "title": "Mr.",
+        "first_name": "Scott",
+        "middle_name": "",
+        "last_name": "Laird",
+        "dob": "08/16/1994",
+        "gender": "",
+        "health_number": "430372789",
+        "ndis_plan_start": "08/25/2020",
+        "ndis_plan_end": "08/25/2021",
+        "ndis_coordinator_name": "Jackie Laird",
+        "ndis_coordinator_phone": "‭0431 478 238‬",
+        "ndis_coordinator_email": "jackie.lai",
+        "clinic_id": "95BD76C6-5591-48C1-8C1A-D88776933504",
+        "clinic_name": "Tamworth",
+        "xero_contact_id": "156dddc2-3ab5-4d71-878a-ab2ddafcc6bb",
+        "created": "12/04/2016 07:39:38",
+        "modified": "10/31/2025 12:47:49"
+      },
+      "contact_details": []
+    }
+  ]
+}
