@@ -19,38 +19,9 @@ mkdir -p logs
 # PID file to track processes
 PID_FILE="$SCRIPT_DIR/.dev-pids"
 
-# Function to cleanup on exit
-cleanup() {
-    echo ""
-    echo -e "${YELLOW}========================================"
-    echo -e "🛑 Shutting down all services..."
-    echo -e "========================================${NC}"
-    
-    if [ -f "$PID_FILE" ]; then
-        while read pid; do
-            if ps -p $pid > /dev/null 2>&1; then
-                echo -e "${CYAN}Stopping process $pid${NC}"
-                kill $pid 2>/dev/null
-            fi
-        done < "$PID_FILE"
-        rm "$PID_FILE"
-    fi
-    
-    # Kill any remaining processes
-    pkill -f "manage.py runserver" 2>/dev/null
-    pkill -f "next dev" 2>/dev/null
-    pkill -f "ngrok http" 2>/dev/null
-    
-    echo -e "${GREEN}✅ All services stopped${NC}"
-    exit 0
-}
-
-# Trap Ctrl+C and other termination signals
-trap cleanup SIGINT SIGTERM
-
 echo -e "${MAGENTA}"
 echo "========================================"
-echo "🚀 WalkEasy Nexus Development Startup"
+echo "🚀 WalkEasy Nexus Quick Start"
 echo "========================================"
 echo -e "${NC}"
 
@@ -95,7 +66,7 @@ for i in {1..10}; do
     fi
     if [ $i -eq 10 ]; then
         echo -e "${RED}❌ Django failed to start. Check logs/django.log${NC}"
-        cleanup
+        exit 1
     fi
     sleep 1
 done
@@ -143,7 +114,7 @@ for i in {1..15}; do
     fi
     if [ $i -eq 15 ]; then
         echo -e "${RED}❌ Next.js failed to start. Check logs/nextjs.log${NC}"
-        cleanup
+        exit 1
     fi
     sleep 1
 done
@@ -165,7 +136,7 @@ fi
 # Check if ngrok is configured
 if ! ngrok config check > /dev/null 2>&1; then
     echo -e "${RED}❌ ngrok not configured. Please run: ngrok config add-authtoken YOUR_TOKEN${NC}"
-    cleanup
+    exit 1
 fi
 
 ngrok http --domain=ignacio-interposable-uniformly.ngrok-free.dev https://localhost:8000 --log=stdout > "$SCRIPT_DIR/logs/ngrok.log" 2>&1 &
@@ -188,7 +159,7 @@ done
 echo ""
 echo -e "${MAGENTA}"
 echo "========================================"
-echo "✨ All Services Running!"
+echo "✨ All Services Started!"
 echo "========================================"
 echo -e "${NC}"
 echo -e "${GREEN}📱 Frontend (HTTPS):${NC}   https://localhost:3000"
@@ -206,25 +177,9 @@ echo -e "   • nextjs-ssl.log  - SSL proxy logs"
 echo -e "   • ngrok.log       - ngrok tunnel logs"
 echo -e "========================================${NC}"
 echo ""
-echo -e "${YELLOW}⚠️  Certificate Warnings:${NC}"
-echo -e "${CYAN}   First time accessing https://localhost:8000 or https://localhost:3000:${NC}"
-echo -e "${CYAN}   1. Browser will show certificate warning${NC}"
-echo -e "${CYAN}   2. Click 'Advanced' or 'Show Details'${NC}"
-echo -e "${CYAN}   3. Click 'Proceed to localhost' or 'visit this website'${NC}"
-echo -e "${CYAN}   This is normal for local development with self-signed certificates${NC}"
+echo -e "${YELLOW}📌 Services are running in the background${NC}"
+echo -e "${CYAN}   Use './status-dev.sh' to check status${NC}"
+echo -e "${CYAN}   Use './stop-dev.sh' to stop all services${NC}"
+echo -e "${CYAN}   View logs with: tail -f logs/django.log${NC}"
 echo ""
-echo -e "${BLUE}Press Ctrl+C to stop all services${NC}"
-echo ""
-
-# Keep script running and monitor processes
-while true; do
-    # Check if any process died
-    for pid in $(cat "$PID_FILE" 2>/dev/null); do
-        if ! ps -p $pid > /dev/null 2>&1; then
-            echo -e "${RED}❌ Process $pid died unexpectedly${NC}"
-            cleanup
-        fi
-    done
-    sleep 5
-done
 

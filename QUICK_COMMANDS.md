@@ -6,13 +6,23 @@
 
 ## 🚀 Starting Work
 
+### Option 1: Quick Start (Recommended)
 ```bash
-./start-dev.sh
+./quick-start.sh
 ```
 **Starts everything:** Django + Next.js + ngrok tunnel (all with HTTPS)  
 **Time:** ~30 seconds  
 **Output:** Colored status updates + all URLs  
+**Returns immediately:** Doesn't hang - services run in background  
 **Note:** Accept certificate warnings in browser on first access
+
+### Option 2: Interactive Start
+```bash
+./start-dev.sh
+```
+**Same as quick-start** but keeps running to monitor processes  
+**Use:** For debugging or when you want real-time monitoring  
+**Stop:** Press `Ctrl+C` to stop all services
 
 ---
 
@@ -31,8 +41,9 @@
 ```bash
 ./restart-dev.sh
 ```
-**Does:** Stop → Wait → Start  
-**Time:** ~35 seconds
+**Does:** Stop → Wait → Start in background  
+**Time:** ~8 seconds (no longer hangs!)  
+**Note:** Services start in background, use `./status-dev.sh` to verify
 
 ---
 
@@ -41,7 +52,7 @@
 ```bash
 ./stop-dev.sh
 ```
-**Or just:** Press `Ctrl+C` in the start-dev.sh terminal  
+**Or:** Press `Ctrl+C` if using `./start-dev.sh`  
 **Stops:** All services cleanly
 
 ---
