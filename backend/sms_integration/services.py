@@ -84,11 +84,14 @@ class SMSService:
         
         try:
             # Send via SMS Broadcast API
+            # SMS Broadcast requires a message even for MMS - use placeholder if empty
+            message_text = message if message.strip() else '[Image]'
+            
             params = {
                 'username': self.username,
                 'password': self.password,
                 'to': phone_number,
-                'message': message,
+                'message': message_text,
                 'maxsplit': '10',  # Allow up to 10 SMS segments
                 'ref': str(sms_message.id)  # Our internal reference
             }
