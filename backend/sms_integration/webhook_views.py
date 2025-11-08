@@ -105,8 +105,6 @@ def sms_inbound(request):
     - ref: Optional reference from original outbound message (UUID)
     - smsref: SMS Broadcast message ID
     - secret: Optional secret token for security
-    - media_url: Optional URL to MMS media (image)
-    - media_type: Optional MIME type (image/jpeg, image/png)
     """
     print(f"[SMS Webhook] ===== WEBHOOK RECEIVED =====")
     print(f"[SMS Webhook] Method: {request.method}")
@@ -121,8 +119,6 @@ def sms_inbound(request):
             message_text = request.GET.get('message') or request.GET.get('messageText')
             ref = request.GET.get('ref') or request.GET.get('msgref')
             smsref = request.GET.get('smsref') or request.GET.get('externalId')
-            media_url = request.GET.get('media_url') or request.GET.get('mediaUrl')  # MMS
-            media_type = request.GET.get('media_type') or request.GET.get('mediaType')  # MMS
         else:
             # POST - try JSON body first, then form data
             data = None
@@ -138,16 +134,12 @@ def sms_inbound(request):
                 message_text = data.get('message') or data.get('messageText')
                 ref = data.get('ref') or data.get('msgref')
                 smsref = data.get('smsref') or data.get('externalId')
-                media_url = data.get('media_url') or data.get('mediaUrl')  # MMS
-                media_type = data.get('media_type') or data.get('mediaType')  # MMS
             else:
                 from_number = request.POST.get('from') or request.POST.get('sourceAddress')
                 to_number = request.POST.get('to') or request.POST.get('destinationAddress')
                 message_text = request.POST.get('message') or request.POST.get('messageText')
                 ref = request.POST.get('ref') or request.POST.get('msgref')
                 smsref = request.POST.get('smsref') or request.POST.get('externalId')
-                media_url = request.POST.get('media_url') or request.POST.get('mediaUrl')  # MMS
-                media_type = request.POST.get('media_type') or request.POST.get('mediaType')  # MMS
         
         # Validate required fields
         if not from_number or not message_text:
@@ -185,37 +177,8 @@ def sms_inbound(request):
             external_message_id=smsref or '',
             received_at=timezone.now(),
             patient=patient,
-            is_processed=False,
-            # MMS support
-            has_media=bool(media_url),
-            media_url=media_url or '',
-            media_type=media_type or '',
-            download_status='pending' if media_url else ''
+            is_processed=False
         )
-        
-        # Download MMS media in background (if present)
-        if media_url:
-            print(f"[SMS Webhook] MMS detected - media_url: {media_url}")
-            # Start background download
-            import threading
-            from .mms_service import mms_service
-            
-            def download_media():
-                try:
-                    result = mms_service.download_inbound_media(media_url, str(sms_inbound.id))
-                    sms_inbound.media_downloaded_url = result['media_downloaded_url']
-                    sms_inbound.s3_key = result['s3_key']
-                    sms_inbound.media_size = result['media_size']
-                    sms_inbound.download_status = 'downloaded'
-                    sms_inbound.save()
-                    print(f"[SMS Webhook] ✓ MMS media downloaded: {result['s3_key']}")
-                except Exception as e:
-                    sms_inbound.download_status = 'failed'
-                    sms_inbound.save()
-                    print(f"[SMS Webhook] ✗ MMS media download failed: {str(e)}")
-            
-            thread = threading.Thread(target=download_media)
-            thread.start()
         
         # Auto-detect simple replies
         message_upper = message_text.upper().strip()

@@ -2,7 +2,6 @@
 SMS Service
 Handles SMS sending via SMS Broadcast API
 """
-import logging
 import os
 import requests
 import uuid
@@ -11,8 +10,6 @@ from django.utils import timezone
 from django.conf import settings
 from .models import SMSMessage, SMSTemplate
 
-
-logger = logging.getLogger(__name__)
 
 class SMSService:
     """
@@ -47,19 +44,17 @@ class SMSService:
         message: str,
         patient_id: Optional[uuid.UUID] = None,
         appointment_id: Optional[uuid.UUID] = None,
-        template_id: Optional[uuid.UUID] = None,
-        media_url: Optional[str] = None  # MMS support
+        template_id: Optional[uuid.UUID] = None
     ) -> SMSMessage:
         """
-        Send an SMS or MMS message
+        Send an SMS message
         
         Args:
             phone_number: Recipient phone number (format: 61412345678 or +61412345678)
-            message: Message content (optional if media_url provided)
+            message: Message content
             patient_id: Optional patient UUID
             appointment_id: Optional appointment UUID
             template_id: Optional template UUID
-            media_url: Optional media URL for MMS (public S3 URL)
         
         Returns:
             SMSMessage object with send status
@@ -79,57 +74,19 @@ class SMSService:
             template_id=template_id,
             phone_number=phone_number,
             message=message,
-            status='pending',
-            # MMS support
-            has_media=bool(media_url),
-            media_url=media_url or ''
+            status='pending'
         )
         
         try:
             # Send via SMS Broadcast API
-            # SMS Broadcast requires a message even for MMS - use placeholder if empty
-            message_text = message if message.strip() else '[Image]'
-            
             params = {
                 'username': self.username,
                 'password': self.password,
                 'to': phone_number,
-                'message': message_text,
+                'message': message,
                 'maxsplit': '10',  # Allow up to 10 SMS segments
                 'ref': str(sms_message.id)  # Our internal reference
             }
-            
-            # Add media for MMS (SMS Broadcast requires base64-encoded media)
-            if media_url:
-                logger.info(f"[SMS Service] Sending MMS with media: {media_url}")
-                
-                # Download image from S3 and encode to base64
-                import requests
-                import base64
-                from urllib.parse import urlparse
-                
-                try:
-                    # Download image from S3
-                    response = requests.get(media_url, timeout=30)
-                    response.raise_for_status()
-                    
-                    # Get content type and filename
-                    content_type = response.headers.get('Content-Type', 'image/jpeg')
-                    filename = media_url.split('/')[-1].split('?')[0]  # Extract filename from URL
-                    
-                    # Encode to base64
-                    media_base64 = base64.b64encode(response.content).decode('utf-8')
-                    
-                    # SMS Broadcast MMS API format
-                    params['attachment0'] = media_base64
-                    params['type0'] = content_type
-                    params['name0'] = filename
-                    
-                    logger.info(f"[SMS Service] Encoded image: {len(media_base64)} chars, type={content_type}, name={filename}")
-                    logger.debug(f"[SMS Service] Attachment params: attachment0 length={len(media_base64)}, type0={content_type}, name0={filename}")
-                except Exception as e:
-                    logger.error(f"[SMS Service] ❌ Failed to download/encode media: {e}")
-                    # Continue without media - send as SMS
             
             # Only include 'from' parameter if sender_id is set and approved
             # If sender_id is None or empty, SMS Broadcast will use account default
@@ -140,7 +97,7 @@ class SMSService:
             if not self.sender_id:
                 print(f"[SMS Service] ⚠️ No sender ID set - using SMS Broadcast default (may be rejected if no default configured)")
             
-            response = requests.post(self.api_url, data=params, timeout=30)
+            response = requests.get(self.api_url, params=params, timeout=30)
             response.raise_for_status()
             
             # Parse response
@@ -150,7 +107,7 @@ class SMSService:
             result = response.text.strip()
             
             # Log the raw response for debugging
-            logger.info(f"[SMS Service] API Response: {result}")
+            print(f"[SMS Service] API Response: {result}")
             print(f"[SMS Service] Phone: {phone_number}, Message: {message[:50]}...")
             
             if result.startswith('OK'):

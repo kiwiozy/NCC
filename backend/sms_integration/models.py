@@ -118,34 +118,6 @@ class SMSMessage(models.Model):
         help_text="Cost in AUD"
     )
     
-    # MMS Support (Multimedia Messaging)
-    has_media = models.BooleanField(default=False, help_text="Does this message include media (image)?")
-    media_url = models.URLField(
-        max_length=1024,
-        blank=True,
-        help_text="Public S3 URL for media file (for sending to SMS provider)"
-    )
-    media_type = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="MIME type (e.g., image/jpeg, image/png)"
-    )
-    media_size = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Media file size in bytes"
-    )
-    media_filename = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Original filename"
-    )
-    s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        help_text="S3 object key (path in bucket: mms/outbound/)"
-    )
-    
     # Metadata
     notes = models.TextField(blank=True, help_text="Internal notes")
     
@@ -216,41 +188,6 @@ class SMSInbound(models.Model):
     is_processed = models.BooleanField(default=False, help_text="Has this been reviewed/handled?")
     processed_at = models.DateTimeField(null=True, blank=True)
     processed_by = models.CharField(max_length=100, blank=True, help_text="Staff member who processed")
-    
-    # MMS Support (Multimedia Messaging - Inbound)
-    has_media = models.BooleanField(default=False, help_text="Does this message include media (image)?")
-    media_url = models.URLField(
-        max_length=1024,
-        blank=True,
-        help_text="Provider's URL for media file (SMS Broadcast's server)"
-    )
-    media_downloaded_url = models.URLField(
-        max_length=1024,
-        blank=True,
-        help_text="Our S3 URL after downloading media"
-    )
-    media_type = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="MIME type (e.g., image/jpeg, image/png)"
-    )
-    media_size = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Media file size in bytes"
-    )
-    s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        help_text="S3 object key (path in bucket: mms/inbound/)"
-    )
-    download_status = models.CharField(
-        max_length=20,
-        choices=[('pending', 'Pending'), ('downloaded', 'Downloaded'), ('failed', 'Failed')],
-        blank=True,
-        help_text="Status of media download from provider to our S3"
-    )
-    
     notes = models.TextField(blank=True, help_text="Processing notes")
     
     class Meta:

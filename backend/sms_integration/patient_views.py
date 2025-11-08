@@ -5,10 +5,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.db.models import Q
-from django.views.decorators.csrf import csrf_exempt
 from patients.models import Patient
 from .models import SMSMessage, SMSInbound
 from .serializers import SMSMessageSerializer, SMSInboundSerializer
@@ -298,13 +296,12 @@ def patient_phone_numbers(request, patient_id):
 @permission_classes([IsAuthenticated])
 def patient_send_sms(request, patient_id):
     """
-    Send SMS or MMS from patient context
+    Send SMS from patient context
     Body: {
         "phone_number": "+61412345678",
         "phone_label": "Default Mobile",  // optional, for display
         "message": "Your message here",
-        "template_id": "uuid",  // optional
-        "media_url": "https://s3.../mms/outbound/uuid.jpg"  // optional, for MMS
+        "template_id": "uuid"  // optional
     }
     """
     try:
@@ -319,7 +316,6 @@ def patient_send_sms(request, patient_id):
     message = request.data.get('message')
     template_id = request.data.get('template_id')
     phone_label = request.data.get('phone_label')
-    media_url = request.data.get('media_url')  # MMS support
     
     if not phone_number:
         return Response(
@@ -327,9 +323,9 @@ def patient_send_sms(request, patient_id):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if not message and not media_url:
+    if not message:
         return Response(
-            {'error': 'message or media_url is required'},
+            {'error': 'message is required'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -355,16 +351,13 @@ def patient_send_sms(request, patient_id):
         except SMSTemplate.DoesNotExist:
             pass
     
-    # Create SMS/MMS message
+    # Create SMS message
     sms_message = SMSMessage.objects.create(
         patient=patient,
         phone_number=phone_number,
-        message=message or '',  # Allow empty message for MMS
+        message=message,
         template=template,
-        status='pending',
-        # MMS support
-        has_media=bool(media_url),
-        media_url=media_url or '',
+        status='pending'
     )
     
     # Try to send via SMS service (if available)
@@ -373,8 +366,7 @@ def patient_send_sms(request, patient_id):
         sms_service = SMSService()
         result = sms_service.send_sms(
             phone_number=phone_number,
-            message=message or '',
-            media_url=media_url  # MMS support
+            message=message
         )
         
         # Ensure result is a dict (SMSService might return a model instance)
@@ -490,62 +482,5 @@ def patient_mark_read(request, patient_id):
     except Exception as e:
         return Response(
             {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def upload_mms_media(request):
-    """
-    Upload image for MMS sending
-    
-    POST /api/sms/upload-media/
-    
-    Body (multipart/form-data):
-        - file: Image file (JPEG, PNG, GIF, HEIC)
-    
-    Returns:
-        {
-            'media_url': 'https://s3.../mms/outbound/uuid.jpg',
-            'media_type': 'image/jpeg',
-            'media_size': 12345,
-            'media_filename': 'image.jpg',
-            's3_key': 'mms/outbound/uuid.jpg',
-            'width': 800,
-            'height': 600
-        }
-    """
-    from .mms_service import mms_service
-    
-    # Get uploaded file
-    file = request.FILES.get('file')
-    if not file:
-        return Response(
-            {'error': 'No file provided'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        print(f"[MMS Upload] Received file: {file.name}, size: {file.size}, type: {file.content_type}")
-        
-        # Upload to S3 (handles HEIC conversion, resizing, validation)
-        result = mms_service.upload_media_for_sending(file, file.name)
-        
-        print(f"[MMS Upload] ✅ Upload successful: {result['s3_key']}")
-        return Response(result, status=status.HTTP_201_CREATED)
-        
-    except ValueError as e:
-        print(f"[MMS Upload] ❌ Validation error: {str(e)}")
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as e:
-        print(f"[MMS Upload] ❌ Upload error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return Response(
-            {'error': f'Failed to upload media: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
