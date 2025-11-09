@@ -313,17 +313,17 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
                     if not original_filename.endswith(ext):
                         original_filename = f"{os.path.splitext(original_filename)[0]}{ext}"
                     
-                    # Upload to S3 (using existing structure for patient images)
-                    # S3 path: patients/images/{patient_id}/{batch_id}/{uuid}.jpg
+                    # Upload to S3 (using same structure as documents import)
+                    # S3 path: patients/filemaker-import/images/{patient_id}/{date}/{filemaker_id}.jpg
                     try:
                         file_obj = BytesIO(file_content)
                         file_obj.name = original_filename
                         file_obj.size = len(file_content)
                         
-                        # Generate S3 key using batch structure
-                        import uuid as uuid_lib
-                        unique_id = str(uuid_lib.uuid4())
-                        s3_key = f"patients/images/{nexus_patient_id}/{batch.id}/{unique_id}{ext}"
+                        # Generate S3 key matching documents structure
+                        # Use date folder instead of batch_id for consistency
+                        date_folder = image_date_str if image_date_str != 'unknown' else 'unknown-date'
+                        s3_key = f"patients/filemaker-import/images/{nexus_patient_id}/{date_folder}/{fm_image_id}{ext}"
                         
                         s3_upload_info = s3_service.upload_file(
                             file_obj=file_obj,

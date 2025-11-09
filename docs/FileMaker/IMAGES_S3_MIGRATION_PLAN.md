@@ -192,7 +192,7 @@ The existing `Document` model can handle images, but we should consider if image
 
 ## 📐 S3 Folder Structure for Images
 
-Based on the documents import, images should follow:
+Based on the documents import, images should follow the same pattern:
 
 ```
 walkeasy-nexus-documents/
@@ -200,25 +200,31 @@ walkeasy-nexus-documents/
     └── filemaker-import/
         └── images/                          # From API_Images (6,664)
             └── {patient_id}/
-                ├── left-dorsal/             # Image type subfolder
-                │   ├── {filemaker_id}.jpg
+                ├── {date}/                  # Date folder (e.g., "2016-10-18")
+                │   ├── {filemaker_id}.jpg   # Original FileMaker UUID as filename
                 │   └── ...
-                ├── left-medial/
-                ├── left-plantar/            # Note: "Planter" → "plantar"
-                ├── plantar/
-                ├── posterior/
-                ├── l-brannock/
-                ├── shoe-box/
-                ├── shoe-sides-bottom/
-                └── shoe-soles/
+                ├── {date}/
+                └── unknown-date/            # Images with no date
 ```
 
-**Folder Name Normalization:**
-- `Left Dorsal` → `left-dorsal`
-- `Left Planter` → `left-plantar` (fix typo)
-- `Planter` → `plantar` (fix typo)
-- `Side and bottom of shoes` → `shoe-sides-bottom`
-- `Soles of shoes` → `shoe-soles`
+**Image S3 Path Format:**
+```
+patients/filemaker-import/images/{patient_id}/{date}/{filemaker_id}.jpg
+```
+
+**Example:**
+```
+patients/filemaker-import/images/a1b2c3d4-e5f6-7890-abcd-ef1234567890/2016-10-18/F8E7D6C5-B4A3-2109-8765-4321FEDC.jpg
+```
+
+**Benefits:**
+- ✅ **Consistent with documents** - Same `filemaker-import/` pattern
+- ✅ **Clear separation** - FileMaker imports vs user uploads
+- ✅ **Date-based organization** - Easy to find images by date
+- ✅ **Preserves FileMaker ID** - Original UUID in filename for tracking
+- ✅ **Easy cleanup** - Can delete entire `filemaker-import/` folder if needed
+
+**Note:** The date folder is derived from `API_Images.date` field. Images without a date go to `unknown-date/`.
 
 ---
 
