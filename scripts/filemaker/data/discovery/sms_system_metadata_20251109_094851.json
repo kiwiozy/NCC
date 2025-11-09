@@ -1,0 +1,1338 @@
+{
+  "discovery_date": "2025-11-09T09:48:51.724419",
+  "server": "https://walkeasy.fmcloud.fm",
+  "database": "WEP-DatabaseV2",
+  "tables": {
+    "API_SMSAccounts_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "_kp_AccountID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CustomText1",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CustomText2",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "GatewayPasswordMask",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "GatewayPassword",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "GatewayUsername",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "AccountName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ProxyServerAddress",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ProxyServerPassword",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ProxyServerPort",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ProxyServerUserName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DefaultAccount_c",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "AlphaNumericSenderID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DefaultSenderID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_Pivot_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zDebugCode",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "GatewayAccountNotes",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "LabelPlural_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SortField_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_SortOrder_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_QuickFind_g",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 27,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_BulkSessions_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "_kp_BulkSessionID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_km_ContactIDs",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_TemplateID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DeliveryDelay",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "MessageBody",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "TotalContacts",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "zv_Pivot_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderIDType",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageCharacterCount",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "SMSCredits",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "MessageBodyPreview_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kz_SelectedRecipient_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_AccountID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderPhoneMobile",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderPhoneMobileIntFormat",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SentTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "SendError",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderCountry",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendServerSide",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "AlphaNumericSenderID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_BulkThrottle_gn",
+          "type": "Edm.Decimal",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 27,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_CountryCodes_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "CountryCode",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "CountryName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_CountryCodeID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "ISOCode",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 9,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_DeliveryReceipts_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "_kp_DeliveryReceiptID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "Timestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayMessageID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Status",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Error",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "To",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "From",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Charge",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "LabelPlural_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SortField_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_QuickFind_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_SortOrder_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ReceivedDate_c",
+          "type": "Edm.Date",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 19,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_GatewayCodes_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "_kp_GatewayCodeID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Code",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Type",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 10,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Gateways_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "Name",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendURL",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditCheckURL",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Website",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Country",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditCheckSupported",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditCheckFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusSupported",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusURL",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageIDFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DeliveryDelayMaxMinutes",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "DeliveryDelaySupported",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_GatewayID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "DeliveryDelayFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageCreditsCalcFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditCheckResultCleanupFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "AlphanumericSenderIDSupported",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "StoredReplyURL",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "StoredReplyFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingSupported",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingURL",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingXSLTurl",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "AccountNotes",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendResultCleanupFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusCleanupFormula",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingCustomText1",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingMethod",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "URLEncodeMessage",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendCustomHeader",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "TrimResult",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_Pivot_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendCustomHeaderValue",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "GatewayNotes",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditChecksCustomHeader",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditChecksCustomHeaderValue",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingCustomHeader",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingCustomHeaderValue",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingExampleSyntax",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kz_StatusCodes_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncomingNotes",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_GatewayID_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zDeveloperLastTested",
+          "type": "Edm.Date",
+          "nullable": true
+        },
+        {
+          "name": "zDeveloperTestSuccessful",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "IncludeLeadingPlusSign",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendUseHTTPBasicAuth",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusHTTPMethod",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusUseHTTPBasicAuth",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditChecksHTTPMethod",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CreditChecksUseHTTPBasicAuth",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusCustomHeader",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatusCustomHeaderValue",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendHTTPMethod",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "xmlEscapeEntitiesMessage",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "IncludeLeadingDoubleZeroes",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [
+        "Name"
+      ],
+      "field_count": 62,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Senders_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "Name",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "PhoneMobile",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "PhoneMobileIntFormat_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Country",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_SenderID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 10,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Templates_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_TemplateID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "TemplateBody",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CharacterCount",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "zv_MergeFieldID_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Notes",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "LabelPlural_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_QuickFind_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_SortOrder_gt",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 14,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Replies_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_ContactID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_ReplyID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "ReplyMessageBody",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "Timestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "ReplyRefID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayMessageID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DisplayFromName_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderPhoneMobileIntFormat",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DestinationPhoneMobileIntFormat",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "CustomText1",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "LabelPlural_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SortField_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_QuickFind_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_SortOrder_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SentDate_c",
+          "type": "Edm.Date",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 21,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_Messages_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "MessageBody",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendResult",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageCharacterCount",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_TemplateID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_MessageID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_ContactID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "MessageStatus",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "DeliveryDelay",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "SentTimestamp",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "SenderPhoneMobile",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SMSCredits",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_BulkSessionID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderIDType",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zDebugCode",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_GatewayMessageID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_EventID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SendServerSide",
+          "type": "Edm.Decimal",
+          "nullable": true
+        },
+        {
+          "name": "_kf_AccountID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "RecipientPhoneMobile",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "RecipientPhoneMobileIntFormat",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderPhoneMobileIntFormat",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_Pivot_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SenderCountry",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "RecipientCountry",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_QuickFind_g",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zv_SortOrder_gt",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "SentDate_c",
+          "type": "Edm.Date",
+          "nullable": true
+        },
+        {
+          "name": "AlphaNumericSenderID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "RecipientPhoneMobileTrim",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "LabelPlural_c",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_ContactDetailID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_ClinicDetailsID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_ Calendar ID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kf_Area",
+          "type": "Edm.String",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 40,
+      "sample_records": [],
+      "sample_count": 0
+    },
+    "API_MergeFields_": {
+      "found": true,
+      "fields": [
+        {
+          "name": "MergeFieldName",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "_kp_MergeFieldID",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zCreatorAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zModifierAccount",
+          "type": "Edm.String",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampCreated",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zTimestampModified",
+          "type": "Edm.DateTimeOffset",
+          "nullable": true
+        },
+        {
+          "name": "zz_Serial#",
+          "type": "Edm.Decimal",
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "field_count": 7,
+      "sample_records": [],
+      "sample_count": 0
+    }
+  }
+}

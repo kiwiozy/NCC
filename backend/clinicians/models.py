@@ -51,6 +51,13 @@ class Clinic(models.Model):
         help_text="Clinic address (JSON format)"
     )
     
+    filemaker_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="Original FileMaker clinic ID (for import tracking)"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

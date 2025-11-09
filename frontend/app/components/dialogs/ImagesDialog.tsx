@@ -285,8 +285,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
       title: 'Delete Image Batch',
       children: (
         <Text>
-          Are you sure you want to delete <strong>"{batchName}"</strong> and all its images? 
-          This cannot be undone.
+          {'Are you sure you want to delete '}<strong>&quot;{batchName}&quot;</strong>{' and all its images? This cannot be undone.'}
         </Text>
       ),
       labels: { confirm: 'Delete', cancel: 'Cancel' },
@@ -328,8 +327,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
       title: 'Delete Image',
       children: (
         <Text>
-          Are you sure you want to delete <strong>"{imageName}"</strong>? 
-          This cannot be undone.
+          {'Are you sure you want to delete '}<strong>&quot;{imageName}&quot;</strong>{'? This cannot be undone.'}
         </Text>
       ),
       labels: { confirm: 'Delete', cancel: 'Cancel' },
@@ -451,7 +449,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
                   <Stack align="center" py="xl">
                     <IconPhoto size={48} style={{ opacity: 0.3 }} />
                     <Text c="dimmed" size="sm" ta="center">No image batches yet</Text>
-                    <Text size="xs" c="dimmed" ta="center">Click "New Batch" to get started</Text>
+                    <Text size="xs" c="dimmed" ta="center">{'Click "New Batch" to get started'}</Text>
                   </Stack>
                 ) : (
                   <Accordion

@@ -77,7 +77,9 @@ export default function ContactHeader({
     const getImagesCount = async () => {
       try {
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
-          const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const batches = data.results || data;
@@ -107,7 +109,9 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific notes
-          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const notesList = data.results || data;
@@ -169,7 +173,9 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific documents
-          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const docsList = data.results || data;
@@ -299,7 +305,8 @@ export default function ContactHeader({
     if (propArchived !== currentArchived) {
       setFilters(prev => ({ ...prev, archived: propArchived }));
     }
-  }, [showArchived]); // Only depend on showArchived, not filters.archived
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showArchived]); // Only depend on showArchived, not filters.archived (intentional)
 
   // Reset filters to current active filters when popover opens
   useEffect(() => {
@@ -442,12 +449,12 @@ export default function ContactHeader({
               checked={Boolean(filters.archived)}
               onChange={(event) => {
                 const newArchived = event.currentTarget.checked;
-                setFilters(prev => {
-                  const updated = { ...prev, archived: newArchived };
-                  // Apply archive filter immediately with updated state
-                  onFilterApply?.(updated);
-                  return updated;
-                });
+                const updatedFilters = { ...filters, archived: newArchived };
+                setFilters(updatedFilters);
+                // Call onFilterApply after state update completes (next tick)
+                setTimeout(() => {
+                  onFilterApply?.(updatedFilters);
+                }, 0);
               }}
               size="md"
             />

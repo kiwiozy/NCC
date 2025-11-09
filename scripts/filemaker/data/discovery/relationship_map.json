@@ -1,0 +1,134 @@
+{
+  "created": "2025-11-09T05:51:16.822053",
+  "total_relationships": 16,
+  "relationships": [
+    {
+      "from_table": "API_Contacts",
+      "from_field": "_kf_XeroContactID",
+      "to_table_field": "Xero (External)",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Contacts",
+      "from_field": "id_Clinic",
+      "to_table_field": "API_Clinic_Name.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Contact_Details",
+      "from_field": "id.key",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Clinics_Details",
+      "from_field": "id_Clinic",
+      "to_table_field": "API_Clinic_Name.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Clinics_Details",
+      "from_field": "id_Contact",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Clinics_Details",
+      "from_field": "id_Funding",
+      "to_table_field": "[Funding table - TBD]",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Clinics_Details",
+      "from_field": "id_Referrer",
+      "to_table_field": "API_Referrer.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Company",
+      "from_field": "_kf_XeroContactID",
+      "to_table_field": "Xero (External)",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Company",
+      "from_field": "id.key",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Referrer",
+      "from_field": "id_Clinic",
+      "to_table_field": "API_Clinic_Name.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_ContactToReferrer",
+      "from_field": "id_Contact",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_ContactToReferrer",
+      "from_field": "id_Perscriber",
+      "to_table_field": "API_Referrer.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Docs",
+      "from_field": "id_Contact",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Docs",
+      "from_field": "id_Order",
+      "to_table_field": "[Orders table - TBD]",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Images",
+      "from_field": "ID.KEY",
+      "to_table_field": "[Parent record - TBD]",
+      "type": "many-to-one"
+    },
+    {
+      "from_table": "API_Images",
+      "from_field": "id_Contact",
+      "to_table_field": "API_Contacts.id",
+      "type": "many-to-one"
+    }
+  ],
+  "target_groups": {
+    "Xero (External)": [
+      "API_Contacts",
+      "API_Company"
+    ],
+    "API_Clinic_Name": [
+      "API_Contacts",
+      "API_Clinics_Details",
+      "API_Referrer"
+    ],
+    "API_Contacts": [
+      "API_Contact_Details",
+      "API_Clinics_Details",
+      "API_Company",
+      "API_ContactToReferrer",
+      "API_Docs",
+      "API_Images"
+    ],
+    "[Funding table - TBD]": [
+      "API_Clinics_Details"
+    ],
+    "API_Referrer": [
+      "API_Clinics_Details",
+      "API_ContactToReferrer"
+    ],
+    "[Orders table - TBD]": [
+      "API_Docs"
+    ],
+    "[Parent record - TBD]": [
+      "API_Images"
+    ]
+  }
+}

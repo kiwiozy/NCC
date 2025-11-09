@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, Textarea, rem, ActionIcon, Modal, Button, Divider, Switch } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
@@ -214,24 +214,30 @@ const transformPatientToContact = (patient: any): Contact => {
   let lastName = '';
   let title = '';
   
+  // ALWAYS use title if available (even when full_name is present)
+  const titleMap: Record<string, string> = {
+    'Mr': 'Mr.',
+    'Mrs': 'Mrs.',
+    'Ms': 'Ms.',
+    'Miss': 'Miss',
+    'Dr': 'Dr.',
+    'Prof': 'Prof.',
+    'Sr': 'Sr.',
+    'Jr': 'Jr.',
+    'Master': 'Master',
+    'Brother': 'Brother',
+    'Sister': 'Sister',
+  };
+  title = patient.title ? (titleMap[patient.title] || patient.title) : '';
+  
   if (patient.full_name) {
-    // Using list serializer - just use full_name
-    displayName = patient.full_name;
-    // Try to parse name parts if possible
+    // Using list serializer - use full_name but ADD title if available
     const nameParts = patient.full_name.split(' ');
-    firstName = nameParts[0] || '';
-    lastName = nameParts[nameParts.length - 1] || '';
+    firstName = patient.first_name || nameParts[0] || '';
+    lastName = patient.last_name || nameParts[nameParts.length - 1] || '';
+    displayName = title ? `${title} ${patient.full_name}` : patient.full_name;
   } else {
     // Using full serializer - build from parts
-    const titleMap: Record<string, string> = {
-      'Mr': 'Mr.',
-      'Mrs': 'Mrs.',
-      'Ms': 'Ms.',
-      'Miss': 'Miss',
-      'Dr': 'Dr.',
-      'Prof': 'Prof.',
-    };
-    title = patient.title ? titleMap[patient.title] || patient.title : '';
     firstName = patient.first_name || '';
     middleName = patient.middle_names || '';
     lastName = patient.last_name || '';
@@ -341,6 +347,9 @@ export default function ContactsPage() {
   const [archiveConfirmOpened, setArchiveConfirmOpened] = useState(false);
   const [archiveErrorOpened, setArchiveErrorOpened] = useState(false);
   const [archiveErrorMessage, setArchiveErrorMessage] = useState('');
+  
+  // Ref to track if we're currently loading to prevent duplicate loads
+  const isLoadingRef = useRef(false);
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -521,6 +530,13 @@ export default function ContactsPage() {
     const loadPatients = async () => {
       if (activeType !== 'patients') return; // Only load for patients type
       
+      // Prevent duplicate concurrent loads
+      if (isLoadingRef.current) {
+        console.log('⚠️ Load already in progress, skipping...');
+        return;
+      }
+      
+      isLoadingRef.current = true;
       setLoading(true);
       // Clear ALL state first to prevent any stale data
       setAllContacts([]);
@@ -539,43 +555,59 @@ export default function ContactsPage() {
         // Note: Clinic and funding filtering is done client-side for now
         // Can be enhanced to use API filtering later
 
-        const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          // Handle paginated response
-          const patients = data.results || data;
-          
-          // Transform fresh from API - always use ISO dates from API
-          const transformed = patients.map((patient: any) => {
-            // Ensure we're working with fresh ISO date from API (not cached formatted date)
-            // Force dob to be ISO format - if it's not, log and skip formatting
-            const isoDob = patient.dob;
-            if (!isoDob || (!/^\d{4}-\d{2}-\d{2}/.test(isoDob) && !isoDob.includes('T'))) {
-              console.warn('Unexpected DOB format from API:', isoDob, 'for patient:', patient.id);
-              // If not ISO, return patient with dob as-is but log warning
+        // Fetch ALL patients by paginating through all pages
+        let allPatients: any[] = [];
+        let nextUrl: string | null = `https://localhost:8000/api/patients/?${params.toString()}`;
+        
+        console.log('📥 Loading all patients (paginated)... This may take 10-15 seconds...');
+        
+        let pageCount = 0;
+        while (nextUrl) {
+          pageCount++;
+          const response = await fetch(nextUrl);
+          if (response.ok) {
+            const data = await response.json();
+            const patients = data.results || data;
+            allPatients = allPatients.concat(patients);
+            nextUrl = data.next; // Next page URL or null if last page
+            
+            // Log progress every 5 pages to avoid console spam
+            if (pageCount % 5 === 0) {
+              console.log(`   Loaded ${allPatients.length} patients (page ${pageCount})...`);
             }
-            // Create fresh patient object with ISO dob
-            const freshPatient = { ...patient, dob: isoDob };
-            return transformPatientToContact(freshPatient);
-          });
-          setAllContacts(transformed);
-          
-          // Apply client-side filtering
-          applyFilters(transformed, searchQuery, activeFilters);
-          
-          // Select first contact
-          if (transformed.length > 0) {
-            setSelectedContact(transformed[0]);
+          } else {
+            console.error('Failed to load patients:', response.statusText);
+            break;
           }
-        } else {
-          console.error('Failed to load patients:', response.statusText);
-          setAllContacts([]);
+        }
+        
+        console.log(`✅ Loaded ${allPatients.length} total patients in ${pageCount} pages`);
+        
+        // Transform fresh from API - always use ISO dates from API
+        const transformed = allPatients.map((patient: any) => {
+          // Ensure we're working with fresh ISO date from API (not cached formatted date)
+          // Force dob to be ISO format - if it's not, skip formatting silently (DOBs are null from OData import)
+          const isoDob = patient.dob;
+          // Silently skip DOB validation - we know they're null from OData import
+          // Create fresh patient object with ISO dob
+          const freshPatient = { ...patient, dob: isoDob };
+          return transformPatientToContact(freshPatient);
+        });
+        setAllContacts(transformed);
+        
+        // Apply client-side filtering
+        applyFilters(transformed, searchQuery, activeFilters);
+        
+        // Select first contact
+        if (transformed.length > 0) {
+          setSelectedContact(transformed[0]);
         }
       } catch (error) {
         console.error('Error loading patients:', error);
         setAllContacts([]);
       } finally {
         setLoading(false);
+        isLoadingRef.current = false;
       }
     };
 
@@ -583,7 +615,8 @@ export default function ContactsPage() {
     if (typeof window !== 'undefined') {
       loadPatients();
     }
-  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes (loadPatients is stable)
 
   useEffect(() => {
     // Only load on client side
@@ -764,7 +797,8 @@ export default function ContactsPage() {
     if (allContacts.length > 0) {
       applyFilters(allContacts, searchQuery, activeFilters);
     }
-  }, [allContacts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allContacts]); // Only re-filter when contacts change (applyFilters, searchQuery, activeFilters are stable)
 
   const handleAddNew = () => {
     console.log('Add new', activeType);
@@ -1086,7 +1120,21 @@ export default function ContactsPage() {
                         <Select
                           label=""
                           value={selectedContact.title}
-                          data={['Mr.', 'Mrs.', 'Ms.', 'Dr.']}
+                          data={[
+                            'Mr.',
+                            'Mrs.',
+                            'Ms.',
+                            { value: 'separator1', label: '─────────', disabled: true },
+                            'Sr.',
+                            'Jr.',
+                            'Master',
+                            { value: 'separator2', label: '─────────', disabled: true },
+                            'Prof.',
+                            'Dr.',
+                            { value: 'separator3', label: '─────────', disabled: true },
+                            'Brother',
+                            'Sister',
+                          ]}
                             onChange={(value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, title: value || '' });
@@ -1129,6 +1177,7 @@ export default function ContactsPage() {
                           <DatePickerInput
                             placeholder="Select date of birth"
                             value={selectedContact.dob ? dayjs(selectedContact.dob).toDate() : null}
+                            valueFormat="DD MMM YYYY"
                             onChange={(date) => {
                               if (selectedContact) {
                                 const dateStr = date ? dayjs(date).format('YYYY-MM-DD') : '';

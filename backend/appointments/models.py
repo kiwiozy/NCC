@@ -35,6 +35,13 @@ class Appointment(models.Model):
         editable=False
     )
     
+    filemaker_event_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="Original FileMaker appointment ID (for import tracking)"
+    )
+    
     clinic = models.ForeignKey(
         Clinic,
         on_delete=models.PROTECT,

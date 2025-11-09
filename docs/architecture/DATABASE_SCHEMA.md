@@ -682,11 +682,300 @@ account_emailconfirmation ✅
 - Needed for: Invoice pages, Patient Detail, Order Detail
 - Will link to: `patients`, `orders`
 
-### ❌ **Patient Coordinators Table** (Decision Needed)
-- **Option A:** Add `coordinators_json` JSONField to `patients` table (recommended for now)
-- **Option B:** Create separate `patient_coordinators` table with FK
-  - Fields: `id`, `patient_id` (FK), `coordinator_name`, `assignment_date`, `created_at`, `updated_at`
-- **Current Status:** Frontend supports multiple coordinators, backend needs decision
+---
+
+## 🔄 **FileMaker Migration - New Tables (Built ✅)**
+
+**Status:** ✅ **All 9 tables created and migrated successfully!**  
+**Date Built:** November 9, 2025  
+**Source:** `docs/integrations/FILEMAKER.md`
+
+### 1. **`referrers` Table** ✅
+
+**Model:** `referrers.models.Referrer`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 98 from FileMaker `API_Referrer`
+
+**Purpose:** Medical professionals who refer patients (GPs, specialists, podiatrists, etc.)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `title` - CharField(10) - Mr, Mrs, Dr, Prof, etc.
+- `first_name` - CharField(100)
+- `last_name` - CharField(100)
+- `specialty` - ForeignKey → `specialties` (nullable)
+- `contact_json` - JSONField - Phone, email, mobile (same structure as patients)
+- `address_json` - JSONField - Address details
+- `practice_name` - CharField(200) - Name of medical practice
+- `company` - ForeignKey → `companies` (nullable) - Links to practice
+- `filemaker_id` - UUIDField (unique, nullable) - Original FileMaker ID
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Relationships:**
+- Many-to-One with `companies` (referrer → practice)
+- Many-to-Many with `patients` via `patient_referrers` join table
+
+---
+
+### 2. **`coordinators` Table** ✅
+
+**Model:** `coordinators.models.Coordinator`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** ~50 (extracted from `patients.coordinator_name`)
+
+**Purpose:** NDIS Support Coordinators and LAC (Local Area Coordinators)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `first_name` - CharField(100)
+- `last_name` - CharField(100)
+- `organization` - CharField(200) - e.g., "Ability Connect", "Afford"
+- `coordinator_type` - CharField(50) - Choices: "Support Coordinator", "LAC", "Plan Manager"
+- `contact_json` - JSONField - Phone, email, mobile
+- `address_json` - JSONField - Address details
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Relationships:**
+- Many-to-Many with `patients` via `patient_coordinators` join table (historical tracking)
+
+**Migration Notes:**
+- Parse from `patients.coordinator_name` field (e.g., "Warda - Ability Connect")
+- Deduplicate by name to create unique coordinator records
+
+---
+
+### 3. **`companies` Table** ✅
+
+**Model:** `companies.models.Company`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 44 from FileMaker `API_Company`
+
+**Purpose:** Medical practices, NDIS providers, organizations
+
+**Fields:**
+- `id` - UUID (primary key)
+- `name` - CharField(200)
+- `abn` - CharField(20) - Australian Business Number (nullable)
+- `contact_json` - JSONField - Phone, email, fax
+- `address_json` - JSONField - Address details
+- `company_type` - CharField(50) - **Choices:** Medical Practice, NDIS Provider, Other ⚠️ **Implementation Note:** Using Django choices instead of FK to lookup table
+- `filemaker_id` - UUIDField (unique, nullable) - Original FileMaker ID
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**⚠️ Implementation Difference:**
+- Original design had separate `company_types` lookup table
+- **Built with:** Django CharField with choices (simpler, fewer queries)
+- **Missing:** Archive support (archived, archived_at, archived_by) - can add later if needed
+
+**Relationships:**
+- One-to-Many with `referrers` (practice → referrers)
+
+---
+
+### 4. **`general_contacts` Table** ✅
+
+**Model:** `contacts.models.GeneralContact`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 0 initially (new feature)
+
+**Purpose:** Non-medical contacts (carers, family, emergency contacts, plumbers, accountants, etc.)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `first_name` - CharField(100)
+- `last_name` - CharField(100)
+- `contact_type` - CharField(50) - Choices: "Carer", "Family", "Emergency Contact", "Supplier", "Other"
+- `contact_json` - JSONField - Phone, email, mobile
+- `address_json` - JSONField - Address details
+- `notes` - TextField (nullable)
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Relationships:**
+- Many-to-Many with `patients` via `contact_relationships` (generic relationships)
+
+---
+
+### 5. **`specialties` Table (Lookup)** ✅
+
+**Model:** `referrers.models.Specialty`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** ~20 unique values from FileMaker `API_Referrer.Specialty`
+
+**Purpose:** Medical specialties lookup table
+
+**Fields:**
+- `id` - UUID (primary key)
+- `name` - CharField(100) - e.g., "GP", "Physiotherapist", "Occupational Therapist", "Psychologist"
+- `created_at` - DateTimeField
+
+**Relationships:**
+- One-to-Many with `referrers` (specialty → referrers)
+
+---
+
+### 6. **`patient_referrers` Table (Join)** ✅
+
+**Model:** `referrers.models.PatientReferrer`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 255 from FileMaker `API_ContactToReferrer`
+
+**Purpose:** Links patients to referrers with referral metadata
+
+**Fields:**
+- `id` - UUID (primary key)
+- `patient` - ForeignKey → `patients` (on_delete=CASCADE)
+- `referrer` - ForeignKey → `referrers` (on_delete=CASCADE)
+- `referral_date` - DateField (nullable)
+- `referral_reason` - TextField (nullable)
+- `status` - CharField(20) - Choices: "Active", "Inactive", "Pending"
+- `filemaker_id` - UUIDField (unique, nullable) - Original FileMaker ID
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Unique Constraint:** `unique_together = [('patient', 'referrer')]`
+
+---
+
+### 7. **`patient_coordinators` Table (Join - Historical)** ✅
+
+**Model:** `coordinators.models.PatientCoordinator`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 2,845 (one per patient with coordinator_name)
+
+**Purpose:** Tracks patient-coordinator relationships over time (historical tracking)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `patient` - ForeignKey → `patients` (on_delete=CASCADE)
+- `coordinator` - ForeignKey → `coordinators` (on_delete=PROTECT)
+- `assignment_date` - DateField - When coordinator was assigned
+- `end_date` - DateField (nullable) - When assignment ended
+- `is_current` - BooleanField - Is this the current coordinator?
+- `ndis_plan_start` - DateField (nullable) - NDIS plan start date
+- `ndis_plan_end` - DateField (nullable) - NDIS plan end date
+- `ndis_notes` - TextField (nullable) - Notes specific to this coordinator assignment
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Why Historical Tracking:**
+- Coordinators change frequently
+- Need to track: "Patient had 3 coordinators over 2 years"
+- Each assignment has its own NDIS plan dates and notes
+
+---
+
+### 8. **`referrer_companies` Table (Join)** ✅
+
+**Model:** `referrers.models.ReferrerCompany`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 73 from FileMaker `API_ReferrerToCompany_Join`
+
+**Purpose:** Links referrers to companies (many-to-many - a doctor can work at multiple practices)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `referrer` - ForeignKey → `referrers` (on_delete=CASCADE)
+- `company` - ForeignKey → `companies` (on_delete=CASCADE)
+- `position` - CharField(100) (nullable) - e.g., "Senior Podiatrist", "GP Partner"
+- `is_primary` - BooleanField - Is this their primary practice?
+- `filemaker_id` - UUIDField (unique, nullable) - Original FileMaker ID
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Unique Constraint:** `unique_together = [('referrer', 'company')]`
+
+---
+
+### 9. **`contact_relationships` Table (Generic Relationships)** ⭐ ✅
+
+**Model:** `contacts.models.ContactRelationship`  
+**Status:** ✅ **Built and migrated**  
+**Records to Import:** 0 initially (new feature)
+
+**Purpose:** Link ANY contact to ANY other contact to track relationships (carers, family, emergency contacts, dual roles)
+
+**Fields:**
+- `id` - UUID (primary key)
+- `from_content_type` - ForeignKey → `ContentType` - Type of source contact
+- `from_object_id` - UUIDField - ID of source contact
+- `from_contact` - GenericForeignKey - Actual source contact object
+- `to_content_type` - ForeignKey → `ContentType` - Type of target contact
+- `to_object_id` - UUIDField - ID of target contact
+- `to_contact` - GenericForeignKey - Actual target contact object
+- `relationship_type` - CharField(50) - Choices:
+  - "carer" - Carer
+  - "parent" - Parent
+  - "spouse" - Spouse
+  - "child" - Child
+  - "sibling" - Sibling
+  - "emergency_contact" - Emergency Contact
+  - "also_patient" - Also a Patient
+  - "also_referrer" - Also a Referrer
+  - "also_coordinator" - Also a Coordinator
+- `notes` - TextField (nullable) - Additional relationship notes
+- `is_active` - BooleanField - Is this relationship current?
+- `created_at` - DateTimeField
+- `updated_at` - DateTimeField
+
+**Why Generic Foreign Keys:**
+- Can link any contact type to any other contact type
+- Examples:
+  - Patient → GeneralContact (carer)
+  - Patient → GeneralContact (emergency contact)
+  - Referrer → Patient (same person, dual role)
+  - Patient → Patient (family member who is also a patient)
+
+**Use Cases:**
+1. Track carers (mother, father) for patients
+2. Handle "edge case" where person is patient AND referrer AND coordinator
+3. Link family members who are also patients
+4. Store emergency contacts
+5. Track any relationship between any two contacts
+
+---
+
+### ✅ **Implementation Summary (November 9, 2025)**
+
+**All 9 FileMaker migration tables successfully built and migrated!**
+
+**Tables Created:**
+1. ✅ `specialties` - Lookup table for medical specialties
+2. ✅ `referrers` - Medical professionals (GPs, specialists, etc.)
+3. ✅ `coordinators` - NDIS Support Coordinators and LAC
+4. ✅ `companies` - Medical practices, NDIS providers
+5. ✅ `general_contacts` - Non-medical contacts (carers, family, etc.)
+6. ✅ `patient_referrers` - Join table (patient ↔ referrer)
+7. ✅ `patient_coordinators` - Join table with historical tracking
+8. ✅ `referrer_companies` - Join table (referrer ↔ company)
+9. ✅ `contact_relationships` - GenericForeignKey for ANY-to-ANY relationships
+
+**Implementation Notes:**
+- **Companies.company_type:** Used Django CharField with choices instead of separate lookup table (simpler, fewer queries)
+- **Archive support:** Not implemented on `companies` table yet (can add: archived, archived_at, archived_by if needed)
+- **Next Step:** Import data from FileMaker into these tables
+
+---
+
+### ❌ **Patient Coordinators Decision** (RESOLVED ✅)
+
+**Decision:** Use separate `coordinators` + `patient_coordinators` tables (Option B)
+
+**Reason:**
+- Historical tracking required (coordinators change frequently)
+- Each assignment has its own NDIS plan dates and notes
+- Better data integrity and querying
+
+**Migration Path:**
+1. Create `coordinators` table
+2. Parse `patients.coordinator_name` field (e.g., "Warda - Ability Connect")
+3. Create unique coordinator records (deduplicate)
+4. Create `patient_coordinators` join table records
+5. Use `patients.coordinator_date` as `assignment_date`
+6. Mark all as `is_current=True` initially
 
 ---
 
