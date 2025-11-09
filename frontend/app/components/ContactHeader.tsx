@@ -77,7 +77,9 @@ export default function ContactHeader({
     const getImagesCount = async () => {
       try {
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
-          const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/images/batches/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const batches = data.results || data;
@@ -107,7 +109,9 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific notes
-          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const notesList = data.results || data;
@@ -169,7 +173,9 @@ export default function ContactHeader({
         // Only make API call if patientId is a valid UUID format
         if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
           // Load from API for patient-specific documents
-          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`);
+          const response = await fetch(`https://localhost:8000/api/documents/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const docsList = data.results || data;
