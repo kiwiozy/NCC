@@ -25,12 +25,30 @@
 | Metric | Value |
 |--------|-------|
 | **Total Images** | 6,664 |
-| **Container Field** | `Recovered` (Edm.Stream) |
+| **Container Fields** | **2 fields discovered!** |
+| **Primary Container** | `image_Full` (Full-size - Data API URL) ✅ **USE THIS** |
+| **Secondary Container** | `Recovered` (Thumbnail - Base64, ~46 KB) |
 | **Patient Link** | `id_Contact` (FK to patient) |
 | **Image Date** | `date` field |
 | **Image Type** | `Type` field (9 categories) |
 | **File Info** | `Name of file`, `filesize` |
 | **Import Status** | `imported` field (tracking) |
+
+### 🎯 **CRITICAL FINDING: Two Image Sizes!**
+
+FileMaker stores **TWO versions** of each image:
+
+1. **`image_Full`** - Full-size, high-quality image
+   - Accessible via **Data API** (streaming URL)
+   - Best quality for clinical use
+   - **⚠️ MUST USE THIS FIELD FOR IMPORT**
+
+2. **`Recovered`** - Thumbnail/preview image
+   - Base64 encoded (via OData)
+   - ~46 KB (low resolution)
+   - ❌ DO NOT use for primary import (too small)
+
+**Import Strategy:** Use `image_Full` to get the largest/best quality images for patient records.
 
 ### 📋 API_Images Table Structure:
 
@@ -40,7 +58,8 @@
 - id_Contact             Patient FK (UUID) ✅
 - date                   Image date (Edm.Date)
 - Type                   Image type/category (Edm.String) ✅
-- Recovered              Container field (Edm.Stream) ✅ **THIS IS THE IMAGE**
+- image_Full             Full-size image container (Edm.Stream) ✅ **PRIMARY - USE THIS**
+- Recovered              Thumbnail image container (Edm.Stream) (Fallback only)
 - Name of file           Original filename
 - filesize               File size (formatted string, e.g., ".03 MB")
 - imported               Import flag (1 = already migrated?)
