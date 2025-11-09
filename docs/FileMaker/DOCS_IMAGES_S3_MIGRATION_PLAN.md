@@ -64,6 +64,54 @@ https://walkeasy.fmcloud.fm:443/Streaming_SSL/Additional_1/{hash}.pdf?RCType=Emb
 
 ---
 
+## 🎯 Import Strategy - FINALIZED (Nov 9, 2025)
+
+### Key Decisions Made:
+
+1. **✅ S3 Bucket Cleanup:** Empty bucket first, start with clean organized structure
+2. **✅ Primary Keys:** Generate NEW Nexus UUIDs, store FileMaker UUID in `filemaker_id` field  
+3. **✅ Folder Structure:** Patient-first with `filemaker-import` subfolder
+   ```
+   patients/filemaker-import/documents/{patient_id}/{type}/{filemaker_id}.pdf
+   
+   Example:
+   patients/filemaker-import/documents/a1b2c3d4-e5f6.../referrals/F8E7D6C5-B4A3....pdf
+   ```
+4. **✅ Incremental Import:** Track exports with `NexusExportDate` field in FileMaker
+5. **✅ Document Model:** Extend existing `Document` model with FileMaker tracking fields
+
+### Import Tracking (Prevents Duplicates)
+
+**FileMaker Field Added:** `NexusExportDate` (Timestamp field on `API_Docs` layout)
+
+**Status Values:**
+- **Empty/Blank** = Not exported yet → **INCLUDE in import**
+- **Has Date** = Already exported to Nexus → **SKIP**
+
+**Why This Matters:**
+- ✅ Can run import multiple times without duplicates
+- ✅ FileMaker still in use daily - can import new docs incrementally
+- ✅ Can see export status directly in FileMaker UI
+- ✅ Safe to re-run script if interrupted or errors occur
+- ✅ Supports phased migration (weekly imports until cutover)
+
+**Import Flow:**
+```python
+# 1. Query FileMaker for un-exported docs
+search = {"query": [{"NexusExportDate": ""}]}  # Empty = not exported
+
+# 2. Download documents from FileMaker Data API
+
+# 3. Upload to S3 (organized folder structure)
+
+# 4. Create Nexus Document records (with filemaker_id)
+
+# 5. Update FileMaker: Mark as exported
+update = {"fieldData": {"NexusExportDate": "2025-11-09T14:30:00"}}
+```
+
+---
+
 ## 🗂️ FileMaker Table Analysis
 
 ### API_Docs (11,269 records)
@@ -79,6 +127,7 @@ https://walkeasy.fmcloud.fm:443/Streaming_SSL/Additional_1/{hash}.pdf?RCType=Emb
 - `imported` - Import flag (1 = already migrated elsewhere?)
 - `num` - Document number
 - **`Doc`** - Container field (capital D) - **CONFIRMED WORKING**
+- **`NexusExportDate`** - Timestamp field (empty = not exported yet, date = exported to Nexus)
 
 **Sample Record:**
 ```json
