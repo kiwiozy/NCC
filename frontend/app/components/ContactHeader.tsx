@@ -442,12 +442,12 @@ export default function ContactHeader({
               checked={Boolean(filters.archived)}
               onChange={(event) => {
                 const newArchived = event.currentTarget.checked;
-                setFilters(prev => {
-                  const updated = { ...prev, archived: newArchived };
-                  // Apply archive filter immediately with updated state
-                  onFilterApply?.(updated);
-                  return updated;
-                });
+                const updatedFilters = { ...filters, archived: newArchived };
+                setFilters(updatedFilters);
+                // Call onFilterApply after state update completes (next tick)
+                setTimeout(() => {
+                  onFilterApply?.(updatedFilters);
+                }, 0);
               }}
               size="md"
             />
