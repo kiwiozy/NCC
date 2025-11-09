@@ -33,16 +33,16 @@ class PatientCoordinatorAdmin(admin.ModelAdmin):
     search_fields = ['patient__first_name', 'patient__last_name', 'coordinator__first_name', 'coordinator__last_name']
     raw_id_fields = ['patient', 'coordinator']
     date_hierarchy = 'assignment_date'
-    readonly_fields = ['filemaker_id']
+    readonly_fields = ['id', 'created_at', 'updated_at']
     
     fieldsets = (
         ('Relationship', {
-            'fields': ('patient', 'coordinator', 'assignment_date', 'end_date', 'is_current')
+            'fields': ('id', 'patient', 'coordinator', 'assignment_date', 'end_date', 'is_current')
         }),
         ('NDIS Plan Information', {
             'fields': ('ndis_plan_start', 'ndis_plan_end', 'ndis_notes')
         }),
-        ('Import Tracking', {
-            'fields': ('filemaker_id',)
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at')
         }),
     )

@@ -4,9 +4,10 @@ from .models import Specialty, Referrer, PatientReferrer, ReferrerCompany
 
 @admin.register(Specialty)
 class SpecialtyAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
-    search_fields = ['name', 'description']
+    list_display = ['name', 'created_at']
+    search_fields = ['name']
     ordering = ['name']
+    readonly_fields = ['id', 'created_at']
 
 
 @admin.register(Referrer)
@@ -45,8 +46,7 @@ class PatientReferrerAdmin(admin.ModelAdmin):
 
 @admin.register(ReferrerCompany)
 class ReferrerCompanyAdmin(admin.ModelAdmin):
-    list_display = ['referrer', 'company', 'start_date', 'is_current']
-    list_filter = ['is_current', 'start_date']
+    list_display = ['referrer', 'company', 'created_at']
     search_fields = ['referrer__first_name', 'referrer__last_name', 'company__name']
     raw_id_fields = ['referrer', 'company']
-    date_hierarchy = 'start_date'
+    readonly_fields = ['id', 'filemaker_id', 'created_at', 'updated_at']
