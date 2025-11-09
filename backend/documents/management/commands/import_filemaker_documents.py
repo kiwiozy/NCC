@@ -152,13 +152,23 @@ class FileMakerAPI:
 
 
 def get_patient_nexus_id(filemaker_contact_id):
-    """Find the Nexus patient UUID given the FileMaker contact ID"""
+    """
+    Find the Nexus patient UUID given the FileMaker contact ID.
+    
+    The FileMaker ID is stored in the patient.notes field as a JSON string:
+    notes = '{"filemaker_id": "UUID-HERE", ...}'
+    
+    Since notes is a TextField (not JSONField), we use string contains.
+    """
     try:
-        patient = Patient.objects.filter(notes__filemaker_id=filemaker_contact_id).first()
+        # Use __contains for string search within the JSON text
+        patient = Patient.objects.filter(notes__contains=f'"filemaker_id": "{filemaker_contact_id}"').first()
         if patient:
             return str(patient.id)
         return None
-    except Exception:
+    except Exception as e:
+        # Log the error for debugging
+        print(f"   ⚠️  Error finding patient for FM ID {filemaker_contact_id}: {e}")
         return None
 
 
