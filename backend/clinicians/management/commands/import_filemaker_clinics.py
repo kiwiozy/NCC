@@ -27,8 +27,8 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Load environment variables from scripts/filemaker/.env (manual parsing like export scripts)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../..'))
-env_path = os.path.join(project_root, 'scripts', 'filemaker', '.env')
+# Get absolute path to .env file
+env_path = '/Users/craig/Documents/nexus-core-clinic/scripts/filemaker/.env'
 
 # Parse .env file manually (more reliable than python-dotenv)
 FM_BASE_URL = None
@@ -107,12 +107,12 @@ class Command(BaseCommand):
         self.stdout.write("📥 Step 2: Fetch Clinics from FileMaker")
         self.stdout.write("="*80)
 
-        odata_url = f"{fm_base_url}/fmi/odata/v4/{fm_database}/API_Clinic_Name_"
+        odata_url = f"{FM_BASE_URL}/fmi/odata/v4/{FM_DATABASE}/API_Clinic_Name"
 
         try:
             response = requests.get(
                 odata_url,
-                auth=(fm_username, fm_password),
+                auth=(FM_USERNAME, FM_PASSWORD),
                 verify=False,
                 timeout=30
             )
