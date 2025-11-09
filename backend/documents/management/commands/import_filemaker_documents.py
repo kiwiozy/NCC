@@ -367,8 +367,15 @@ class Command(BaseCommand):
             self.stdout.write(f"   ❌ Failed: {stats['failed']}")
             
             # Check if we've processed all
-            if returned_count < batch_size or total_processed >= stats['total_found']:
+            # FIX: Only exit when we've truly processed all found records
+            # Don't exit early just because batch size is smaller than expected
+            if total_processed >= stats['total_found']:
                 self.stdout.write("\n   ✅ All documents processed!")
+                break
+            
+            # Also check if FileMaker returned 0 records (no more data)
+            if returned_count == 0:
+                self.stdout.write("\n   ✅ No more documents available from FileMaker")
                 break
             
             offset += batch_size
