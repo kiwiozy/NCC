@@ -305,7 +305,8 @@ export default function ContactHeader({
     if (propArchived !== currentArchived) {
       setFilters(prev => ({ ...prev, archived: propArchived }));
     }
-  }, [showArchived]); // Only depend on showArchived, not filters.archived
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showArchived]); // Only depend on showArchived, not filters.archived (intentional)
 
   // Reset filters to current active filters when popover opens
   useEffect(() => {

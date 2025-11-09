@@ -615,7 +615,8 @@ export default function ContactsPage() {
     if (typeof window !== 'undefined') {
       loadPatients();
     }
-  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes (loadPatients is stable)
 
   useEffect(() => {
     // Only load on client side
@@ -796,7 +797,8 @@ export default function ContactsPage() {
     if (allContacts.length > 0) {
       applyFilters(allContacts, searchQuery, activeFilters);
     }
-  }, [allContacts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allContacts]); // Only re-filter when contacts change (applyFilters, searchQuery, activeFilters are stable)
 
   const handleAddNew = () => {
     console.log('Add new', activeType);
