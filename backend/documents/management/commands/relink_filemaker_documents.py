@@ -106,7 +106,7 @@ class Command(BaseCommand):
         unlinked_docs = Document.objects.filter(
             filemaker_id__isnull=False,
             object_id__isnull=True
-        ).order_by('created_at')
+        ).order_by('uploaded_at')
         
         total_unlinked = unlinked_docs.count()
         self.stdout.write(f"Found {total_unlinked:,} unlinked FileMaker documents")
