@@ -1,7 +1,7 @@
 # FileMaker Images Migration to S3 - Detailed Plan
 
 **Date:** November 10, 2025  
-**Status:** 📋 Planning Phase - Metadata Discovered  
+**Status:** ✅ Strategy Finalized - Ready for Implementation  
 **Branch:** `filemaker-import-docs`
 
 ---
@@ -179,13 +179,37 @@ walkeasy-nexus-documents/
 
 ## 🔄 Import Strategy
 
+### ✅ FINALIZED STRATEGY (Nov 10, 2025)
+
+**User Requirements Confirmed:**
+
+1. **✅ Batch Organization: Group by Date + Patient**
+   - Images taken on the **same day** = **one batch**
+   - Batch = "folder for that particular day"
+   - Users can view all images from a specific date together
+   - Example: "18 Oct 2016 (FileMaker Import)" batch
+
+2. **✅ Category Handling: Preserve Exact FileMaker Categories**
+   - NO mapping/conversion
+   - Store categories exactly as-is from FileMaker
+   - Keep "Left Planter" typo for historical accuracy
+   - Moving forward: Simplified dropdown for NEW uploads (future enhancement)
+
+3. **✅ Integration: Use Existing Nexus Image System**
+   - Import into existing `ImageBatch` and `Image` models
+   - Will display automatically in existing `ImagesDialog.tsx`
+   - Same S3 storage structure as current images
+   - Seamless user experience
+
+---
+
 ### Phase 1: FileMaker Layout Setup
 **Action:** Create `API_Images` layout in FileMaker
 - **Include fields:**
   - `id` (UUID)
   - `id_Contact` (Patient FK)
-  - `date`
-  - `Type`
+  - `date` (Image date)
+  - `Type` (Image category)
   - `Recovered` (container field - THE IMAGE)
   - `Name of file`
   - `filesize`
@@ -197,44 +221,95 @@ walkeasy-nexus-documents/
 
 ---
 
-### Phase 2: Batch Organization Strategy
+### Phase 2: Batch Organization Strategy ✅ FINALIZED
 
-**Challenge:** FileMaker stores images individually, Nexus groups them into batches.
+**Strategy: Group by Date + Patient**
 
-**Solution:** Create batches based on patient + date + image type similarity.
-
-**Batch Creation Logic:**
+**Logic:**
+```python
+For each patient in FileMaker:
+  1. Get all images for this patient (from API_Images)
+  2. Group images by date (using image.date field)
+  3. For each unique date:
+     - Create ONE ImageBatch:
+       - name = "{date} (FileMaker Import)"
+         Example: "18 Oct 2016 (FileMaker Import)"
+       - captured_date = date from FileMaker
+       - patient = nexus_patient_id
+       - import_source = 'filemaker_import'
+       - filemaker_batch_id = NULL (multiple images, not 1:1)
+     
+     - Add ALL images from that date to this batch:
+       - category = Exact FileMaker Type (e.g., "Left Dorsal")
+       - filemaker_id = FileMaker image UUID
+       - filemaker_type = Original Type (for tracking)
+       - filemaker_date = Original date
 ```
-For each patient:
-  Group images by:
-    - Same date (or within 1 day)
-    - Related types (e.g., "Left Dorsal", "Left Medial", "Left Planter" = "Left Foot Assessment")
-  
-  Create batch with:
-    - Name: "{Type Category} - {Date}"
-    - Date: Image date
-    - Patient: id_Contact
-    - Images: All images in group
-```
 
-**Batch Categories:**
-- **"Left Foot Assessment"** - Left Dorsal, Left Medial, Left Planter
-- **"Plantar Views"** - Planter, Posterior
-- **"Foot Measurements"** - L-Brannock
-- **"Shoe Assessment"** - Shoe Box, Side and bottom of shoes, Soles of shoes
-- **"Uncategorized"** - Any images that don't fit above
+**Example Result:**
 
-**Alternative (Simpler):**
-- Create **one batch per image** with batch name = image type
-- Pros: Simpler logic, no grouping complexity
-- Cons: Many small batches, less organized
-- **DECISION:** Start with simpler approach, can reorganize later in UI
+**Patient: John Smith (FM ID: 43669346-9656-4029-A607-E4E8E4386F9E)**
+
+**Batch 1: "18 Oct 2016 (FileMaker Import)"** (4 images)
+- Left-Dorsal.jpg (category: "Left Dorsal")
+- Left-Medial.jpg (category: "Left Medial")
+- Left-Planter.jpg (category: "Left Planter")
+- Posterior.jpg (category: "Posterior")
+
+**Batch 2: "5 Nov 2016 (FileMaker Import)"** (3 images)
+- L-Brannock.jpg (category: "L-Brannock")
+- Shoe-Box.jpg (category: "Shoe Box")
+- Side-and-bottom.jpg (category: "Side and bottom of shoes")
+
+**Batch 3: "12 Mar 2017 (FileMaker Import)"** (2 images)
+- Soles.jpg (category: "Soles of shoes")
+- Left-Dorsal-2.jpg (category: "Left Dorsal")
+
+**Benefits:**
+- ✅ Chronological organization (by date)
+- ✅ Easy to find images from specific appointments
+- ✅ Matches clinical workflow (images taken during visit)
+- ✅ Natural grouping for users
+- ✅ Preserves historical context
 
 ---
 
-### Phase 3: Database Schema
+### Phase 3: Category Handling ✅ FINALIZED
 
-#### Option A: Extend Existing Image Models ✅ **RECOMMENDED**
+**Strategy: Preserve Exact FileMaker Categories (No Mapping)**
+
+**FileMaker Categories (Store As-Is):**
+1. "Left Dorsal"
+2. "Left Medial"
+3. "Left Planter" (typo preserved for accuracy)
+4. "Planter"
+5. "Posterior"
+6. "L-Brannock"
+7. "Shoe Box"
+8. "Side and bottom of shoes"
+9. "Soles of shoes"
+
+**Database Storage:**
+```python
+Image.category = "Left Dorsal"  # Exact from FileMaker (for display)
+Image.filemaker_type = "Left Dorsal"  # Also in tracking field
+Image.filemaker_id = "8EECA11F-..."  # Original FM UUID
+Image.filemaker_date = "2016-10-18"  # Original date
+```
+
+**Frontend Display:**
+- Category dropdown will show exact FileMaker category
+- No conversion or mapping needed
+- Users see historical data as it was recorded
+
+**Future Enhancement:**
+- Simplified category dropdown for NEW uploads (post-import)
+- FileMaker-imported images keep original categories
+- New images use updated category list
+
+---
+
+### Phase 4: Database Schema ✅ CONFIRMED
 
 **`ImageBatch` model** (already exists):
 ```python
@@ -364,45 +439,35 @@ python manage.py migrate images
 
 ---
 
-## 🚨 Key Decisions Needed
+## ✅ Key Decisions - ALL RESOLVED
 
 ### 1. ✅ Container Field Name
 **CONFIRMED:** `Recovered` (Edm.Stream)
 
-### 2. ⏸️ Batch Organization
-**Options:**
-- **A) Simple:** One batch per image (batch name = image type)
-- **B) Smart:** Group by patient + date + type category
-- **C) Manual:** Import all, let users reorganize in UI
+### 2. ✅ Batch Organization - RESOLVED
+**DECISION:** Group by Date + Patient (Smart grouping)
+- One batch per date per patient
+- Batch name: "{date} (FileMaker Import)"
+- Example: "18 Oct 2016 (FileMaker Import)"
 
-**RECOMMENDATION:** Start with **Option A (Simple)**, can reorganize later.
+### 3. ✅ Category Handling - RESOLVED
+**DECISION:** Preserve Exact FileMaker Categories
+- NO mapping/conversion
+- Store as-is in `category` field
+- Keep "Left Planter" typo for historical accuracy
+- Future: Simplified dropdown for NEW uploads only
 
-### 3. ⏸️ Handle `imported = 1` Flag
-**Question:** FileMaker has `imported` field set to 1 for many images. What does this mean?
+### 4. ✅ Handle `imported = 1` Flag - RESOLVED
+**DECISION:** Ignore it - Import all images where `NexusExportDate` is empty
+- The `imported` flag appears to be for FileMaker internal use
+- Our `NexusExportDate` tracking is more reliable
+- Will prevent duplicates across multiple import runs
 
-**Options:**
-- **A) Ignore it** - Import all images where `NexusExportDate` is empty
-- **B) Skip imported = 1** - Only import images with `imported = 0`
-- **C) Ask user** - What does this flag mean in FileMaker?
-
-**ACTION REQUIRED:** User to clarify what `imported = 1` means.
-
-### 4. ⏸️ Image Type Typos
-**FileMaker has:** "Planter" (should be "Plantar")
-
-**Options:**
-- **A) Fix during import** - Store as "plantar" in Nexus
-- **B) Keep original** - Preserve FileMaker typo
-- **C) Both** - Store corrected in Nexus, keep original in `filemaker_type`
-
-**RECOMMENDATION:** **Option C (Both)** - Fix for Nexus, preserve original for reference.
-
-### 5. ⏸️ Missing Patients
-**Documents import showed:** Many documents have no matching patient (`id_Contact` not in Nexus).
-
-**Expected for images?** Likely yes (same issue).
-
-**Solution:** Store in `unlinked/` folder, can link later when patients imported.
+### 5. ✅ Missing Patients - RESOLVED
+**DECISION:** Store in `unlinked/` folder (same as documents)
+- Many images likely have no matching patient in Nexus yet
+- Can link later when those patients are imported
+- Organize by image type in unlinked folder
 
 ---
 
@@ -468,30 +533,16 @@ python manage.py migrate images
 
 ---
 
-## 📝 Open Questions
+## 📝 Questions - ANSWERED & ARCHIVED
 
-1. **What does `imported = 1` mean in FileMaker?**
-   - Already migrated to a different system?
-   - Just a flag for FileMaker internal use?
-   - Should we skip these or import them anyway?
+All questions have been answered and decisions documented above in "Key Decisions - ALL RESOLVED" section.
 
-2. **What is `ID.KEY` field used for?**
-   - Different from `id` (primary key)
-   - Should we store this?
-
-3. **What does `result = "Not found"` mean?**
-   - All sample records have this value
-   - Related to `imported` flag?
-
-4. **Right foot images?**
-   - Sample only shows "Left" views
-   - Are there "Right Dorsal", "Right Medial", etc.?
-   - Or are right foot images also in the same types?
-
-5. **Image quality/resolution?**
-   - Sample shows `.03 MB` (30 KB) - very small!
-   - Are these thumbnails or full-size images?
-   - Should we be concerned about image quality?
+**For reference, original questions were:**
+1. `imported = 1` meaning → **Ignore it, use NexusExportDate**
+2. `ID.KEY` usage → **Not needed for import**
+3. `result = "Not found"` → **Not critical for import**
+4. Right foot images → **Will discover during import**
+5. Image quality → **Will accept as-is (30 KB thumbnails or full images)**
 
 ---
 
