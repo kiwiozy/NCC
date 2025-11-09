@@ -36,13 +36,21 @@ From sample of 50 records, we found **5 document types**:
 4. **Quote** - Price quotes
 5. **Referral** - Referral documents
 
-## Missing: Container Field
+## ✅ Container Field: SUCCESS!
 
-**⚠️ CRITICAL:** The `API_Docs` table does NOT expose the actual **container field** (PDF/file) via OData.
+**🎉 BREAKTHROUGH:** The container field `Doc` is **fully accessible** via FileMaker Data API!
 
-- OData only provides **metadata** (id, type, date, etc.)
-- OData **CANNOT** access container field contents
-- The actual PDF/document files are **NOT** accessible via OData API
+- **Field Name:** `Doc` (capital D, not lowercase)
+- **Access Method:** FileMaker Data API (not OData)
+- **Format:** Returns a streaming URL to the file
+- **File Download:** Fully working with authentication token
+
+### Test Results (Nov 9, 2025):
+- ✅ Created `API_Docs` layout in FileMaker
+- ✅ Accessed layout via Data API
+- ✅ Retrieved container field as URL
+- ✅ Downloaded actual PDF (263 KB test file)
+- ✅ File integrity confirmed
 
 ## Relationships
 
@@ -80,11 +88,11 @@ API_Docs
 - Some records have null `Date` field (especially ERF types)
 - Most records have `id_Order = null` (only `Referral` type has order links)
 
-## Import Strategy (For Documentation)
+## Import Strategy (UPDATED - Nov 9, 2025)
 
-### Phase 1: Metadata Only (Feasible via OData)
+### ✅ Phase 1: Metadata Import (Via OData or Data API)
 
-✅ **Can import:**
+**Can import:**
 - Document ID (as `filemaker_doc_id`)
 - Patient link (`id_Contact`)
 - Document type (`Type`)
@@ -92,24 +100,35 @@ API_Docs
 - Creation/modification timestamps
 - Created by / modified by
 
-### Phase 2: File Contents (Requires Alternative Method)
+### ✅ Phase 2: File Contents (Via Data API) - **WORKING!**
 
-❌ **Cannot import via OData:**
-- Actual PDF/file contents (container field not exposed)
+**Container field export method:**
 
-**Alternatives for file import:**
-1. **FileMaker Data API** - `getRecordById` with container field name (if we can determine it)
-2. **FileMaker Script** - Export container fields to folder, then upload to S3
-3. **Manual Export** - Export from FileMaker UI, then bulk upload
+1. **Authenticate** with FileMaker Data API (Base64 Basic Auth)
+2. **Fetch records** from `API_Docs` layout
+3. **Extract URL** from `Doc` field (returns streaming URL)
+4. **Download file** using auth token
+5. **Upload to S3** with organized folder structure
+6. **Update database** with S3 key
+
+**Example URL format:**
+```
+https://walkeasy.fmcloud.fm:443/Streaming_SSL/Additional_1/{hash}.pdf?RCType=EmbeddedRCFileProcessor
+```
+
+**Implementation:**
+- Script: `scripts/filemaker/09_test_container_field_access.py` (proof of concept)
+- Next: Build bulk export script for all 11,269 documents
+- Target: Upload to S3 `filemaker-documents/` folder
 
 ## Next Steps
 
 1. ✅ Metadata structure documented
-2. ⏸️ Determine container field name (not visible in OData)
-3. ⏸️ Test FileMaker Data API for container field access
-4. ⏸️ Design S3 folder structure for imported docs
-5. ⏸️ Create import strategy for metadata → Nexus `documents` table
-6. ⏸️ Determine best approach for file contents migration
+2. ✅ Container field access confirmed working
+3. ⏭️ Build bulk export script (all 11,269 docs)
+4. ⏭️ Design S3 upload strategy
+5. ⏭️ Create metadata import to Nexus `documents` table
+6. ⏭️ Repeat process for `API_Images` (6,664 images)
 
 ## Related Documentation
 
