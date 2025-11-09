@@ -1,7 +1,7 @@
 # FileMaker Documents & Images Migration to S3
 
 **Date:** November 9, 2025  
-**Status:** 📋 Planning Phase  
+**Status:** ✅ Container Field Export WORKING - Ready for Bulk Export  
 **Branch:** `filemaker-import-docs`
 
 ---
@@ -26,39 +26,41 @@
 - ✅ Document upload/download system operational
 - ✅ Frontend dialogs for documents and images
 - ✅ FileMaker OData API access to metadata
+- ✅ **API_Docs layout created in FileMaker**
+- ✅ **Container field 'Doc' accessible via Data API**
+- ✅ **Test download successful (263 KB PDF verified)**
 
 ### What's Remaining ⏸️
-- ⏸️ Document/image metadata import
-- ⏸️ Actual file migration from FileMaker to S3
-- ⏸️ FileMaker Data API setup for container fields
-- ⏸️ Batch processing script for 17,933 files
+- ⏸️ Build bulk export script (all 11,269 documents)
+- ⏸️ Implement S3 upload with folder structure
+- ⏸️ Document metadata import to Nexus database
+- ⏸️ Repeat for images (API_Images layout + export)
 
 ---
 
-## 🔍 Understanding the Challenge
+## 🔍 Container Field Export - SOLVED! ✅
 
-### The Container Field Problem
+### The Solution (Nov 9, 2025)
 
-**FileMaker Container Fields:**
-- Store binary data (PDFs, images, etc.)
-- **Cannot be accessed via OData** (only metadata visible)
-- Require **FileMaker Data API** (REST) for file download
+**FileMaker Data API + Layout = Working Export**
 
-**What OData Gives Us:**
-```json
-{
-  "id": "ABC-123",
-  "Name of file": "Referral_Letter.pdf",
-  "Type": "Referral",
-  "date": "2024-05-15",
-  "id_Contact": "patient-uuid"
-  // ❌ No actual file data!
-}
+1. **Create Layout:** `API_Docs` layout created in FileMaker with container field exposed
+2. **Field Name:** `Doc` (capital D) - returns streaming URL
+3. **Authentication:** Base64 Basic Auth → Bearer token
+4. **Download:** Authenticated GET request to streaming URL
+
+**Test Results:**
+- ✅ Record accessed: `1A127CC7-2A4E-4473-A07F-3D124EE15BB9`
+- ✅ File downloaded: 263 KB PDF (Referral document)
+- ✅ File verified: Opens correctly
+- ✅ Process confirmed working
+
+**URL Format:**
+```
+https://walkeasy.fmcloud.fm:443/Streaming_SSL/Additional_1/{hash}.pdf?RCType=EmbeddedRCFileProcessor
 ```
 
-**What We Need:**
-- File bytes/binary data
-- Requires Data API endpoint: `/layouts/{layout}/records/{recordId}/containers/{fieldName}`
+**Code:** `scripts/filemaker/09_test_container_field_access.py`
 
 ---
 
@@ -72,11 +74,11 @@
 - `id` - Primary key (UUID)
 - `id_Contact` - Patient FK (UUID)
 - `id_Order` - Order/invoice FK (UUID) - optional
-- `Type` - Document type (e.g., "Referral", "Report")
+- `Type` - Document type (e.g., "Referral", "Report")  
 - `Date` - Document date
 - `imported` - Import flag (1 = already migrated elsewhere?)
 - `num` - Document number
-- `Container_Field_Name` - TBD (need to discover actual field name)
+- **`Doc`** - Container field (capital D) - **CONFIRMED WORKING**
 
 **Sample Record:**
 ```json
