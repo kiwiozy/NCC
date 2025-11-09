@@ -61,12 +61,21 @@ class Document(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     
+    # FileMaker import tracking
+    filemaker_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text='Original FileMaker document ID (from API_Docs.id) - for imported documents only'
+    )
+    
     class Meta:
         ordering = ['-uploaded_at']
         indexes = [
             models.Index(fields=['content_type', 'object_id']),
             models.Index(fields=['category']),
             models.Index(fields=['uploaded_at']),
+            models.Index(fields=['filemaker_id']),  # For FileMaker import lookups
         ]
     
     def __str__(self):
