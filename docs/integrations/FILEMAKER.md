@@ -947,14 +947,99 @@ filemaker_note_id = models.UUIDField(
 
 ---
 
-**Current Status:** Ready to implement Phase 2 (Clinics) 🚀
+**Current Status:** ✅ All Core Data Imported Successfully (55,758 records) 🎉
+
+---
+
+## 🔧 Post-Import Issues & Fixes (Nov 9, 2025)
+
+After completing the import, several issues were discovered and fixed:
+
+### Issue 1: Django 500 Errors - Admin Field References
+
+**Problem:** All API endpoints returned 500 errors after registering new models in Django admin.
+
+**Root Cause:** Admin classes referenced fields that didn't exist in the models:
+- `Specialty.description` (doesn't exist)
+- `ReferrerCompany.start_date`, `is_current` (don't exist)
+- `PatientCoordinator.filemaker_id` (doesn't exist)
+
+**Fix:** Corrected all admin.py files to only reference actual model fields.
+
+**Files Fixed:**
+- `backend/referrers/admin.py`
+- `backend/coordinators/admin.py`
+
+**Commit:** `a0ffc5c` - "fix: Correct Django admin field references to match actual models"
+
+---
+
+### Issue 2: Patient Titles Not Displaying
+
+**Problem:** Patients displayed as "John Smith" instead of "Mr. John Smith" despite titles being in the database.
+
+**Root Cause:** Frontend `transformPatientToContact` function used `full_name` directly without checking for `title` field.
+
+**Fix:** Updated transformation logic to always extract title and prepend it to display name.
+
+**Files Fixed:**
+- `frontend/app/patients/page.tsx`
+
+**Result:** All 2,837 patients with titles now display correctly.
+
+**Commit:** `882fc96` - "fix: Display patient titles (Mr, Mrs, etc) in patient list"
+
+---
+
+### Issue 3: CORS Errors for API Badge Counts
+
+**Problem:** Notes, documents, and images API calls failed with CORS errors despite backend returning 200 OK.
+
+**Root Cause:** Missing `credentials: 'include'` option in fetch requests. When `CORS_ALLOW_CREDENTIALS = True` in Django, browsers require this option.
+
+**Fix:** Added `credentials: 'include'` to all authenticated API calls in ContactHeader.
+
+**Files Fixed:**
+- `frontend/app/components/ContactHeader.tsx` (3 fetch calls)
+
+**Commit:** `434c231` - "fix: Add credentials: 'include' to all API fetch requests in ContactHeader"
+
+---
+
+### Issue 4: React setState During Render Warning
+
+**Problem:** Console warning when toggling archive filter: "Cannot update a component while rendering a different component"
+
+**Root Cause:** `ContactHeader` called parent callback synchronously during onChange handler.
+
+**Fix:** Deferred callback using `setTimeout(..., 0)` to next event loop tick.
+
+**Files Fixed:**
+- `frontend/app/components/ContactHeader.tsx`
+
+**Commit:** `ec234f2` - "fix: Prevent React setState during render warning in ContactHeader"
+
+---
+
+### Lessons Learned
+
+1. **Always validate admin configurations** - Use `python manage.py check` before starting server
+2. **Test data transformation logic** - Verify frontend displays all imported fields correctly
+3. **Consistent fetch options** - All authenticated API calls need `credentials: 'include'`
+4. **Async state updates** - Never update parent component state during child render cycle
+
+### Documentation Updated
+
+- ✅ `docs/architecture/TROUBLESHOOTING.md` - Added all 4 issues with solutions
+- ✅ `docs/integrations/FILEMAKER.md` - This section added
+- ✅ Git commits - All fixes properly documented
 
 ---
 
 ## 📚 Related Documentation
 
 - **Database Schema:** `docs/architecture/DATABASE_SCHEMA.md`
-- **Troubleshooting:** `docs/architecture/TROUBLESHOOTING.md`
+- **Troubleshooting:** `docs/architecture/TROUBLESHOOTING.md` ⭐ Updated Nov 9, 2025
 - **FileMaker Details:** `docs/FileMaker/` (analysis docs)
 
 ---

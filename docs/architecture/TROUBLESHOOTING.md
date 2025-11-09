@@ -2,7 +2,183 @@
 
 **Common issues and solutions for WalkEasy Nexus development**
 
+**Last Updated:** November 9, 2025 - Added FileMaker import issues
+
 > ⚠️ **IMPORTANT:** If this troubleshooting guide is updated, you **MUST** also update the "Troubleshooting Reference" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
+
+---
+
+## 📊 **FileMaker Import Issues** (Added: Nov 9, 2025)
+
+### **Django 500 Errors After Adding New Models to Admin**
+
+**Symptoms:**
+- All API requests return 500 Internal Server Error
+- CORS errors in browser console
+- "Origin https://localhost:3000 is not allowed by Access-Control-Allow-Origin"
+- Frontend cannot load any data
+
+**Root Cause:**
+Django admin.py files reference fields that don't exist in the models, causing Django's system check to fail on every request.
+
+**Common Errors in Django Logs:**
+```
+ERRORS:
+<class 'coordinators.admin.PatientCoordinatorAdmin'>: (admin.E035) 
+  The value of 'readonly_fields[0]' is not a callable, an attribute of 
+  'PatientCoordinatorAdmin', or an attribute of 'coordinators.PatientCoordinator'.
+  
+<class 'referrers.admin.ReferrerCompanyAdmin'>: (admin.E108) 
+  The value of 'list_display[2]' refers to 'start_date', which is not a 
+  callable, an attribute of 'ReferrerCompanyAdmin', or an attribute or 
+  method on 'referrers.ReferrerCompany'.
+```
+
+**Solution:**
+1. Check Django logs: `tail -n 100 logs/django.log | grep ERRORS`
+2. Identify which admin classes have incorrect field references
+3. Compare admin.py field references with actual model fields
+4. Remove or correct any references to non-existent fields
+5. Restart Django server: `./stop-dev.sh && ./quick-start.sh`
+
+**Example Fix:**
+```python
+# BEFORE (causes error)
+@admin.register(Specialty)
+class SpecialtyAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description']  # 'description' doesn't exist!
+
+# AFTER (fixed)
+@admin.register(Specialty)
+class SpecialtyAdmin(admin.ModelAdmin):
+    list_display = ['name', 'created_at']  # Use actual fields
+    readonly_fields = ['id', 'created_at']
+```
+
+**Prevention:**
+- Always check model fields before adding them to admin
+- Use `python manage.py check` to validate admin configuration
+- Test admin registration immediately after creating it
+
+---
+
+### **Patient Titles Not Displaying in Frontend**
+
+**Symptoms:**
+- Patients display as "John Smith" instead of "Mr. John Smith"
+- Titles exist in database (check with Django shell)
+- Backend API returns title field correctly
+- Frontend ignores the title
+
+**Root Cause:**
+The `transformPatientToContact` function uses `full_name` from the API but doesn't prepend the title when available.
+
+**Solution:**
+Update `frontend/app/patients/page.tsx` to extract and use title regardless of serializer type:
+
+```typescript
+// BEFORE (ignores title)
+if (patient.full_name) {
+  displayName = patient.full_name;  // No title!
+}
+
+// AFTER (includes title)
+const titleMap: Record<string, string> = {
+  'Mr': 'Mr.', 'Mrs': 'Mrs.', 'Ms': 'Ms.', /* ... */
+};
+title = patient.title ? (titleMap[patient.title] || patient.title) : '';
+
+if (patient.full_name) {
+  displayName = title ? `${title} ${patient.full_name}` : patient.full_name;
+}
+```
+
+**Verification:**
+1. Check database has titles: `Patient.objects.exclude(title='').count()`
+2. Check API returns titles: `curl -k https://localhost:8000/api/patients/ | grep title`
+3. Hard refresh browser (Cmd+Shift+R) after fix
+
+---
+
+### **CORS Errors for Notes/Documents/Images API Calls**
+
+**Symptoms:**
+- "Fetch API cannot load ... due to access control checks"
+- Notes count, documents count, images count show as 0
+- Backend logs show 200 OK responses
+- Only happens for specific endpoints (notes, documents, images)
+
+**Root Cause:**
+When `CORS_ALLOW_CREDENTIALS = True` is set in Django, browsers require `credentials: 'include'` in fetch requests. Some fetch calls had this option, others didn't.
+
+**Solution:**
+Add `credentials: 'include'` to all fetch requests in `ContactHeader.tsx`:
+
+```typescript
+// BEFORE (causes CORS error)
+const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}`);
+
+// AFTER (works correctly)
+const response = await fetch(`https://localhost:8000/api/notes/?patient_id=${patientId}`, {
+  credentials: 'include',
+});
+```
+
+**Files to Check:**
+- `frontend/app/components/ContactHeader.tsx` - Badge count API calls
+- `frontend/app/patients/page.tsx` - Patient data loading
+- Any component making API calls to authenticated endpoints
+
+**Why This Happens:**
+- Django has `CORS_ALLOW_CREDENTIALS = True` for session authentication
+- Browsers enforce stricter CORS rules when credentials are enabled
+- Without `credentials: 'include'`, browser blocks the request
+
+**Verification:**
+1. Check Django logs show 200 OK: `tail -f logs/django.log`
+2. Check browser console for CORS errors
+3. Add credentials option to all authenticated API calls
+4. Hard refresh browser to clear cached CORS preflight responses
+
+---
+
+### **React "Cannot Update Component While Rendering" Warning**
+
+**Symptoms:**
+- Console warning: "Cannot update a component (`ContactsPage`) while rendering a different component (`ContactHeader`)"
+- Warning appears when toggling archive filter
+- App still works but console is noisy
+
+**Root Cause:**
+`ContactHeader` calls `onFilterApply` (which updates parent state) synchronously during the `onChange` handler, which happens during render.
+
+**Solution:**
+Defer the callback to the next tick using `setTimeout`:
+
+```typescript
+// BEFORE (causes warning)
+onChange={(event) => {
+  setFilters(prev => {
+    const updated = { ...prev, archived: newArchived };
+    onFilterApply?.(updated);  // Updates parent during render!
+    return updated;
+  });
+}}
+
+// AFTER (defers to next tick)
+onChange={(event) => {
+  const updatedFilters = { ...filters, archived: newArchived };
+  setFilters(updatedFilters);
+  setTimeout(() => {
+    onFilterApply?.(updatedFilters);  // Deferred to next tick
+  }, 0);
+}}
+```
+
+**Why This Works:**
+- `setTimeout(..., 0)` defers execution to the next JavaScript event loop tick
+- This ensures state update completes before calling parent callback
+- Parent component receives update after render cycle finishes
 
 ---
 
