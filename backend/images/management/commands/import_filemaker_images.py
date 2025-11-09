@@ -35,6 +35,8 @@ from django.db import transaction
 from patients.models import Patient
 from images.models import ImageBatch, Image
 from documents.services import S3Service
+from PIL import Image as PILImage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # Suppress SSL warnings
 requests.packages.urllib3.disable_warnings()
@@ -320,29 +322,68 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
                     # Upload to S3 (using same structure as documents import)
                     # S3 path: patients/filemaker-import/images/{patient_id}/{date}/{filemaker_id}.jpg
                     try:
+                        # Open image with Pillow to get dimensions and generate thumbnail
                         file_obj = BytesIO(file_content)
+                        img = PILImage.open(file_obj)
+                        width, height = img.size
+                        
+                        # Generate thumbnail (300x300 max, same as user uploads)
+                        thumb_img = img.copy()
+                        thumb_img.thumbnail((300, 300), PILImage.Resampling.LANCZOS)
+                        
+                        # Save thumbnail to BytesIO
+                        thumb_buffer = BytesIO()
+                        thumb_img.save(thumb_buffer, format=img.format or 'JPEG', quality=85)
+                        thumb_buffer.seek(0)
+                        thumbnail_size = thumb_buffer.getbuffer().nbytes
+                        
+                        # Wrap thumbnail in InMemoryUploadedFile for S3 upload
+                        thumb_file = InMemoryUploadedFile(
+                            thumb_buffer,
+                            None,
+                            f"{original_filename}_thumb",
+                            mime_type or 'image/jpeg',
+                            thumbnail_size,
+                            None
+                        )
+                        
+                        # Generate S3 keys (matching documents structure + thumbnail)
+                        date_folder = image_date_str if image_date_str != 'unknown' else 'unknown-date'
+                        base_key = f"patients/filemaker-import/images/{nexus_patient_id}/{date_folder}/{fm_image_id}"
+                        s3_key = f"{base_key}{ext}"
+                        s3_thumbnail_key = f"{base_key}_thumb{ext}"
+                        
+                        # Reset file pointer for full image upload
+                        file_obj.seek(0)
                         file_obj.name = original_filename
                         file_obj.size = len(file_content)
                         
-                        # Generate S3 key matching documents structure
-                        # Use date folder instead of batch_id for consistency
-                        date_folder = image_date_str if image_date_str != 'unknown' else 'unknown-date'
-                        s3_key = f"patients/filemaker-import/images/{nexus_patient_id}/{date_folder}/{fm_image_id}{ext}"
-                        
+                        # Upload full image to S3
                         s3_upload_info = s3_service.upload_file(
                             file_obj=file_obj,
                             filename=original_filename,
                             folder=s3_key
                         )
                         
-                        # Create Image record
+                        # Upload thumbnail to S3
+                        s3_thumb_info = s3_service.upload_file(
+                            file_obj=thumb_file,
+                            filename=f"{original_filename}_thumb",
+                            folder=s3_thumbnail_key
+                        )
+                        
+                        # Create Image record with thumbnail data
                         Image.objects.create(
                             batch=batch,
                             s3_key=s3_upload_info['s3_key'],
+                            s3_thumbnail_key=s3_thumb_info['s3_key'],
                             s3_bucket=s3_service.bucket_name,
                             original_filename=original_filename,
                             file_size=len(file_content),
+                            thumbnail_size=thumbnail_size,
                             mime_type=mime_type or 'image/jpeg',
+                            width=width,
+                            height=height,
                             category=image_type,  # Preserve exact FileMaker category
                             filemaker_id=fm_image_id,
                             uploaded_by='FileMaker Import'
@@ -354,7 +395,7 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
                         stats['images_imported'] += 1
                         total_imported += 1
                         
-                        command.stdout.write(f"      ✅ Imported: {original_filename} (from {container_field})")
+                        command.stdout.write(f"      ✅ Imported: {original_filename} ({width}x{height}, thumb: {thumb_img.size[0]}x{thumb_img.size[1]}) from {container_field}")
                         
                     except Exception as e:
                         command.stdout.write(f"      ❌ Failed to save: {fm_image_id} - {e}")
