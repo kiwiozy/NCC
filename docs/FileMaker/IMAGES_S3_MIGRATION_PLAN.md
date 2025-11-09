@@ -554,14 +554,33 @@ python manage.py migrate images
 - [ ] Handle image type normalization
 - [ ] Test S3 upload with image files
 
-### 7. ⏸️ Import Script Development
-- [ ] Create `import_filemaker_images.py` management command
-- [ ] Implement FileMaker API connection
-- [ ] Implement batch finding/creation logic
-- [ ] Implement image download and S3 upload
-- [ ] Implement Image record creation
-- [ ] Implement NexusExportDate tracking
-- [ ] Add error handling and logging
+### 7. ✅ Import Script Development (COMPLETE - Nov 10, 2025)
+- [x] Create `import_filemaker_images.py` management command
+- [x] Implement FileMaker API connection with authentication
+- [x] Implement **waterfall container field strategy** (5 sizes)
+- [x] Implement patient-to-Nexus UUID mapping
+- [x] Implement batch finding/creation logic (group by date + patient)
+- [x] Implement image download and S3 upload
+- [x] Implement Image record creation
+- [x] Implement NexusExportDate tracking (prevent duplicates)
+- [x] Add error handling and logging
+- [x] Add container field usage statistics
+
+**Script Location:** `backend/images/management/commands/import_filemaker_images.py`
+
+**Key Features:**
+- **Waterfall Strategy:** Tries image_Full → image_Ex_large → image_large → image_medium → image_small
+- **Smart Batching:** Groups images by patient + date (same day = one batch)
+- **Batch Naming:** "{date} (FileMaker Import)" e.g., "18 Oct 2016 (FileMaker Import)"
+- **Category Preservation:** Stores exact FileMaker Type (no mapping)
+- **Progress Tracking:** Uses NexusExportDate to prevent duplicates
+- **Usage Stats:** Reports which container fields were used (percentage breakdown)
+
+**Run Command:**
+```bash
+cd backend
+python manage.py import_filemaker_images
+```
 
 ### 8. ⏸️ Testing & Execution
 - [ ] Test import with 10 sample images
