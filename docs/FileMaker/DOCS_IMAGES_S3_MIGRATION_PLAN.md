@@ -255,25 +255,116 @@ Base URL: https://walkeasy.fmcloud.fm/fmi/data/v1/databases/WEP-DatabaseV2
    Response: Binary file data
 ```
 
+### S3 Bucket Configuration
+
+**Current S3 Bucket:**
+- **Name:** `walkeasy-nexus-documents`
+- **Region:** `ap-southeast-2` (Sydney, Australia)
+- **Environment Variables:**
+  ```bash
+  AWS_S3_BUCKET_NAME=walkeasy-nexus-documents
+  AWS_REGION=ap-southeast-2
+  AWS_ACCESS_KEY_ID=<from .env>
+  AWS_SECRET_ACCESS_KEY=<from .env>
+  ```
+
+**Folder Structure (Current):**
+```
+walkeasy-nexus-documents/
+└── documents/
+    ├── {uuid}.pdf
+    ├── {uuid}.jpg
+    ├── {uuid}.docx
+    └── ...
+```
+
+**Proposed Folder Structure (FileMaker Import):**
+```
+walkeasy-nexus-documents/
+├── documents/                    # Existing uploaded documents
+│   └── {uuid}.{ext}
+│
+├── filemaker-documents/          # Imported from FileMaker API_Docs
+│   ├── referrals/
+│   │   ├── {uuid}.pdf
+│   │   └── ...
+│   ├── reports/
+│   │   └── {uuid}.pdf
+│   ├── letters/
+│   │   └── {uuid}.pdf
+│   └── other/
+│       └── {uuid}.{ext}
+│
+└── filemaker-images/             # Imported from FileMaker API_Images
+    ├── clinical-photos/
+    │   ├── left-dorsal/
+    │   ├── right-plantar/
+    │   └── ...
+    ├── scanned-documents/
+    └── other/
+```
+
+**Benefits of Organized Structure:**
+- Easy to identify FileMaker-imported files
+- Can apply different retention policies
+- Easier to troubleshoot migration issues
+- Can re-import specific folders if needed
+- Clear separation from user-uploaded files
+
 ### S3 Upload Flow (Already Working)
 
 **Existing S3Service:**
 ```python
 # backend/documents/services.py
 class S3Service:
-    def upload_file(self, file_obj, filename, folder='documents/'):
+    def upload_file(self, file_obj, filename, folder='documents'):
         """Upload file to S3 and return S3 key"""
-        s3_key = f"{folder}{uuid.uuid4()}_{filename}"
-        self.s3_client.upload_fileobj(file_obj, self.bucket_name, s3_key)
+        # Generates: "{folder}/{uuid}{ext}"
+        s3_key = self.generate_s3_key(filename, folder)
+        
+        # Upload with proper MIME type and metadata
+        self.s3_client.upload_fileobj(
+            file_obj,
+            self.bucket_name,
+            s3_key,
+            ExtraArgs={
+                'ContentType': mime_type,
+                'ContentDisposition': f'attachment; filename="{filename}"',
+            }
+        )
         return s3_key
     
-    def get_presigned_url(self, s3_key, expiration=3600):
+    def generate_presigned_url(self, s3_key, expiration=3600):
         """Generate temporary download URL"""
         return self.s3_client.generate_presigned_url(
             'get_object',
             Params={'Bucket': self.bucket_name, 'Key': s3_key},
             ExpiresIn=expiration
         )
+```
+
+**For FileMaker Import:**
+```python
+# Use organized folder structure
+def get_s3_folder(filemaker_type, document_type):
+    """Get S3 folder based on FileMaker source and type"""
+    if filemaker_type == 'document':
+        # From API_Docs
+        type_map = {
+            'Referral': 'filemaker-documents/referrals',
+            'Report': 'filemaker-documents/reports',
+            'Letter': 'filemaker-documents/letters',
+        }
+        return type_map.get(document_type, 'filemaker-documents/other')
+    
+    elif filemaker_type == 'image':
+        # From API_Images
+        type_map = {
+            'Left Dorsal': 'filemaker-images/clinical-photos/left-dorsal',
+            'Right Plantar': 'filemaker-images/clinical-photos/right-plantar',
+            # ... other image types
+        }
+        return type_map.get(document_type, 'filemaker-images/other')
 ```
 
 ---
