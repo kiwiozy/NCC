@@ -214,24 +214,30 @@ const transformPatientToContact = (patient: any): Contact => {
   let lastName = '';
   let title = '';
   
+  // ALWAYS use title if available (even when full_name is present)
+  const titleMap: Record<string, string> = {
+    'Mr': 'Mr.',
+    'Mrs': 'Mrs.',
+    'Ms': 'Ms.',
+    'Miss': 'Miss',
+    'Dr': 'Dr.',
+    'Prof': 'Prof.',
+    'Sr': 'Sr.',
+    'Jr': 'Jr.',
+    'Master': 'Master',
+    'Brother': 'Brother',
+    'Sister': 'Sister',
+  };
+  title = patient.title ? (titleMap[patient.title] || patient.title) : '';
+  
   if (patient.full_name) {
-    // Using list serializer - just use full_name
-    displayName = patient.full_name;
-    // Try to parse name parts if possible
+    // Using list serializer - use full_name but ADD title if available
     const nameParts = patient.full_name.split(' ');
-    firstName = nameParts[0] || '';
-    lastName = nameParts[nameParts.length - 1] || '';
+    firstName = patient.first_name || nameParts[0] || '';
+    lastName = patient.last_name || nameParts[nameParts.length - 1] || '';
+    displayName = title ? `${title} ${patient.full_name}` : patient.full_name;
   } else {
     // Using full serializer - build from parts
-    const titleMap: Record<string, string> = {
-      'Mr': 'Mr.',
-      'Mrs': 'Mrs.',
-      'Ms': 'Ms.',
-      'Miss': 'Miss',
-      'Dr': 'Dr.',
-      'Prof': 'Prof.',
-    };
-    title = patient.title ? titleMap[patient.title] || patient.title : '';
     firstName = patient.first_name || '';
     middleName = patient.middle_names || '';
     lastName = patient.last_name || '';
