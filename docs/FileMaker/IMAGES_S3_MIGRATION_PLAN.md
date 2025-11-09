@@ -34,23 +34,40 @@
 | **File Info** | `Name of file`, `filesize` |
 | **Import Status** | `imported` field (tracking) |
 
-### 🎯 **CRITICAL FINDING: Two Image Sizes!**
+### 🎯 **CRITICAL FINDING: FIVE Different Image Sizes!**
 
-FileMaker stores **TWO versions** of each image:
+FileMaker stores **FIVE versions** of each clinical image in the **`Images`** table:
 
-1. **`image_Full`** - Full-size, high-quality image
-   - Accessible via **Data API** (streaming URL)
-   - Best quality for clinical use
-   - **⚠️ MUST USE THIS FIELD FOR IMPORT**
+| # | Field Name | Size | Quality | Import Priority |
+|---|------------|------|---------|-----------------|
+| 1 | **`image_Full`** | Full resolution | Highest | ✅ **PRIMARY** |
+| 2 | **`image_Ex_large`** | Extra Large | High | ✅ **FALLBACK 1** |
+| 3 | **`image_large`** | Large | Good | ✅ **FALLBACK 2** |
+| 4 | **`image_medium`** | Medium | Lower | ⚠️ Fallback 3 |
+| 5 | **`image_small`** | Small | Low | ❌ Last resort |
+| 6 | **`Recovered`** | Thumbnail | Very low (~46 KB) | ❌ Skip |
 
-2. **`Recovered`** - Thumbnail/preview image
-   - Base64 encoded (via OData)
-   - ~46 KB (low resolution)
-   - ❌ DO NOT use for primary import (too small)
+**Import Strategy - Waterfall Approach:**
 
-**Import Strategy:** Use `image_Full` to get the largest/best quality images for patient records.
+```python
+# Try each field in order until we find one with data:
+1. Try image_Full (best quality)
+2. If empty → try image_Ex_large
+3. If empty → try image_large
+4. If empty → try image_medium
+5. If empty → try image_small
+6. If all empty → skip (or log warning)
+```
 
-### 📋 API_Images Table Structure:
+**Why This Matters:**
+- ✅ **Guarantees best quality:** Always gets the largest available image
+- ✅ **Handles missing data:** Falls back to next best if primary is empty
+- ✅ **No data loss:** Ensures every image is imported at best available quality
+- ✅ **Clinical accuracy:** Full resolution critical for foot assessment photos
+
+### 📋 Images Table Structure (NOT API_Images):
+
+**IMPORTANT:** User discovered the main **`Images`** table has ALL 5 container fields!
 
 **Key Fields:**
 ```
@@ -58,8 +75,15 @@ FileMaker stores **TWO versions** of each image:
 - id_Contact             Patient FK (UUID) ✅
 - date                   Image date (Edm.Date)
 - Type                   Image type/category (Edm.String) ✅
-- image_Full             Full-size image container (Edm.Stream) ✅ **PRIMARY - USE THIS**
-- Recovered              Thumbnail image container (Edm.Stream) (Fallback only)
+
+** CONTAINER FIELDS (5 sizes) **
+- image_Full             Full resolution ✅ **PRIMARY - USE THIS FIRST**
+- image_Ex_large         Extra Large ✅ **FALLBACK 1**
+- image_large            Large ✅ **FALLBACK 2**
+- image_medium           Medium ⚠️ **FALLBACK 3**
+- image_small            Small ❌ **FALLBACK 4 (last resort)**
+
+- Recovered              Thumbnail (~46 KB) (Skip - too small)
 - Name of file           Original filename
 - filesize               File size (formatted string, e.g., ".03 MB")
 - imported               Import flag (1 = already migrated?)
@@ -74,6 +98,8 @@ FileMaker stores **TWO versions** of each image:
 - modificationAccountName
 - modificationTimestamp
 ```
+
+**Note:** The `API_Images` table may be a Table Occurrence (TO) of the base `Images` table.
 
 ### 🏷️ Image Types (9 Categories):
 
