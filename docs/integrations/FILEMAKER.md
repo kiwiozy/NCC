@@ -1,7 +1,7 @@
 # FileMaker Data Migration
 
 **Last Updated:** November 9, 2025  
-**Status:** 🔄 In Progress  
+**Status:** ✅ Core Data Complete (55,758 records)  
 **Database:** WEP-DatabaseV2
 
 ---
@@ -15,27 +15,42 @@ Migrating patient and clinical data from FileMaker Pro to Nexus PostgreSQL datab
 - 34,345 total records
 - Server: walkeasy.fmcloud.fm
 
-**Progress:**
-- ✅ 2,845 patients imported
-- ✅ 10,688 contact details imported
-- ⏸️ Remaining: appointments, referrers, clinics, companies, documents, images
+**✅ Import Complete:**
+- ✅ 2,842 patients imported (full demographics + contact info)
+- ✅ 11 clinics imported (with filemaker_id tracking)
+- ✅ 228 referrers imported (GPs, specialists, etc.)
+- ✅ 92 companies imported (medical practices + NDIS providers)
+- ✅ 183 coordinators imported (NDIS Support Coordinators)
+- ✅ 8,329 appointments imported (past + future)
+- ✅ 42,036 clinical notes imported
+- ✅ 1,706 patient-referrer links
+- ✅ 247 patient-coordinator links
+- ✅ 63 referrer-company links
+- ✅ 21 specialty lookup records
+
+**📊 Grand Total: 55,758 Records Imported**
+
+**⏸️ Remaining (Optional):**
+- Documents & Images: 11,269 docs + 6,664 images (Phase 6 - requires streaming URLs)
+- SMS History: Templates + message history (Phase 7 - optional)
 
 ---
 
 ## 🗂️ FileMaker Tables (10 total)
 
-| Table | Records | Status | Maps To |
-|-------|---------|--------|---------|
-| `API_Contacts` | 2,845 | ✅ Imported | `patients` |
-| `API_Contact_Details` | 10,688 | ✅ Imported | `patients.contact_json` |
-| `API_Clinic_Name` | 11 | 🔄 Ready | `clinics` |
-| `API_Referrer` | 234 | 🔄 Ready | `referrers` (new table) |
-| `API_Company` | 92 | 🔄 Ready | `companies` (new table) |
-| `API_ContactToReferrer` | 1,720 | 🔄 Ready | `patient_referrers` (new table) |
-| `API_ReferrerToCompany_Join` | 73 | 🔄 Ready | `referrer_companies` (new table) |
-| `API_event` | 15,127 | 🔄 Ready | `appointments` |
-| `API_Docs` | 11,269 | ⏸️ Phase 2 | `documents` |
-| `API_Images` | 6,664 | ⏸️ Phase 2 | `documents` |
+| Table | Records | Status | Maps To | Imported |
+|-------|---------|--------|---------|----------|
+| `API_Contacts` | 2,845 | ✅ Complete | `patients` | 2,842 |
+| `API_Contact_Details` | 10,688 | ✅ Complete | `patients.contact_json` | Merged |
+| `API_Notes` | 11,399 | ✅ Complete | `notes` | 42,036 |
+| `API_Clinic_Name` | 11 | ✅ Complete | `clinics` | 11 |
+| `API_Referrer` | 234 | ✅ Complete | `referrers` | 228 |
+| `API_Company` | 92 | ✅ Complete | `companies` | 92 |
+| `API_ContactToReferrer` | 1,720 | ✅ Complete | `patient_referrers` | 1,706 |
+| `API_ReferrerToCompany_Join` | 73 | ✅ Complete | `referrer_companies` | 63 |
+| `API_event` | 15,127 | ✅ Complete | `appointments` | 8,329 (with patients) |
+| `API_Docs` | 11,269 | ⏸️ Phase 6 | `documents` | Phase 2 |
+| `API_Images` | 6,664 | ⏸️ Phase 6 | `documents` | Phase 2 |
 
 ---
 
@@ -73,7 +88,131 @@ python manage.py import_filemaker_data
 
 ---
 
-## 🔄 Phase 2: Clinics (Ready to Implement)
+## ✅ Phase 2: Clinics (Complete)
+
+### What Was Imported
+
+**11 clinics from FileMaker:**
+- Tamworth, Newcastle, Armidale, RPA, Gunnedah, Concord, Better Health Practice, Coffs Harbour, Inverell, Home Visit, Narrabri
+- Each clinic assigned a `filemaker_id` for tracking
+- Existing Newcastle/Tamworth clinics were deleted before import
+
+### Import Command
+
+```bash
+cd backend
+python manage.py import_filemaker_clinics
+```
+
+---
+
+## ✅ Phase 3: Referrers & Companies (Complete)
+
+### What Was Imported
+
+**228 Referrers (GPs, Specialists, etc.):**
+- Medical referrers with specialty classification
+- Contact information (phone, email)
+- Linked to medical practices via companies
+- 21 unique specialties imported
+
+**92 Companies (Medical Practices & NDIS Providers):**
+- Medical practices, NDIS providers, etc.
+- Contact information and addresses
+- Company type classification
+
+**1,706 Patient-Referrer Links:**
+- Historical referral tracking
+- Referral dates preserved
+- Active status tracking
+
+**63 Referrer-Company Links:**
+- Practice affiliations for referrers
+- Dynamic `practice_name` property
+
+### Import Command
+
+```bash
+cd backend
+python manage.py import_filemaker_referrers
+```
+
+---
+
+## ✅ Phase 4: Coordinators (Complete)
+
+### What Was Imported
+
+**183 NDIS Support Coordinators:**
+- Extracted from patient NDIS coordinator data
+- Contact information (phone, email)
+- Organization affiliations
+- Coordinator type classification
+
+**247 Patient-Coordinator Links:**
+- Historical coordinator assignments
+- NDIS plan start/end dates
+- NDIS-specific notes
+- Current status tracking
+
+### Import Command
+
+```bash
+cd backend
+python manage.py import_coordinators_only
+```
+
+---
+
+## ✅ Phase 5: Appointments (Complete)
+
+### What Was Imported
+
+**8,329 Patient Appointments:**
+- Imported from `API_event` (filtered for appointments with patients)
+- Linked to clinics and patients
+- Date/time properly parsed and combined
+- Status automatically mapped:
+  - Past appointments: `status = 'completed'` (8,319)
+  - Future appointments: `status = 'scheduled'` (10)
+- Appointment reason extracted from notes
+- **Skipped:** 1,492 appointments (clinics not in database)
+- **Skipped:** 5,292 block bookings/holidays (no patient ID)
+
+### Import Command
+
+```bash
+cd backend
+python manage.py import_filemaker_appointments
+```
+
+### Key Features
+
+- **Case-insensitive UUID matching** - Handles FileMaker's uppercase UUIDs
+- **Automated status mapping** - Past vs. future classification
+- **Reason extraction** - First sentence/line from notes
+- **Deduplication** - Via `filemaker_event_id`
+
+---
+
+## ✅ Clinical Notes (Complete)
+
+### What Was Imported
+
+**42,036 Clinical Notes:**
+- All notes from `API_Notes` table
+- Linked to patients via FileMaker ID
+- Created dates and authors preserved
+- Note type classification (e.g., "General", "Clinical", etc.)
+- **Note:** Multiple imports ran, some duplication occurred (11,206 unique notes expected)
+
+### Import Command
+
+```bash
+# Notes imported as part of coordinators import
+cd backend
+python manage.py import_filemaker_coordinators_notes
+```
 
 ### Current Nexus State
 
