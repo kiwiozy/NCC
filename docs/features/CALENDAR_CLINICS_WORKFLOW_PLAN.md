@@ -1,12 +1,339 @@
 # 🗓️ Calendar & Clinics Workflow - Planning Document
 
 **Date:** November 10, 2025  
-**Status:** 🎯 PLANNING PHASE  
+**Status:** ✅ COMPLETE - Ready to Build  
 **Purpose:** Design how calendar, clinics, clinicians, and appointments work together
 
 ---
 
-## 📊 Current State (What We Have)
+## 📊 Complete Requirements Specification
+
+This document contains all decisions made during the planning session.
+
+---
+
+## 1. CLINICS & LOCATIONS 🏥
+
+### **Clinic Types:**
+- ✅ **All 13 clinics tracked** (11 physical + 2 home visit)
+- ✅ **Physical clinics (11):**
+  - Tamworth (main clinic - 5,731 historical appointments)
+  - Newcastle
+  - RPA (1,335 historical appointments)
+  - Armidale (1,031 historical appointments)
+  - Gunnedah (232 historical appointments)
+  - Concord
+  - Better Health Practice
+  - Coffs Harbour
+  - Inverell
+  - Narrabri
+  
+- 🏠 **Home Visit Clinics (2):**
+  - **Home Visit - Craig** (appointments at patient homes, Craig)
+  - **Home Visit - Jono** (appointments at patient homes, Jono)
+  - **Why separate:** Easy filtering/reporting per clinician's home visits
+
+### **Operating Hours:**
+- ❌ **No operating hours enforcement** at this stage
+- ✅ Can schedule appointments anytime at any clinic
+- 📝 May add later if needed
+
+### **Multi-Clinic Operations:**
+- ✅ **Common to work at multiple clinics in one day**
+- 📅 Calendar shows all clinics together with visual distinction
+- ❌ **No travel time tracking** - manually managed
+
+---
+
+## 2. CLINICIANS & STAFF 👨‍⚕️
+
+### **Clinicians:**
+- **Craig** - works at all clinics
+- **Jono** - works at all clinics
+
+### **Workflow:**
+- ✅ **Patients booked to CLINIC** (location-based scheduling)
+- ✅ **Either Craig or Jono can see them** at physical clinics
+- ✅ **Can book appointments for each other**
+- 🏠 **Home visits: Clinician assigned via clinic** (Home Visit - Craig vs Home Visit - Jono)
+
+### **Clinician Assignment:**
+- 🏥 **Physical clinics:** No clinician field needed (flexible)
+- 🏠 **Home visits:** Clinician determined by clinic choice
+- 📋 **Historical appointments (8,329):** Remain unassigned (no clinician)
+- ✅ **Going forward:** All new appointments have clear clinic (and thus clinician for home visits)
+
+---
+
+## 3. APPOINTMENT TYPES 📋
+
+### **Initial Appointment Types (4):**
+1. ✅ **Appointment** (generic/default)
+2. ✅ **Initial Consultation**
+3. ✅ **Follow-up**
+4. ✅ **Fitting**
+
+### **Management:**
+- ✅ **Lookup table** managed in Settings
+- ✅ Admin can add/edit/delete types
+- ✅ Flexible - evolves with business needs
+
+### **Duration:**
+- ⏱️ **Default: 30 minutes** for all types
+- ✅ Can manually adjust per appointment
+- 📅 Calendar shows time blocks (e.g., 9:00 AM - 9:30 AM)
+
+---
+
+## 4. CALENDAR VIEWS 📅
+
+### **Enabled Views (3):**
+1. ✅ **Month view** - See whole month at a glance
+2. ✅ **Week view** - See one week, hour-by-hour
+3. ✅ **Day view** - Single day, detailed schedule
+
+### **Color Coding:**
+- 🎨 **Color by Clinic**
+- ✅ Each clinic has **color picker in Settings**
+- ✅ Admin can set/change colors anytime
+- ✅ Calendar automatically uses those colors
+- 🎯 Visual distinction between locations
+
+**Example:**
+```
+Clinic Settings:
+- Tamworth: 🎨 Blue
+- Newcastle: 🎨 Green
+- Home Visit - Craig: 🎨 Purple
+- Home Visit - Jono: 🎨 Orange
+```
+
+---
+
+## 5. WORKFLOW - Day-to-Day Operations 🔄
+
+### **Creating Appointments:**
+- ✅ **Click time slot on calendar** → opens "New Appointment" dialog
+- ✅ Date/time pre-filled from clicked slot
+- ✅ Quick and visual
+
+**Dialog fields:**
+1. Patient (search/select or quick-add new)
+2. Clinic (dropdown with color indicator)
+3. Date & Time (pre-filled, adjustable)
+4. Appointment Type (dropdown)
+5. Duration (default 30 min, adjustable)
+6. Notes (optional, free text)
+
+### **Quick-Add New Patients:**
+- ✅ **During appointment creation**
+- ✅ Minimum fields: Name + Phone
+- ✅ Full patient details added later
+- ✅ Fast booking, no friction
+
+**Workflow:**
+1. Click time slot
+2. Start typing patient name → "Not found"
+3. **"+ Add New Patient"** button
+4. Quick form: Name + Phone → Save
+5. Patient created, appointment linked
+
+### **Viewing Appointments:**
+- ✅ **Click existing appointment** → View-only popup
+- ✅ Shows: Patient, clinic, date/time, type, notes
+- ✅ **"Edit" button** → opens edit dialog
+- ✅ **"Delete" button** → confirms and cancels
+- ✅ **"View Patient Record" link** → full patient page
+- ✅ **Quick patient info** in popup (name, phone, DOB)
+
+### **Filtering:**
+- ✅ **Multi-select clinic filter**
+- ✅ Checkboxes for each clinic
+- ✅ Select multiple clinics to view
+- ✅ **Save preference** (remembers selection)
+
+**Use cases:**
+- "Show me Tamworth + Home Visit - Craig only"
+- "Show all clinics except Narrabri"
+- "Show only home visits (both clinicians)"
+
+### **Default View:**
+- ✅ **Show all clinics at once** when calendar opens
+- ✅ Color-coded by clinic
+- ✅ Big picture of all operations
+- ✅ Filter down using multi-select as needed
+
+---
+
+## 6. PATIENT INTEGRATION 🤝
+
+### **New Patient Booking:**
+- ✅ **Quick-add during appointment creation**
+- ✅ Minimum: Name + Phone
+- ✅ Complete patient record later
+
+### **Patient History Access:**
+- ✅ **Quick info in appointment popup**
+- ✅ **"View Full Record" button** → patient page
+- ✅ Stay on calendar or dive deeper
+
+### **Data Integrity:**
+- ✅ All appointments linked to patients
+- ✅ No orphaned appointments
+
+---
+
+## 7. REPORTING & ANALYTICS 📊
+
+### **Current Phase:**
+- ⏳ **Defer dashboard/reporting widgets** - build later
+- ✅ Focus on core calendar functionality first
+
+### **Future Dashboard Widgets:**
+- Today's appointments count
+- This week's appointments
+- Busy clinics overview
+- Upcoming week summary
+- Appointments by clinic/type
+
+### **For Now:**
+- ✅ Basic appointment list/search
+- ✅ Filter by date range
+- ⏳ Export to CSV (add later if needed)
+
+---
+
+## 8. MOBILE ACCESS 📱
+
+### **Current Phase:**
+- ✅ **Desktop/laptop focus** - build core system first
+- ✅ Make it **responsive** (works on mobile browser)
+- ⏳ **Optimized mobile experience later**
+
+### **Future Mobile Features:**
+- Quick appointment view
+- Easy patient search
+- One-tap call patient
+- Push notifications for appointments
+
+### **For Now:**
+- ✅ Desktop calendar fully functional
+- ✅ Basic mobile browser access (not optimized)
+
+---
+
+## 9. SMS APPOINTMENT REMINDERS 📱
+
+### **Integration:**
+- ✅ **Use existing SMS system** (SMS Broadcast)
+- ✅ **Trigger from calendar appointments**
+- ✅ Use existing SMS tracking (don't duplicate)
+
+### **Sending:**
+- ✅ **Automatic reminders:** Day before at 9:00 AM
+- ✅ **Manual send button** on each appointment
+- ✅ Track which reminders were sent (via existing SMS system)
+
+**Examples:**
+- Appointment: Wednesday 2:00 PM → SMS: Tuesday 9:00 AM
+- Appointment: Monday 9:00 AM → SMS: Sunday 9:00 AM
+
+### **SMS Templates:**
+- ✅ **Per-clinic templates** (in Clinic Settings)
+- ✅ **Template variables:**
+  - `{patient_name}` - Patient's first name
+  - `{appointment_time}` - Time (e.g., "10:00 AM")
+  - `{appointment_date}` - Date (e.g., "Wednesday, Nov 12")
+  - `{clinic_name}` - Clinic name
+  - `{clinic_phone}` - Clinic phone
+  - `{clinic_address}` - Clinic address (if set)
+
+**Example templates:**
+
+**Tamworth:**
+```
+Hi {patient_name}, reminder: appointment tomorrow at {appointment_time} 
+at our Tamworth clinic. Call 6766 3153 to reschedule. - WalkEasy
+```
+
+**Home Visit - Craig:**
+```
+Hi {patient_name}, Craig will visit you at home tomorrow at {appointment_time}. 
+Call 6766 3153 if you need to reschedule. - WalkEasy
+```
+
+### **Patient Preferences:**
+- ✅ **Patient record has "SMS Reminders" toggle** (Yes/No)
+- ✅ Default: **Yes** (opt-in by default)
+- ✅ Can be changed in patient settings
+- ✅ System respects preference
+
+---
+
+## 10. FILEMAKER COMPARISON 🔄
+
+### **Philosophy:**
+- ❌ **Don't copy FileMaker** - build something better
+- ✅ Fresh start with modern tools
+- ✅ Learn from 9 years of experience
+- ✅ Modern web-based calendar (FullCalendar)
+- ✅ Clean, fast, intuitive interface
+
+---
+
+## 📋 IMPLEMENTATION CHECKLIST
+
+### **Phase 1: Core Calendar (Priority)**
+- [ ] Update Clinic model with color field
+- [ ] Create 2 new Home Visit clinics (Craig, Jono)
+- [ ] Remove old generic "Home Visit" clinic
+- [ ] Create AppointmentType lookup table
+- [ ] Seed 4 default appointment types
+- [ ] Update Appointment model (link to AppointmentType)
+- [ ] Enhance FullCalendar component:
+  - [ ] Click time slot → Create appointment
+  - [ ] Click appointment → View/Edit dialog
+  - [ ] Multi-select clinic filter
+  - [ ] Color by clinic
+  - [ ] Month/Week/Day views
+- [ ] Quick-add patient during booking
+- [ ] Patient info in appointment popup
+
+### **Phase 2: Settings Management**
+- [ ] Clinic color picker
+- [ ] Appointment types CRUD
+- [ ] SMS template per clinic
+- [ ] SMS reminders toggle per patient
+
+### **Phase 3: SMS Integration**
+- [ ] Automatic reminder scheduler (daily job at 9 AM)
+- [ ] Manual "Send SMS" button per appointment
+- [ ] Template variable replacement
+- [ ] Respect patient opt-out preference
+
+### **Phase 4: Future Enhancements**
+- [ ] Dashboard widgets
+- [ ] Advanced reporting
+- [ ] Export to CSV
+- [ ] Optimized mobile UI
+- [ ] Operating hours enforcement
+- [ ] Travel time warnings
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+The calendar system is successful when:
+1. ✅ Can book appointments in seconds (click slot → select patient → done)
+2. ✅ Clear visual distinction between clinics (colors)
+3. ✅ Easy to filter view (multi-select clinics)
+4. ✅ Automatic SMS reminders work reliably
+5. ✅ Quick patient info access from appointments
+6. ✅ Fast, modern, web-based (better than FileMaker!)
+
+---
+
+**Next Step:** Start implementation - Phase 1 (Core Calendar)
 
 ### **Data Imported:** ✅
 - ✅ **11 Clinics** (Tamworth, Newcastle, RPA, Armidale, etc.)
