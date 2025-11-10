@@ -30,10 +30,15 @@ import {
 interface Clinic {
   id: string;
   name: string;
-  abn: string | null;
   phone: string | null;
   email: string | null;
-  address_json: any;
+  address_json: {
+    street?: string;
+    suburb?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,10 +55,13 @@ export default function ClinicsSettings() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [formName, setFormName] = useState('');
-  const [formABN, setFormABN] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formAddress, setFormAddress] = useState('');
+  // Address fields
+  const [formStreet, setFormStreet] = useState('');
+  const [formSuburb, setFormSuburb] = useState('');
+  const [formState, setFormState] = useState('');
+  const [formPostcode, setFormPostcode] = useState('');
 
   useEffect(() => {
     fetchClinics();
@@ -82,25 +90,34 @@ export default function ClinicsSettings() {
   const handleAdd = () => {
     setEditingClinic(null);
     setFormName('');
-    setFormABN('');
     setFormPhone('');
     setFormEmail('');
-    setFormAddress('');
+    setFormStreet('');
+    setFormSuburb('');
+    setFormState('');
+    setFormPostcode('');
     setModalOpen(true);
   };
 
   const handleEdit = (clinic: Clinic) => {
     setEditingClinic(clinic);
     setFormName(clinic.name || '');
-    setFormABN(clinic.abn || '');
     setFormPhone(clinic.phone || '');
     setFormEmail(clinic.email || '');
+    
     // Parse address_json if it exists
-    if (clinic.address_json && typeof clinic.address_json === 'object') {
-      setFormAddress(JSON.stringify(clinic.address_json, null, 2));
+    if (clinic.address_json) {
+      setFormStreet(clinic.address_json.street || '');
+      setFormSuburb(clinic.address_json.suburb || '');
+      setFormState(clinic.address_json.state || '');
+      setFormPostcode(clinic.address_json.postcode || '');
     } else {
-      setFormAddress('');
+      setFormStreet('');
+      setFormSuburb('');
+      setFormState('');
+      setFormPostcode('');
     }
+    
     setModalOpen(true);
   };
 
@@ -120,22 +137,18 @@ export default function ClinicsSettings() {
       
       const method = editingClinic ? 'PUT' : 'POST';
       
-      // Parse address_json if provided
-      let addressJson = {};
-      if (formAddress.trim()) {
-        try {
-          addressJson = JSON.parse(formAddress);
-        } catch (e) {
-          throw new Error('Address must be valid JSON');
-        }
-      }
+      // Build address_json from individual fields
+      const addressJson: any = {};
+      if (formStreet.trim()) addressJson.street = formStreet.trim();
+      if (formSuburb.trim()) addressJson.suburb = formSuburb.trim();
+      if (formState.trim()) addressJson.state = formState.trim();
+      if (formPostcode.trim()) addressJson.postcode = formPostcode.trim();
       
       const payload = {
         name: formName.trim(),
-        abn: formABN.trim() || null,
         phone: formPhone.trim() || null,
         email: formEmail.trim() || null,
-        address_json: addressJson,
+        address_json: Object.keys(addressJson).length > 0 ? addressJson : null,
       };
 
       const response = await fetch(url, {
@@ -143,6 +156,7 @@ export default function ClinicsSettings() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
@@ -202,7 +216,7 @@ export default function ClinicsSettings() {
     
     const parts = [];
     if (addressJson.street) parts.push(addressJson.street);
-    if (addressJson.city) parts.push(addressJson.city);
+    if (addressJson.suburb) parts.push(addressJson.suburb);
     if (addressJson.state) parts.push(addressJson.state);
     if (addressJson.postcode) parts.push(addressJson.postcode);
     
@@ -213,9 +227,6 @@ export default function ClinicsSettings() {
     <Table.Tr key={clinic.id}>
       <Table.Td>
         <Text fw={500}>{clinic.name}</Text>
-      </Table.Td>
-      <Table.Td>
-        <Text size="sm" c="dimmed">{clinic.abn || '-'}</Text>
       </Table.Td>
       <Table.Td>
         <Text size="sm">{clinic.phone || '-'}</Text>
@@ -293,7 +304,6 @@ export default function ClinicsSettings() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Name</Table.Th>
-                  <Table.Th>ABN</Table.Th>
                   <Table.Th>Phone</Table.Th>
                   <Table.Th>Email</Table.Th>
                   <Table.Th>Address</Table.Th>
@@ -322,34 +332,49 @@ export default function ClinicsSettings() {
             />
             
             <TextInput
-              label="ABN"
-              placeholder="Australian Business Number (optional)"
-              value={formABN}
-              onChange={(e) => setFormABN(e.target.value)}
-            />
-            
-            <TextInput
               label="Phone"
-              placeholder="Main clinic phone number (optional)"
+              placeholder="e.g., (02) 6762 4444"
               value={formPhone}
               onChange={(e) => setFormPhone(e.target.value)}
             />
             
             <TextInput
               label="Email"
-              placeholder="Main clinic email address (optional)"
+              placeholder="e.g., newcastle@walkeasy.com.au"
               type="email"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
             />
             
-            <Textarea
-              label="Address (JSON)"
-              placeholder='{"street": "123 Main St", "city": "Newcastle", "state": "NSW", "postcode": "2300"}'
-              value={formAddress}
-              onChange={(e) => setFormAddress(e.target.value)}
-              description="Enter address as JSON object (optional)"
-              minRows={3}
+            <Text size="sm" fw={500} mt="xs">Address</Text>
+            
+            <TextInput
+              label="Street"
+              placeholder="e.g., 123 Hunter Street"
+              value={formStreet}
+              onChange={(e) => setFormStreet(e.target.value)}
+            />
+            
+            <Group grow>
+              <TextInput
+                label="Suburb"
+                placeholder="e.g., Newcastle"
+                value={formSuburb}
+                onChange={(e) => setFormSuburb(e.target.value)}
+              />
+              <TextInput
+                label="State"
+                placeholder="e.g., NSW"
+                value={formState}
+                onChange={(e) => setFormState(e.target.value)}
+              />
+            </Group>
+            
+            <TextInput
+              label="Postcode"
+              placeholder="e.g., 2300"
+              value={formPostcode}
+              onChange={(e) => setFormPostcode(e.target.value)}
             />
 
             <Group justify="flex-end" mt="md">
