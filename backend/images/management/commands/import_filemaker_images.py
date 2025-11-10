@@ -42,7 +42,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 requests.packages.urllib3.disable_warnings()
 
 # Load FileMaker credentials from scripts/filemaker/.env
-SCRIPT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'scripts', 'filemaker')
+# Hardcode the project root to avoid path calculation issues
+PROJECT_ROOT = '/Users/craig/Documents/nexus-core-clinic'
+SCRIPT_DIR = os.path.join(PROJECT_ROOT, 'scripts', 'filemaker')
 ENV_PATH = os.path.join(SCRIPT_DIR, '.env')
 
 FM_USERNAME = None
@@ -95,6 +97,10 @@ class FileMakerAPI:
 
     def authenticate(self):
         """Authenticate with FileMaker Data API"""
+        if not FM_USERNAME or not FM_PASSWORD:
+            print(f"❌ Missing credentials: FM_USERNAME={bool(FM_USERNAME)}, FM_PASSWORD={bool(FM_PASSWORD)}")
+            return False
+            
         auth_url = f"{FM_BASE_URL_DATA_API}/sessions"
         auth_string = base64.b64encode(f"{FM_USERNAME}:{FM_PASSWORD}".encode()).decode()
         headers = {
@@ -105,10 +111,13 @@ class FileMakerAPI:
             response = requests.post(auth_url, headers=headers, timeout=30, verify=False)
             if response.status_code == 200:
                 self.token = response.json()["response"]["token"]
+                print(f"✅ Authentication successful")
                 return True
             else:
+                print(f"❌ Authentication failed: {response.status_code} - {response.text}")
                 return False
         except Exception as e:
+            print(f"❌ Authentication error: {e}")
             return False
 
     def logout(self):
@@ -270,11 +279,13 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
             with transaction.atomic():
                 if nexus_patient_id:
                     patient = Patient.objects.get(id=nexus_patient_id)
+                    patient_content_type = ContentType.objects.get_for_model(Patient)
+                    
                     batch = ImageBatch.objects.create(
-                        patient=patient,
+                        content_type=patient_content_type,
+                        object_id=nexus_patient_id,
                         name=batch_name,
-                        captured_date=captured_date,
-                        notes=f"Imported from FileMaker on {datetime.now().strftime('%Y-%m-%d')}"
+                        description=f"Imported from FileMaker on {datetime.now().strftime('%Y-%m-%d')}"
                     )
                 else:
                     # Unlinked batch - we'll handle this differently
