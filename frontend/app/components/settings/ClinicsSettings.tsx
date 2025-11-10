@@ -18,6 +18,8 @@ import {
   Alert,
   Loader,
   Box,
+  ColorInput,
+  Switch,
 } from '@mantine/core';
 import {
   IconPlus,
@@ -30,10 +32,18 @@ import {
 interface Clinic {
   id: string;
   name: string;
-  abn: string | null;
   phone: string | null;
   email: string | null;
-  address_json: any;
+  address_json: {
+    street?: string;
+    suburb?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  } | null;
+  color: string | null;
+  sms_reminder_template: string | null;
+  sms_reminders_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -46,12 +56,21 @@ export default function ClinicsSettings() {
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [formName, setFormName] = useState('');
-  const [formABN, setFormABN] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formAddress, setFormAddress] = useState('');
+  // Address fields
+  const [formStreet, setFormStreet] = useState('');
+  const [formSuburb, setFormSuburb] = useState('');
+  const [formState, setFormState] = useState('');
+  const [formPostcode, setFormPostcode] = useState('');
+  // Calendar & SMS fields
+  const [formColor, setFormColor] = useState('#3B82F6');
+  const [formSmsTemplate, setFormSmsTemplate] = useState('');
+  const [formSmsEnabled, setFormSmsEnabled] = useState(true);
 
   useEffect(() => {
     fetchClinics();
@@ -80,25 +99,42 @@ export default function ClinicsSettings() {
   const handleAdd = () => {
     setEditingClinic(null);
     setFormName('');
-    setFormABN('');
-    setFormPhone('');
+    setFormPhone('6766 3153'); // Default phone number for all clinics
     setFormEmail('');
-    setFormAddress('');
+    setFormStreet('');
+    setFormSuburb('');
+    setFormState('');
+    setFormPostcode('');
+    setFormColor('#3B82F6'); // Default blue color
+    setFormSmsTemplate('Hi {patient_name}, this is a reminder for your appointment at {clinic_name} on {date} at {time}. Reply STOP to unsubscribe.');
+    setFormSmsEnabled(true);
     setModalOpen(true);
   };
 
   const handleEdit = (clinic: Clinic) => {
     setEditingClinic(clinic);
     setFormName(clinic.name || '');
-    setFormABN(clinic.abn || '');
     setFormPhone(clinic.phone || '');
     setFormEmail(clinic.email || '');
+    
     // Parse address_json if it exists
-    if (clinic.address_json && typeof clinic.address_json === 'object') {
-      setFormAddress(JSON.stringify(clinic.address_json, null, 2));
+    if (clinic.address_json) {
+      setFormStreet(clinic.address_json.street || '');
+      setFormSuburb(clinic.address_json.suburb || '');
+      setFormState(clinic.address_json.state || '');
+      setFormPostcode(clinic.address_json.postcode || '');
     } else {
-      setFormAddress('');
+      setFormStreet('');
+      setFormSuburb('');
+      setFormState('');
+      setFormPostcode('');
     }
+    
+    // Load calendar & SMS fields
+    setFormColor(clinic.color || '#3B82F6');
+    setFormSmsTemplate(clinic.sms_reminder_template || '');
+    setFormSmsEnabled(clinic.sms_reminders_enabled !== false);
+    
     setModalOpen(true);
   };
 
@@ -118,22 +154,21 @@ export default function ClinicsSettings() {
       
       const method = editingClinic ? 'PUT' : 'POST';
       
-      // Parse address_json if provided
-      let addressJson = {};
-      if (formAddress.trim()) {
-        try {
-          addressJson = JSON.parse(formAddress);
-        } catch (e) {
-          throw new Error('Address must be valid JSON');
-        }
-      }
+      // Build address_json from individual fields
+      const addressJson: any = {};
+      if (formStreet.trim()) addressJson.street = formStreet.trim();
+      if (formSuburb.trim()) addressJson.suburb = formSuburb.trim();
+      if (formState.trim()) addressJson.state = formState.trim();
+      if (formPostcode.trim()) addressJson.postcode = formPostcode.trim();
       
       const payload = {
         name: formName.trim(),
-        abn: formABN.trim() || null,
         phone: formPhone.trim() || null,
         email: formEmail.trim() || null,
-        address_json: addressJson,
+        address_json: Object.keys(addressJson).length > 0 ? addressJson : null,
+        color: formColor || '#3B82F6',
+        sms_reminder_template: formSmsTemplate.trim() || null,
+        sms_reminders_enabled: formSmsEnabled,
       };
 
       const response = await fetch(url, {
@@ -141,6 +176,7 @@ export default function ClinicsSettings() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
@@ -200,7 +236,7 @@ export default function ClinicsSettings() {
     
     const parts = [];
     if (addressJson.street) parts.push(addressJson.street);
-    if (addressJson.city) parts.push(addressJson.city);
+    if (addressJson.suburb) parts.push(addressJson.suburb);
     if (addressJson.state) parts.push(addressJson.state);
     if (addressJson.postcode) parts.push(addressJson.postcode);
     
@@ -210,10 +246,18 @@ export default function ClinicsSettings() {
   const rows = clinics.map((clinic) => (
     <Table.Tr key={clinic.id}>
       <Table.Td>
-        <Text fw={500}>{clinic.name}</Text>
+        <Box
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 4,
+            backgroundColor: clinic.color || '#3B82F6',
+            border: '1px solid #e0e0e0'
+          }}
+        />
       </Table.Td>
       <Table.Td>
-        <Text size="sm" c="dimmed">{clinic.abn || '-'}</Text>
+        <Text fw={500}>{clinic.name}</Text>
       </Table.Td>
       <Table.Td>
         <Text size="sm">{clinic.phone || '-'}</Text>
@@ -288,16 +332,16 @@ export default function ClinicsSettings() {
             </Text>
           ) : (
             <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>ABN</Table.Th>
-                  <Table.Th>Phone</Table.Th>
-                  <Table.Th>Email</Table.Th>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Color</Table.Th>
+              <Table.Th>Name</Table.Th>
+              <Table.Th>Phone</Table.Th>
+              <Table.Th>Email</Table.Th>
+              <Table.Th>Address</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
             </Table>
           )}
@@ -320,34 +364,78 @@ export default function ClinicsSettings() {
             />
             
             <TextInput
-              label="ABN"
-              placeholder="Australian Business Number (optional)"
-              value={formABN}
-              onChange={(e) => setFormABN(e.target.value)}
-            />
-            
-            <TextInput
               label="Phone"
-              placeholder="Main clinic phone number (optional)"
+              placeholder="e.g., (02) 6762 4444"
               value={formPhone}
               onChange={(e) => setFormPhone(e.target.value)}
             />
             
             <TextInput
               label="Email"
-              placeholder="Main clinic email address (optional)"
+              placeholder="e.g., newcastle@walkeasy.com.au"
               type="email"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
             />
             
+            <Text size="sm" fw={500} mt="xs">Address</Text>
+            
+            <TextInput
+              label="Street"
+              placeholder="e.g., 123 Hunter Street"
+              value={formStreet}
+              onChange={(e) => setFormStreet(e.target.value)}
+            />
+            
+            <Group grow>
+              <TextInput
+                label="Suburb"
+                placeholder="e.g., Newcastle"
+                value={formSuburb}
+                onChange={(e) => setFormSuburb(e.target.value)}
+              />
+              <TextInput
+                label="State"
+                placeholder="e.g., NSW"
+                value={formState}
+                onChange={(e) => setFormState(e.target.value)}
+              />
+            </Group>
+            
+            <TextInput
+              label="Postcode"
+              placeholder="e.g., 2300"
+              value={formPostcode}
+              onChange={(e) => setFormPostcode(e.target.value)}
+            />
+            
+            <Text size="sm" fw={500} mt="xs">Calendar & SMS Settings</Text>
+            
+            <ColorInput
+              label="Calendar Color"
+              description="Color used to display this clinic in the calendar"
+              placeholder="Pick a color"
+              value={formColor}
+              onChange={setFormColor}
+              format="hex"
+              swatches={['#e11d48', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#10B981', '#EF4444']}
+            />
+            
             <Textarea
-              label="Address (JSON)"
-              placeholder='{"street": "123 Main St", "city": "Newcastle", "state": "NSW", "postcode": "2300"}'
-              value={formAddress}
-              onChange={(e) => setFormAddress(e.target.value)}
-              description="Enter address as JSON object (optional)"
+              label="SMS Reminder Template"
+              description="Use placeholders: {patient_name}, {clinic_name}, {date}, {time}"
+              placeholder="Hi {patient_name}, this is a reminder for your appointment..."
+              value={formSmsTemplate}
+              onChange={(e) => setFormSmsTemplate(e.target.value)}
               minRows={3}
+              maxRows={6}
+            />
+            
+            <Switch
+              label="Enable automatic SMS reminders for this clinic"
+              description="Reminders are sent at 9:00 AM the day before the appointment"
+              checked={formSmsEnabled}
+              onChange={(event) => setFormSmsEnabled(event.currentTarget.checked)}
             />
 
             <Group justify="flex-end" mt="md">
@@ -356,6 +444,40 @@ export default function ClinicsSettings() {
               </Button>
               <Button onClick={handleSave}>
                 {editingClinic ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          opened={deleteConfirmOpened}
+          onClose={() => {
+            setDeleteConfirmOpened(false);
+            setItemToDelete(null);
+          }}
+          title="Delete Clinic"
+          size="sm"
+        >
+          <Stack gap="md">
+            <Text>
+              Are you sure you want to delete this clinic? This action cannot be undone.
+            </Text>
+            <Alert icon={<IconAlertCircle size={16} />} color="yellow">
+              Warning: Clinics with existing appointments or clinicians cannot be deleted.
+            </Alert>
+            <Group justify="flex-end" mt="md">
+              <Button 
+                variant="subtle" 
+                onClick={() => {
+                  setDeleteConfirmOpened(false);
+                  setItemToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button color="red" onClick={confirmDelete}>
+                Delete
               </Button>
             </Group>
           </Stack>

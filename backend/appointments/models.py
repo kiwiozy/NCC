@@ -8,6 +8,46 @@ from patients.models import Patient
 from clinicians.models import Clinic, Clinician
 
 
+class AppointmentType(models.Model):
+    """
+    Lookup table for appointment types (e.g., Initial Consultation, Follow-up, Fitting).
+    Managed in Settings by admins.
+    """
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Name of appointment type (e.g., 'Initial Consultation')"
+    )
+    
+    default_duration_minutes = models.IntegerField(
+        default=30,
+        help_text="Default duration in minutes"
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this type is active and available for use"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'appointment_types'
+        ordering = ['name']
+        verbose_name = 'Appointment Type'
+        verbose_name_plural = 'Appointment Types'
+    
+    def __str__(self):
+        return self.name
+
+
 class Appointment(models.Model):
     """
     Patient appointments/bookings.
@@ -46,7 +86,9 @@ class Appointment(models.Model):
         Clinic,
         on_delete=models.PROTECT,
         related_name='appointments',
-        help_text="Clinic location for this appointment"
+        null=True,
+        blank=True,
+        help_text="Clinic location for this appointment (null for historical appointments with archived clinics)"
     )
     
     patient = models.ForeignKey(
@@ -63,6 +105,15 @@ class Appointment(models.Model):
         blank=True,
         related_name='appointments',
         help_text="Assigned clinician"
+    )
+    
+    appointment_type = models.ForeignKey(
+        AppointmentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+        help_text="Type of appointment (e.g., Initial Consultation, Follow-up)"
     )
     
     start_time = models.DateTimeField(

@@ -71,25 +71,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             clinics = clinics.filter(id=clinic_id)
         
         # Format clinics as FullCalendar resources with colors
-        clinic_colors = {
-            0: '#e11d48',  # Red
-            1: '#f97316',  # Orange
-            2: '#eab308',  # Yellow
-            3: '#22c55e',  # Green
-            4: '#06b6d4',  # Cyan
-            5: '#3b82f6',  # Blue
-            6: '#8b5cf6',  # Purple
-            7: '#ec4899',  # Pink
-            8: '#14b8a6',  # Teal
-            9: '#f59e0b',  # Amber
-        }
-        
         resources = []
-        for idx, clinic in enumerate(clinics):
+        for clinic in clinics:
             resources.append({
                 'id': str(clinic.id),
                 'title': clinic.name,
-                'color': clinic_colors.get(idx % len(clinic_colors), '#3b82f6')
+                'color': clinic.color or '#3B82F6'  # Use clinic's color or default blue
             })
         
         # Get appointments (events)

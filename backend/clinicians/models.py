@@ -51,6 +51,25 @@ class Clinic(models.Model):
         help_text="Clinic address (JSON format)"
     )
     
+    color = models.CharField(
+        max_length=7,
+        null=True,
+        blank=True,
+        default='#3B82F6',
+        help_text="Hex color code for calendar display (e.g., '#3B82F6')"
+    )
+    
+    sms_reminder_template = models.TextField(
+        null=True,
+        blank=True,
+        help_text="SMS reminder template for this clinic (use {patient_name}, {date}, {time}, {clinic_name} placeholders)"
+    )
+    
+    sms_reminders_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether automatic SMS reminders are enabled for this clinic"
+    )
+    
     filemaker_id = models.UUIDField(
         null=True,
         blank=True,

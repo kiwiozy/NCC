@@ -11,6 +11,7 @@ import ContactHeader from '../components/ContactHeader';
 import NotesDialog from '../components/dialogs/NotesDialog';
 import DocumentsDialog from '../components/dialogs/DocumentsDialog';
 import ImagesDialog from '../components/dialogs/ImagesDialog';
+import AppointmentsDialog from '../components/dialogs/AppointmentsDialog';
 import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
@@ -398,6 +399,7 @@ export default function ContactsPage() {
   const [notesDialogOpened, setNotesDialogOpened] = useState(false);
   const [documentsDialogOpened, setDocumentsDialogOpened] = useState(false);
   const [imagesDialogOpened, setImagesDialogOpened] = useState(false);
+  const [appointmentsDialogOpened, setAppointmentsDialogOpened] = useState(false);
   const [lettersDialogOpened, setLettersDialogOpened] = useState(false);
   const [smsDialogOpened, setSmsDialogOpened] = useState(false);
   
@@ -1009,6 +1011,7 @@ export default function ContactsPage() {
         onNotesClick={() => setNotesDialogOpened(true)}
         onDocumentsClick={() => setDocumentsDialogOpened(true)}
         onImagesClick={() => setImagesDialogOpened(true)}
+        onAppointmentsClick={() => setAppointmentsDialogOpened(true)}
         onLettersClick={() => setLettersDialogOpened(true)}
         onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
@@ -3166,6 +3169,14 @@ export default function ContactsPage() {
       <ImagesDialog
         opened={imagesDialogOpened}
         onClose={() => setImagesDialogOpened(false)}
+        patientId={selectedContact?.id || ''}
+        patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
+      />
+
+      {/* Appointments Dialog */}
+      <AppointmentsDialog
+        opened={appointmentsDialogOpened}
+        onClose={() => setAppointmentsDialogOpened(false)}
         patientId={selectedContact?.id || ''}
         patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
       />

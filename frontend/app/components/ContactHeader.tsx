@@ -13,6 +13,7 @@ interface ContactHeaderProps {
   onNotesClick?: () => void;
   onDocumentsClick?: () => void;
   onImagesClick?: () => void;
+  onAppointmentsClick?: () => void;
   onLettersClick?: () => void;
   onSmsClick?: () => void;
   patientId?: string; // For getting note and document counts
@@ -38,6 +39,7 @@ export default function ContactHeader({
   onNotesClick,
   onDocumentsClick,
   onImagesClick,
+  onAppointmentsClick,
   onLettersClick,
   onSmsClick,
   patientId,
@@ -335,7 +337,7 @@ export default function ContactHeader({
     { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); }, count: notesCount },
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
-    { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => console.log('Appointments') },
+    { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); } },
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },

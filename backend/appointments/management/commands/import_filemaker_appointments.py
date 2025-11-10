@@ -18,6 +18,7 @@ from datetime import datetime, date, time
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+import pytz
 from appointments.models import Appointment
 from patients.models import Patient
 from clinicians.models import Clinic
@@ -95,26 +96,39 @@ class Command(BaseCommand):
 
     def parse_datetime(self, date_str, time_str):
         """
-        Parse FileMaker date + time to Python datetime
+        Parse FileMaker date + time to Python datetime (timezone-aware, Australia/Sydney)
+        FileMaker sends times in local Sydney time, so we need to localize them properly.
         date_str: '2017-10-17' or '2017-10-17 13:30:00'
         time_str: '13:30:00' or None
         """
         if not date_str:
             return None
         
+        # Australia/Sydney timezone
+        sydney_tz = pytz.timezone('Australia/Sydney')
+        
         try:
+            naive_dt = None
+            
             # If date_str already contains time
             if ' ' in str(date_str):
-                return datetime.strptime(str(date_str), '%Y-%m-%d %H:%M:%S')
-            
+                naive_dt = datetime.strptime(str(date_str), '%Y-%m-%d %H:%M:%S')
             # Combine date + time
-            if time_str and str(time_str).strip():
+            elif time_str and str(time_str).strip():
                 date_part = datetime.strptime(str(date_str), '%Y-%m-%d').date()
                 time_part = datetime.strptime(str(time_str), '%H:%M:%S').time()
-                return datetime.combine(date_part, time_part)
+                naive_dt = datetime.combine(date_part, time_part)
             else:
-                # Date only (all-day event)
-                return datetime.strptime(str(date_str), '%Y-%m-%d')
+                # Date only (all-day event) - use noon Sydney time
+                naive_dt = datetime.strptime(str(date_str), '%Y-%m-%d').replace(hour=12)
+            
+            if naive_dt:
+                # Localize the naive datetime to Sydney timezone
+                # This tells Django: "this time is in Sydney timezone, please convert to UTC for storage"
+                aware_dt = sydney_tz.localize(naive_dt)
+                return aware_dt
+            
+            return None
                 
         except Exception as e:
             return None
@@ -172,9 +186,10 @@ class Command(BaseCommand):
 
         imported = 0
         skipped_no_patient = 0
-        skipped_no_clinic = 0
+        skipped_no_clinic = 0  # Kept for backwards compatibility, but we now allow null
         skipped_invalid_date = 0
         skipped_error = 0
+        orphaned_appointments = 0  # Appointments with unknown clinic IDs (clinic=None)
 
         for fm_appt in fm_appointments:
             appt_id = fm_appt.get('id')
@@ -202,15 +217,14 @@ class Command(BaseCommand):
                 skipped_no_patient += 1
                 continue
 
-            # Find clinic
-            if not clinic_id:
-                skipped_no_clinic += 1
-                continue
-
-            clinic = clinic_map.get(str(clinic_id).lower())  # Case-insensitive match
-            if not clinic:
-                skipped_no_clinic += 1
-                continue
+            # Find clinic (allow null for orphaned appointments)
+            clinic = None
+            if clinic_id:
+                clinic = clinic_map.get(str(clinic_id).lower())  # Case-insensitive match
+                if not clinic:
+                    orphaned_appointments += 1
+            
+            # Note: We allow appointments without clinics for historical data
 
             # Parse dates
             start_time = self.parse_datetime(start_date_str, start_time_str)
@@ -234,7 +248,7 @@ class Command(BaseCommand):
                 if imported < 5:  # Show first 5 in dry run
                     self.stdout.write(f"\n   [DRY RUN] Would create:")
                     self.stdout.write(f"      Patient: {patient.first_name} {patient.last_name}")
-                    self.stdout.write(f"      Clinic: {clinic.name}")
+                    self.stdout.write(f"      Clinic: {clinic.name if clinic else 'Unknown/Archived'}")
                     self.stdout.write(f"      Start: {start_time}")
                     self.stdout.write(f"      Status: {status}")
                     self.stdout.write(f"      Reason: {reason}")
@@ -276,10 +290,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"\n   ✅ Imported: {imported}")
         
+        if orphaned_appointments > 0:
+            self.stdout.write(f"   ⚠️  Orphaned (unknown clinic): {orphaned_appointments}")
         if skipped_no_patient > 0:
             self.stdout.write(f"   ⚠️  Skipped (no patient): {skipped_no_patient}")
-        if skipped_no_clinic > 0:
-            self.stdout.write(f"   ⚠️  Skipped (no clinic): {skipped_no_clinic}")
         if skipped_invalid_date > 0:
             self.stdout.write(f"   ⚠️  Skipped (invalid date): {skipped_invalid_date}")
         if skipped_error > 0:
