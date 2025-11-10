@@ -85,6 +85,8 @@ class FileMakerAPI:
     def __init__(self):
         self.token = None
         self.layout = "API_Images"
+        self.last_auth_time = None
+        self.token_lifetime = 900  # 15 minutes (FileMaker default is 15 min)
         
         # Container fields in priority order (waterfall)
         self.container_fields = [
@@ -95,8 +97,28 @@ class FileMakerAPI:
             'image_small'      # Last resort
         ]
 
+    def ensure_authenticated(self):
+        """Ensure we have a valid token, re-authenticating if needed"""
+        import time
+        
+        # If no token, authenticate
+        if not self.token:
+            return self.authenticate()
+        
+        # If token is about to expire (within 2 minutes), re-authenticate
+        if self.last_auth_time:
+            elapsed = time.time() - self.last_auth_time
+            if elapsed > (self.token_lifetime - 120):  # Refresh 2 min before expiry
+                print(f"   🔄 Token expiring soon ({elapsed:.0f}s), re-authenticating...")
+                self.logout()
+                return self.authenticate()
+        
+        return True
+
     def authenticate(self):
         """Authenticate with FileMaker Data API"""
+        import time
+        
         if not FM_USERNAME or not FM_PASSWORD:
             print(f"❌ Missing credentials: FM_USERNAME={bool(FM_USERNAME)}, FM_PASSWORD={bool(FM_PASSWORD)}")
             return False
@@ -111,6 +133,7 @@ class FileMakerAPI:
             response = requests.post(auth_url, headers=headers, timeout=30, verify=False)
             if response.status_code == 200:
                 self.token = response.json()["response"]["token"]
+                self.last_auth_time = time.time()
                 print(f"✅ Authentication successful")
                 return True
             else:
@@ -132,6 +155,10 @@ class FileMakerAPI:
 
     def find_unexported_images(self, limit=100, offset=1):
         """Find images in FileMaker that have not been exported yet"""
+        # Ensure token is valid before making request
+        if not self.ensure_authenticated():
+            return [], {}
+        
         find_url = f"{FM_BASE_URL_DATA_API}/layouts/{self.layout}/_find"
         headers = {
             'Authorization': f'Bearer {self.token}',
@@ -178,6 +205,10 @@ class FileMakerAPI:
 
     def download_container_file(self, url):
         """Download file from container URL using the current token"""
+        # Ensure token is valid before making request
+        if not self.ensure_authenticated():
+            return None, None
+        
         headers = {'Authorization': f'Bearer {self.token}'}
         try:
             response = requests.get(url, headers=headers, stream=True, timeout=60, verify=False)
@@ -188,6 +219,10 @@ class FileMakerAPI:
 
     def update_export_date(self, fm_record_id):
         """Update NexusExportDate in FileMaker for a given record"""
+        # Ensure token is valid before making request
+        if not self.ensure_authenticated():
+            return False
+        
         update_url = f"{FM_BASE_URL_DATA_API}/layouts/{self.layout}/records/{fm_record_id}"
         headers = {
             'Authorization': f'Bearer {self.token}',
@@ -388,8 +423,7 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
                             batch=batch,
                             s3_key=s3_upload_info['s3_key'],
                             s3_thumbnail_key=s3_thumb_info['s3_key'],
-                            s3_bucket=s3_service.bucket_name,
-                            original_filename=original_filename,
+                            original_name=original_filename,
                             file_size=len(file_content),
                             thumbnail_size=thumbnail_size,
                             mime_type=mime_type or 'image/jpeg',
@@ -397,7 +431,7 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
                             height=height,
                             category=image_type,  # Preserve exact FileMaker category
                             filemaker_id=fm_image_id,
-                            uploaded_by='FileMaker Import'
+                            uploaded_by=None  # FileMaker imports have no user
                         )
                         
                         # Update FileMaker
@@ -425,13 +459,34 @@ def process_images_for_patient(fm_api, patient_images, nexus_patient_id, s3_serv
 class Command(BaseCommand):
     help = 'Imports FileMaker images to S3 and Nexus using waterfall container field strategy'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--limit',
+            type=int,
+            default=None,
+            help='Maximum number of images to import in this run (default: no limit)'
+        )
+        parser.add_argument(
+            '--batch-size',
+            type=int,
+            default=50,
+            help='Number of records to fetch per API request (default: 50)'
+        )
+
     def handle(self, *args, **options):
+        limit = options.get('limit')
+        batch_size = options.get('batch_size', 50)
         self.stdout.write("=" * 80)
         self.stdout.write("📷 FileMaker Images to S3 Bulk Import")
         self.stdout.write("=" * 80)
         self.stdout.write(f"Database: {FM_DATABASE}")
         self.stdout.write(f"Layout: API_Images")
         self.stdout.write(f"Query: WHERE NexusExportDate IS EMPTY")
+        if limit:
+            self.stdout.write(f"Limit: {limit} images (batch import mode)")
+        else:
+            self.stdout.write(f"Limit: No limit (import all)")
+        self.stdout.write(f"Batch Size: {batch_size} records per API request")
         self.stdout.write("")
         self.stdout.write("Waterfall Strategy:")
         self.stdout.write("  1. Try image_Full (best quality)")
@@ -456,14 +511,19 @@ class Command(BaseCommand):
         self.stdout.write("=" * 80)
         
         # Process in batches
-        batch_size = 50
         offset = 1
         total_processed = 0
+        images_imported_count = 0  # Track actual imported images for limit
         
         # Group images by patient as we fetch them
         patient_images_map = defaultdict(list)
         
         while True:
+            # Check if we've reached the limit
+            if limit and images_imported_count >= limit:
+                self.stdout.write(f"\n   ⏹️  Reached import limit ({limit} images) - stopping")
+                break
+            
             self.stdout.write(f"\n📋 Fetching batch (offset: {offset}, limit: {batch_size})...")
             records, data_info = fm_api.find_unexported_images(limit=batch_size, offset=offset)
             
@@ -476,7 +536,10 @@ class Command(BaseCommand):
             
             if offset == 1:
                 stats['total_found'] = found_count
-                self.stdout.write(f"   📊 Total unexported images: {found_count}")
+                if limit:
+                    self.stdout.write(f"   📊 Total unexported images: {found_count} (will import up to {limit})")
+                else:
+                    self.stdout.write(f"   📊 Total unexported images: {found_count}")
             
             self.stdout.write(f"   📄 Grouping {returned_count} images by patient...")
             
@@ -510,6 +573,11 @@ class Command(BaseCommand):
         self.stdout.write("=" * 80)
         
         for i, (fm_contact_id, images) in enumerate(patient_images_map.items(), 1):
+            # Check limit before processing each patient
+            if limit and images_imported_count >= limit:
+                self.stdout.write(f"\n   ⏹️  Reached import limit ({limit} images) - stopping patient processing")
+                break
+            
             self.stdout.write(f"\n[{i}/{len(patient_images_map)}] Patient: {fm_contact_id}")
             self.stdout.write(f"   Images: {len(images)}")
             
@@ -522,9 +590,23 @@ class Command(BaseCommand):
                 stats['skipped'] += len(images)
                 continue
             
+            # If we have a limit, check if we should process all images or just some
+            images_to_process = images
+            if limit and images_imported_count + len(images) > limit:
+                # Only process enough to reach the limit
+                images_to_process = images[:limit - images_imported_count]
+                self.stdout.write(f"   ⚠️  Limit reached - processing only {len(images_to_process)} of {len(images)} images")
+            
             # Process images for this patient
-            imported = process_images_for_patient(fm_api, images, nexus_patient_id, s3_service, self)
-            self.stdout.write(f"   ✅ Imported {imported} images")
+            imported = process_images_for_patient(fm_api, images_to_process, nexus_patient_id, s3_service, self)
+            images_imported_count += imported
+            self.stdout.write(f"   ✅ Imported {imported} images (total so far: {images_imported_count})")
+            
+            # If we skipped some images due to limit, update stats
+            if len(images_to_process) < len(images):
+                skipped_count = len(images) - len(images_to_process)
+                self.stdout.write(f"   ⏭️  Skipped remaining {skipped_count} images (limit reached)")
+                stats['skipped'] += skipped_count
         
         # Logout
         fm_api.logout()

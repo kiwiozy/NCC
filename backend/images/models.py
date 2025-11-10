@@ -150,6 +150,14 @@ class Image(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
+    # FileMaker import tracking
+    filemaker_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text='Original FileMaker image ID (from API_Images.id) - for imported images only'
+    )
+    
     # Order within batch
     order = models.IntegerField(default=0, help_text="Display order within batch")
     

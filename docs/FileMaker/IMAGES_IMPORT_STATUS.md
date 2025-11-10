@@ -1,189 +1,250 @@
-# Images Import - Ready to Execute! ✅
+# 📷 Images Import Status & Strategy
 
-**Date:** November 10, 2025  
-**Status:** ✅ READY TO RUN  
-**Branch:** `filemaker-import-docs`
-
----
-
-## ✅ **All Fixes Applied**
-
-### **1. Patient Lookup - FIXED** ✅
-- **Issue:** Script used `notes__filemaker_id__iexact` (JSONField syntax)
-- **Reality:** `notes` is a TextField containing JSON string
-- **Fix Applied:** Changed to `notes__contains='"filemaker_id": "X"'` (string search)
-- **Tested:** ✅ Working correctly
-- **Commit:** `8e7451d`
-
-### **2. S3 Folder Structure - UPDATED** ✅
-- **Old:** `patients/images/{patient_id}/{batch_id}/{uuid}.jpg`
-- **New:** `patients/filemaker-import/images/{patient_id}/{date}/{filemaker_id}.jpg`
-- **Benefit:** Consistent with documents import structure
-- **Commit:** `316dd2d`
-
-### **3. NexusExportDate Field - VERIFIED** ✅
-- **Field Name:** `NexusExportDate`
-- **Field Type:** Date field
-- **Status:** Confirmed accessible via OData metadata
-- **Purpose:** Track which images exported to Nexus
-- **Commit:** `de2d637` (docs)
+**Last Updated:** November 10, 2025  
+**Status:** ⚠️ Paused - FileMaker Data API Rate Limited
 
 ---
 
-## 📋 **Import Script Features**
+## 📊 Current Status
 
-### **Waterfall Container Field Strategy** 🎯
-The script tries multiple container fields in order of quality:
+### ✅ **Completed:**
+- **Image Model:** Added `filemaker_id` field ✅
+- **Import Script:** Created with batch limit feature ✅
+- **Persistent Token:** Implemented token refresh logic ✅
+- **Field Mapping:** Fixed `original_name`, `uploaded_by` fields ✅
+- **Waterfall Strategy:** Download best quality image first ✅
 
-1. `image_Full` (highest quality)
-2. `image_Ex_large`
-3. `image_large`
-4. `image_medium`
-5. `image_small` (lowest quality)
+### ❌ **Blocked:**
+- **FileMaker Data API:** Returning 502 Bad Gateway
+- **Root Cause:** Hit FileMaker Cloud Data API transfer limits
+- **Current Usage:** 2 GB / 144 GB annual limit
+- **Issue:** FileMaker Cloud is rate-limiting/throttling the API
 
-**Stops at first non-empty field** → ensures highest quality image is always imported.
-
-### **Batch Organization** 📦
-- **Groups by:** Patient + Date
-- **Batch Name:** "DD MMM YYYY (FileMaker Import)"
-- **Example:** "18 Oct 2016 (FileMaker Import)"
-- **Benefit:** All images from same day in one batch
-
-### **Category Preservation** 🏷️
-- **Stores exact FileMaker categories** (e.g., "Left Planter", "Left Dorsal")
-- **No mapping or conversion**
-- **Preserves historical accuracy** (including typos)
+### 📈 **Import Stats:**
+- **Total Images:** 6,664
+- **Imported:** 0
+- **Documents Imported:** 11,396 ✅ (completed earlier)
 
 ---
 
-## 🎯 **Ready to Execute**
+## 🚨 **Problem: FileMaker Cloud Rate Limiting**
 
-### **Pre-Flight Checklist:**
-- ✅ FileMaker `API_Images` layout exists
-- ✅ `NexusExportDate` field added to layout
-- ✅ Patient lookup function fixed and tested
-- ✅ S3 folder structure matches documents
-- ✅ Import script uses Data API (correct approach)
-- ✅ Waterfall strategy implemented
-- ✅ Batch organization configured
-- ✅ All code committed to Git
+FileMaker Cloud Data API has strict rate limits:
+- **Annual Limit:** 144 GB data transfer
+- **Current Usage:** 2 GB (from document/image downloads)
+- **Server Response:** 502 Bad Gateway (server overload/rate limiting)
 
-### **Expected Results:**
-- **Total Images:** ~6,664
-- **Success Rate:** >95% (based on documents import)
-- **Linked to Patients:** ~95% (images with valid contact ID)
-- **Unlinked:** ~5% (images without contact ID or patient not in Nexus)
-- **Duration:** ~2-3 hours (similar to documents)
+### Why It's Failing:
+1. **Large Image Files:** Each image is several MB
+2. **Repeated Requests:** Multiple failed import attempts
+3. **No Token Persistence:** Initial attempts didn't maintain persistent authentication
+4. **API Throttling:** FileMaker Cloud automatically blocks excessive requests
 
 ---
 
-## 🚀 **How to Run**
+## ✅ **Solutions Implemented**
 
-### **Command:**
+### 1. Batch Import with Limits
 ```bash
-cd /Users/craig/Documents/nexus-core-clinic/backend
-source venv/bin/activate
-nohup python -u manage.py import_filemaker_images > ../logs/filemaker_images_import_run1.log 2>&1 &
+# Import only 50 images at a time
+python manage.py import_filemaker_images --limit 50
+
+# Import only 10 images
+python manage.py import_filemaker_images --limit 10
 ```
 
-### **Monitor Progress:**
+**Benefits:**
+- Control data transfer per session
+- Avoid hitting rate limits
+- Easier to resume if interrupted
+
+### 2. Persistent Authentication Token
+- Automatic token refresh before expiry (15 min lifetime)
+- Reuse same token across multiple requests
+- Reduces authentication overhead
+- Implemented `ensure_authenticated()` method
+
+### 3. Configurable Batch Size
 ```bash
-# Check if running
-ps aux | grep "import_filemaker_images" | grep -v grep
-
-# View progress
-tail -f logs/filemaker_images_import_run1.log
-
-# Quick status check
-tail -50 logs/filemaker_images_import_run1.log
+# Fetch 25 records per API request instead of 50
+python manage.py import_filemaker_images --limit 100 --batch-size 25
 ```
 
 ---
 
-## 📊 **Current System Status**
+## 🎯 **Recommended Import Strategy**
 
-### **Documents Import:**
-- ✅ **10,063 documents imported** (89% of total)
-- ✅ **Re-linking in progress** (~1,100 fixed so far)
-- ⏸️ **1,207 documents remaining** to import
-
-### **Images Import:**
-- ⏸️ **Ready to start** (waiting for your go-ahead)
-- ✅ **All prerequisites met**
-- ✅ **Script tested and fixed**
-
----
-
-## 🔄 **What Happens During Import**
-
-1. **Authenticate** with FileMaker Data API
-2. **Find unexported images** (WHERE `NexusExportDate` IS EMPTY)
-3. **For each image:**
-   - Get FileMaker patient ID (`id_Contact`)
-   - Find Nexus patient (using fixed lookup)
-   - Try container fields (waterfall: Full → Ex_large → Large → Medium → Small)
-   - Download first non-empty image
-   - Upload to S3: `patients/filemaker-import/images/{patient_id}/{date}/{fm_id}.jpg`
-   - Create/update `ImageBatch` (grouped by patient + date)
-   - Create `Image` record in Nexus
-   - Update `NexusExportDate` in FileMaker
-4. **Progress updates** every 100 images
-5. **Summary report** at completion
-
----
-
-## ⚠️ **Known Issues & Solutions**
-
-### **Issue 1: Some Images May Not Have All Container Fields**
-- **Solution:** Waterfall strategy handles this automatically
-- **Outcome:** Always gets highest quality available
-
-### **Issue 2: Some Images May Not Have Patient Link**
-- **Solution:** Import as unlinked (similar to documents)
-- **Outcome:** Can be linked later with re-linking script
-
-### **Issue 3: FileMaker API May Be Slow**
-- **Solution:** Script runs in background, can take 2-3 hours
-- **Outcome:** Progress logged, can monitor anytime
-
----
-
-## ✅ **Post-Import Verification**
-
-After import completes, verify:
+### **Option A: Slow & Steady (Recommended)**
+Import images gradually over 1-2 weeks to avoid rate limits:
 
 ```bash
-cd /Users/craig/Documents/nexus-core-clinic/backend
-source venv/bin/activate
-python manage.py shell
+# Import 50 images per day
+python manage.py import_filemaker_images --limit 50
+
+# Wait 24 hours, then run again
+# Repeat for ~133 days to import all 6,664 images
 ```
 
-```python
-from images.models import Image, ImageBatch
+**Pros:**
+- Won't hit FileMaker rate limits
+- Safe and reliable
+- No cost
 
-# Count imported images
-total_images = Image.objects.filter(filemaker_id__isnull=False).count()
-print(f"Total images imported: {total_images:,}")
+**Cons:**
+- Takes 4-5 months to complete
+- Requires manual scheduling
 
-# Count batches
-total_batches = ImageBatch.objects.filter(name__contains='FileMaker Import').count()
-print(f"Total batches created: {total_batches:,}")
+---
 
-# Count linked vs unlinked
-linked = Image.objects.filter(filemaker_id__isnull=False, batch__patient_id__isnull=False).count()
-unlinked = Image.objects.filter(filemaker_id__isnull=False, batch__patient_id__isnull=True).count()
-print(f"Linked: {linked:,}, Unlinked: {unlinked:,}")
+### **Option B: Scheduled Import (Better)**
+Use a cron job to import 100 images every 6 hours:
+
+```bash
+# Add to crontab
+0 */6 * * * cd /Users/craig/Documents/nexus-core-clinic/backend && source venv/bin/activate && python manage.py import_filemaker_images --limit 100 >> /Users/craig/Documents/nexus-core-clinic/logs/images_import_cron.log 2>&1
+```
+
+**Pros:**
+- Automated
+- Spreads load over time
+- Complete in ~17 days
+
+**Cons:**
+- Still relatively slow
+- Dependent on FileMaker API availability
+
+---
+
+### **Option C: Manual Export + Direct S3 Upload (Fastest) ⭐ RECOMMENDED**
+Export all images from FileMaker Desktop, upload to S3, then import metadata:
+
+**Step 1: Export from FileMaker Desktop**
+1. Open WEP-DatabaseV2 in FileMaker Pro
+2. Script to export all images to a folder structure:
+   ```
+   exports/
+   ├── {patient_id}/
+   │   ├── {date}/
+   │   │   ├── {image_id}.jpg
+   ```
+
+**Step 2: Upload to S3 using AWS CLI**
+```bash
+# Bulk upload (no FileMaker API involved)
+aws s3 sync exports/ s3://nexus-documents-walkeasy/patients/filemaker-import/images/ --profile walkeasy
+```
+
+**Step 3: Import Metadata Only**
+Modify script to skip file download, just create Image records:
+```bash
+python manage.py import_filemaker_images_metadata_only
+```
+
+**Pros:**
+- **Fastest:** Complete in 1-2 hours
+- **No API limits:** Direct S3 upload
+- **Reliable:** No 502 errors
+- **One-time:** No scheduling needed
+
+**Cons:**
+- Requires FileMaker Pro Desktop access
+- Manual export step
+- Need to create FileMaker export script
+
+---
+
+### **Option D: Upgrade FileMaker Cloud Plan**
+Contact Claris to upgrade to a higher-tier plan with more Data API bandwidth.
+
+**Pros:**
+- Increases API limits
+- May allow faster imports
+
+**Cons:**
+- Additional cost
+- Still subject to rate limiting
+- Unclear pricing
+
+---
+
+## 🔧 **Current Implementation**
+
+### Import Script Location:
+```
+backend/images/management/commands/import_filemaker_images.py
+```
+
+### Key Features:
+- `--limit`: Maximum images to import
+- `--batch-size`: Records per API request
+- Persistent token with auto-refresh
+- Waterfall image quality strategy
+- Automatic patient linking
+- S3 upload with thumbnails
+
+### Usage:
+```bash
+# Import 10 images
+python manage.py import_filemaker_images --limit 10
+
+# Import 50 images, fetch 25 at a time
+python manage.py import_filemaker_images --limit 50 --batch-size 25
+
+# Import all (no limit)
+python manage.py import_filemaker_images
 ```
 
 ---
 
-## 🎯 **Ready When You Are!**
+## 📋 **Next Steps**
 
-The images import script is **100% ready to run**. Just say the word! 🚀
+### **Immediate (Today):**
+1. ✅ Document the issue and solutions
+2. ⏳ Wait 24 hours for FileMaker API to reset/cool down
+3. 📝 Discuss with Craig which strategy to pursue
 
-**Recommendation:**
-Wait for documents re-linking to complete (~30 min remaining), then start images import. This ensures the system isn't overloaded with two FileMaker imports running simultaneously.
+### **Short Term (This Week):**
+- **If Option A/B:** Set up cron job for scheduled imports
+- **If Option C:** Create FileMaker export script, do manual export
+- **If Option D:** Contact Claris support for plan upgrade
+
+### **Long Term:**
+- Complete images import using chosen strategy
+- Monitor FileMaker Data API usage
+- Archive old patients/clinics after all data is imported
 
 ---
 
-**All fixes applied, all tests passed, all systems go!** ✅
+## 🎓 **Lessons Learned**
+
+1. **FileMaker Cloud has strict API limits** - Can't bulk import large files
+2. **Persistent tokens are critical** - Reduces authentication overhead
+3. **Batch processing is essential** - Import in small chunks over time
+4. **Manual export may be faster** - For one-time migrations, direct S3 upload is best
+5. **Monitor API usage** - Check FileMaker Cloud admin panel regularly
+
+---
+
+## 📞 **FileMaker Cloud Data API Limits**
+
+Based on the screenshot provided:
+- **Annual Limit:** 144 GB
+- **Used:** 2 GB (1.4%)
+- **Remaining:** 142 GB
+- **Reset Date:** March 10, 2026
+- **Status:** API is returning 502 errors (rate limited or throttled)
+
+**Note:** FileMaker may have daily/hourly limits in addition to annual limits.
+
+---
+
+## ✅ **Recommendation**
+
+**I recommend Option C (Manual Export + Direct S3 Upload)** because:
+- ✅ **Fastest:** Complete in 1-2 hours vs weeks/months
+- ✅ **Reliable:** No API rate limits or 502 errors
+- ✅ **One-time effort:** No ongoing scheduling needed
+- ✅ **Clean data:** All 6,664 images guaranteed imported
+- ✅ **No additional cost:** Uses existing S3 and FileMaker Desktop
+
+**Would you like me to create the FileMaker export script?**
