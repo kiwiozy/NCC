@@ -90,7 +90,7 @@ export default function ClinicsSettings() {
   const handleAdd = () => {
     setEditingClinic(null);
     setFormName('');
-    setFormPhone('');
+    setFormPhone('6766 3153'); // Default phone number for all clinics
     setFormEmail('');
     setFormStreet('');
     setFormSuburb('');
