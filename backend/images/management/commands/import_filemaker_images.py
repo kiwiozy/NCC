@@ -204,18 +204,56 @@ class FileMakerAPI:
         return None, None
 
     def download_container_file(self, url):
-        """Download file from container URL using the current token"""
+        """
+        Download file from container URL using the current token.
+        
+        Implements exponential backoff for 502 errors (WPE crash recovery).
+        Adds 0.5 second delay between downloads to prevent overwhelming WPE.
+        """
+        import time
+        
         # Ensure token is valid before making request
         if not self.ensure_authenticated():
             return None, None
         
         headers = {'Authorization': f'Bearer {self.token}'}
-        try:
-            response = requests.get(url, headers=headers, stream=True, timeout=60, verify=False)
-            response.raise_for_status()
-            return response.content, response.headers.get('Content-Type')
-        except requests.exceptions.RequestException:
-            return None, None
+        
+        # Exponential backoff for 502 errors
+        max_retries = 5
+        wait_time = 30  # Start with 30 seconds
+        
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, headers=headers, stream=True, timeout=60, verify=False)
+                
+                # Check for 502 Bad Gateway (WPE crash)
+                if response.status_code == 502:
+                    if attempt < max_retries - 1:
+                        print(f"      ⚠️  502 Bad Gateway (WPE crash) - waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                        time.sleep(wait_time)
+                        wait_time *= 2  # Exponential backoff: 30, 60, 120, 240, 480
+                        continue
+                    else:
+                        print(f"      ❌ 502 Bad Gateway - max retries reached")
+                        return None, None
+                
+                response.raise_for_status()
+                
+                # Success - add 0.5 second delay before next download to prevent WPE overload
+                time.sleep(0.5)
+                
+                return response.content, response.headers.get('Content-Type')
+                
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    print(f"      ⚠️  Download error ({e}) - retrying after {wait_time}s")
+                    time.sleep(wait_time)
+                    wait_time *= 2
+                    continue
+                else:
+                    return None, None
+        
+        return None, None
 
     def update_export_date(self, fm_record_id):
         """Update NexusExportDate in FileMaker for a given record"""
