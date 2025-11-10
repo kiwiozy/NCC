@@ -39,6 +39,7 @@ docs/
 │       └── SETTINGS_REQUIREMENTS.md
 │
 ├── features/                     # ⭐ Feature documentation
+│   ├── CLINICS_CALENDAR_SYSTEM.md       # Clinics & calendar (in progress) ⭐ NEW
 │   ├── SMS_NOTIFICATION_WIDGET_PLAN.md  # SMS notifications
 │   └── MMS_SUPPORT_PLAN.md              # MMS research (deferred)
 │
@@ -113,6 +114,7 @@ docs/
 - [Patients Page](architecture/pages/PatientsPage.md) - Main patient management page
 
 ### **Feature Documentation**
+- [Clinics & Calendar System](features/CLINICS_CALENDAR_SYSTEM.md) - Calendar, clinics, clinicians ⚠️ IN PROGRESS ⭐ NEW
 - [SMS Notification Widget](features/SMS_NOTIFICATION_WIDGET_PLAN.md) - Real-time SMS notifications ✅ NEW
 - [Communication Dialog](architecture/dialogs/CommunicationDialog.md) - Patient contact info
 - [Coordinator Dialogs](architecture/dialogs/CoordinatorDialogs.md) - NDIS coordinators
