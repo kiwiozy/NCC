@@ -46,6 +46,8 @@ export default function ClinicsSettings() {
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [formName, setFormName] = useState('');
   const [formABN, setFormABN] = useState('');
@@ -356,6 +358,40 @@ export default function ClinicsSettings() {
               </Button>
               <Button onClick={handleSave}>
                 {editingClinic ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          opened={deleteConfirmOpened}
+          onClose={() => {
+            setDeleteConfirmOpened(false);
+            setItemToDelete(null);
+          }}
+          title="Delete Clinic"
+          size="sm"
+        >
+          <Stack gap="md">
+            <Text>
+              Are you sure you want to delete this clinic? This action cannot be undone.
+            </Text>
+            <Alert icon={<IconAlertCircle size={16} />} color="yellow">
+              Warning: Clinics with existing appointments or clinicians cannot be deleted.
+            </Alert>
+            <Group justify="flex-end" mt="md">
+              <Button 
+                variant="subtle" 
+                onClick={() => {
+                  setDeleteConfirmOpened(false);
+                  setItemToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button color="red" onClick={confirmDelete}>
+                Delete
               </Button>
             </Group>
           </Stack>
