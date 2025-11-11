@@ -40,7 +40,6 @@ import {
   IconListDetails,
 } from '@tabler/icons-react';
 import Link from 'next/link';
-import MarketingNav from '../components/MarketingNav';
 
 export default function MarketingDashboardPage() {
   // Mock data - will come from API later
@@ -118,9 +117,6 @@ export default function MarketingDashboardPage() {
 
   return (
     <Container size="xl" py="xl">
-      {/* Marketing Navigation Tabs */}
-      <MarketingNav />
-
       {/* Header */}
       <Group justify="space-between" mb="xl">
         <div>

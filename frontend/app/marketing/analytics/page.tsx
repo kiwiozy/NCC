@@ -9,14 +9,10 @@
 
 import { Container, Title, Text, Card } from '@mantine/core';
 import { IconChartBar } from '@tabler/icons-react';
-import MarketingNav from '../../components/MarketingNav';
 
 export default function MarketingAnalyticsPage() {
   return (
     <Container size="xl" py="xl">
-      {/* Marketing Navigation Tabs */}
-      <MarketingNav />
-
       <Title order={1} mb="md">Marketing Analytics</Title>
       <Text size="sm" c="dimmed" mb="xl">
         Campaign performance, trends, and insights

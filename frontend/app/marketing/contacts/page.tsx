@@ -10,14 +10,10 @@
 
 import { Container, Title, Text, Card } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
-import MarketingNav from '../../components/MarketingNav';
 
 export default function MarketingContactsPage() {
   return (
     <Container size="xl" py="xl">
-      {/* Marketing Navigation Tabs */}
-      <MarketingNav />
-
       <Title order={1} mb="md">Marketing Contacts</Title>
       <Text size="sm" c="dimmed" mb="xl">
         Manage referrer contacts for email campaigns (Phase 1)

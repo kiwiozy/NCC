@@ -32,7 +32,6 @@ import {
   Progress,
 } from '@mantine/core';
 import { IconPlus, IconSearch, IconDots, IconMail, IconChartBar, IconUsers, IconSend } from '@tabler/icons-react';
-import MarketingNav from '../components/MarketingNav';
 
 export default function MarketingCampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,9 +93,6 @@ export default function MarketingCampaignsPage() {
 
   return (
     <Container size="xl" py="xl">
-      {/* Marketing Navigation Tabs */}
-      <MarketingNav />
-
       {/* Header */}
       <Group justify="space-between" mb="xl">
         <div>
