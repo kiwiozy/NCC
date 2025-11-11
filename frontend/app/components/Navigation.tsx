@@ -205,9 +205,10 @@ export default function Navigation({ children }: NavigationProps) {
   ];
 
   const marketingSubItems = [
+    { icon: <IconLayoutDashboard size={subIconSize} stroke={1.5} />, label: 'Dashboard', href: '/marketing' },
     { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Campaigns', href: '/marketing/campaigns' },
     { icon: <IconUsers size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/marketing/contacts' },
-    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Templates', href: '/marketing/templates' },
+    { icon: <IconTemplate size={subIconSize} stroke={1.5} />, label: 'Templates', href: '/marketing/templates' },
     { icon: <IconChartBar size={subIconSize} stroke={1.5} />, label: 'Analytics', href: '/marketing/analytics' },
   ];
 
