@@ -29,7 +29,9 @@ import {
   IconFlask,
   IconPhoto,
   IconLogout,
-  IconSpeakerphone
+  IconSpeakerphone,
+  IconChartBar,
+  IconTemplate
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
