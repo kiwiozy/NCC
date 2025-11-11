@@ -32,7 +32,7 @@ import {
   Progress,
 } from '@mantine/core';
 import { IconPlus, IconSearch, IconDots, IconMail, IconChartBar, IconUsers, IconSend } from '@tabler/icons-react';
-import Navigation from '../components/Navigation';
+import Navigation from '../../components/Navigation';
 
 export default function MarketingCampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
