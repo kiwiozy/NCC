@@ -28,7 +28,8 @@ import {
   IconPencil,
   IconFlask,
   IconPhoto,
-  IconLogout
+  IconLogout,
+  IconSpeakerphone
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -182,6 +183,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconLayoutDashboard size={iconSize} stroke={1.5} />, label: 'Dashboard', href: '/', unreadBadge: unreadCount > 0 ? unreadCount : undefined },
     { icon: <IconUsers size={iconSize} stroke={1.5} />, label: 'Contacts', href: '/patients', hasSubmenu: true, submenuType: 'contacts' },
     { icon: <IconCalendar size={iconSize} stroke={1.5} />, label: 'Calendar', href: '/calendar' },
+    { icon: <IconSpeakerphone size={iconSize} stroke={1.5} />, label: 'Marketing', href: '/marketing' },
     { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/accounts' },
     { icon: <IconCheckupList size={iconSize} stroke={1.5} />, label: 'Orders', href: '/orders' },
     { icon: <IconFileText size={iconSize} stroke={1.5} />, label: 'Inventory', href: '/inventory' },
@@ -320,7 +322,7 @@ export default function Navigation({ children }: NavigationProps) {
                 icon={item.icon}
                 label={item.label}
                 href={item.href}
-                active={(pathname.startsWith(item.href) && item.href !== '/') || (item.href === '/testing' && pathname.startsWith('/testing')) || (item.href === '/settings' && pathname.startsWith('/settings'))}
+                active={(pathname.startsWith(item.href) && item.href !== '/') || (item.href === '/marketing' && pathname.startsWith('/marketing')) || (item.href === '/testing' && pathname.startsWith('/testing')) || (item.href === '/settings' && pathname.startsWith('/settings'))}
                 onClick={() => handleNavClick(item.href, item.hasSubmenu)}
                 onMouseEnter={item.hasSubmenu ? () => handleMenuEnter(item.submenuType!) : undefined}
                 onMouseLeave={item.hasSubmenu ? handleMenuLeave : undefined}

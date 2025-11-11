@@ -1,12 +1,15 @@
 /**
- * Email Campaigns Dashboard - Main listing page
- * URL: /campaigns
+ * Marketing Dashboard - Referrer Campaigns
+ * URL: /marketing/campaigns
  * 
  * Features:
- * - List all email campaigns (draft, scheduled, sent)
+ * - List all referrer marketing campaigns (draft, scheduled, sent)
  * - Quick stats (active campaigns, open rate, etc.)
  * - Filter and search
  * - Create new campaign button
+ * 
+ * Phase 1: Referrers only
+ * Phase 2: Add patient campaigns later
  */
 
 'use client';
@@ -30,7 +33,7 @@ import {
 } from '@mantine/core';
 import { IconPlus, IconSearch, IconDots, IconMail, IconChartBar, IconUsers, IconSend } from '@tabler/icons-react';
 
-export default function CampaignsPage() {
+export default function MarketingCampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
@@ -39,37 +42,40 @@ export default function CampaignsPage() {
     { label: 'Active Campaigns', value: '12', icon: IconMail, color: 'blue' },
     { label: 'Total Sent', value: '1,234', icon: IconSend, color: 'green' },
     { label: 'Avg Open Rate', value: '85%', icon: IconChartBar, color: 'teal' },
-    { label: 'Total Subscribers', value: '245', icon: IconUsers, color: 'grape' },
+    { label: 'Referrer Contacts', value: '245', icon: IconUsers, color: 'grape' },
   ];
 
   const campaigns = [
     {
       id: '1',
-      name: 'Monthly Health Tips',
-      subject: 'Your November Health Update',
+      name: 'New Insoles Product Launch',
+      subject: 'Walk Easy - New Premium Insoles Available',
       status: 'sent',
       sentDate: '2025-11-01',
       recipients: 245,
+      recipientType: 'Podiatrists - Newcastle area',
       openRate: 85,
       clickRate: 23,
     },
     {
       id: '2',
-      name: 'Appointment Reminders',
-      subject: 'Your upcoming appointment at Walk Easy',
+      name: 'Quarterly Referrer Newsletter',
+      subject: 'Q4 2025 Update from Walk Easy',
       status: 'active',
       sentDate: null,
       recipients: 412,
+      recipientType: 'All active referrers',
       openRate: 92,
       clickRate: 15,
     },
     {
       id: '3',
-      name: 'Welcome Series',
-      subject: 'Welcome to Walk Easy Clinic',
+      name: 'Clinic Visit Follow-ups',
+      subject: 'Thank you for meeting with us',
       status: 'draft',
       sentDate: null,
-      recipients: 0,
+      recipients: 23,
+      recipientType: 'Recent clinic visits',
       openRate: 0,
       clickRate: 0,
     },
@@ -89,12 +95,17 @@ export default function CampaignsPage() {
     <Container size="xl" py="xl">
       {/* Header */}
       <Group justify="space-between" mb="xl">
-        <Title order={1}>Email Campaigns</Title>
+        <div>
+          <Title order={1}>Referrer Marketing Campaigns</Title>
+          <Text size="sm" c="dimmed">
+            Manage email campaigns to healthcare providers and referrers
+          </Text>
+        </div>
         <Button
           leftSection={<IconPlus size={16} />}
           size="md"
           onClick={() => {
-            // TODO: Navigate to /campaigns/new
+            // TODO: Navigate to /marketing/campaigns/new
             alert('Navigate to campaign builder');
           }}
         >
@@ -165,15 +176,19 @@ export default function CampaignsPage() {
                   </Badge>
                 </Group>
                 
-                <Text size="sm" c="dimmed" mb="md">
+                <Text size="sm" c="dimmed" mb="xs">
                   {campaign.subject}
                 </Text>
+
+                <Badge color="grape" variant="light" mb="md">
+                  {campaign.recipientType}
+                </Badge>
 
                 {campaign.status === 'sent' && (
                   <Group gap="xl">
                     <div>
                       <Text size="xs" c="dimmed">Sent to</Text>
-                      <Text size="sm" fw={600}>{campaign.recipients} patients</Text>
+                      <Text size="sm" fw={600}>{campaign.recipients} referrers</Text>
                     </div>
                     <div>
                       <Text size="xs" c="dimmed">Open Rate</Text>
@@ -214,7 +229,7 @@ export default function CampaignsPage() {
 
                 {campaign.status === 'draft' && (
                   <Text size="sm" c="dimmed">
-                    Not scheduled yet
+                    Not scheduled yet • {campaign.recipients} referrers selected
                   </Text>
                 )}
               </div>
@@ -257,9 +272,9 @@ export default function CampaignsPage() {
         <Card shadow="sm" padding="xl" radius="md" withBorder>
           <Stack align="center" gap="md" py="xl">
             <IconMail size={64} stroke={1} color="gray" />
-            <Title order={3} c="dimmed">No campaigns yet</Title>
+            <Title order={3} c="dimmed">No referrer campaigns yet</Title>
             <Text size="sm" c="dimmed" ta="center">
-              Create your first email campaign to start engaging with your patients
+              Create your first email campaign to start engaging with healthcare providers
             </Text>
             <Button
               leftSection={<IconPlus size={16} />}
@@ -270,6 +285,19 @@ export default function CampaignsPage() {
           </Stack>
         </Card>
       )}
+
+      {/* Info Banner */}
+      <Card shadow="sm" padding="md" radius="md" withBorder mt="xl" bg="blue.0">
+        <Group>
+          <IconUsers size={20} />
+          <div>
+            <Text size="sm" fw={600}>Phase 1: Referrer Marketing</Text>
+            <Text size="xs" c="dimmed">
+              Currently focused on healthcare provider campaigns. Patient campaigns coming in Phase 2.
+            </Text>
+          </div>
+        </Group>
+      </Card>
     </Container>
   );
 }
