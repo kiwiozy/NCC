@@ -27,6 +27,11 @@ Each page/dialog gets its own markdown file documenting:
 | Dashboard | `/` | ✅ Built | [Dashboard.md](pages/Dashboard.md) | Appointments, Patients, Orders ❌ |
 | Patients List | `/patients` | ✅ Built (UI) | [PatientsPage.md](pages/PatientsPage.md) | Patients ⚠️ (needs fields) |
 | Calendar | `/calendar` | ✅ Built | [Calendar.md](pages/Calendar.md) | Appointments ✅ |
+| **Marketing Dashboard** | `/marketing` | ✅ Built | - | Campaigns ❌ |
+| **Marketing Campaigns** | `/marketing/campaigns` | ✅ Built | - | Campaigns ❌ |
+| **Marketing Contacts** | `/marketing/contacts` | ⏳ Placeholder | - | Campaign Contacts ❌ |
+| **Marketing Templates** | `/marketing/templates` | ⏳ Placeholder | - | Email Templates ❌ |
+| **Marketing Analytics** | `/marketing/analytics` | ⏳ Placeholder | - | Campaign Analytics ❌ |
 | Testing | `/testing` | ✅ Built | - | Integrations ✅ |
 | Settings | `/settings` | ✅ Built | [Settings.md](pages/Settings.md) | Configuration ✅ |
 

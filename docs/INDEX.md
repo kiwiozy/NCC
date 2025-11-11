@@ -40,6 +40,9 @@ docs/
 │
 ├── features/                     # ⭐ Feature documentation
 │   ├── CLINICS_CALENDAR_SYSTEM.md       # Clinics & calendar (in progress) ⭐ NEW
+│   ├── CALENDAR_CLINICS_WORKFLOW_PLAN.md # Calendar workflow planning ⭐ NEW
+│   ├── MARKETING_SECTION_UI_SUMMARY.md  # Marketing section (PinsV5 migration) ⭐ NEW
+│   ├── PINSV5_TO_NEXUS_MIGRATION_PLAN.md # Email marketing migration plan ⭐ NEW
 │   ├── SMS_NOTIFICATION_WIDGET_PLAN.md  # SMS notifications
 │   └── MMS_SUPPORT_PLAN.md              # MMS research (deferred)
 │
@@ -115,6 +118,9 @@ docs/
 
 ### **Feature Documentation**
 - [Clinics & Calendar System](features/CLINICS_CALENDAR_SYSTEM.md) - Calendar, clinics, clinicians ⚠️ IN PROGRESS ⭐ NEW
+- [Calendar Workflow Plan](features/CALENDAR_CLINICS_WORKFLOW_PLAN.md) - Calendar planning & requirements ⭐ NEW
+- [Marketing Section](features/MARKETING_SECTION_UI_SUMMARY.md) - Email marketing for referrers ⭐ NEW
+- [PinsV5 Migration Plan](features/PINSV5_TO_NEXUS_MIGRATION_PLAN.md) - Email campaigns migration strategy ⭐ NEW
 - [SMS Notification Widget](features/SMS_NOTIFICATION_WIDGET_PLAN.md) - Real-time SMS notifications ✅ NEW
 - [Communication Dialog](architecture/dialogs/CommunicationDialog.md) - Patient contact info
 - [Coordinator Dialogs](architecture/dialogs/CoordinatorDialogs.md) - NDIS coordinators
@@ -151,6 +157,7 @@ docs/
 ### ✅ **Implemented**
 - **Google OAuth Authentication** - Seamless login with Google Workspace accounts
 - **Patient Letters System** - Full WYSIWYG editor with PDF generation and Safari-compatible printing ✅ NEW
+- **Marketing Section** - Email campaigns for referrer outreach (Phase 1: Referrers, Phase 2: Patients) ⭐ NEW
 - Patient management (list, search, filter, archive)
 - Contact types (patients, referrers, coordinators, etc.)
 - Multi-clinic calendar with drag-and-drop
