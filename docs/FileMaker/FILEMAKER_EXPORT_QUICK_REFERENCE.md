@@ -9,14 +9,34 @@
 
 ## 🔑 **AWS Credentials**
 
-Get these from your `.env` file:
+**Location:** `/Users/craig/Documents/nexus-core-clinic/backend/.env`
+
+**To get your credentials:**
 ```bash
-# Location: /Users/craig/Documents/nexus-core-clinic/backend/.env
-AWS_ACCESS_KEY_ID=your_key_here
-AWS_SECRET_ACCESS_KEY=your_secret_here
-AWS_S3_BUCKET_NAME=walkeasy-nexus-documents
-AWS_REGION=ap-southeast-2
+# Open the .env file
+cat /Users/craig/Documents/nexus-core-clinic/backend/.env | grep AWS
+
+# You'll see:
+# AWS_ACCESS_KEY_ID=<your_actual_key>
+# AWS_SECRET_ACCESS_KEY=<your_actual_secret>
+# AWS_S3_BUCKET_NAME=walkeasy-nexus-documents
+# AWS_REGION=ap-southeast-2
 ```
+
+**Or open in your editor:**
+```bash
+# Use VS Code
+code /Users/craig/Documents/nexus-core-clinic/backend/.env
+
+# Or use any text editor
+open -a TextEdit /Users/craig/Documents/nexus-core-clinic/backend/.env
+```
+
+**What you need for FileMaker:**
+- `AWS_ACCESS_KEY_ID` → Copy this value
+- `AWS_SECRET_ACCESS_KEY` → Copy this value
+- Region: `ap-southeast-2` (Sydney)
+- Bucket: `walkeasy-nexus-documents`
 
 ---
 
