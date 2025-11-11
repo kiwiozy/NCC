@@ -10,25 +10,28 @@
 
 import { Container, Title, Text, Card } from '@mantine/core';
 import { IconUsers } from '@tabler/icons-react';
+import Navigation from '../../components/Navigation';
 
 export default function MarketingContactsPage() {
   return (
-    <Container size="xl" py="xl">
-      <Title order={1} mb="md">Marketing Contacts</Title>
-      <Text size="sm" c="dimmed" mb="xl">
-        Manage referrer contacts for email campaigns (Phase 1)
-      </Text>
+    <Navigation>
+      <Container size="xl" py="xl">
+        <Title order={1} mb="md">Marketing Contacts</Title>
+        <Text size="sm" c="dimmed" mb="xl">
+          Manage referrer contacts for email campaigns (Phase 1)
+        </Text>
 
-      <Card shadow="sm" padding="xl" radius="md" withBorder>
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <IconUsers size={64} stroke={1} color="gray" style={{ margin: '0 auto' }} />
-          <Title order={3} c="dimmed" mt="md">Marketing Contacts Coming Soon</Title>
-          <Text size="sm" c="dimmed" mt="sm">
-            Manage referrer contacts, segments, and email lists
-          </Text>
-        </div>
-      </Card>
-    </Container>
+        <Card shadow="sm" padding="xl" radius="md" withBorder>
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <IconUsers size={64} stroke={1} color="gray" style={{ margin: '0 auto' }} />
+            <Title order={3} c="dimmed" mt="md">Marketing Contacts Coming Soon</Title>
+            <Text size="sm" c="dimmed" mt="sm">
+              Manage referrer contacts, segments, and email lists
+            </Text>
+          </div>
+        </Card>
+      </Container>
+    </Navigation>
   );
 }
 

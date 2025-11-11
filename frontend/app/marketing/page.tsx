@@ -40,6 +40,7 @@ import {
   IconListDetails,
 } from '@tabler/icons-react';
 import Link from 'next/link';
+import Navigation from '../components/Navigation';
 
 export default function MarketingDashboardPage() {
   // Mock data - will come from API later
@@ -116,9 +117,10 @@ export default function MarketingDashboardPage() {
   ];
 
   return (
-    <Container size="xl" py="xl">
-      {/* Header */}
-      <Group justify="space-between" mb="xl">
+    <Navigation>
+      <Container size="xl" py="xl">
+        {/* Header */}
+        <Group justify="space-between" mb="xl">
         <div>
           <Title order={1}>Marketing Dashboard</Title>
           <Text size="sm" c="dimmed">
@@ -320,6 +322,7 @@ export default function MarketingDashboardPage() {
         </Group>
       </Card>
     </Container>
+    </Navigation>
   );
 }
 

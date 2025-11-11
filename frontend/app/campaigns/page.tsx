@@ -32,6 +32,7 @@ import {
   Progress,
 } from '@mantine/core';
 import { IconPlus, IconSearch, IconDots, IconMail, IconChartBar, IconUsers, IconSend } from '@tabler/icons-react';
+import Navigation from '../components/Navigation';
 
 export default function MarketingCampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,9 +93,10 @@ export default function MarketingCampaignsPage() {
   };
 
   return (
-    <Container size="xl" py="xl">
-      {/* Header */}
-      <Group justify="space-between" mb="xl">
+    <Navigation>
+      <Container size="xl" py="xl">
+        {/* Header */}
+        <Group justify="space-between" mb="xl">
         <div>
           <Title order={1}>Referrer Marketing Campaigns</Title>
           <Text size="sm" c="dimmed">
@@ -299,6 +301,7 @@ export default function MarketingCampaignsPage() {
         </Group>
       </Card>
     </Container>
+    </Navigation>
   );
 }
 
