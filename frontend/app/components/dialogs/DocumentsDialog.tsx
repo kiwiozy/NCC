@@ -633,17 +633,17 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
               /* Selected Document View */
               <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
-                  {/* Top Row: Category and Document Date */}
+                  {/* Top Row: File Info */}
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1 }}>
-                      <Text size="sm" c="dimmed" mb={4}>CATEGORY</Text>
-                      <Badge variant="light" size="lg">
-                        {getCategoryLabel(selectedDocument.category)}
-                      </Badge>
+                      <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
+                      <Text size="md" fw={500}>
+                        {selectedDocument.original_name}
+                      </Text>
                     </Box>
                     <Group gap="xs">
                       {selectedDocument.document_date && (
-                        <Box style={{ flex: 1, textAlign: 'right' }}>
+                        <Box style={{ textAlign: 'right' }}>
                           <Text size="sm" c="dimmed" mb={4}>DOCUMENT DATE</Text>
                           <Text size="sm" fw={500}>
                             {formatDateOnlyAU(selectedDocument.document_date)}
@@ -673,7 +673,123 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                           return null;
                         })()
                       )}
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="lg"
+                        onClick={() => handleDownload(selectedDocument)}
+                        title="Download"
+                        disabled={!selectedDocument.download_url}
+                      >
+                        <IconDownload size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="light"
+                        color="red"
+                        size="lg"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this document?')) {
+                            deleteDocument(selectedDocument.id);
+                          }
+                        }}
+                        title="Delete"
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                        onClick={() => {
+                          setSelectedDocument(null);
+                          resetForm();
+                        }}
+                        title="Close"
+                      >
+                        <IconX size={18} />
+                      </ActionIcon>
                     </Group>
+                  </Group>
+                  
+                  {/* Category Dropdown + File Info Row */}
+                  <Group gap="md" align="flex-start">
+                    <Box style={{ flex: 1, maxWidth: rem(300) }}>
+                      <Text size="sm" c="dimmed" mb={4}>CATEGORY</Text>
+                      <Select
+                        size="sm"
+                        value={selectedDocument.category || ''}
+                        onChange={async (value) => {
+                          if (!value || !selectedDocument.id) return;
+                          
+                          try {
+                            // Update category via API
+                            const response = await fetch(`https://localhost:8000/api/documents/${selectedDocument.id}/`, {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({ category: value }),
+                            });
+                            
+                            if (response.ok) {
+                              // Update local state
+                              const updatedDoc = { ...selectedDocument, category: value };
+                              setSelectedDocument(updatedDoc);
+                              setDocuments(documents.map(d => d.id === selectedDocument.id ? updatedDoc : d));
+                              window.dispatchEvent(new Event('documentsUpdated'));
+                            } else {
+                              throw new Error('Failed to update category');
+                            }
+                          } catch (error: any) {
+                            console.error('Error updating category:', error);
+                            setError('Failed to update category: ' + (error.message || 'Unknown error'));
+                          }
+                        }}
+                        data={(() => {
+                          // Hybrid data list: show current category + standard categories
+                          const currentCategory = selectedDocument.category;
+                          if (currentCategory) {
+                            // Check if current category exists in standard list
+                            const existsInList = DOCUMENT_CATEGORIES.some(group =>
+                              group.items.some(item => item.value === currentCategory)
+                            );
+                            
+                            // If current category is NOT in standard list, add it as a top-level option
+                            if (!existsInList) {
+                              return [
+                                {
+                                  group: 'Current Category',
+                                  items: [{ value: currentCategory, label: currentCategory }]
+                                },
+                                ...DOCUMENT_CATEGORIES
+                              ];
+                            }
+                          }
+                          
+                          return DOCUMENT_CATEGORIES;
+                        })()}
+                        placeholder="Select category"
+                        searchable
+                        clearable={false}
+                        styles={{
+                          input: { fontSize: '13px', height: '32px', minHeight: '32px' },
+                        }}
+                      />
+                    </Box>
+                    <Box>
+                      <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
+                      <Text size="sm">
+                        {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
+                      </Text>
+                    </Box>
+                    {selectedDocument.description && (
+                      <Box style={{ flex: 1 }}>
+                        <Text size="sm" c="dimmed" mb={4}>DESCRIPTION</Text>
+                        <Text size="sm">
+                          {selectedDocument.description}
+                        </Text>
+                      </Box>
+                    )}
                   </Group>
                   
                   {/* Document Viewer */}
@@ -876,57 +992,6 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                       })()}
                     </Box>
                   )}
-                  
-                  {/* Bottom: File Name and File Size */}
-                  <Box style={{ marginTop: 'auto', paddingTop: rem(16), borderTop: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-                    <Stack gap="xs">
-                      <Box>
-                        <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
-                        <Text size="md" fw={500}>
-                          {selectedDocument.original_name}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
-                        <Text size="sm">
-                          {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
-                        </Text>
-                      </Box>
-                      {selectedDocument.description && (
-                        <Box>
-                          <Text size="sm" c="dimmed" mb={4} mt="md">DESCRIPTION</Text>
-                          <Text size="sm">
-                            {selectedDocument.description}
-                          </Text>
-                        </Box>
-                      )}
-                      <Text size="xs" c="dimmed" mt="xs">
-                        Uploaded: {formatDateTimeAU(selectedDocument.uploaded_at)}
-                      </Text>
-                    </Stack>
-                  </Box>
-                  
-                  <Group gap="xs">
-                    {selectedDocument.download_url && (
-                      <Button
-                        variant="outline"
-                        leftSection={<IconDownload size={16} />}
-                        onClick={() => handleDownload(selectedDocument)}
-                      >
-                        Download
-                      </Button>
-                    )}
-                    <Button
-                      variant="filled"
-                      leftSection={<IconPlus size={16} />}
-                      onClick={() => {
-                        setSelectedDocument(null);
-                        resetForm();
-                      }}
-                    >
-                      Add Another Document
-                    </Button>
-                  </Group>
                 </Stack>
               </Box>
             ) : (
