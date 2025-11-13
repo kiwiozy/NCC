@@ -41,6 +41,8 @@ docs/
 ├── features/                     # ⭐ Feature documentation
 │   ├── CLINICS_CALENDAR_SYSTEM.md       # Clinics & calendar (in progress) ⭐ NEW
 │   ├── SMS_NOTIFICATION_WIDGET_PLAN.md  # SMS notifications
+│   ├── IMAGE_DOWNLOAD_FILENAMES.md      # Image download naming convention ✅ NEW
+│   ├── APPOINTMENT_TYPES.md             # Appointment types system ✅ NEW
 │   └── MMS_SUPPORT_PLAN.md              # MMS research (deferred)
 │
 ├── FileMaker/                    # ⭐ FileMaker data migration (2,845 patients imported ✅)
@@ -116,6 +118,8 @@ docs/
 ### **Feature Documentation**
 - [Clinics & Calendar System](features/CLINICS_CALENDAR_SYSTEM.md) - Calendar, clinics, clinicians ⚠️ IN PROGRESS ⭐ NEW
 - [SMS Notification Widget](features/SMS_NOTIFICATION_WIDGET_PLAN.md) - Real-time SMS notifications ✅ NEW
+- [Image Download Filenames](features/IMAGE_DOWNLOAD_FILENAMES.md) - Standardized image download naming ✅ NEW
+- [Appointment Types](features/APPOINTMENT_TYPES.md) - Appointment types system ✅ NEW
 - [Communication Dialog](architecture/dialogs/CommunicationDialog.md) - Patient contact info
 - [Coordinator Dialogs](architecture/dialogs/CoordinatorDialogs.md) - NDIS coordinators
 - [Documents Dialog](architecture/dialogs/DocumentsDialog.md) - S3 document management

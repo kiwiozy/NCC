@@ -139,9 +139,10 @@ class Image(models.Model):
     
     # Image metadata
     category = models.CharField(
-        max_length=50,
-        choices=IMAGE_CATEGORIES,
-        default='other'
+        max_length=100,  # Increased from 50 to allow longer FileMaker types
+        blank=True,
+        default='',
+        help_text="Image category/type (flexible text field - can be standard category or custom)"
     )
     caption = models.TextField(blank=True, help_text="Optional caption/notes")
     date_taken = models.DateField(null=True, blank=True, help_text="Date photo was taken")
