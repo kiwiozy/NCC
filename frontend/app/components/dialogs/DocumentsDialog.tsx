@@ -645,9 +645,11 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                   {/* Top Row: File Info */}
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
+                      <Text size="lg" fw={600} mb={4}>
+                        {getCategoryLabel(selectedDocument.category)}
+                      </Text>
                       <Tooltip label={selectedDocument.original_name} multiline maw={400}>
-                        <Text size="md" fw={500} truncate>
+                        <Text size="xs" c="dimmed" truncate>
                           {selectedDocument.original_name}
                         </Text>
                       </Tooltip>
