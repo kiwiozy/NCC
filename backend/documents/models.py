@@ -11,6 +11,8 @@ class Document(models.Model):
     Uses Generic Foreign Key to link to any model (Patient, Appointment, etc.)
     """
     
+    # Standard category choices (for reference in frontend)
+    # These are no longer enforced at model level to allow flexible categories
     CATEGORY_CHOICES = [
         ('erf', 'ERF'),
         ('purchase_order', 'Purchase Order'),
@@ -46,7 +48,12 @@ class Document(models.Model):
     s3_url = models.URLField(max_length=1024, blank=True, help_text="Pre-signed or public URL")
     
     # Metadata
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    category = models.CharField(
+        max_length=100,  # Increased from 50 to allow longer FileMaker types
+        blank=True,
+        default='',
+        help_text="Document category/type (flexible text field - can be standard category or custom)"
+    )
     description = models.TextField(blank=True)
     tags = models.JSONField(default=list, blank=True)
     

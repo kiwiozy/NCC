@@ -58,29 +58,47 @@ interface Document {
   mime_type?: string;
 }
 
-const DOCUMENT_TYPES = [
-  { value: 'erf', label: 'ERF' },
-  { value: 'purchase_order', label: 'Purchase Order' },
-  { value: 'referral', label: 'Referral' },
-  { value: 'enablensw_application', label: 'EnableNSW Application' },
-  { value: 'remittance_advice', label: 'Remittance Advice' },
-  { value: 'quote', label: 'Quote' },
-  { value: 'medical', label: 'Medical Records' },
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'xray', label: 'X-Ray / Imaging' },
-  { value: 'consent', label: 'Consent Form' },
-  { value: 'insurance', label: 'Insurance Document' },
-  { value: 'invoice', label: 'Invoice' },
-  { value: 'other', label: 'Other' },
+const DOCUMENT_CATEGORIES = [
+  { group: 'Medical', items: [
+    { value: 'medical', label: 'Medical Records' },
+    { value: 'prescription', label: 'Prescription' },
+    { value: 'xray', label: 'X-Ray / Imaging' },
+  ]},
+  { group: 'NDIS & Funding', items: [
+    { value: 'erf', label: 'ERF' },
+    { value: 'enablensw_application', label: 'EnableNSW Application' },
+    { value: 'remittance_advice', label: 'Remittance Advice' },
+  ]},
+  { group: 'Administrative', items: [
+    { value: 'referral', label: 'Referral' },
+    { value: 'purchase_order', label: 'Purchase Order' },
+    { value: 'quote', label: 'Quote' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'consent', label: 'Consent Form' },
+    { value: 'insurance', label: 'Insurance Document' },
+  ]},
+  { group: 'Other', items: [
+    { value: 'other', label: 'Other' },
+  ]},
 ];
+
+// Helper function to get category label
+const getCategoryLabel = (category: string): string => {
+  for (const group of DOCUMENT_CATEGORIES) {
+    const item = group.items.find(i => i.value === category);
+    if (item) return item.label;
+  }
+  return category; // Return the category itself if not found in standard list
+};
 
 interface DocumentsDialogProps {
   opened: boolean;
   onClose: () => void;
   patientId?: string;
+  patientName?: string;
 }
 
-export default function DocumentsDialog({ opened, onClose, patientId }: DocumentsDialogProps) {
+export default function DocumentsDialog({ opened, onClose, patientId, patientName = '' }: DocumentsDialogProps) {
   const { colorScheme } = useMantineColorScheme();
   const browser = useBrowserDetection();
   const isDark = colorScheme === 'dark';
@@ -447,6 +465,51 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     return `${url}${separator}t=${Date.now()}&reload=${reloadKey}`;
   };
 
+  const handleDownload = async (doc: Document) => {
+    if (!doc.download_url) return;
+    
+    try {
+      // Fetch the document
+      const response = await fetch(doc.download_url);
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Get file extension
+      const extension = doc.original_name.split('.').pop() || 'pdf';
+      
+      // Format patient name (FirstName_LastName)
+      const formattedPatientName = patientName.replace(/\s+/g, '_');
+      
+      // Format category (replace spaces with underscores)
+      const formattedCategory = doc.category ? doc.category.replace(/\s+/g, '_') : 'Uncategorized';
+      
+      // New filename: {FirstName}_{LastName}_{Category}.{ext}
+      const newFilename = `${formattedPatientName}_${formattedCategory}.${extension}`;
+      
+      // Create a temporary anchor element to trigger download
+      const link = window.document.createElement('a');
+      link.href = blobUrl;
+      link.download = newFilename;
+      link.style.display = 'none';
+      window.document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        window.document.body.removeChild(link);
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Download error:', error);
+      setError('Failed to download document: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   return (
     <Modal
       opened={opened}
@@ -525,7 +588,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                     <Group justify="space-between" align="flex-start" mb="xs">
                       <Box style={{ flex: 1 }}>
                         <Badge variant="light" size="sm" mb="xs">
-                          {DOCUMENT_TYPES.find(t => t.value === doc.category)?.label || doc.category}
+                          {getCategoryLabel(doc.category)}
                         </Badge>
                         <Text size="xs" c={isDark ? '#C1C2C5' : '#495057'} fw={500} lineClamp={1}>
                           {doc.original_name}
@@ -570,12 +633,12 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
               /* Selected Document View */
               <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
-                  {/* Top Row: Document Type and Document Date */}
+                  {/* Top Row: Category and Document Date */}
                   <Group justify="space-between" align="flex-start">
                     <Box style={{ flex: 1 }}>
-                      <Text size="sm" c="dimmed" mb={4}>DOCUMENT TYPE</Text>
+                      <Text size="sm" c="dimmed" mb={4}>CATEGORY</Text>
                       <Badge variant="light" size="lg">
-                        {DOCUMENT_TYPES.find(t => t.value === selectedDocument.category)?.label || selectedDocument.category}
+                        {getCategoryLabel(selectedDocument.category)}
                       </Badge>
                     </Box>
                     <Group gap="xs">
@@ -848,9 +911,7 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                       <Button
                         variant="outline"
                         leftSection={<IconDownload size={16} />}
-                        onClick={() => {
-                          window.open(selectedDocument.download_url, '_blank');
-                        }}
+                        onClick={() => handleDownload(selectedDocument)}
                       >
                         Download
                       </Button>
@@ -926,9 +987,31 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                   )}
 
                   <Select
-                    label="DOCUMENT TYPE"
-                    placeholder="Select document type"
-                    data={DOCUMENT_TYPES}
+                    label="CATEGORY"
+                    placeholder="Select category"
+                    data={(() => {
+                      // Hybrid data list: show current category + standard categories
+                      const currentCategory = documentType;
+                      if (currentCategory) {
+                        // Check if current category exists in standard list
+                        const existsInList = DOCUMENT_CATEGORIES.some(group =>
+                          group.items.some(item => item.value === currentCategory)
+                        );
+                        
+                        // If current category is NOT in standard list, add it as a top-level option
+                        if (!existsInList) {
+                          return [
+                            {
+                              group: 'Current Category',
+                              items: [{ value: currentCategory, label: currentCategory }]
+                            },
+                            ...DOCUMENT_CATEGORIES
+                          ];
+                        }
+                      }
+                      
+                      return DOCUMENT_CATEGORIES;
+                    })()}
                     value={documentType}
                     onChange={(value) => setDocumentType(value || 'other')}
                     size="sm"
