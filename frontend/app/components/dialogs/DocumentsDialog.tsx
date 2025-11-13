@@ -515,11 +515,20 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
       opened={opened}
       onClose={onClose}
       title="Documents"
-      size="xl"
+      size="95%"
+      styles={{
+        body: {
+          height: 'calc(90vh - 60px)',
+          padding: 0,
+        },
+        content: {
+          height: '90vh',
+        },
+      }}
     >
-      <Grid gutter={0} style={{ height: rem(600) }}>
+      <Grid gutter={0} style={{ height: '100%' }}>
         {/* Left Column: Documents List */}
-        <Grid.Col span={4} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
+        <Grid.Col span={3} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
           <Stack gap={0} style={{ height: '100%' }}>
             {/* Header with Add Button */}
             <Box p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
@@ -627,7 +636,7 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
         </Grid.Col>
 
         {/* Right Column: Upload/View */}
-        <Grid.Col span={8}>
+        <Grid.Col span={9}>
           <Stack gap={0} style={{ height: '100%' }}>
             {selectedDocument ? (
               /* Selected Document View */
@@ -635,11 +644,13 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                 <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
                   {/* Top Row: File Info */}
                   <Group justify="space-between" align="flex-start">
-                    <Box style={{ flex: 1 }}>
+                    <Box style={{ flex: 1, minWidth: 0 }}>
                       <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
-                      <Text size="md" fw={500}>
-                        {selectedDocument.original_name}
-                      </Text>
+                      <Tooltip label={selectedDocument.original_name} multiline maw={400}>
+                        <Text size="md" fw={500} truncate>
+                          {selectedDocument.original_name}
+                        </Text>
+                      </Tooltip>
                     </Box>
                     <Group gap="xs">
                       {selectedDocument.document_date && (
