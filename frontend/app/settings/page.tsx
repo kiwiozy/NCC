@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Container, rem } from '@mantine/core';
 import Navigation from '../components/Navigation';
-import SettingsHeader from '../components/SettingsHeader';
 
 // We'll import these as separate components
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 import ClinicsSettings from '../components/settings/ClinicsSettings';
+import DataManagementSettings from '../components/settings/DataManagementSettings';
 
-type SettingsTab = 'general' | 'funding-sources' | 'clinics';
+type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -29,6 +29,8 @@ export default function SettingsPage() {
         return <FundingSourcesSettings />;
       case 'clinics':
         return <ClinicsSettings />;
+      case 'data-management':
+        return <DataManagementSettings />;
       case 'general':
       default:
         return (
@@ -42,7 +44,6 @@ export default function SettingsPage() {
 
   return (
     <Navigation>
-      <SettingsHeader />
       <Container size="xl" py="xl">
         {renderContent()}
       </Container>
