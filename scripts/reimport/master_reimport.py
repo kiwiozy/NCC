@@ -117,6 +117,7 @@ class ReimportOrchestrator:
                 'description': 'Re-Link Images',
                 'scripts': [
                     'phase7_images/relink_images.py',
+                    'phase7_images/link_filemaker_images_csv.py',
                 ],
                 'required': True,
                 'stop_on_error': True,

@@ -51,7 +51,7 @@ class Command(BaseCommand):
         
         metadata_lookup = {}
         try:
-            with open(csv_file, 'r', encoding='utf-8') as f:
+            with open(csv_file, 'r', encoding='utf-8-sig') as f:  # utf-8-sig strips BOM
                 reader = csv.DictReader(f)
                 for row in reader:
                     recid = row.get('recid', '').strip()
@@ -131,10 +131,10 @@ class Command(BaseCommand):
                 stats['skipped'] += 1
                 continue
             
-            # Find Nexus patient by filemaker_id in notes JSON
+            # Find Nexus patient by filemaker_id in filemaker_metadata JSON
             try:
-                # notes contains JSON like: {"filemaker_id": "UUID", ...}
-                patient = Patient.objects.get(notes__contains=f'"filemaker_id": "{id_contact}"')
+                # filemaker_metadata contains JSON like: {"filemaker_id": "UUID", ...}
+                patient = Patient.objects.get(filemaker_metadata__filemaker_id=id_contact)
             except (Patient.DoesNotExist, Patient.MultipleObjectsReturned):
                 stats['skipped'] += 1
                 continue
