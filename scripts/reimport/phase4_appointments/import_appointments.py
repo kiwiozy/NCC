@@ -58,6 +58,50 @@ def transform_datetime(datetime_str: str) -> datetime:
                 return None
 
 
+def combine_date_time(date_str: str, time_str: str) -> datetime:
+    """
+    Combine separate date and time strings from FileMaker into a datetime.
+    
+    Args:
+        date_str: Date string (e.g., "10/12/2016")
+        time_str: Time string (e.g., "00:00:00" or "14:30:00")
+    
+    Returns:
+        Python datetime object or None
+    """
+    if not date_str:
+        return None
+    
+    # Default time to midnight if not provided
+    if not time_str or time_str.strip() == '':
+        time_str = '00:00:00'
+    
+    # Handle "24:00:00" (end of day) - convert to 23:59:59
+    if time_str == '24:00:00':
+        time_str = '23:59:59'
+    
+    try:
+        # Combine date and time
+        datetime_str = f"{date_str} {time_str}"
+        # Try MM/DD/YYYY HH:MM:SS format (FileMaker default)
+        return datetime.strptime(datetime_str, '%m/%d/%Y %H:%M:%S')
+    except:
+        try:
+            # Try YYYY-MM-DD HH:MM:SS format
+            return datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
+        except:
+            # If time parsing fails, try just the date
+            try:
+                dt = datetime.strptime(date_str, '%m/%d/%Y')
+                return dt.replace(hour=0, minute=0, second=0)
+            except:
+                try:
+                    dt = datetime.strptime(date_str, '%Y-%m-%d')
+                    return dt.replace(hour=0, minute=0, second=0)
+                except:
+                    return None
+
+
 def import_appointments(import_file: str, dry_run: bool = False, fix_missing_clinics: bool = True) -> bool:
     """
     Import appointments from JSON file into Nexus.
@@ -131,6 +175,11 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
         appointments_with_notes = 0
         
         for i, appointment_data in enumerate(appointments_data):
+            # Show progress every 50 records (heartbeat)
+            if (i + 1) % 50 == 0:
+                logger.info(f"💓 Still working... {i + 1}/{len(appointments_data)} appointments processed")
+            
+            # Show detailed progress every 100 records
             if (i + 1) % 100 == 0:
                 logger.progress(i + 1, len(appointments_data), "Importing appointments")
             
@@ -187,11 +236,23 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
                     logger.debug(f"Appointment {filemaker_id} - no appointment type found")
                 
                 # Transform dates
+                # Try combined 'Start' field first (if it exists), otherwise combine separate date/time fields
                 start_time = transform_datetime(appointment_data.get('Start'))
+                if not start_time:
+                    # FileMaker often has separate date and time fields
+                    start_date = appointment_data.get('startDate')
+                    start_time_str = appointment_data.get('startTime')
+                    start_time = combine_date_time(start_date, start_time_str)
+                
                 end_time = transform_datetime(appointment_data.get('End'))
+                if not end_time:
+                    # FileMaker often has separate date and time fields
+                    end_date = appointment_data.get('endDate')
+                    end_time_str = appointment_data.get('endTime')
+                    end_time = combine_date_time(end_date, end_time_str)
                 
                 if not start_time:
-                    logger.warning(f"Appointment {filemaker_id} - no start time, skipping")
+                    logger.warning(f"Appointment {filemaker_id} - no start date/time found, skipping")
                     skipped_count += 1
                     continue
                 
