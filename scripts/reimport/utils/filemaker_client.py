@@ -182,7 +182,8 @@ class FileMakerClient:
         if orderby:
             params['$orderby'] = orderby
         
-        response = self.session.get(url, params=params, auth=self.odata_auth, timeout=30)
+        # Increased timeout from 30 to 120 seconds for large data sets (notes, SMS)
+        response = self.session.get(url, params=params, auth=self.odata_auth, timeout=120)
         
         if response.status_code == 200:
             return response.json()
