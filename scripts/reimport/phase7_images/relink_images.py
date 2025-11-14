@@ -81,6 +81,11 @@ def relink_images(dry_run: bool = False) -> bool:
         error_count = 0
         
         for i, batch in enumerate(image_batches):
+            # Show progress every 25 records (heartbeat) - batches are fewer
+            if (i + 1) % 25 == 0:
+                logger.info(f"💓 Still working... {i + 1}/{total_batches} image batches processed")
+            
+            # Show detailed progress every 50 records
             if (i + 1) % 50 == 0:
                 logger.progress(i + 1, total_batches, "Re-linking image batches")
             

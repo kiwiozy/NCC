@@ -1,0 +1,63 @@
+{
+  "start_time": "2025-11-14T20:04:09.325798",
+  "last_update": "2025-11-15T09:28:48.178185",
+  "current_phase": "Phase 0: Pre-Import Validation",
+  "phases": {
+    "Phase 0: Pre-Import Validation": {
+      "status": "in_progress",
+      "start_time": "2025-11-15T09:28:23.797116",
+      "end_time": null,
+      "total_items": 6,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 2: Delete Existing Patient Data": {
+      "status": "completed",
+      "start_time": "2025-11-15T07:44:19.318245",
+      "end_time": "2025-11-15T07:44:20.016334",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 3: Import Patients": {
+      "status": "completed",
+      "start_time": "2025-11-15T07:44:20.017057",
+      "end_time": "2025-11-15T07:55:01.022849",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 4: Import Appointments": {
+      "status": "completed",
+      "start_time": "2025-11-15T07:55:01.023578",
+      "end_time": "2025-11-15T07:55:45.811287",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 5: Import Notes & SMS": {
+      "status": "in_progress",
+      "start_time": "2025-11-15T07:55:45.811898",
+      "end_time": null,
+      "total_items": 2,
+      "processed_items": 0,
+      "success_count": 0,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    }
+  },
+  "overall_status": "failed"
+}

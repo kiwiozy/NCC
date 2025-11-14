@@ -44,11 +44,16 @@ from django.conf import settings
 
 def get_s3_client():
     """Get configured S3 client."""
+    # Try to get credentials from settings first, then environment
+    aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None) or os.environ.get('AWS_ACCESS_KEY_ID')
+    aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None) or os.environ.get('AWS_SECRET_ACCESS_KEY')
+    aws_region = getattr(settings, 'AWS_S3_REGION_NAME', None) or getattr(settings, 'AWS_REGION', None) or os.environ.get('AWS_REGION', 'ap-southeast-2')
+    
     return boto3.client(
         's3',
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_S3_REGION_NAME,
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key,
+        region_name=aws_region,
     )
 
 
@@ -195,8 +200,18 @@ def backup_s3_files(dry_run: bool = False) -> bool:
         logger.info("")
     
     try:
-        # Get bucket name from settings
-        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        # Get bucket name from settings or environment
+        bucket = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None) or \
+                 getattr(settings, 'AWS_S3_BUCKET_NAME', None) or \
+                 os.environ.get('AWS_S3_BUCKET_NAME') or \
+                 os.environ.get('AWS_STORAGE_BUCKET_NAME')
+        
+        if not bucket:
+            logger.error("❌ AWS S3 bucket name not configured!")
+            logger.error("Set AWS_S3_BUCKET_NAME or AWS_STORAGE_BUCKET_NAME in settings or .env")
+            logger.phase_end(success=False)
+            return False
+        
         logger.info(f"S3 Bucket: {bucket}")
         logger.info("")
         

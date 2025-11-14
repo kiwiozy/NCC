@@ -30,51 +30,38 @@ def validate_filemaker_data() -> bool:
     try:
         with create_filemaker_client() as fm:
             # ========================================
-            # Validate Patients (Sample Only)
+            # Validate Patients
             # ========================================
-            logger.info("Validating sample of FileMaker patients...")
+            logger.info("Fetching all patients from FileMaker...")
+            patients = fm.get_all_patients()
+            logger.success(f"Found {len(patients)} patients")
             
-            # Get just a sample (first 500 patients) for validation
-            try:
-                sample_response = fm.odata_query('@Contacts', top=500)
-                patients = sample_response.get('value', [])
-                logger.success(f"Retrieved {len(patients)} patients for validation")
-                total_patients = f"{len(patients)}+ (sample)"
-            except Exception as e:
-                logger.error(f"Failed to fetch patient sample: {str(e)}")
-                logger.warning("Skipping patient validation - cannot fetch sample")
-                patients = []
-                total_patients = "unknown"
+            # Check for missing clinic
+            patients_without_clinic = [
+                p for p in patients 
+                if not p.get('Clinic_Name') and not p.get('id_Clinic')
+            ]
+            
+            if patients_without_clinic:
+                logger.warning(f"⚠️  {len(patients_without_clinic)} patients missing clinic assignment")
+                logger.warning("Example patients without clinic:")
+                for patient in patients_without_clinic[:5]:
+                    logger.warning(f"  - {patient.get('nameFirst', 'Unknown')} {patient.get('nameLast', 'Unknown')} (ID: {patient.get('id')})")
                 all_valid = False
+            else:
+                logger.success("✅ All patients have clinic assigned")
             
-            if patients:
-                # Check for missing clinic
-                patients_without_clinic = [
-                    p for p in patients 
-                    if not p.get('Clinic_Name') and not p.get('id_Clinic')
-                ]
-                
-                if patients_without_clinic:
-                    logger.warning(f"⚠️  Sample: {len(patients_without_clinic)}/{len(patients)} patients missing clinic assignment")
-                    logger.warning("Example patients without clinic:")
-                    for patient in patients_without_clinic[:5]:
-                        logger.warning(f"  - {patient.get('nameFirst', 'Unknown')} {patient.get('nameLast', 'Unknown')} (ID: {patient.get('id')})")
-                    logger.warning("Note: This is a sample check. Full import may have more issues.")
-                    all_valid = False
-                else:
-                    logger.success("✅ Sample patients all have clinic assigned")
-                
-                # Check for missing names
-                patients_without_name = [
-                    p for p in patients 
-                    if not p.get('nameFirst') and not p.get('nameLast')
-                ]
-                
-                if patients_without_name:
-                    logger.warning(f"⚠️  Sample: {len(patients_without_name)}/{len(patients)} patients missing name data")
-                    logger.info("These will be skipped during import")
-                else:
-                    logger.success("✅ Sample patients all have name data")
+            # Check for missing names
+            patients_without_name = [
+                p for p in patients 
+                if not p.get('nameFirst') and not p.get('nameLast')
+            ]
+            
+            if patients_without_name:
+                logger.warning(f"⚠️  {len(patients_without_name)} patients missing name data")
+                logger.info("These will be skipped during import")
+            else:
+                logger.success("✅ All patients have name data")
             
             # ========================================
             # Validate Appointments
@@ -180,13 +167,9 @@ def validate_filemaker_data() -> bool:
             logger.info("=" * 70)
             logger.info("📊 Validation Summary")
             logger.info("=" * 70)
-            logger.info(f"Total Patients: {total_patients}")
-            if patients:
-                logger.info(f"Sample Size: {len(patients)} patients")
-                logger.info(f"Sample without clinic: {len(patients_without_clinic)}")
-                logger.info(f"Sample without name: {len(patients_without_name)}")
-            else:
-                logger.warning("No patient sample available for validation")
+            logger.info(f"Total Patients: {len(patients)}")
+            logger.info(f"Patients without clinic: {len(patients_without_clinic)}")
+            logger.info(f"Patients without name: {len(patients_without_name)}")
             
             if all_valid:
                 logger.success("")
@@ -195,14 +178,13 @@ def validate_filemaker_data() -> bool:
                 logger.success("")
             else:
                 logger.warning("")
-                logger.warning("⚠️  Some validations failed or were skipped!")
-                logger.warning("This is informational only - import can proceed")
-                logger.warning("Some records may be skipped/incomplete during import")
+                logger.warning("⚠️  Some validations failed!")
+                logger.warning("Fix issues in FileMaker before proceeding with import")
+                logger.warning("Or accept that some records may be skipped/incomplete")
                 logger.warning("")
             
-            # Always succeed - this is just informational
-            logger.phase_end(success=True)
-            return True
+            logger.phase_end(success=all_valid)
+            return all_valid
             
     except Exception as e:
         logger.error(f"Exception during data validation: {str(e)}", exc_info=e)

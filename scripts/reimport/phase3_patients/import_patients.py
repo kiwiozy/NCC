@@ -166,6 +166,11 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
         patients_without_funding = 0
         
         for i, patient_record in enumerate(patients_data):
+            # Show progress every 50 records (heartbeat)
+            if (i + 1) % 50 == 0:
+                logger.info(f"💓 Still working... {i + 1}/{len(patients_data)} patients processed")
+            
+            # Show detailed progress every 100 records
             if (i + 1) % 100 == 0:
                 logger.progress(i + 1, len(patients_data), "Importing patients")
             

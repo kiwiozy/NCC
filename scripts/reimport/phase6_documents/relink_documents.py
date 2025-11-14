@@ -83,6 +83,11 @@ def relink_documents(dry_run: bool = False) -> bool:
         
         # Process documents with filemaker_id
         for i, doc in enumerate(documents_with_fm_id):
+            # Show progress every 50 records (heartbeat)
+            if (i + 1) % 50 == 0:
+                logger.info(f"💓 Still working... {i + 1}/{total_documents} documents processed")
+            
+            # Show detailed progress every 100 records
             if (i + 1) % 100 == 0:
                 logger.progress(i + 1, total_documents, "Re-linking documents")
             
@@ -128,6 +133,12 @@ def relink_documents(dry_run: bool = False) -> bool:
         # Process documents with metadata
         for i, doc in enumerate(documents_with_metadata):
             idx = documents_with_fm_id.count() + i + 1
+            
+            # Show progress every 50 records (heartbeat)
+            if idx % 50 == 0:
+                logger.info(f"💓 Still working... {idx}/{total_documents} documents processed")
+            
+            # Show detailed progress every 100 records
             if idx % 100 == 0:
                 logger.progress(idx, total_documents, "Re-linking documents")
             

@@ -120,6 +120,11 @@ def import_notes_and_sms(notes_file: str = None, sms_file: str = None, dry_run: 
                 error_count = 0
                 
                 for i, note_data in enumerate(notes_data):
+                    # Show progress every 50 records (heartbeat)
+                    if (i + 1) % 50 == 0:
+                        logger.info(f"💓 Still working... {i + 1}/{len(notes_data)} notes processed")
+                    
+                    # Show detailed progress every 100 records
                     if (i + 1) % 100 == 0:
                         logger.progress(i + 1, len(notes_data), "Importing notes")
                     
@@ -200,6 +205,11 @@ def import_notes_and_sms(notes_file: str = None, sms_file: str = None, dry_run: 
                 error_count = 0
                 
                 for i, sms in enumerate(sms_data):
+                    # Show progress every 50 records (heartbeat)
+                    if (i + 1) % 50 == 0:
+                        logger.info(f"💓 Still working... {i + 1}/{len(sms_data)} SMS processed")
+                    
+                    # Show detailed progress every 100 records
                     if (i + 1) % 100 == 0:
                         logger.progress(i + 1, len(sms_data), "Importing SMS")
                     

@@ -48,8 +48,7 @@ class ReimportOrchestrator:
                 'number': 0,
                 'description': 'Pre-Import Validation',
                 'scripts': [
-                    'phase0_validation/backup_postgres_to_s3.py',  # NEW: Backup Postgres FIRST
-                    'phase0_validation/backup_s3_files.py',  # Backup S3 files SECOND
+                    'phase0_validation/backup_s3_files.py',  # NEW: Backup S3 files FIRST
                     'phase0_validation/validate_filemaker_connection.py',
                     'phase0_validation/validate_filemaker_data.py',
                     'phase0_validation/validate_system_config.py',
