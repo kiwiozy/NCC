@@ -77,6 +77,21 @@
 - Uses `/favicon.svg` from public folder
 - Eliminates 404 errors for `favicon.ico`
 
+### **10. Download Button CORS Fix** ✅
+- **Problem:** Direct S3 fetch blocked by CORS
+- **Solution:** Use backend proxy for downloads (same as PDF viewing)
+- **Result:** Downloads work reliably for all file types
+
+### **11. Category Display Formatting** ✅
+- **Custom categories:** Format for better readability
+  - Replace hyphens with spaces: `"enable-waiver"` → `"enable waiver"`
+  - Capitalize first letter: `"enable waiver"` → `"Enable waiver"`
+- **Standard categories:** Use exact label from list (unchanged)
+- **Examples:**
+  - `"enable-waiver"` → "Enable waiver"
+  - `"medical-records"` → "Medical records"
+  - `"ERF"` → "ERF" (standard, unchanged)
+
 ---
 
 ## 🔧 **Technical Implementation**
@@ -119,6 +134,11 @@
     - Added `patientName` prop
     - Implemented `handleDownload()` with custom filename logic
     - Updated download button to use new handler
+    - Fixed CORS issue by using backend proxy (`/api/documents/{id}/proxy/`)
+  - **Category Formatting:**
+    - Added `getCategoryLabel()` helper function
+    - Formats custom categories: replace hyphens, capitalize first letter
+    - Standard categories use exact label from list
 
 - **File:** `frontend/app/components/ContactHeader.tsx`
   - **Memory Leak Fixes:**
@@ -170,6 +190,8 @@
 - Continuous API polling (memory leak)
 - 403 errors flooding console
 - Favicon 404 errors
+- Download button CORS errors
+- Category names with hyphens (e.g., "enable-waiver")
 
 ### **After:**
 - "CATEGORY" label (consistent with images)
@@ -183,6 +205,8 @@
 - Smart polling (only when menu open)
 - Clean console (no error spam)
 - Favicon loads correctly
+- Download button works (uses backend proxy)
+- Formatted category names: "Enable waiver", "Medical records"
 
 ---
 
@@ -216,6 +240,19 @@
 - **Problem:** Browser requesting `favicon.ico`, only `.svg` exists
 - **Root Cause:** No explicit icon path in Next.js metadata
 - **Solution:** Added `icons: { icon: '/favicon.svg' }`
+- **Status:** ✅ Fixed
+
+### **6. Download Button CORS Error**
+- **Problem:** Direct S3 fetch blocked by CORS, downloads failing
+- **Root Cause:** Trying to fetch directly from S3 presigned URL
+- **Solution:** Use backend proxy (`/api/documents/{id}/proxy/`) with credentials
+- **Status:** ✅ Fixed
+
+### **7. Category Display Formatting**
+- **Problem:** Category names with hyphens looked unpolished: "enable-waiver"
+- **Root Cause:** FileMaker import preserved exact field names
+- **Solution:** Format custom categories (replace hyphens, capitalize)
+- **Result:** "Enable waiver", "Medical records" (much better!)
 - **Status:** ✅ Fixed
 
 ---
@@ -257,6 +294,8 @@
 | Mouse Scrolling | ✅ Complete | Works perfectly |
 | Memory Leak Fixes | ✅ Complete | Clean console |
 | Favicon Fix | ✅ Complete | No more 404s |
+| Download Button | ✅ Complete | Uses backend proxy |
+| Category Formatting | ✅ Complete | Hyphens removed, capitalized |
 | Documentation | ✅ Complete | All docs updated |
 | Backend Testing | ✅ Complete | Migration successful |
 | Frontend Testing | ✅ Complete | All features tested |
@@ -301,11 +340,11 @@ The documents system now mirrors the images system:
 
 ---
 
-**Total Development Time:** ~4 hours  
-**Lines of Code Changed:** ~300  
+**Total Development Time:** ~4.5 hours  
+**Lines of Code Changed:** ~320  
 **Documentation Pages:** 3 created/updated  
 **Migrations Created:** 1  
-**Issues Fixed:** 5 major issues
+**Issues Fixed:** 7 major issues
 
 ---
 

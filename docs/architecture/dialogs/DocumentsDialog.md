@@ -111,6 +111,10 @@ The Documents Dialog provides a comprehensive interface for managing patient-spe
 - **FileMaker Import:** Old FileMaker document types are preserved as custom categories
 - **New Documents:** Users can select standard categories or type custom ones
 - **Display:** Category is shown as the primary document identifier (instead of UUID filename)
+- **Formatting:** Custom categories are formatted for display:
+  - Hyphens replaced with spaces: `"enable-waiver"` → `"enable waiver"`
+  - First letter capitalized: `"enable waiver"` → `"Enable waiver"`
+  - Standard categories unchanged (use exact label from list)
 
 ### **Download Filenames**
 - **Format:** `{FirstName}_{LastName}_{Category}.{extension}`
@@ -265,8 +269,11 @@ The Documents Dialog provides a comprehensive interface for managing patient-spe
 
 ### **Download Flow**
 1. User clicks download button
-2. Frontend fetches document blob
+2. Frontend fetches document blob via **backend proxy** (bypasses CORS)
+   - URL: `GET /api/documents/{id}/proxy/`
+   - Includes credentials for authentication
 3. Frontend constructs filename: `{FirstName}_{LastName}_{Category}.{ext}`
+   - Category formatting: hyphens → spaces, capitalize first letter
 4. Frontend creates temporary download link
 5. Browser downloads file with custom filename
 6. Temporary link cleaned up
@@ -332,8 +339,9 @@ See `docs/architecture/DATABASE_SCHEMA.md` for full schema documentation.
 **Problem:** Cross-origin requests from `localhost:3000` to S3 bucket.
 
 **Solution:** 
-- Backend proxy for document fetching
-- IndexedDB cache to minimize S3 requests
+- Backend proxy for document fetching (viewing AND downloading)
+- IndexedDB cache to minimize S3 requests (PDF viewing only)
+- All downloads use proxy to bypass CORS
 
 **Documentation:** 
 - `docs/troubleshooting/CORS_FIX_S3_BUCKET.md`

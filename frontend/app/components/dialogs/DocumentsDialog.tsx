@@ -85,11 +85,17 @@ const DOCUMENT_CATEGORIES = [
 
 // Helper function to get category label
 const getCategoryLabel = (category: string): string => {
+  // First check if it's in the standard list
   for (const group of DOCUMENT_CATEGORIES) {
     const item = group.items.find(i => i.value === category);
     if (item) return item.label;
   }
-  return category; // Return the category itself if not found in standard list
+  
+  // For custom categories (e.g., from FileMaker):
+  // 1. Replace hyphens with spaces: "enable-waiver" → "enable waiver"
+  // 2. Capitalize first letter: "enable waiver" → "Enable waiver"
+  const formatted = category.replace(/-/g, ' ');
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
 interface DocumentsDialogProps {
@@ -473,8 +479,14 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
     if (!doc.download_url) return;
     
     try {
-      // Fetch the document
-      const response = await fetch(doc.download_url);
+      // Use backend proxy to avoid CORS issues (same as PDF viewing)
+      const proxyUrl = `https://localhost:8000/api/documents/${doc.id}/proxy/`;
+      
+      // Fetch the document via backend proxy
+      const response = await fetch(proxyUrl, {
+        credentials: 'include',
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to download document');
       }
