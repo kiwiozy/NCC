@@ -14,13 +14,13 @@ from pathlib import Path
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger
+from utils import create_logger
 from patients.models import Patient
 from notes.models import Note
 from sms_integration.models import SMSMessage

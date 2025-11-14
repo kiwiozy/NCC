@@ -14,13 +14,13 @@ import django
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger
+from utils import create_logger
 from patients.models import Patient
 from appointments.models import Appointment
 from documents.models import Document
@@ -101,17 +101,41 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             # and user has reviewed the deletion plan
             
             # ========================================
-            # Delete Patients (CASCADE deletes appointments, notes, etc.)
+            # ========================================
+            # Delete Appointments first (due to PROTECT on patient FK)
             # ========================================
             logger.warning("🗑️  Starting deletion...")
             logger.info("")
             
-            logger.info("Deleting patients...")
-            deleted_count, deleted_details = Patient.objects.all().delete()
+            logger.info("Step 1: Deleting appointments...")
+            appointment_count_before = Appointment.objects.count()
+            Appointment.objects.all().delete()
+            logger.success(f"✅ Deleted {appointment_count_before} appointments")
             
-            logger.success(f"✅ Deleted {deleted_count} total records:")
-            for model, count in deleted_details.items():
-                logger.info(f"  - {model}: {count}")
+            logger.info("")
+            logger.info("Step 2: Deleting patients (this will take 30-60 seconds)...")
+            logger.info("")
+            
+            # DELETE using batch processing to avoid overwhelming output
+            from django.db import transaction
+            
+            batch_size = 100
+            total_deleted = 0
+            patient_ids = list(Patient.objects.values_list('id', flat=True))
+            total_patients = len(patient_ids)
+            
+            for i in range(0, len(patient_ids), batch_size):
+                batch_ids = patient_ids[i:i + batch_size]
+                with transaction.atomic():
+                    Patient.objects.filter(id__in=batch_ids).delete()
+                    total_deleted += len(batch_ids)
+                
+                # Progress update every 500 patients
+                if total_deleted % 500 == 0 or total_deleted == total_patients:
+                    logger.info(f"  Deleted {total_deleted}/{total_patients} patients...")
+            
+            logger.info("")
+            logger.success(f"✅ Deleted {total_deleted} patients and all related records (CASCADE)")
             
             # ========================================
             # Verify Deletion
@@ -138,9 +162,9 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             logger.info("=" * 70)
             logger.info("📊 Deletion Summary")
             logger.info("=" * 70)
-            logger.info(f"Total records deleted: {deleted_count}")
-            logger.info(f"Patients deleted: {patient_count}")
-            logger.info(f"Appointments deleted: {appointment_count}")
+            logger.info(f"Patients deleted: {total_deleted}")
+            logger.info(f"Appointments deleted: {appointment_count_before}")
+            logger.info(f"Total records deleted: {total_deleted + appointment_count_before}")
             logger.info("")
             logger.info(f"Documents preserved: {remaining_documents}")
             logger.info(f"Images preserved: {remaining_images}")

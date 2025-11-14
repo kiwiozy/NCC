@@ -21,6 +21,7 @@ import json
 import time
 from datetime import datetime
 import urllib3
+import os
 
 # Suppress SSL warnings for FileMaker Cloud
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -30,8 +31,17 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ============================================================================
 
 FILEMAKER_ODATA_URL = "https://walkeasy.fmcloud.fm/fmi/odata/v4/WEP-DatabaseV2/API_Images"
-FILEMAKER_USERNAME = "Craig"
-FILEMAKER_PASSWORD = "Marknet//2"
+
+# Get credentials from environment variables
+FILEMAKER_USERNAME = os.environ.get('FILEMAKER_USERNAME')
+FILEMAKER_PASSWORD = os.environ.get('FILEMAKER_PASSWORD')
+
+if not FILEMAKER_USERNAME or not FILEMAKER_PASSWORD:
+    raise ValueError(
+        "FileMaker credentials not found!\n"
+        "Please set FILEMAKER_USERNAME and FILEMAKER_PASSWORD environment variables.\n"
+        "You can add them to .env.filemaker file."
+    )
 
 DEFAULT_BATCH_SIZE = 500  # Records per request
 DEFAULT_OUTPUT_FILE = "filemaker_images_metadata.csv"

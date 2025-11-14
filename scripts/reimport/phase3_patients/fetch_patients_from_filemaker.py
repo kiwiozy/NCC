@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from scripts.reimport.utils import create_logger, create_filemaker_client
+from utils import create_logger, create_filemaker_client
 
 
 def fetch_patients_from_filemaker(output_dir: str = "data/reimport") -> str:
@@ -45,11 +45,12 @@ def fetch_patients_from_filemaker(output_dir: str = "data/reimport") -> str:
         # Fetch Patients from FileMaker
         # ========================================
         with create_filemaker_client() as fm:
-            logger.info("Fetching patients from FileMaker via OData...")
-            logger.info(f"OData API: {fm.odata_base_url}")
+            logger.info("Fetching patients from FileMaker via Data API...")
+            logger.info(f"Data API: {fm.data_api_base_url}")
+            logger.info(f"Layout: API_Contacts")
             
-            # Get all patients with pagination
-            patients = fm.get_all_patients()
+            # Get all patients with pagination using Data API
+            patients = fm.get_all_patients(use_data_api=True)
             
             logger.success(f"✅ Fetched {len(patients)} patients from FileMaker")
             

@@ -11,16 +11,16 @@ import django
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger, create_filemaker_client
+from utils import create_logger, create_filemaker_client
 from clinicians.models import Clinic, Clinician
 from appointments.models import AppointmentType
-from patients.models import FundingType
+from settings.models import FundingSource
 
 
 def validate_system_config() -> bool:
@@ -44,7 +44,7 @@ def validate_system_config() -> bool:
         nexus_clinics = list(Clinic.objects.all().values_list('name', flat=True))
         nexus_clinicians = list(Clinician.objects.all().values_list('full_name', flat=True))
         nexus_appointment_types = list(AppointmentType.objects.all().values_list('name', flat=True))
-        nexus_funding_types = list(FundingType.objects.all().values_list('name', flat=True))
+        nexus_funding_types = list(FundingSource.objects.all().values_list('name', flat=True))
         
         logger.success(f"Found {len(nexus_clinics)} clinics in Nexus")
         logger.success(f"Found {len(nexus_clinicians)} clinicians in Nexus")

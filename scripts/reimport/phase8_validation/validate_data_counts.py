@@ -10,13 +10,13 @@ import django
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger, create_filemaker_client
+from utils import create_logger, create_filemaker_client
 from patients.models import Patient
 from appointments.models import Appointment
 from documents.models import Document

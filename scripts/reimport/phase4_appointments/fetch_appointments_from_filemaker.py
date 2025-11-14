@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from scripts.reimport.utils import create_logger, create_filemaker_client
+from utils import create_logger, create_filemaker_client
 
 
 def fetch_appointments_from_filemaker(output_dir: str = "data/reimport") -> str:
@@ -45,25 +45,38 @@ def fetch_appointments_from_filemaker(output_dir: str = "data/reimport") -> str:
         # Fetch Appointments from FileMaker
         # ========================================
         with create_filemaker_client() as fm:
-            logger.info("Fetching appointments from FileMaker via OData...")
-            logger.info(f"OData API: {fm.odata_base_url}")
+            logger.info("Fetching appointments from FileMaker via Data API...")
+            logger.info(f"Data API: {fm.data_api_base_url}")
             
-            # Try different entity names for appointments
+            # Try different layout names for appointments
             appointments = []
-            try:
-                appointments = fm.odata_get_all('@Appointment', batch_size=100)
-            except Exception as e:
-                logger.warning(f"Could not fetch from '@Appointment': {str(e)}")
+            layout_names = [
+                'API_event',            # Try this first - user suggestion
+                'API_Clinic_Name',      # User suggestion
+                'API_Clinics_Details',  # From old documentation
+                'API_Calendar_Events',
+                'API_Appointments', 
+                'API_Events',
+                'Events',
+                'Appointments', 
+                'API_Calendar', 
+                'Calendar'
+            ]
+            
+            for layout_name in layout_names:
                 try:
-                    appointments = fm.odata_get_all('@Appointments', batch_size=100)
-                except Exception as e2:
-                    logger.warning(f"Could not fetch from '@Appointments': {str(e2)}")
-                    try:
-                        appointments = fm.odata_get_all('API_Appointments', batch_size=100)
-                    except Exception as e3:
-                        logger.error(f"Could not fetch appointments from any known entity: {str(e3)}")
-                        logger.phase_end(success=False)
-                        return None
+                    logger.info(f"Trying layout: {layout_name}")
+                    appointments = fm.data_api_get_all_records(layout=layout_name, batch_size=100)
+                    logger.success(f"✅ Found appointments in layout: {layout_name}")
+                    break
+                except Exception as e:
+                    logger.debug(f"Layout '{layout_name}' not available: {str(e)}")
+                    continue
+            
+            if not appointments:
+                logger.error("Could not fetch appointments from any known layout")
+                logger.phase_end(success=False)
+                return None
             
             logger.success(f"✅ Fetched {len(appointments)} appointments from FileMaker")
             

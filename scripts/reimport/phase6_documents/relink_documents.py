@@ -11,13 +11,13 @@ import django
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger
+from utils import create_logger
 from patients.models import Patient
 from documents.models import Document
 from django.db import transaction
@@ -66,7 +66,7 @@ def relink_documents(dry_run: bool = False) -> bool:
         for patient in Patient.objects.all():
             fm_metadata = patient.filemaker_metadata
             if fm_metadata and fm_metadata.get('filemaker_id'):
-                filemaker_id = fm_metadata['filemaker_id']
+                filemaker_id = str(fm_metadata['filemaker_id']).upper()  # Convert to uppercase string
                 patient_map[filemaker_id] = patient
         
         logger.success(f"✅ Built lookup map for {len(patient_map)} patients")
@@ -87,12 +87,11 @@ def relink_documents(dry_run: bool = False) -> bool:
                 logger.progress(i + 1, total_documents, "Re-linking documents")
             
             try:
-                # Get FileMaker patient ID from document metadata
-                fm_patient_id = doc.filemaker_metadata.get('filemaker_patient_id') if doc.filemaker_metadata else None
+                # Get FileMaker patient ID from document (stored directly in filemaker_id field)
+                fm_patient_id = str(doc.filemaker_id).upper() if doc.filemaker_id else None
                 
                 if not fm_patient_id:
-                    # Try to extract from other fields
-                    logger.debug(f"Document {doc.id} - no filemaker_patient_id in metadata")
+                    logger.debug(f"Document {doc.id} - no filemaker_id")
                     no_patient_found_count += 1
                     continue
                 
@@ -100,20 +99,23 @@ def relink_documents(dry_run: bool = False) -> bool:
                 patient = patient_map.get(fm_patient_id)
                 
                 if not patient:
-                    logger.warning(f"Document {doc.id} - patient with filemaker_id '{fm_patient_id}' not found")
+                    logger.debug(f"Document {doc.id} - patient with filemaker_id '{fm_patient_id}' not found")
                     no_patient_found_count += 1
                     continue
                 
-                # Check if already linked correctly
-                if doc.patient == patient:
+                # Check if already linked correctly (use Generic FK)
+                from django.contrib.contenttypes.models import ContentType
+                patient_ct = ContentType.objects.get_for_model(Patient)
+                
+                if doc.content_type == patient_ct and doc.object_id == str(patient.id):
                     already_linked_count += 1
                     continue
                 
-                # Re-link document
+                # Re-link document using Generic FK
                 if not dry_run:
                     with transaction.atomic():
-                        doc.patient = patient
-                        doc.save(update_fields=['patient'])
+                        doc.content_object = patient
+                        doc.save()
                 
                 linked_count += 1
                 logger.increment_success()
@@ -173,7 +175,7 @@ def relink_documents(dry_run: bool = False) -> bool:
             logger.info("")
             logger.info("Verifying re-linking...")
             
-            orphaned_documents = Document.objects.filter(patient__isnull=True).count()
+            orphaned_documents = Document.objects.filter(object_id__isnull=True).count()
             
             if orphaned_documents > 0:
                 logger.warning(f"⚠️  {orphaned_documents} documents still orphaned (no patient)")

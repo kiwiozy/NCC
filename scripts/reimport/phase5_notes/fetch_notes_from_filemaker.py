@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from scripts.reimport.utils import create_logger, create_filemaker_client
+from utils import create_logger, create_filemaker_client
 
 
 def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:

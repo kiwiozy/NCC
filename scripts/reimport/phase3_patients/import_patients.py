@@ -14,14 +14,15 @@ from pathlib import Path
 
 # Add Django project to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../backend')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from scripts.reimport.utils import create_logger
-from patients.models import Patient, FundingType
+from utils import create_logger
+from patients.models import Patient
+from settings.models import FundingSource
 from clinicians.models import Clinic
 from django.db import transaction
 
@@ -148,7 +149,7 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
         logger.info("Loading Nexus configuration...")
         
         clinics = {clinic.name: clinic for clinic in Clinic.objects.all()}
-        funding_types = {ft.name: ft for ft in FundingType.objects.all()}
+        funding_types = {ft.name: ft for ft in FundingSource.objects.all()}
         
         logger.success(f"✅ Loaded {len(clinics)} clinics")
         logger.success(f"✅ Loaded {len(funding_types)} funding types")
@@ -194,7 +195,7 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
                 funding_type_name = (
                     patient_data.get('funding_type') or 
                     patient_data.get('Funding_Type') or
-                    patient_data.get('FundingType') or
+                    patient_data.get('FundingSource') or
                     patient_data.get('Funding') or
                     patient_data.get('NDIS_Type') or
                     patient_data.get('ndis_type')

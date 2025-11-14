@@ -53,7 +53,7 @@ class FileMakerClient:
         
         # Session for connection pooling
         self.session = requests.Session()
-        self.session.verify = True  # Verify SSL certificates
+        self.session.verify = False  # Disable SSL verification (FileMaker Cloud issue)
     
     # ========================================
     # Data API Methods (Layout-Based Access)
@@ -66,7 +66,7 @@ class FileMakerClient:
             return self.data_api_token
         
         # Request new token
-        url = urljoin(self.data_api_base_url, 'sessions')
+        url = f"{self.data_api_base_url}/sessions"
         headers = {'Content-Type': 'application/json'}
         
         response = self.session.post(
@@ -104,7 +104,7 @@ class FileMakerClient:
             List of record dictionaries
         """
         token = self._get_data_api_token()
-        url = urljoin(self.data_api_base_url, f'layouts/{layout}/_find')
+        url = f"{self.data_api_base_url}/layouts/{layout}/_find"
         
         headers = {
             'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ class FileMakerClient:
             'limit': str(limit)
         }
         
-        response = self.session.post(url, json=payload, headers=headers)
+        response = self.session.post(url, json=payload, headers=headers, timeout=30)
         
         if response.status_code == 200:
             data = response.json()
@@ -168,7 +168,7 @@ class FileMakerClient:
         if orderby:
             params['$orderby'] = orderby
         
-        response = self.session.get(url, params=params, auth=self.odata_auth)
+        response = self.session.get(url, params=params, auth=self.odata_auth, timeout=30)
         
         if response.status_code == 200:
             return response.json()
@@ -223,13 +223,104 @@ class FileMakerClient:
     # Convenience Methods
     # ========================================
     
-    def get_all_patients(self) -> List[Dict]:
-        """Get all patients from FileMaker via OData."""
-        return self.odata_get_all(entity='@Contacts')
+    def get_all_patients(self, use_data_api: bool = False) -> List[Dict]:
+        """
+        Get all patients from FileMaker.
+        
+        Args:
+            use_data_api: If True, use Data API instead of OData
+        
+        Returns:
+            List of patient records
+        """
+        if use_data_api:
+            return self.data_api_get_all_records(layout='API_Contacts')
+        else:
+            return self.odata_get_all(entity='@Contacts')
     
-    def get_all_appointments(self) -> List[Dict]:
-        """Get all appointments from FileMaker via OData."""
-        return self.odata_get_all(entity='@Appointment')  # Adjust entity name as needed
+    def data_api_get_all_records(
+        self,
+        layout: str,
+        batch_size: int = 100,
+    ) -> List[Dict]:
+        """
+        Get all records from a layout using Data API with pagination.
+        Uses GET /layouts/{layout}/records instead of _find.
+        
+        Args:
+            layout: Layout name
+            batch_size: Records per batch
+        
+        Returns:
+            List of all records
+        """
+        all_records = []
+        offset = 1
+        
+        while True:
+            try:
+                token = self._get_data_api_token()
+                url = f"{self.data_api_base_url}/layouts/{layout}/records"
+                
+                params = {
+                    '_offset': offset,
+                    '_limit': batch_size
+                }
+                
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {token}'
+                }
+                
+                response = self.session.get(url, params=params, headers=headers, timeout=30)
+                
+                if response.status_code != 200:
+                    # Check if we just ran out of records
+                    if response.status_code == 401 or 'No records match' in response.text:
+                        break
+                    raise Exception(f"Data API get records failed: {response.status_code} - {response.text}")
+                
+                data = response.json()
+                records = data.get('response', {}).get('data', [])
+                
+                if not records:
+                    break
+                
+                # Extract fieldData from each record
+                for record in records:
+                    field_data = record.get('fieldData', {})
+                    # Add recordId for reference
+                    field_data['_recordId'] = record.get('recordId')
+                    all_records.append(field_data)
+                
+                offset += len(records)
+                
+                # If we got fewer records than batch_size, we're done
+                if len(records) < batch_size:
+                    break
+                    
+            except Exception as e:
+                # If we get an error about no records found, we're done
+                if 'No records match the request' in str(e) or 'range is invalid' in str(e):
+                    break
+                raise
+        
+        return all_records
+    
+    def get_all_appointments(self, use_data_api: bool = False) -> List[Dict]:
+        """
+        Get all appointments from FileMaker.
+        
+        Args:
+            use_data_api: If True, use Data API instead of OData
+        
+        Returns:
+            List of appointment records
+        """
+        if use_data_api:
+            return self.data_api_get_all_records(layout='API_Appointments')
+        else:
+            return self.odata_get_all(entity='@Appointment')
     
     def get_contact_details(self, patient_id: str) -> List[Dict]:
         """
