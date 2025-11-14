@@ -138,11 +138,14 @@ export default function ContactHeader({
       }
     };
 
-    getNotesCount();
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getNotesCount();
+    }
     
     // Listen for storage changes (when notes are added/deleted in other tabs/components)
     const handleStorageChange = (e: StorageEvent) => {
-      if (!patientId) {
+      if (!patientId && menuOpened) {
         const storageKey = 'walkeasy_nexus_notes';
         if (e.key === storageKey) {
           getNotesCount();
@@ -152,17 +155,22 @@ export default function ContactHeader({
     
     // Listen for custom event when notes change in NotesDialog
     const handleNotesChange = () => {
-      getNotesCount();
+      if (menuOpened) {
+        getNotesCount();
+      }
     };
     
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('notesUpdated', handleNotesChange);
     
-    // Refresh count periodically
-    const interval = setInterval(getNotesCount, 2000);
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getNotesCount, 5000); // Reduced from 2s to 5s
+    }
     
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('notesUpdated', handleNotesChange);
     };
@@ -194,20 +202,28 @@ export default function ContactHeader({
       }
     };
 
-    getDocumentsCount();
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getDocumentsCount();
+    }
     
     // Listen for custom event when documents change
     const handleDocumentsChange = () => {
-      getDocumentsCount();
+      if (menuOpened) {
+        getDocumentsCount();
+      }
     };
     
     window.addEventListener('documentsUpdated', handleDocumentsChange);
     
-    // Refresh count periodically
-    const interval = setInterval(getDocumentsCount, 2000);
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getDocumentsCount, 5000); // Reduced from 2s to 5s
+    }
     
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('documentsUpdated', handleDocumentsChange);
     };
   }, [patientId, menuOpened]);
@@ -238,20 +254,28 @@ export default function ContactHeader({
       }
     };
 
-    getLettersCount();
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getLettersCount();
+    }
     
     // Listen for custom event when letters change
     const handleLettersChange = () => {
-      getLettersCount();
+      if (menuOpened) {
+        getLettersCount();
+      }
     };
     
     window.addEventListener('lettersUpdated', handleLettersChange);
     
-    // Refresh count periodically
-    const interval = setInterval(getLettersCount, 2000);
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getLettersCount, 5000); // Reduced from 2s to 5s
+    }
     
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('lettersUpdated', handleLettersChange);
     };
   }, [patientId, menuOpened]);
@@ -281,20 +305,28 @@ export default function ContactHeader({
       }
     };
 
-    getSmsUnreadCount();
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getSmsUnreadCount();
+    }
     
     // Listen for custom event when SMS messages are read
     const handleSmsRead = () => {
-      getSmsUnreadCount();
+      if (menuOpened) {
+        getSmsUnreadCount();
+      }
     };
     
     window.addEventListener('smsRead', handleSmsRead);
     
-    // Refresh count periodically
-    const interval = setInterval(getSmsUnreadCount, 5000); // Every 5 seconds for SMS
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getSmsUnreadCount, 10000); // Every 10 seconds (reduced from 5s)
+    }
     
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('smsRead', handleSmsRead);
     };
   }, [patientId, menuOpened]);

@@ -36,6 +36,7 @@ import {
   IconDownload,
   IconUpload,
   IconRefresh,
+  IconEye,
 } from '@tabler/icons-react';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 import { DateValue } from '@mantine/dates';
@@ -115,6 +116,9 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null); // Blob URL for Safari PDF
   const [isLoadingPdf, setIsLoadingPdf] = useState(false); // Loading state for PDF blob
   const [pdfError, setPdfError] = useState<string | null>(null); // PDF loading error
+  
+  // Ref for document viewer to scroll to
+  const viewerRef = useRef<HTMLDivElement>(null);
   
   // Upload form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -515,21 +519,27 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
       opened={opened}
       onClose={onClose}
       title="Documents"
-      size="95%"
+      size="60%"
       styles={{
         body: {
-          height: 'calc(90vh - 60px)',
+          height: 'calc(98vh - 60px)',
           padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          // overflow: default (auto) - allows natural scrolling
         },
         content: {
-          height: '90vh',
+          height: '98vh',
+          display: 'flex',
+          flexDirection: 'column',
+          // overflow: default (auto) - allows natural scrolling
         },
       }}
     >
       <Grid gutter={0} style={{ height: '100%' }}>
         {/* Left Column: Documents List */}
-        <Grid.Col span={3} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-          <Stack gap={0} style={{ height: '100%' }}>
+        <Grid.Col span={2} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, height: '100%', overflow: 'hidden' }}>
+          <Stack gap={0} style={{ height: '100%', overflow: 'hidden' }}>
             {/* Header with Add Button */}
             <Box p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
               <Group justify="space-between" align="center">
@@ -596,11 +606,8 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                   >
                     <Group justify="space-between" align="flex-start" mb="xs">
                       <Box style={{ flex: 1 }}>
-                        <Badge variant="light" size="sm" mb="xs">
+                        <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'} fw={600} lineClamp={1} mb="xs">
                           {getCategoryLabel(doc.category)}
-                        </Badge>
-                        <Text size="xs" c={isDark ? '#C1C2C5' : '#495057'} fw={500} lineClamp={1}>
-                          {doc.original_name}
                         </Text>
                         <Text size="xs" c="dimmed" mt="xs">
                           {doc.file_size_display || formatFileSize(doc.file_size || 0)}
@@ -636,23 +643,18 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
         </Grid.Col>
 
         {/* Right Column: Upload/View */}
-        <Grid.Col span={9}>
-          <Stack gap={0} style={{ height: '100%' }}>
+        <Grid.Col span={10} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Stack gap={0} style={{ height: '100%', flex: 1 }}>
             {selectedDocument ? (
               /* Selected Document View */
-              <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
+              <Box p="xs" style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <Stack gap="xs" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                   {/* Top Row: File Info */}
-                  <Group justify="space-between" align="flex-start">
+                  <Group justify="space-between" align="flex-start" style={{ flexShrink: 0 }}>
                     <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text size="lg" fw={600} mb={4}>
+                      <Text size="lg" fw={600}>
                         {getCategoryLabel(selectedDocument.category)}
                       </Text>
-                      <Tooltip label={selectedDocument.original_name} multiline maw={400}>
-                        <Text size="xs" c="dimmed" truncate>
-                          {selectedDocument.original_name}
-                        </Text>
-                      </Tooltip>
                     </Box>
                     <Group gap="xs">
                       {selectedDocument.document_date && (
@@ -686,6 +688,19 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                           return null;
                         })()
                       )}
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="lg"
+                        onClick={() => {
+                          // Scroll to the viewer
+                          viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                        title="Scroll to viewer"
+                        disabled={!selectedDocument.download_url}
+                      >
+                        <IconEye size={18} />
+                      </ActionIcon>
                       <ActionIcon
                         variant="light"
                         color="blue"
@@ -725,7 +740,7 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                   </Group>
                   
                   {/* Category Dropdown + File Info Row */}
-                  <Group gap="md" align="flex-start">
+                  <Group gap="md" align="flex-start" style={{ flexShrink: 0 }}>
                     <Box style={{ flex: 1, maxWidth: rem(300) }}>
                       <Text size="sm" c="dimmed" mb={4}>CATEGORY</Text>
                       <Select
@@ -807,15 +822,16 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                   
                   {/* Document Viewer */}
                   {selectedDocument.download_url && (
-                    <Box 
+                    <Box
+                      ref={viewerRef}
                       style={{ 
-                        flex: 1, 
-                        minHeight: 0,
+                        height: 'calc(98vh - 200px)', // Explicit height: Modal height minus header, top rows, padding
+                        width: '100%',
+                        position: 'relative',
                         border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                         borderRadius: rem(8),
-                        overflow: 'hidden',
+                        overflow: 'auto', // Allow PDF to scroll
                         backgroundColor: isDark ? '#1A1B1E' : '#ffffff',
-                        position: 'relative',
                       }}
                     >
                       {isReloadingPDF && reloadKey === 0 ? (
@@ -839,78 +855,66 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                           // Safari: Use blob URL approach (Option A) for reliable reloading
                           if (browser.isSafari) {
                             return (
-                              <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
-                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4), overflow: 'auto', minHeight: rem(400), maxHeight: '100%' }}>
-                                  {isLoadingPdf && (
-                                    <Box style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                      <Loader size="lg" />
-                                      <Text c="dimmed" size="sm">Loading PDF...</Text>
-                                    </Box>
-                                  )}
-                                  {pdfError && (
-                                    <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                      <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
-                                      <Text c="red" size="sm" ta="center">
-                                        {pdfError}
-                                      </Text>
-                                    <Button
-                                        leftSection={<IconDownload size={16} />}
-                                        onClick={() => {
-                                            window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
-                                        }}
-                                    >
-                                        Open PDF in New Window
-                                    </Button>
-                                    </Box>
-                                  )}
-                                  {pdfBlobUrl && !isLoadingPdf && !pdfError && (
-                                    <object
-                                      key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
-                                      data={pdfBlobUrl}
-                                      type="application/pdf"
-                                      style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        minHeight: rem(400),
-                                        display: 'block',
+                              <>
+                                {isLoadingPdf && (
+                                  <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <Loader size="lg" />
+                                    <Text c="dimmed" size="sm">Loading PDF...</Text>
+                                  </Box>
+                                )}
+                                {pdfError && (
+                                  <Box p="md" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
+                                    <Text c="red" size="sm" ta="center">
+                                      {pdfError}
+                                    </Text>
+                                  <Button
+                                      leftSection={<IconDownload size={16} />}
+                                      onClick={() => {
+                                          window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                       }}
-                                      onError={() => {
-                                        console.error('PDF failed to load in object tag');
-                                        setIsReloadingPDF(false);
-                                        setPdfError('PDF failed to render');
-                                      }}
-                                    >
-                                      <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                        <IconFile size={48} style={{ opacity: 0.5 }} />
-                                        <Text c="dimmed" size="sm" ta="center">
-                                          PDF viewer not available
-                                        </Text>
-                                        <Anchor href={pdfBlobUrl} download={selectedDocument.original_name}>
-                                          Download PDF
-                                        </Anchor>
-                                      </Box>
-                                    </object>
-                                  )}
-                                  {!pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  >
+                                      Open PDF in New Window
+                                  </Button>
+                                  </Box>
+                                )}
+                                {pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  <object
+                                    key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
+                                    data={pdfBlobUrl}
+                                    type="application/pdf"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      border: 'none',
+                                      display: 'block',
+                                    }}
+                                    onError={() => {
+                                      console.error('PDF failed to load in object tag');
+                                      setIsReloadingPDF(false);
+                                      setPdfError('PDF failed to render');
+                                    }}
+                                  >
                                     <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
                                       <IconFile size={48} style={{ opacity: 0.5 }} />
                                       <Text c="dimmed" size="sm" ta="center">
-                                        Preparing PDF...
+                                        PDF viewer not available
                                       </Text>
+                                      <Anchor href={pdfBlobUrl} download={selectedDocument.original_name}>
+                                        Download PDF
+                                      </Anchor>
                                     </Box>
-                                  )}
-                                </Box>
-                                <Button
-                                  variant="light"
-                                  fullWidth
-                                  leftSection={<IconDownload size={16} />}
-                                  onClick={() => {
-                                    window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
-                                  }}
-                                >
-                                  Open PDF in Safari
-                                </Button>
-                              </Box>
+                                  </object>
+                                )}
+                                {!pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  <Box p="md" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <IconFile size={48} style={{ opacity: 0.5 }} />
+                                    <Text c="dimmed" size="sm" ta="center">
+                                      Preparing PDF...
+                                    </Text>
+                                  </Box>
+                                )}
+                              </>
                             );
                           } else {
                             // For other browsers, use iframe with blob URL (cached)
@@ -923,7 +927,6 @@ export default function DocumentsDialog({ opened, onClose, patientId, patientNam
                                     width: '100%',
                                     height: '100%',
                                     border: 'none',
-                                    minHeight: rem(400),
                                   }}
                                   title={selectedDocument.original_name}
                                   onError={() => {

@@ -36,6 +36,9 @@ const theme = createTheme({
 export const metadata = {
   title: 'WalkEasy Nexus - Patient Management',
   description: 'Modern patient management system for Walk Easy Pedorthics',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

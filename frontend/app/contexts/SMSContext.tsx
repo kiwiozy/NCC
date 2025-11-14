@@ -35,9 +35,17 @@ export function SMSProvider({ children }: { children: ReactNode }) {
         
         setUnreadCount(newCount);
         setLastMessageId(latestId);
+      } else if (response.status === 403 || response.status === 401) {
+        // Silent fail for permission errors (e.g., not logged in, letters endpoint not implemented)
+        // Don't log to console to avoid spam
+        setUnreadCount(0);
       }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      // Silent fail for network errors
+      // Only log if it's not a common error
+      if (!(error instanceof TypeError)) {
+        console.error('Error fetching unread count:', error);
+      }
     }
   };
 
@@ -45,8 +53,8 @@ export function SMSProvider({ children }: { children: ReactNode }) {
     // Initial load
     refreshUnreadCount();
     
-    // Poll every 5 seconds
-    const interval = setInterval(refreshUnreadCount, 5000);
+    // Poll every 30 seconds (reduced from 5 seconds to minimize API calls)
+    const interval = setInterval(refreshUnreadCount, 30000);
     
     return () => clearInterval(interval);
   }, []); // Empty dependency array! lastMessageId change should NOT restart interval
