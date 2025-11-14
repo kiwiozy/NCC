@@ -84,6 +84,7 @@ The FileMaker reimport system has **ALL 19 planned scripts completed** (100% com
 2. ✅ **Functional Validation** (`validate_functional.py`) - BUILT (327 lines)
 3. ✅ **Hardcoded Credentials** - FIXED (removed from 2 legacy scripts)
 4. ✅ **Filename Mismatch** - FIXED (renamed to match documentation)
+5. ✅ **Image Linking** - FIXED (CSV BOM encoding + patient lookup field) - **NEW!**
 
 ### 🟢 **SYSTEM STATUS: READY FOR TESTING**
 - All core functionality implemented and documented
@@ -267,7 +268,72 @@ master_reimport.py now references correct filename
 
 ---
 
-## ⚠️  MEDIUM PRIORITY ISSUE #5: No Rollback Mechanism
+## ✅ RESOLVED ISSUE #5: Image Linking (COMPLETE)
+
+### Problem (WAS)
+The CSV-based image linking script was **skipping ALL 6,490 images** during import with a 0% success rate.
+
+### Root Causes
+1. **Incorrect Patient Lookup:** Script was searching for `filemaker_id` in the `notes` JSON field, but it's actually stored in `filemaker_metadata` JSON field
+2. **CSV BOM Encoding:** CSV file had UTF-8 Byte Order Mark (`\ufeff`), causing first column `date` to be read as `\ufeffdate`, breaking date parsing
+
+### Solution (NOW)
+✅ **FIXED** image linking with two key changes:
+
+**Fix #1: Changed patient lookup query**
+```python
+# BEFORE (INCORRECT):
+patient = Patient.objects.get(notes__contains=f'"filemaker_id": "{id_contact}"')
+
+# AFTER (CORRECT):
+patient = Patient.objects.get(filemaker_metadata__filemaker_id=id_contact)
+```
+
+**Fix #2: Fixed CSV encoding to strip BOM**
+```python
+# BEFORE:
+with open(csv_file, 'r', encoding='utf-8') as f:
+
+# AFTER:
+with open(csv_file, 'r', encoding='utf-8-sig') as f:  # strips BOM
+```
+
+**Additional Changes:**
+- Created wrapper script `phase7_images/link_filemaker_images_csv.py` for Phase 7 integration
+- Added to `master_reimport.py` Phase 7 scripts list
+- Integrated with reimport logger and progress tracker
+
+### Results After Fix
+
+**Dry Run Test (Full 6,490 images):**
+```
+✅ Total images:          6490
+✅ Images linked:         6489 (99.98% success rate!)
+✅ Patients matched:      1303
+✅ Batches created:       1661
+⏭️  Skipped:               1 (missing metadata)
+❌ Errors:                0
+```
+
+**Performance:**
+- Total time: ~8 seconds for 6,490 images (dry run)
+- CSV load: instant (6,662 metadata records)
+- S3 listing: ~2 seconds
+- Patient matching: ~5 seconds
+
+**Files Modified:**
+1. `backend/images/management/commands/link_filemaker_images_csv.py` - Fixed encoding and lookup
+2. `scripts/reimport/phase7_images/link_filemaker_images_csv.py` - NEW wrapper script
+3. `scripts/reimport/master_reimport.py` - Added to Phase 7
+
+**Documentation:**
+- Created `scripts/reimport/IMAGE_LINKING_FIX.md` with full details
+
+### Status: ✅ **COMPLETE** (Ready for production)
+
+---
+
+## ⚠️  MEDIUM PRIORITY ISSUE #6: No Rollback Mechanism
 
 ### Problem
 If reimport **fails halfway** (e.g., Phase 4 appointments fails after Phase 3 patients succeeds):
@@ -329,7 +395,7 @@ if not phase_success:
 
 ---
 
-## ⚠️  LOW PRIORITY ISSUE #6: No Email Notifications
+## ⚠️  LOW PRIORITY ISSUE #7: No Email Notifications
 
 ### Problem
 Reimport is a **long-running process** (estimated 30-60 minutes for full reimport):
@@ -389,14 +455,15 @@ REIMPORT_NOTIFICATION_EMAIL = 'admin@walkeasy.com.au'
 | 2 | Missing `validate_functional.py` | 🔴 Critical | ✅ **COMPLETE** | 3-4 hours | ~~BLOCKER~~ |
 | 3 | Hardcoded credentials in legacy scripts | ⚠️  High | ✅ **COMPLETE** | 30 min | ~~HIGH~~ |
 | 4 | Filename mismatch (`import_notes_sms.py`) | ⚠️  Medium | ✅ **COMPLETE** | 5 min | ~~MEDIUM~~ |
-| 5 | No rollback mechanism | ⚠️  Medium | Not Started | 2-3 hours | OPTIONAL |
-| 6 | No email notifications | ⚠️  Low | Not Started | 1-2 hours | OPTIONAL |
-| 7 | No progress web dashboard | ℹ️  Enhancement | Not Started | 8-10 hours | OPTIONAL |
-| 8 | No Slack/webhook notifications | ℹ️  Enhancement | Not Started | 1 hour | OPTIONAL |
+| 5 | Image linking broken (CSV + patient lookup) | 🔴 Critical | ✅ **COMPLETE** | 45 min | ~~BLOCKER~~ |
+| 6 | No rollback mechanism | ⚠️  Medium | Not Started | 2-3 hours | OPTIONAL |
+| 7 | No email notifications | ⚠️  Low | Not Started | 1-2 hours | OPTIONAL |
+| 8 | No progress web dashboard | ℹ️  Enhancement | Not Started | 8-10 hours | OPTIONAL |
+| 9 | No Slack/webhook notifications | ℹ️  Enhancement | Not Started | 1 hour | OPTIONAL |
 
 **✅ ALL CRITICAL BLOCKERS RESOLVED!**
 
-**Total Effort Completed:** ~8 hours (all blockers)  
+**Total Effort Completed:** ~9 hours (all blockers including image linking fix)  
 **Total Effort Remaining:** 12-16 hours (all optional enhancements)
 
 ---
@@ -417,6 +484,8 @@ REIMPORT_NOTIFICATION_EMAIL = 'admin@walkeasy.com.au'
 11. ✅ **Clinic auto-fix** (appointments without clinic use patient's clinic)
 12. ✅ **Generic FK support** (documents/images re-linking)
 13. ✅ **Security fixes** (no hardcoded credentials)
+14. ✅ **Image linking working** (99.98% success rate with CSV metadata) - **NEW!**
+15. ✅ **S3 backup system** (automated backup before reimport)
 
 ### Code Quality
 - ✅ Consistent code style across all scripts
@@ -671,18 +740,22 @@ Before proceeding with blocker fixes, clarify:
 ## 📈 Progress Update
 
 **Fixes Applied:** November 14, 2025  
-**Time Taken:** ~1.5 hours  
-**Scripts Built:** 3 new scripts (1,161 total lines)  
-**Scripts Fixed:** 4 files updated  
-**Blockers Resolved:** 4 out of 4 (100%)  
-**New Feature:** S3 backup for images & documents
+**Time Taken:** ~2.5 hours (including image linking fix)  
+**Scripts Built:** 4 new scripts (1,310 total lines)  
+**Scripts Fixed:** 5 files updated  
+**Blockers Resolved:** 5 out of 5 (100%)  
+**New Features:** 
+- S3 backup for images & documents
+- CSV-based image linking (99.98% success rate)
 
 **New Scripts Created:**
 1. `master_reimport.py` (486 lines) - Master orchestrator
 2. `validate_functional.py` (327 lines) - Functional validation
 3. `backup_s3_files.py` (348 lines) - S3 file backup
+4. `link_filemaker_images_csv.py` (149 lines) - Phase 7 image linking wrapper
 
 **See also:** 
 - `FIXES_APPLIED_2025_11_14.md` - Detailed changelog
 - `docs/FileMaker/S3_BACKUP.md` - S3 backup documentation
+- `IMAGE_LINKING_FIX.md` - Image linking fix details
 
