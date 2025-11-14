@@ -75,6 +75,11 @@ class Document(models.Model):
         unique=True,
         help_text='Original FileMaker document ID (from API_Docs.id) - for imported documents only'
     )
+    filemaker_metadata = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='FileMaker import metadata (filemaker_clinic, xero_contact_id, imported_at, etc.)'
+    )
     
     class Meta:
         ordering = ['-uploaded_at']
