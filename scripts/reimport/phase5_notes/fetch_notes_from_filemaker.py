@@ -1,7 +1,7 @@
 """
-Phase 5: Fetch Notes from FileMaker
+Phase 5: Fetch Notes and SMS from FileMaker
 
-Fetches all patient note records from FileMaker via OData API.
+Fetches all patient note and SMS records from FileMaker via OData API.
 Exports to JSON file for import into Nexus.
 """
 
@@ -17,34 +17,36 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from scripts.reimport.utils import create_logger, create_filemaker_client
 
 
-def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> str:
+def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:
     """
-    Fetch all notes from FileMaker.
+    Fetch all notes and SMS messages from FileMaker.
     
     Args:
-        output_dir: Directory to save export file
+        output_dir: Directory to save export files
     
     Returns:
-        Path to exported JSON file, or None if failed
+        Tuple of (notes_file, sms_file), or (None, None) if failed
     """
     logger = create_logger("PHASE 5")
-    logger.phase_start("Phase 5.1", "Fetch Notes from FileMaker")
+    logger.phase_start("Phase 5.1", "Fetch Notes and SMS from FileMaker")
     
     try:
         # Create output directory
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # Create timestamped filename
+        # Create timestamped filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file = output_path / f"notes_export_{timestamp}.json"
+        notes_file = output_path / f"notes_export_{timestamp}.json"
+        sms_file = output_path / f"sms_export_{timestamp}.json"
         
-        logger.info(f"Export will be saved to: {output_file}")
+        logger.info(f"Notes will be saved to: {notes_file}")
+        logger.info(f"SMS will be saved to: {sms_file}")
         
-        # ========================================
-        # Fetch Notes from FileMaker
-        # ========================================
         with create_filemaker_client() as fm:
+            # ========================================
+            # Fetch Notes from FileMaker
+            # ========================================
             logger.info("Fetching notes from FileMaker via OData...")
             logger.info(f"OData API: {fm.odata_base_url}")
             
@@ -61,47 +63,80 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> str:
                     try:
                         notes = fm.odata_get_all('@Contact_Notes', batch_size=100)
                     except Exception as e3:
-                        logger.error(f"Could not fetch notes from any known entity: {str(e3)}")
-                        logger.info("Notes may not be available in FileMaker, or use a different entity name")
-                        logger.phase_end(success=False)
-                        return None
+                        logger.warning(f"Could not fetch notes from any known entity")
+                        logger.info("Notes may not be available in FileMaker")
             
             logger.success(f"✅ Fetched {len(notes)} notes from FileMaker")
             
-            if len(notes) == 0:
-                logger.warning("No notes found in FileMaker")
-                logger.info("This is OK if FileMaker doesn't have notes, or they're not exposed via OData")
-            
-            # ========================================
-            # Analyze Note Data
-            # ========================================
+            # Analyze note data
             if notes:
-                logger.info("Analyzing note data...")
-                
-                # Count notes by type/category
                 notes_with_patient = sum(1 for n in notes if n.get('id_Contact') or n.get('patient_id'))
                 notes_with_content = sum(1 for n in notes if n.get('content') or n.get('Note') or n.get('Text'))
-                
                 logger.info(f"Notes with patient link: {notes_with_patient}/{len(notes)}")
                 logger.info(f"Notes with content: {notes_with_content}/{len(notes)}")
             
+            # Save notes
+            if notes:
+                notes_export = {
+                    'export_timestamp': timestamp,
+                    'export_date': datetime.now().isoformat(),
+                    'total_notes': len(notes),
+                    'source': 'FileMaker OData API',
+                    'notes': notes
+                }
+                
+                with open(notes_file, 'w') as f:
+                    json.dump(notes_export, f, indent=2, default=str)
+                
+                logger.success(f"✅ Saved notes to: {notes_file}")
+            
             # ========================================
-            # Save to JSON File
+            # Fetch SMS Messages from FileMaker
             # ========================================
-            logger.info(f"Saving export to: {output_file}")
+            logger.info("")
+            logger.info("Fetching SMS messages from FileMaker via OData...")
             
-            export_data = {
-                'export_timestamp': timestamp,
-                'export_date': datetime.now().isoformat(),
-                'total_notes': len(notes),
-                'source': 'FileMaker OData API',
-                'notes': notes
-            }
+            # Try different entity names for SMS
+            sms_messages = []
+            try:
+                sms_messages = fm.odata_get_all('@SMS', batch_size=100)
+            except Exception as e:
+                logger.warning(f"Could not fetch from '@SMS': {str(e)}")
+                try:
+                    sms_messages = fm.odata_get_all('API_SMS', batch_size=100)
+                except Exception as e2:
+                    logger.warning(f"Could not fetch from 'API_SMS': {str(e2)}")
+                    try:
+                        sms_messages = fm.odata_get_all('@SMS_Messages', batch_size=100)
+                    except Exception as e3:
+                        logger.warning(f"Could not fetch SMS from any known entity")
+                        logger.info("SMS may not be available in FileMaker")
             
-            with open(output_file, 'w') as f:
-                json.dump(export_data, f, indent=2, default=str)
+            logger.success(f"✅ Fetched {len(sms_messages)} SMS messages from FileMaker")
             
-            logger.success(f"✅ Saved export to: {output_file}")
+            # Analyze SMS data
+            if sms_messages:
+                sms_with_patient = sum(1 for s in sms_messages if s.get('id_Contact') or s.get('patient_id'))
+                sms_with_phone = sum(1 for s in sms_messages if s.get('phone') or s.get('phone_number'))
+                sms_with_message = sum(1 for s in sms_messages if s.get('message') or s.get('Message') or s.get('text'))
+                logger.info(f"SMS with patient link: {sms_with_patient}/{len(sms_messages)}")
+                logger.info(f"SMS with phone number: {sms_with_phone}/{len(sms_messages)}")
+                logger.info(f"SMS with message content: {sms_with_message}/{len(sms_messages)}")
+            
+            # Save SMS
+            if sms_messages:
+                sms_export = {
+                    'export_timestamp': timestamp,
+                    'export_date': datetime.now().isoformat(),
+                    'total_sms': len(sms_messages),
+                    'source': 'FileMaker OData API',
+                    'sms_messages': sms_messages
+                }
+                
+                with open(sms_file, 'w') as f:
+                    json.dump(sms_export, f, indent=2, default=str)
+                
+                logger.success(f"✅ Saved SMS to: {sms_file}")
             
             # ========================================
             # Export Summary
@@ -111,40 +146,34 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> str:
             logger.info("📊 Export Summary")
             logger.info("=" * 70)
             logger.info(f"Total Notes: {len(notes)}")
-            logger.info(f"Export File: {output_file}")
-            if notes:
-                logger.info(f"File Size: {output_file.stat().st_size / 1024 / 1024:.2f} MB")
+            logger.info(f"Total SMS: {len(sms_messages)}")
             
-            # Sample note data
             if notes:
-                sample = notes[0]
-                logger.info("")
-                logger.info("Sample Note Data:")
-                logger.info(f"  ID: {sample.get('id')}")
-                logger.info(f"  Patient ID: {sample.get('id_Contact')}")
-                logger.info(f"  Content: {str(sample.get('Note') or sample.get('content') or sample.get('Text'))[:100]}...")
+                logger.info(f"Notes File: {notes_file} ({notes_file.stat().st_size / 1024 / 1024:.2f} MB)")
+            if sms_messages:
+                logger.info(f"SMS File: {sms_file} ({sms_file.stat().st_size / 1024 / 1024:.2f} MB)")
             
             logger.success("")
-            logger.success("✅ Note export completed successfully!")
+            logger.success("✅ Note and SMS export completed successfully!")
             logger.success(f"Next: Run import_notes.py to import into Nexus")
             logger.success("")
             
             logger.phase_end(success=True)
-            return str(output_file)
+            return (str(notes_file) if notes else None, str(sms_file) if sms_messages else None)
             
     except Exception as e:
-        logger.error(f"Exception during note fetch: {str(e)}", exc_info=e)
+        logger.error(f"Exception during fetch: {str(e)}", exc_info=e)
         logger.phase_end(success=False)
-        return None
+        return (None, None)
 
 
 if __name__ == '__main__':
     import argparse
     
-    parser = argparse.ArgumentParser(description='Fetch notes from FileMaker')
-    parser.add_argument('--output-dir', default='data/reimport', help='Output directory for export file')
+    parser = argparse.ArgumentParser(description='Fetch notes and SMS from FileMaker')
+    parser.add_argument('--output-dir', default='data/reimport', help='Output directory for export files')
     args = parser.parse_args()
     
-    output_file = fetch_notes_from_filemaker(output_dir=args.output_dir)
-    sys.exit(0 if output_file else 1)
+    notes_file, sms_file = fetch_notes_from_filemaker(output_dir=args.output_dir)
+    sys.exit(0 if (notes_file or sms_file) else 1)
 
