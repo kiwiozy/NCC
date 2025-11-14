@@ -13,6 +13,20 @@ import time
 import requests
 from typing import Dict, List, Optional, Any
 from urllib.parse import urljoin
+from pathlib import Path
+
+# Load environment variables from backend/.env
+try:
+    from dotenv import load_dotenv
+    # Try to load from backend/.env first
+    backend_env = Path(__file__).parent.parent.parent.parent / 'backend' / '.env'
+    if backend_env.exists():
+        load_dotenv(backend_env)
+    # Fallback to project root .env
+    else:
+        load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, rely on system environment variables
 
 
 class FileMakerClient:
