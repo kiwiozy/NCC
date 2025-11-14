@@ -24,11 +24,19 @@
 
 ---
 
-## 🚧 Next Steps (To Build)
+## ✅ Recently Completed
 
 ### Phase 3: Import Patients
-- [ ] `phase3_patients/fetch_patients_from_filemaker.py`
-- [ ] `phase3_patients/import_patients.py`
+- ✅ `phase3_patients/fetch_patients_from_filemaker.py` - Fetch patients via OData
+- ✅ `phase3_patients/import_patients.py` - Import patients with full transformation
+
+### Phase 6: Re-link Documents
+- ✅ `phase6_documents/relink_documents.py` - Re-link orphaned documents
+
+### Phase 7: Re-link Images
+- ✅ `phase7_images/relink_images.py` - Re-link orphaned image batches
+
+## 🚧 Next Steps (To Build)
 
 ### Phase 4: Import Appointments
 - [ ] `phase4_appointments/fetch_appointments_from_filemaker.py`
@@ -37,12 +45,6 @@
 ### Phase 5: Import Notes (Optional)
 - [ ] `phase5_notes/fetch_notes_from_filemaker.py`
 - [ ] `phase5_notes/import_notes.py`
-
-### Phase 6: Re-link Documents
-- [ ] `phase6_documents/relink_documents.py`
-
-### Phase 7: Re-link Images
-- [ ] `phase7_images/relink_images.py`
 
 ### Phase 8: Post-Import Validation
 - [ ] `phase8_validation/validate_data_counts.py`
@@ -155,5 +157,5 @@ export DJANGO_SETTINGS_MODULE=ncc_api.settings
 ---
 
 **Last Updated:** 2025-11-14  
-**Status:** Foundation complete, ready for Phase 3-8 implementation
+**Status:** Core phases complete (0, 2, 3, 6, 7), Phase 4 & 8 pending
 
