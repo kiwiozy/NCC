@@ -128,6 +128,7 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
         skipped_count = 0
         error_count = 0
         fixed_clinic_count = 0
+        appointments_with_notes = 0
         
         for i, appointment_data in enumerate(appointments_data):
             if (i + 1) % 100 == 0:
@@ -199,6 +200,17 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
                 if status not in ['scheduled', 'completed', 'cancelled', 'no-show']:
                     status = 'scheduled'
                 
+                # Get notes (try multiple field names)
+                notes = (
+                    appointment_data.get('notes') or 
+                    appointment_data.get('Notes') or
+                    appointment_data.get('note') or
+                    appointment_data.get('Note') or
+                    appointment_data.get('Comment') or
+                    appointment_data.get('comments') or
+                    ''
+                )
+                
                 if not dry_run:
                     # Create appointment record
                     with transaction.atomic():
@@ -210,8 +222,12 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
                             start_time=start_time,
                             end_time=end_time or start_time,  # Use start_time if end_time missing
                             status=status,
-                            notes=appointment_data.get('notes', ''),
+                            notes=notes,
                         )
+                
+                # Track statistics
+                if notes and notes.strip():
+                    appointments_with_notes += 1
                 
                 imported_count += 1
                 logger.increment_success()
@@ -234,6 +250,8 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
         logger.info(f"✅ Imported: {imported_count}")
         logger.info(f"⏭️  Skipped: {skipped_count} (no patient or start time)")
         logger.info(f"❌ Errors: {error_count}")
+        logger.info("")
+        logger.info(f"Appointments with notes: {appointments_with_notes}")
         
         if fix_missing_clinics:
             logger.info(f"🔧 Fixed Clinics: {fixed_clinic_count} (used patient's clinic)")
