@@ -161,6 +161,8 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
         imported_count = 0
         skipped_count = 0
         error_count = 0
+        patients_with_funding = 0
+        patients_without_funding = 0
         
         for i, patient_record in enumerate(patients_data):
             if (i + 1) % 100 == 0:
@@ -188,9 +190,19 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
                 if not clinic:
                     logger.warning(f"Patient {first_name} {last_name} - clinic '{clinic_name}' not found")
                 
-                # Get funding type (if available)
-                funding_type_name = patient_data.get('funding_type') or patient_data.get('Funding_Type')
+                # Get funding type (if available - try multiple field names)
+                funding_type_name = (
+                    patient_data.get('funding_type') or 
+                    patient_data.get('Funding_Type') or
+                    patient_data.get('FundingType') or
+                    patient_data.get('Funding') or
+                    patient_data.get('NDIS_Type') or
+                    patient_data.get('ndis_type')
+                )
                 funding_type = funding_types.get(funding_type_name) if funding_type_name else None
+                
+                if not funding_type and funding_type_name:
+                    logger.debug(f"Patient {first_name} {last_name} - funding type '{funding_type_name}' not found in Nexus")
                 
                 # Transform contact details
                 contact_json, address_json = transform_contact_details(contact_details)
@@ -226,6 +238,12 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
                             filemaker_metadata=filemaker_metadata,
                         )
                 
+                # Track funding statistics
+                if funding_type:
+                    patients_with_funding += 1
+                else:
+                    patients_without_funding += 1
+                
                 imported_count += 1
                 logger.increment_success()
                 
@@ -247,6 +265,14 @@ def import_patients(import_file: str, dry_run: bool = False) -> bool:
         logger.info(f"✅ Imported: {imported_count}")
         logger.info(f"⏭️  Skipped: {skipped_count} (no name)")
         logger.info(f"❌ Errors: {error_count}")
+        logger.info("")
+        logger.info(f"Patients with funding type: {patients_with_funding}")
+        logger.info(f"Patients without funding type: {patients_without_funding}")
+        
+        if patients_without_funding > 0:
+            logger.warning(f"⚠️  {patients_without_funding} patients have no funding type")
+            logger.warning("This may be normal if FileMaker doesn't have funding type field")
+            logger.warning("Or funding type names don't match Nexus funding types")
         
         if not dry_run:
             # Verify import
