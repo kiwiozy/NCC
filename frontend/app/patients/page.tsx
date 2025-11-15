@@ -1169,17 +1169,9 @@ export default function ContactsPage() {
         {/* Right Panel - Contact Details */}
         <Grid.Col span={9} style={{ 
           height: '100%',
-          overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
         }}>
-          <ScrollArea 
-            style={{ 
-              flex: 1,
-              height: '100%',
-            }}
-            type="scroll"
-          >
             <Container size="xl" py="xl">
               {selectedContact ? (
                 <Stack gap="lg">
@@ -2112,7 +2104,6 @@ export default function ContactsPage() {
                 </Center>
               )}
             </Container>
-          </ScrollArea>
         </Grid.Col>
       </Grid>
 
