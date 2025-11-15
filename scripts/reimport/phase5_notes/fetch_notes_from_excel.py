@@ -159,6 +159,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Fetch notes from Excel export')
     parser.add_argument('--excel', default='Notes.xlsx', help='Path to Notes.xlsx file')
     parser.add_argument('--output-dir', default='data/reimport', help='Output directory for export files')
+    parser.add_argument('--dry-run', action='store_true', help='Dry run mode (ignored - this script only reads data)')
     args = parser.parse_args()
     
     notes_file = fetch_notes_from_excel(excel_file=args.excel, output_dir=args.output_dir)
