@@ -95,6 +95,7 @@ class PatientListSerializer(serializers.ModelSerializer):
     
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+    referrers = serializers.SerializerMethodField()
     
     class Meta:
         model = Patient
@@ -105,6 +106,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             'coordinator_name', 'coordinator_date',  # Include coordinator info
             'notes',  # Include general notes field
             'filemaker_metadata',  # Include FileMaker import metadata
+            'referrers',  # Include referrers
         ]
     
     def to_representation(self, instance):
@@ -138,4 +140,27 @@ class PatientListSerializer(serializers.ModelSerializer):
     
     def get_age(self, obj):
         return obj.get_age()
+    
+    def get_referrers(self, obj):
+        """Get patient's referrers (PatientReferrer relationships)"""
+        try:
+            from referrers.models import PatientReferrer
+            patient_referrers = PatientReferrer.objects.filter(
+                patient=obj,
+                status='ACTIVE'
+            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date')
+            
+            return [{
+                'id': str(pr.id),
+                'referrer_id': str(pr.referrer.id),
+                'name': pr.referrer.get_full_name(),
+                'specialty': pr.referrer.specialty.name if pr.referrer.specialty else None,
+                'practice_name': pr.referrer.practice_name,
+                'referral_date': pr.referral_date.strftime('%Y-%m-%d') if pr.referral_date else None,
+                'referral_reason': pr.referral_reason,
+                'status': pr.status,
+            } for pr in patient_referrers]
+        except Exception as e:
+            # If referrers app not available or error, return empty list
+            return []
 
