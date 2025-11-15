@@ -1366,11 +1366,11 @@ export default function ContactsPage() {
                           />
                         </Box>
 
-                        {/* NDIS Plan Dates (from FileMaker Import) - Show for all NDIS patients */}
-                        {isNDISFunding(selectedContact) && (selectedContact.ndis_plan_start_date || selectedContact.ndis_plan_end_date) && (
+                        {/* Current Plan Dates - Show NDIS plan dates if available, otherwise show editable plan dates */}
+                        {isNDISFunding(selectedContact) && (selectedContact.ndis_plan_start_date || selectedContact.ndis_plan_end_date) ? (
                           <Box style={{ width: '100%' }}>
                             <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">
-                              NDIS Plan Dates (Imported)
+                              Current Plan Dates
                             </Text>
                             <Group gap="xs" align="flex-start">
                               <Text size="md" fw={700}>
@@ -1380,10 +1380,7 @@ export default function ContactsPage() {
                               </Text>
                             </Group>
                           </Box>
-                        )}
-
-                        {/* Plan Dates Section - Only show if funding is NDIS */}
-                        {isNDISFunding(selectedContact) && (
+                        ) : isNDISFunding(selectedContact) && (
                           <Box style={{ width: '100%' }}>
                             <Group justify="space-between" mb="xs" align="flex-start">
                               <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Current Plan Dates</Text>
