@@ -2424,8 +2424,18 @@ export default function ContactsPage() {
             
             // Sort by date descending (most recent first)
             const sortedCoordinators = [...coordinators].sort((a, b) => {
-              const dateA = new Date(a.date);
-              const dateB = new Date(b.date);
+              // Parse dates in DD/MM/YYYY format
+              const parseDate = (dateStr: string) => {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                  // Convert DD/MM/YYYY to YYYY-MM-DD for parsing
+                  return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                }
+                return new Date(dateStr);
+              };
+              
+              const dateA = parseDate(a.date);
+              const dateB = parseDate(b.date);
               return dateB.getTime() - dateA.getTime();
             });
             
