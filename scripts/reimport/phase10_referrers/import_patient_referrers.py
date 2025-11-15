@@ -221,8 +221,8 @@ def import_patient_referrers(excel_file: str = None, dry_run: bool = False) -> b
 
         with transaction.atomic():
             if relationships_to_create:
-                PatientReferrer.objects.bulk_create(relationships_to_create, batch_size=100)
-                logger.success(f"✅ Created {len(relationships_to_create):,} relationships")
+                PatientReferrer.objects.bulk_create(relationships_to_create, batch_size=100, ignore_conflicts=True)  # Fixed: Ignore duplicates
+                logger.success(f"✅ Created {len(relationships_to_create):,} relationships (duplicates ignored)")
 
             if relationships_to_update:
                 PatientReferrer.objects.bulk_update(
