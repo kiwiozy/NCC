@@ -2208,25 +2208,7 @@ export default function ContactsPage() {
           setCoordinatorSearchResults([]);
           setCoordinatorDate(null);
         }}
-        title={
-          <Group justify="space-between" style={{ width: '100%' }}>
-            <Text fw={600} size="lg">
-              {selectedContact && isNDISFunding(selectedContact) ? 'Add Coordinator' : 'Add Referrer'}
-            </Text>
-            <ActionIcon
-              variant="subtle"
-              onClick={() => {
-                setCoordinatorDialogOpened(false);
-                setCoordinatorSearchQuery('');
-                setCoordinatorSearchResults([]);
-                setCoordinatorDate(null);
-              }}
-              size="lg"
-            >
-              <IconX size={20} />
-            </ActionIcon>
-          </Group>
-        }
+        title={selectedContact && isNDISFunding(selectedContact) ? 'Add Coordinator' : 'Add Referrer'}
         size="md"
         styles={{
           header: {
@@ -2236,6 +2218,8 @@ export default function ContactsPage() {
           },
           title: {
             color: 'white',
+            fontSize: rem(18),
+            fontWeight: 600,
           },
         }}
       >
@@ -2274,14 +2258,15 @@ export default function ContactsPage() {
             onChange={(e) => setCoordinatorSearchQuery(e.currentTarget.value)}
           />
           
-          {coordinatorLoading ? (
-            <Center py="xl">
-              <Loader size="sm" />
-            </Center>
-          ) : coordinatorSearchResults.length > 0 ? (
-            <ScrollArea h={300}>
-              <Stack gap="xs">
-                {coordinatorSearchResults.map((coordinator) => (
+          {coordinatorSearchQuery.trim() && (
+            coordinatorLoading ? (
+              <Center py="xl">
+                <Loader size="sm" />
+              </Center>
+            ) : coordinatorSearchResults.length > 0 ? (
+              <ScrollArea h={300}>
+                <Stack gap="xs">
+                  {coordinatorSearchResults.map((coordinator) => (
                   <UnstyledButton
                     key={coordinator.id}
                     onClick={async () => {
@@ -2387,18 +2372,13 @@ export default function ContactsPage() {
                 ))}
               </Stack>
             </ScrollArea>
-          ) : coordinatorSearchQuery ? (
+          ) : (
             <Center py="xl">
               <Text c="dimmed" size="sm">
                 {selectedContact && isNDISFunding(selectedContact) ? 'No coordinators found' : 'No referrers found'}
               </Text>
             </Center>
-          ) : (
-            <Center py="xl">
-              <Text c="dimmed" size="sm">
-                {selectedContact && isNDISFunding(selectedContact) ? 'Start typing to search coordinators' : 'Start typing to search referrers'}
-              </Text>
-            </Center>
+          )
           )}
         </Stack>
       </Modal>
