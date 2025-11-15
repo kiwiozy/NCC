@@ -2530,10 +2530,10 @@ export default function ContactsPage() {
                             setContacts(prev => prev.map(c => 
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
+                            
+                            // Close the dialog AFTER successful update
+                            setCoordinatorListDialogOpened(false);
                           }
-                          
-                          // Close the dialog after successful update
-                          setCoordinatorListDialogOpened(false);
                           
                         } catch (error) {
                           console.error('Error updating coordinator/referrer date:', error);
