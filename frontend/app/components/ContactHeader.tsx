@@ -241,8 +241,14 @@ export default function ContactHeader({
           });
           if (response.ok) {
             const data = await response.json();
-            const appointmentsList = data.results || data;
-            setAppointmentsCount(Array.isArray(appointmentsList) ? appointmentsList.length : 0);
+            // Check if API returns a 'count' field (Django REST pagination)
+            if (data.count !== undefined) {
+              setAppointmentsCount(data.count);
+            } else {
+              // Fallback to array length
+              const appointmentsList = data.results || data;
+              setAppointmentsCount(Array.isArray(appointmentsList) ? appointmentsList.length : 0);
+            }
           } else {
             setAppointmentsCount(0);
           }
