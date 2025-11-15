@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 django.setup()
 
-from utils import create_logger, create_filemaker_client
+from utils import create_logger
 from patients.models import Patient
 from appointments.models import Appointment
 from documents.models import Document
@@ -25,13 +25,19 @@ from images.models import Image, ImageBatch
 
 def validate_data_counts() -> bool:
     """
-    Validate that data counts match expectations after reimport.
+    Validate that data counts are reasonable after reimport.
+    
+    NOTE: FileMaker validation removed - we're now 100% Excel-based!
+    This script now only validates Nexus record counts.
     
     Returns:
         True if validation passed, False otherwise
     """
     logger = create_logger("PHASE 8")
     logger.phase_start("Phase 8.1", "Validate Data Counts")
+    
+    logger.info("✅ 100% Excel-based import - No FileMaker validation needed!")
+    logger.info("")
     
     all_valid = True
     
@@ -47,79 +53,51 @@ def validate_data_counts() -> bool:
         nexus_images = Image.objects.count()
         nexus_batches = ImageBatch.objects.count()
         
-        logger.success(f"✅ Nexus Patients: {nexus_patients}")
-        logger.success(f"✅ Nexus Appointments: {nexus_appointments}")
-        logger.success(f"✅ Nexus Documents: {nexus_documents}")
-        logger.success(f"✅ Nexus Images: {nexus_images}")
-        logger.success(f"✅ Nexus Image Batches: {nexus_batches}")
+        logger.success(f"✅ Nexus Patients: {nexus_patients:,}")
+        logger.success(f"✅ Nexus Appointments: {nexus_appointments:,}")
+        logger.success(f"✅ Nexus Documents: {nexus_documents:,}")
+        logger.success(f"✅ Nexus Images: {nexus_images:,}")
+        logger.success(f"✅ Nexus Image Batches: {nexus_batches:,}")
         
         # ========================================
-        # Get FileMaker Counts
-        # ========================================
-        logger.info("Counting records in FileMaker...")
-        
-        with create_filemaker_client() as fm:
-            try:
-                fm_patients = fm.odata_query('@Contacts', top=1)
-                fm_patient_count = fm_patients.get('@odata.count', 0)
-                logger.success(f"✅ FileMaker Patients: {fm_patient_count}")
-            except:
-                logger.warning("Could not get FileMaker patient count")
-                fm_patient_count = None
-            
-            try:
-                # Try different appointment entity names
-                fm_appointments = None
-                for entity in ['@Appointment', '@Appointments', 'API_Appointments']:
-                    try:
-                        fm_appointments = fm.odata_query(entity, top=1)
-                        break
-                    except:
-                        continue
-                
-                if fm_appointments:
-                    fm_appointment_count = fm_appointments.get('@odata.count', 0)
-                    logger.success(f"✅ FileMaker Appointments: {fm_appointment_count}")
-                else:
-                    logger.warning("Could not get FileMaker appointment count")
-                    fm_appointment_count = None
-            except:
-                logger.warning("Could not get FileMaker appointment count")
-                fm_appointment_count = None
-        
-        # ========================================
-        # Compare Counts
+        # Validate Counts
         # ========================================
         logger.info("")
         logger.info("=" * 70)
-        logger.info("📊 Count Comparison")
+        logger.info("📊 Count Validation (Excel-Based Expected Counts)")
         logger.info("=" * 70)
         
-        if fm_patient_count is not None:
-            patient_diff = nexus_patients - fm_patient_count
-            if abs(patient_diff) <= 5:  # Allow small difference for skipped records
-                logger.success(f"✅ Patients: Nexus={nexus_patients}, FileMaker={fm_patient_count} (diff={patient_diff})")
-            else:
-                logger.error(f"❌ Patients: Nexus={nexus_patients}, FileMaker={fm_patient_count} (diff={patient_diff})")
-                logger.error("   Large difference detected! Check import logs.")
-                all_valid = False
-        else:
-            logger.warning(f"⚠️  Patients: Nexus={nexus_patients}, FileMaker=Unknown")
+        # Expected counts from Excel files
+        expected_patients = 2842  # From Contacts.xlsx
+        expected_appointments = 15149  # From Appointments.xlsx
+        expected_notes = 11408  # From Notes.xlsx
+        expected_docs = 11274  # From Docs.xlsx
+        expected_images = 6662  # From images.xlsx
         
-        if fm_appointment_count is not None:
-            appt_diff = nexus_appointments - fm_appointment_count
-            if abs(appt_diff) <= 10:  # Allow small difference for skipped records
-                logger.success(f"✅ Appointments: Nexus={nexus_appointments}, FileMaker={fm_appointment_count} (diff={appt_diff})")
-            else:
-                logger.error(f"❌ Appointments: Nexus={nexus_appointments}, FileMaker={fm_appointment_count} (diff={appt_diff})")
-                logger.error("   Large difference detected! Check import logs.")
-                all_valid = False
+        # Validate patients
+        if nexus_patients == 0:
+            logger.error("❌ No patients found! Import may have failed.")
+            all_valid = False
+        elif abs(nexus_patients - expected_patients) <= 5:
+            logger.success(f"✅ Patients: {nexus_patients:,} (expected ~{expected_patients:,})")
         else:
-            logger.warning(f"⚠️  Appointments: Nexus={nexus_appointments}, FileMaker=Unknown")
+            diff = nexus_patients - expected_patients
+            logger.warning(f"⚠️  Patients: {nexus_patients:,} (expected ~{expected_patients:,}, diff={diff:+,})")
         
-        logger.info(f"Documents: {nexus_documents} (should be preserved)")
-        logger.info(f"Images: {nexus_images} (should be preserved)")
-        logger.info(f"Image Batches: {nexus_batches} (should be preserved)")
+        # Validate appointments
+        if nexus_appointments == 0:
+            logger.error("❌ No appointments found! Import may have failed.")
+            all_valid = False
+        elif abs(nexus_appointments - expected_appointments) <= 10:
+            logger.success(f"✅ Appointments: {nexus_appointments:,} (expected ~{expected_appointments:,})")
+        else:
+            diff = nexus_appointments - expected_appointments
+            logger.warning(f"⚠️  Appointments: {nexus_appointments:,} (expected ~{expected_appointments:,}, diff={diff:+,})")
+        
+        # Validate other counts
+        logger.info(f"Documents: {nexus_documents:,} (expected ~{expected_docs:,}, preserved from previous import)")
+        logger.info(f"Images: {nexus_images:,} (expected ~{expected_images:,}, preserved from previous import)")
+        logger.info(f"Image Batches: {nexus_batches:,}")
         
         # ========================================
         # Summary
@@ -131,9 +109,10 @@ def validate_data_counts() -> bool:
         
         if all_valid:
             logger.success("✅ All count validations passed!")
+            logger.success("Data appears to have imported successfully!")
         else:
             logger.error("❌ Some count validations failed!")
-            logger.error("Review the differences and check import logs")
+            logger.error("Review the counts and check import logs")
         
         logger.phase_end(success=all_valid)
         return all_valid

@@ -255,12 +255,12 @@ def import_patients_from_excel(excel_file: str = None, dry_run: bool = False) ->
             patient_data = {
                 'first_name': first_name,
                 'last_name': last_name,
-                'middle_name': middle_name or '',
+                'middle_names': middle_name or '',  # Note: field is 'middle_names' not 'middle_name'
                 'title': title or '',
-                'date_of_birth': dob,
-                'gender': gender,
+                'dob': dob,  # Note: field is 'dob' not 'date_of_birth'
+                'sex': gender,  # Note: field is 'sex' not 'gender'
                 'clinic': clinic,
-                'funding_source': funding_source,
+                'funding_type': funding_source,  # Note: field is 'funding_type' not 'funding_source'
                 'filemaker_metadata': {
                     'filemaker_id': str(filemaker_id),
                     'clinic_name': clinic_name or '',

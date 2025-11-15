@@ -1,14 +1,14 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T18:06:52.958930",
-  "current_phase": "Phase 0: Pre-Import Validation",
+  "last_update": "2025-11-15T18:11:14.766288",
+  "current_phase": "Phase 8: Post-Import Validation",
   "phases": {
     "Phase 0: Pre-Import Validation": {
-      "status": "in_progress",
-      "start_time": "2025-11-15T18:06:45.723690",
-      "end_time": null,
-      "total_items": 4,
-      "processed_items": 1,
+      "status": "completed",
+      "start_time": "2025-11-15T18:10:56.372921",
+      "end_time": "2025-11-15T18:10:57.976272",
+      "total_items": 2,
+      "processed_items": 2,
       "success_count": 1,
       "error_count": 0,
       "skipped_count": 0,
@@ -16,8 +16,8 @@
     },
     "Phase 2: Delete Existing Patient Data": {
       "status": "completed",
-      "start_time": "2025-11-15T12:23:10.768426",
-      "end_time": "2025-11-15T12:23:11.504217",
+      "start_time": "2025-11-15T18:10:57.976914",
+      "end_time": "2025-11-15T18:10:59.856778",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -38,8 +38,8 @@
     },
     "Phase 4: Import Appointments": {
       "status": "completed",
-      "start_time": "2025-11-15T13:56:05.621478",
-      "end_time": "2025-11-15T13:56:10.178686",
+      "start_time": "2025-11-15T18:11:02.065029",
+      "end_time": "2025-11-15T18:11:05.473569",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -49,8 +49,8 @@
     },
     "Phase 5: Import Notes & SMS": {
       "status": "completed",
-      "start_time": "2025-11-15T13:56:10.274153",
-      "end_time": "2025-11-15T13:56:11.967904",
+      "start_time": "2025-11-15T18:11:05.474154",
+      "end_time": "2025-11-15T18:11:07.083858",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -76,15 +76,21 @@
       ]
     },
     "Phase 6: Re-Link Documents with Clean S3 Paths": {
-      "status": "completed",
-      "start_time": "2025-11-15T12:35:06.649912",
-      "end_time": "2025-11-15T13:36:23.630911",
+      "status": "failed",
+      "start_time": "2025-11-15T18:11:07.084510",
+      "end_time": "2025-11-15T18:11:07.797549",
       "total_items": 1,
       "processed_items": 1,
-      "success_count": 1,
-      "error_count": 0,
+      "success_count": 0,
+      "error_count": 2,
       "skipped_count": 0,
-      "errors": []
+      "errors": [
+        {
+          "timestamp": "2025-11-15T18:11:07.797343",
+          "message": "Script failed: phase6_documents/relink_documents_clean.py",
+          "record_id": null
+        }
+      ]
     },
     "Phase 7: Re-Link Images": {
       "status": "failed",
@@ -104,26 +110,31 @@
       ]
     },
     "Phase 8: Post-Import Validation": {
-      "status": "failed",
-      "start_time": "2025-11-15T13:56:12.067422",
-      "end_time": "2025-11-15T13:58:13.272641",
+      "status": "in_progress",
+      "start_time": "2025-11-15T18:11:14.767382",
+      "end_time": null,
       "total_items": 2,
-      "processed_items": 2,
+      "processed_items": 0,
       "success_count": 0,
-      "error_count": 2,
+      "error_count": 0,
       "skipped_count": 0,
-      "errors": [
-        {
-          "timestamp": "2025-11-15T13:58:13.272356",
-          "message": "Script failed: phase8_validation/validate_relationships.py",
-          "record_id": null
-        }
-      ]
+      "errors": []
     },
     "Phase 7: Link Images from CSV": {
       "status": "completed",
-      "start_time": "2025-11-15T14:17:48.976099",
-      "end_time": "2025-11-15T14:18:10.980844",
+      "start_time": "2025-11-15T18:11:07.798074",
+      "end_time": "2025-11-15T18:11:14.766798",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 3: Import Patients from Excel": {
+      "status": "completed",
+      "start_time": "2025-11-15T18:10:59.857496",
+      "end_time": "2025-11-15T18:11:02.064349",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
