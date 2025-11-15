@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'coordinators',  # NDIS Support Coordinators and LAC
     'companies',  # Medical practices, NDIS providers
     'contacts',  # General contacts and contact relationships
+    'data_management',  # Data management and FileMaker reimport
 ]
 
 MIDDLEWARE = [

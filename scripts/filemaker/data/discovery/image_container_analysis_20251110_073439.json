@@ -1,0 +1,22 @@
+{
+  "timestamp": "20251110_073439",
+  "layout": "API_Images",
+  "sample_record_id": "2",
+  "container_fields_found": [
+    {
+      "name": "image_Full",
+      "type": "URL (Container)",
+      "value": "https://walkeasy.fmcloud.fm:443/Streaming_SSL/Additional_1/93D1B4957A7C11D96B5138B75C3D1D55743F7CAB6...",
+      "estimated_size_bytes": null,
+      "estimated_size_mb": null
+    },
+    {
+      "name": "Recovered",
+      "type": "Base64 (Container)",
+      "value": "/9j/4Q/+RXhpZgAATU0AKgAAAAgACgEPAAIAAAAGAAAAhgEQAAIAAAAJAAAAjAESAAMAAAABAAYA\r\nAAEaAAUAAAABAAAAlgEbAA...",
+      "estimated_size_bytes": 46978,
+      "estimated_size_mb": 0.045
+    }
+  ],
+  "recommended_field": "Recovered"
+}

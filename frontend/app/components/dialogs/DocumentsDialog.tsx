@@ -36,6 +36,7 @@ import {
   IconDownload,
   IconUpload,
   IconRefresh,
+  IconEye,
 } from '@tabler/icons-react';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 import { DateValue } from '@mantine/dates';
@@ -58,29 +59,53 @@ interface Document {
   mime_type?: string;
 }
 
-const DOCUMENT_TYPES = [
-  { value: 'erf', label: 'ERF' },
-  { value: 'purchase_order', label: 'Purchase Order' },
-  { value: 'referral', label: 'Referral' },
-  { value: 'enablensw_application', label: 'EnableNSW Application' },
-  { value: 'remittance_advice', label: 'Remittance Advice' },
-  { value: 'quote', label: 'Quote' },
-  { value: 'medical', label: 'Medical Records' },
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'xray', label: 'X-Ray / Imaging' },
-  { value: 'consent', label: 'Consent Form' },
-  { value: 'insurance', label: 'Insurance Document' },
-  { value: 'invoice', label: 'Invoice' },
-  { value: 'other', label: 'Other' },
+const DOCUMENT_CATEGORIES = [
+  { group: 'Medical', items: [
+    { value: 'medical', label: 'Medical Records' },
+    { value: 'prescription', label: 'Prescription' },
+    { value: 'xray', label: 'X-Ray / Imaging' },
+  ]},
+  { group: 'NDIS & Funding', items: [
+    { value: 'erf', label: 'ERF' },
+    { value: 'enablensw_application', label: 'EnableNSW Application' },
+    { value: 'remittance_advice', label: 'Remittance Advice' },
+  ]},
+  { group: 'Administrative', items: [
+    { value: 'referral', label: 'Referral' },
+    { value: 'purchase_order', label: 'Purchase Order' },
+    { value: 'quote', label: 'Quote' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'consent', label: 'Consent Form' },
+    { value: 'insurance', label: 'Insurance Document' },
+  ]},
+  { group: 'Other', items: [
+    { value: 'other', label: 'Other' },
+  ]},
 ];
+
+// Helper function to get category label
+const getCategoryLabel = (category: string): string => {
+  // First check if it's in the standard list
+  for (const group of DOCUMENT_CATEGORIES) {
+    const item = group.items.find(i => i.value === category);
+    if (item) return item.label;
+  }
+  
+  // For custom categories (e.g., from FileMaker):
+  // 1. Replace hyphens with spaces: "enable-waiver" → "enable waiver"
+  // 2. Capitalize first letter: "enable waiver" → "Enable waiver"
+  const formatted = category.replace(/-/g, ' ');
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+};
 
 interface DocumentsDialogProps {
   opened: boolean;
   onClose: () => void;
   patientId?: string;
+  patientName?: string;
 }
 
-export default function DocumentsDialog({ opened, onClose, patientId }: DocumentsDialogProps) {
+export default function DocumentsDialog({ opened, onClose, patientId, patientName = '' }: DocumentsDialogProps) {
   const { colorScheme } = useMantineColorScheme();
   const browser = useBrowserDetection();
   const isDark = colorScheme === 'dark';
@@ -97,6 +122,9 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null); // Blob URL for Safari PDF
   const [isLoadingPdf, setIsLoadingPdf] = useState(false); // Loading state for PDF blob
   const [pdfError, setPdfError] = useState<string | null>(null); // PDF loading error
+  
+  // Ref for document viewer to scroll to
+  const viewerRef = useRef<HTMLDivElement>(null);
   
   // Upload form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -447,17 +475,83 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
     return `${url}${separator}t=${Date.now()}&reload=${reloadKey}`;
   };
 
+  const handleDownload = async (doc: Document) => {
+    if (!doc.download_url) return;
+    
+    try {
+      // Use backend proxy to avoid CORS issues (same as PDF viewing)
+      const proxyUrl = `https://localhost:8000/api/documents/${doc.id}/proxy/`;
+      
+      // Fetch the document via backend proxy
+      const response = await fetch(proxyUrl, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Get file extension
+      const extension = doc.original_name.split('.').pop() || 'pdf';
+      
+      // Format patient name (FirstName_LastName)
+      const formattedPatientName = patientName.replace(/\s+/g, '_');
+      
+      // Format category (replace spaces with underscores)
+      const formattedCategory = doc.category ? doc.category.replace(/\s+/g, '_') : 'Uncategorized';
+      
+      // New filename: {FirstName}_{LastName}_{Category}.{ext}
+      const newFilename = `${formattedPatientName}_${formattedCategory}.${extension}`;
+      
+      // Create a temporary anchor element to trigger download
+      const link = window.document.createElement('a');
+      link.href = blobUrl;
+      link.download = newFilename;
+      link.style.display = 'none';
+      window.document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        window.document.body.removeChild(link);
+      }, 100);
+      
+    } catch (error: any) {
+      console.error('Download error:', error);
+      setError('Failed to download document: ' + (error.message || 'Unknown error'));
+    }
+  };
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
       title="Documents"
-      size="xl"
+      size="60%"
+      styles={{
+        body: {
+          height: 'calc(98vh - 60px)',
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          // overflow: default (auto) - allows natural scrolling
+        },
+        content: {
+          height: '98vh',
+          display: 'flex',
+          flexDirection: 'column',
+          // overflow: default (auto) - allows natural scrolling
+        },
+      }}
     >
-      <Grid gutter={0} style={{ height: rem(600) }}>
+      <Grid gutter={0} style={{ height: '100%' }}>
         {/* Left Column: Documents List */}
-        <Grid.Col span={4} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-          <Stack gap={0} style={{ height: '100%' }}>
+        <Grid.Col span={2} style={{ borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, height: '100%', overflow: 'hidden' }}>
+          <Stack gap={0} style={{ height: '100%', overflow: 'hidden' }}>
             {/* Header with Add Button */}
             <Box p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
               <Group justify="space-between" align="center">
@@ -524,11 +618,8 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                   >
                     <Group justify="space-between" align="flex-start" mb="xs">
                       <Box style={{ flex: 1 }}>
-                        <Badge variant="light" size="sm" mb="xs">
-                          {DOCUMENT_TYPES.find(t => t.value === doc.category)?.label || doc.category}
-                        </Badge>
-                        <Text size="xs" c={isDark ? '#C1C2C5' : '#495057'} fw={500} lineClamp={1}>
-                          {doc.original_name}
+                        <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'} fw={600} lineClamp={1} mb="xs">
+                          {getCategoryLabel(doc.category)}
                         </Text>
                         <Text size="xs" c="dimmed" mt="xs">
                           {doc.file_size_display || formatFileSize(doc.file_size || 0)}
@@ -564,23 +655,22 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
         </Grid.Col>
 
         {/* Right Column: Upload/View */}
-        <Grid.Col span={8}>
-          <Stack gap={0} style={{ height: '100%' }}>
+        <Grid.Col span={10} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Stack gap={0} style={{ height: '100%', flex: 1 }}>
             {selectedDocument ? (
               /* Selected Document View */
-              <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Stack gap="md" style={{ flex: 1, overflow: 'hidden' }}>
-                  {/* Top Row: Document Type and Document Date */}
-                  <Group justify="space-between" align="flex-start">
-                    <Box style={{ flex: 1 }}>
-                      <Text size="sm" c="dimmed" mb={4}>DOCUMENT TYPE</Text>
-                      <Badge variant="light" size="lg">
-                        {DOCUMENT_TYPES.find(t => t.value === selectedDocument.category)?.label || selectedDocument.category}
-                      </Badge>
+              <Box p="xs" style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <Stack gap="xs" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                  {/* Top Row: File Info */}
+                  <Group justify="space-between" align="flex-start" style={{ flexShrink: 0 }}>
+                    <Box style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="lg" fw={600}>
+                        {getCategoryLabel(selectedDocument.category)}
+                      </Text>
                     </Box>
                     <Group gap="xs">
                       {selectedDocument.document_date && (
-                        <Box style={{ flex: 1, textAlign: 'right' }}>
+                        <Box style={{ textAlign: 'right' }}>
                           <Text size="sm" c="dimmed" mb={4}>DOCUMENT DATE</Text>
                           <Text size="sm" fw={500}>
                             {formatDateOnlyAU(selectedDocument.document_date)}
@@ -610,20 +700,150 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           return null;
                         })()
                       )}
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="lg"
+                        onClick={() => {
+                          // Scroll to the viewer
+                          viewerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                        title="Scroll to viewer"
+                        disabled={!selectedDocument.download_url}
+                      >
+                        <IconEye size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="lg"
+                        onClick={() => handleDownload(selectedDocument)}
+                        title="Download"
+                        disabled={!selectedDocument.download_url}
+                      >
+                        <IconDownload size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="light"
+                        color="red"
+                        size="lg"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this document?')) {
+                            deleteDocument(selectedDocument.id);
+                          }
+                        }}
+                        title="Delete"
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                        onClick={() => {
+                          setSelectedDocument(null);
+                          resetForm();
+                        }}
+                        title="Close"
+                      >
+                        <IconX size={18} />
+                      </ActionIcon>
                     </Group>
+                  </Group>
+                  
+                  {/* Category Dropdown + File Info Row */}
+                  <Group gap="md" align="flex-start" style={{ flexShrink: 0 }}>
+                    <Box style={{ flex: 1, maxWidth: rem(300) }}>
+                      <Text size="sm" c="dimmed" mb={4}>CATEGORY</Text>
+                      <Select
+                        size="sm"
+                        value={selectedDocument.category || ''}
+                        onChange={async (value) => {
+                          if (!value || !selectedDocument.id) return;
+                          
+                          try {
+                            // Update category via API
+                            const response = await fetch(`https://localhost:8000/api/documents/${selectedDocument.id}/`, {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({ category: value }),
+                            });
+                            
+                            if (response.ok) {
+                              // Update local state
+                              const updatedDoc = { ...selectedDocument, category: value };
+                              setSelectedDocument(updatedDoc);
+                              setDocuments(documents.map(d => d.id === selectedDocument.id ? updatedDoc : d));
+                              window.dispatchEvent(new Event('documentsUpdated'));
+                            } else {
+                              throw new Error('Failed to update category');
+                            }
+                          } catch (error: any) {
+                            console.error('Error updating category:', error);
+                            setError('Failed to update category: ' + (error.message || 'Unknown error'));
+                          }
+                        }}
+                        data={(() => {
+                          // Hybrid data list: show current category + standard categories
+                          const currentCategory = selectedDocument.category;
+                          if (currentCategory) {
+                            // Check if current category exists in standard list
+                            const existsInList = DOCUMENT_CATEGORIES.some(group =>
+                              group.items.some(item => item.value === currentCategory)
+                            );
+                            
+                            // If current category is NOT in standard list, add it as a top-level option
+                            if (!existsInList) {
+                              return [
+                                {
+                                  group: 'Current Category',
+                                  items: [{ value: currentCategory, label: currentCategory }]
+                                },
+                                ...DOCUMENT_CATEGORIES
+                              ];
+                            }
+                          }
+                          
+                          return DOCUMENT_CATEGORIES;
+                        })()}
+                        placeholder="Select category"
+                        searchable
+                        clearable={false}
+                        styles={{
+                          input: { fontSize: '13px', height: '32px', minHeight: '32px' },
+                        }}
+                      />
+                    </Box>
+                    <Box>
+                      <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
+                      <Text size="sm">
+                        {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
+                      </Text>
+                    </Box>
+                    {selectedDocument.description && (
+                      <Box style={{ flex: 1 }}>
+                        <Text size="sm" c="dimmed" mb={4}>DESCRIPTION</Text>
+                        <Text size="sm">
+                          {selectedDocument.description}
+                        </Text>
+                      </Box>
+                    )}
                   </Group>
                   
                   {/* Document Viewer */}
                   {selectedDocument.download_url && (
-                    <Box 
+                    <Box
+                      ref={viewerRef}
                       style={{ 
-                        flex: 1, 
-                        minHeight: 0,
+                        height: 'calc(98vh - 200px)', // Explicit height: Modal height minus header, top rows, padding
+                        width: '100%',
+                        position: 'relative',
                         border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                         borderRadius: rem(8),
-                        overflow: 'hidden',
+                        overflow: 'auto', // Allow PDF to scroll
                         backgroundColor: isDark ? '#1A1B1E' : '#ffffff',
-                        position: 'relative',
                       }}
                     >
                       {isReloadingPDF && reloadKey === 0 ? (
@@ -647,78 +867,66 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                           // Safari: Use blob URL approach (Option A) for reliable reloading
                           if (browser.isSafari) {
                             return (
-                              <Box style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: rem(16), padding: rem(16) }}>
-                                <Box style={{ flex: 1, border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`, borderRadius: rem(4), overflow: 'auto', minHeight: rem(400), maxHeight: '100%' }}>
-                                  {isLoadingPdf && (
-                                    <Box style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                      <Loader size="lg" />
-                                      <Text c="dimmed" size="sm">Loading PDF...</Text>
-                                    </Box>
-                                  )}
-                                  {pdfError && (
-                                    <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                      <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
-                                      <Text c="red" size="sm" ta="center">
-                                        {pdfError}
-                                      </Text>
-                                    <Button
-                                        leftSection={<IconDownload size={16} />}
-                                        onClick={() => {
-                                            window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
-                                        }}
-                                    >
-                                        Open PDF in New Window
-                                    </Button>
-                                    </Box>
-                                  )}
-                                  {pdfBlobUrl && !isLoadingPdf && !pdfError && (
-                                    <object
-                                      key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
-                                      data={pdfBlobUrl}
-                                      type="application/pdf"
-                                      style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        minHeight: rem(400),
-                                        display: 'block',
+                              <>
+                                {isLoadingPdf && (
+                                  <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <Loader size="lg" />
+                                    <Text c="dimmed" size="sm">Loading PDF...</Text>
+                                  </Box>
+                                )}
+                                {pdfError && (
+                                  <Box p="md" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <IconAlertCircle size={48} style={{ opacity: 0.5 }} />
+                                    <Text c="red" size="sm" ta="center">
+                                      {pdfError}
+                                    </Text>
+                                  <Button
+                                      leftSection={<IconDownload size={16} />}
+                                      onClick={() => {
+                                          window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
                                       }}
-                                      onError={() => {
-                                        console.error('PDF failed to load in object tag');
-                                        setIsReloadingPDF(false);
-                                        setPdfError('PDF failed to render');
-                                      }}
-                                    >
-                                      <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
-                                        <IconFile size={48} style={{ opacity: 0.5 }} />
-                                        <Text c="dimmed" size="sm" ta="center">
-                                          PDF viewer not available
-                                        </Text>
-                                        <Anchor href={pdfBlobUrl} download={selectedDocument.original_name}>
-                                          Download PDF
-                                        </Anchor>
-                                      </Box>
-                                    </object>
-                                  )}
-                                  {!pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  >
+                                      Open PDF in New Window
+                                  </Button>
+                                  </Box>
+                                )}
+                                {pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  <object
+                                    key={`safari-pdf-${selectedDocument.id}-${reloadKey}`}
+                                    data={pdfBlobUrl}
+                                    type="application/pdf"
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      border: 'none',
+                                      display: 'block',
+                                    }}
+                                    onError={() => {
+                                      console.error('PDF failed to load in object tag');
+                                      setIsReloadingPDF(false);
+                                      setPdfError('PDF failed to render');
+                                    }}
+                                  >
                                     <Box p="md" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
                                       <IconFile size={48} style={{ opacity: 0.5 }} />
                                       <Text c="dimmed" size="sm" ta="center">
-                                        Preparing PDF...
+                                        PDF viewer not available
                                       </Text>
+                                      <Anchor href={pdfBlobUrl} download={selectedDocument.original_name}>
+                                        Download PDF
+                                      </Anchor>
                                     </Box>
-                                  )}
-                                </Box>
-                                <Button
-                                  variant="light"
-                                  fullWidth
-                                  leftSection={<IconDownload size={16} />}
-                                  onClick={() => {
-                                    window.open(`https://localhost:8000/api/documents/${selectedDocument.id}/proxy/`, '_blank');
-                                  }}
-                                >
-                                  Open PDF in Safari
-                                </Button>
-                              </Box>
+                                  </object>
+                                )}
+                                {!pdfBlobUrl && !isLoadingPdf && !pdfError && (
+                                  <Box p="md" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: rem(16) }}>
+                                    <IconFile size={48} style={{ opacity: 0.5 }} />
+                                    <Text c="dimmed" size="sm" ta="center">
+                                      Preparing PDF...
+                                    </Text>
+                                  </Box>
+                                )}
+                              </>
                             );
                           } else {
                             // For other browsers, use iframe with blob URL (cached)
@@ -731,7 +939,6 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                                     width: '100%',
                                     height: '100%',
                                     border: 'none',
-                                    minHeight: rem(400),
                                   }}
                                   title={selectedDocument.original_name}
                                   onError={() => {
@@ -813,59 +1020,6 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                       })()}
                     </Box>
                   )}
-                  
-                  {/* Bottom: File Name and File Size */}
-                  <Box style={{ marginTop: 'auto', paddingTop: rem(16), borderTop: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
-                    <Stack gap="xs">
-                      <Box>
-                        <Text size="sm" c="dimmed" mb={4}>FILE NAME</Text>
-                        <Text size="md" fw={500}>
-                          {selectedDocument.original_name}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text size="sm" c="dimmed" mb={4}>FILE SIZE</Text>
-                        <Text size="sm">
-                          {selectedDocument.file_size_display || formatFileSize(selectedDocument.file_size || 0)}
-                        </Text>
-                      </Box>
-                      {selectedDocument.description && (
-                        <Box>
-                          <Text size="sm" c="dimmed" mb={4} mt="md">DESCRIPTION</Text>
-                          <Text size="sm">
-                            {selectedDocument.description}
-                          </Text>
-                        </Box>
-                      )}
-                      <Text size="xs" c="dimmed" mt="xs">
-                        Uploaded: {formatDateTimeAU(selectedDocument.uploaded_at)}
-                      </Text>
-                    </Stack>
-                  </Box>
-                  
-                  <Group gap="xs">
-                    {selectedDocument.download_url && (
-                      <Button
-                        variant="outline"
-                        leftSection={<IconDownload size={16} />}
-                        onClick={() => {
-                          window.open(selectedDocument.download_url, '_blank');
-                        }}
-                      >
-                        Download
-                      </Button>
-                    )}
-                    <Button
-                      variant="filled"
-                      leftSection={<IconPlus size={16} />}
-                      onClick={() => {
-                        setSelectedDocument(null);
-                        resetForm();
-                      }}
-                    >
-                      Add Another Document
-                    </Button>
-                  </Group>
                 </Stack>
               </Box>
             ) : (
@@ -926,9 +1080,31 @@ export default function DocumentsDialog({ opened, onClose, patientId }: Document
                   )}
 
                   <Select
-                    label="DOCUMENT TYPE"
-                    placeholder="Select document type"
-                    data={DOCUMENT_TYPES}
+                    label="CATEGORY"
+                    placeholder="Select category"
+                    data={(() => {
+                      // Hybrid data list: show current category + standard categories
+                      const currentCategory = documentType;
+                      if (currentCategory) {
+                        // Check if current category exists in standard list
+                        const existsInList = DOCUMENT_CATEGORIES.some(group =>
+                          group.items.some(item => item.value === currentCategory)
+                        );
+                        
+                        // If current category is NOT in standard list, add it as a top-level option
+                        if (!existsInList) {
+                          return [
+                            {
+                              group: 'Current Category',
+                              items: [{ value: currentCategory, label: currentCategory }]
+                            },
+                            ...DOCUMENT_CATEGORIES
+                          ];
+                        }
+                      }
+                      
+                      return DOCUMENT_CATEGORIES;
+                    })()}
                     value={documentType}
                     onChange={(value) => setDocumentType(value || 'other')}
                     size="sm"

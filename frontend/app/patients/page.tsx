@@ -11,6 +11,7 @@ import ContactHeader from '../components/ContactHeader';
 import NotesDialog from '../components/dialogs/NotesDialog';
 import DocumentsDialog from '../components/dialogs/DocumentsDialog';
 import ImagesDialog from '../components/dialogs/ImagesDialog';
+import AppointmentsDialog from '../components/dialogs/AppointmentsDialog';
 import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
@@ -22,6 +23,7 @@ interface Contact {
   id: string;
   name: string;
   clinic: string;
+  clinicColor?: string; // Add clinic color
   funding: string;
   title: string;
   firstName: string;
@@ -60,6 +62,12 @@ interface Contact {
     default?: boolean;
   };
   note?: string;
+  filemaker_metadata?: {
+    filemaker_id?: string;
+    filemaker_clinic?: string;
+    xero_contact_id?: string;
+    imported_at?: string;
+  };
 }
 
 // Transform API patient data to Contact interface
@@ -250,6 +258,7 @@ const transformPatientToContact = (patient: any): Contact => {
 
   // Extract clinic and funding names (may not be in list serializer)
   const clinicName = patient.clinic?.name || '';
+  const clinicColor = patient.clinic?.color || undefined;
   const fundingName = patient.funding_type?.name || '';
 
   // Extract contact info - handle both old string format and new object format
@@ -306,6 +315,7 @@ const transformPatientToContact = (patient: any): Contact => {
     id: patient.id,
     name: displayName,
     clinic: clinicName,
+    clinicColor: clinicColor,
     funding: fundingName,
     title: title || '',
     firstName: firstName,
@@ -331,6 +341,7 @@ const transformPatientToContact = (patient: any): Contact => {
       default: patient.address_json.default || false,
     } : undefined,
     note: patient.notes || '',
+    filemaker_metadata: patient.filemaker_metadata || undefined,
   };
 };
 
@@ -398,6 +409,7 @@ export default function ContactsPage() {
   const [notesDialogOpened, setNotesDialogOpened] = useState(false);
   const [documentsDialogOpened, setDocumentsDialogOpened] = useState(false);
   const [imagesDialogOpened, setImagesDialogOpened] = useState(false);
+  const [appointmentsDialogOpened, setAppointmentsDialogOpened] = useState(false);
   const [lettersDialogOpened, setLettersDialogOpened] = useState(false);
   const [smsDialogOpened, setSmsDialogOpened] = useState(false);
   
@@ -1009,6 +1021,7 @@ export default function ContactsPage() {
         onNotesClick={() => setNotesDialogOpened(true)}
         onDocumentsClick={() => setDocumentsDialogOpened(true)}
         onImagesClick={() => setImagesDialogOpened(true)}
+        onAppointmentsClick={() => setAppointmentsDialogOpened(true)}
         onLettersClick={() => setLettersDialogOpened(true)}
         onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
@@ -1079,12 +1092,14 @@ export default function ContactsPage() {
                       {contact.name}
                     </Text>
                     <Group gap="xs">
-                      <Text size="xs" c="blue">
+                      <Text size="xs" c={contact.clinicColor || 'blue'} fw={600}>
                         {contact.clinic}
                       </Text>
-                      <Badge size="xs" variant="light">
-                        {contact.funding}
-                      </Badge>
+                      {contact.funding && (
+                        <Badge size="xs" variant="light">
+                          {contact.funding}
+                        </Badge>
+                      )}
                     </Group>
                   </Stack>
                 </UnstyledButton>
@@ -2024,6 +2039,41 @@ export default function ContactsPage() {
                       minRows={4}
                     />
                   </Box>
+
+                  {/* FileMaker Metadata */}
+                  {selectedContact.filemaker_metadata && (
+                    <Box>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="md">FileMaker Import Info</Text>
+                      <Paper p="sm" withBorder style={{ backgroundColor: 'var(--mantine-color-dark-6)' }}>
+                        <Stack gap="xs">
+                          {selectedContact.filemaker_metadata.filemaker_id && (
+                            <Group gap="xs">
+                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>FileMaker ID:</Text>
+                              <Text size="xs" style={{ fontFamily: 'monospace' }}>{selectedContact.filemaker_metadata.filemaker_id}</Text>
+                            </Group>
+                          )}
+                          {selectedContact.filemaker_metadata.filemaker_clinic && (
+                            <Group gap="xs">
+                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Clinic:</Text>
+                              <Text size="xs">{selectedContact.filemaker_metadata.filemaker_clinic}</Text>
+                            </Group>
+                          )}
+                          {selectedContact.filemaker_metadata.xero_contact_id && (
+                            <Group gap="xs">
+                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Xero Contact ID:</Text>
+                              <Text size="xs" style={{ fontFamily: 'monospace' }}>{selectedContact.filemaker_metadata.xero_contact_id}</Text>
+                            </Group>
+                          )}
+                          {selectedContact.filemaker_metadata.imported_at && (
+                            <Group gap="xs">
+                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Imported:</Text>
+                              <Text size="xs">{new Date(selectedContact.filemaker_metadata.imported_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}</Text>
+                            </Group>
+                          )}
+                        </Stack>
+                      </Paper>
+                    </Box>
+                  )}
                 </Stack>
               ) : (
                 <Center h={400}>
@@ -3166,6 +3216,14 @@ export default function ContactsPage() {
       <ImagesDialog
         opened={imagesDialogOpened}
         onClose={() => setImagesDialogOpened(false)}
+        patientId={selectedContact?.id || ''}
+        patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
+      />
+
+      {/* Appointments Dialog */}
+      <AppointmentsDialog
+        opened={appointmentsDialogOpened}
+        onClose={() => setAppointmentsDialogOpened(false)}
         patientId={selectedContact?.id || ''}
         patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
       />

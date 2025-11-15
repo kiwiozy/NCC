@@ -226,12 +226,29 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
     def download(self, request, pk=None):
         """
         Download all images in a batch as a ZIP file.
+        Files are renamed to: {FirstName}_{LastName}_{Category}.{ext}
+        ZIP is named: {FirstName}_{LastName}_Images_{Date}.zip
         
         GET /api/images/batches/{id}/download/
         """
         try:
             # Get batch
             batch = self.get_object()
+            
+            # Get patient info from batch's content_object (Generic FK)
+            from patients.models import Patient
+            patient = None
+            if isinstance(batch.content_object, Patient):
+                patient = batch.content_object
+            
+            if not patient:
+                return Response(
+                    {'error': 'Could not determine patient for this batch'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Format patient name for filenames
+            patient_name = f"{patient.first_name}_{patient.last_name}".replace(' ', '_')
             
             # Get image IDs from query parameters if provided
             image_ids_param = request.query_params.getlist('image_ids')
@@ -257,6 +274,7 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
             zip_buffer = BytesIO()
             s3_service = S3Service()
             images_added = 0
+            filename_counter = {}  # Track filenames to handle duplicates
             
             try:
                 with ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
@@ -286,10 +304,27 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                             
                             print(f"📦 Fetched {len(image_content)} bytes for {image.original_name}")
                             
-                            # Add image to ZIP with original filename
-                            zip_file.writestr(image.original_name, image_content)
+                            # Get file extension
+                            extension = image.original_name.split('.')[-1] if '.' in image.original_name else 'jpg'
+                            
+                            # Format category for filename
+                            category = image.category.replace(' ', '_') if image.category else 'Uncategorized'
+                            
+                            # New filename: {FirstName}_{LastName}_{Category}.{ext}
+                            new_filename = f"{patient_name}_{category}.{extension}"
+                            
+                            # Handle duplicate filenames
+                            if new_filename in filename_counter:
+                                filename_counter[new_filename] += 1
+                                name_part = new_filename.rsplit('.', 1)[0]
+                                new_filename = f"{name_part}_{filename_counter[new_filename]}.{extension}"
+                            else:
+                                filename_counter[new_filename] = 0
+                            
+                            # Add image to ZIP with new filename
+                            zip_file.writestr(new_filename, image_content)
                             images_added += 1
-                            print(f"✅ Added {image.original_name} to ZIP ({images_added}/{total_images})")
+                            print(f"✅ Added {new_filename} to ZIP ({images_added}/{total_images})")
                             
                         except Exception as e:
                             import traceback
@@ -325,11 +360,21 @@ class ImageBatchViewSet(viewsets.ModelViewSet):
                 content_type='application/zip'
             )
             
-            # Generate filename: sanitize batch name
-            safe_name = ''.join(c for c in batch.name if c.isalnum() or c in (' ', '-', '_', '.'))
-            safe_name = safe_name.replace(' ', '_')[:50]  # Limit length
-            batch_id_str = str(batch.id)[:8]  # Convert UUID to string first
-            zip_filename = f"{safe_name}_{batch_id_str}.zip"
+            # Generate ZIP filename: {FirstName}_{LastName}_Images_{Date}.zip
+            # Extract date from batch name (e.g., "24 Aug 2018 (FileMaker Import)" -> "24_Aug_2018")
+            import re
+            from datetime import datetime
+            
+            # Try to parse date from batch name
+            date_match = re.search(r'(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})', batch.name)
+            if date_match:
+                day, month, year = date_match.groups()
+                date_str = f"{day}_{month}_{year}"
+            else:
+                # Fallback to uploaded_at date
+                date_str = batch.uploaded_at.strftime('%d_%b_%Y')
+            
+            zip_filename = f"{patient_name}_Images_{date_str}.zip"
             
             # Set headers for download
             django_response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'

@@ -12,7 +12,7 @@ class ClinicSerializer(serializers.ModelSerializer):
         model = Clinic
         fields = [
             'id', 'name', 'abn', 'phone', 'email', 
-            'address_json', 'created_at', 'updated_at'
+            'address_json', 'color', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

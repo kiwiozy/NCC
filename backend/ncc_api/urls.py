@@ -56,4 +56,5 @@ urlpatterns = [
     path('api/ai/', include('ai_services.urls')),  # AI services
     path('api/settings/', include('settings.urls')),  # Settings management (Funding Sources)
     path('api/letters/', include('letters.urls')),  # Patient letters
+    path('api/data-management/', include('data_management.urls')),  # Data management and reimport
 ]

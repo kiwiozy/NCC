@@ -1,0 +1,136 @@
+{
+  "start_time": "2025-11-14T20:04:09.325798",
+  "last_update": "2025-11-15T14:18:10.980428",
+  "current_phase": "Phase 7: Link Images from CSV",
+  "phases": {
+    "Phase 0: Pre-Import Validation": {
+      "status": "completed",
+      "start_time": "2025-11-15T12:17:06.605542",
+      "end_time": "2025-11-15T12:23:10.767789",
+      "total_items": 4,
+      "processed_items": 4,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 2: Delete Existing Patient Data": {
+      "status": "completed",
+      "start_time": "2025-11-15T12:23:10.768426",
+      "end_time": "2025-11-15T12:23:11.504217",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 3: Import Patients": {
+      "status": "completed",
+      "start_time": "2025-11-15T12:23:11.504852",
+      "end_time": "2025-11-15T12:34:21.455666",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 4: Import Appointments": {
+      "status": "completed",
+      "start_time": "2025-11-15T13:56:05.621478",
+      "end_time": "2025-11-15T13:56:10.178686",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 5: Import Notes & SMS": {
+      "status": "completed",
+      "start_time": "2025-11-15T13:56:10.274153",
+      "end_time": "2025-11-15T13:56:11.967904",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 6: Re-Link Documents": {
+      "status": "failed",
+      "start_time": "2025-11-15T11:45:28.807375",
+      "end_time": "2025-11-15T11:45:29.526020",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 0,
+      "error_count": 2,
+      "skipped_count": 0,
+      "errors": [
+        {
+          "timestamp": "2025-11-15T11:45:29.525785",
+          "message": "Script failed: phase6_documents/relink_documents.py",
+          "record_id": null
+        }
+      ]
+    },
+    "Phase 6: Re-Link Documents with Clean S3 Paths": {
+      "status": "completed",
+      "start_time": "2025-11-15T12:35:06.649912",
+      "end_time": "2025-11-15T13:36:23.630911",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 7: Re-Link Images": {
+      "status": "failed",
+      "start_time": "2025-11-15T13:36:23.631614",
+      "end_time": "2025-11-15T13:36:24.375614",
+      "total_items": 2,
+      "processed_items": 1,
+      "success_count": 0,
+      "error_count": 2,
+      "skipped_count": 0,
+      "errors": [
+        {
+          "timestamp": "2025-11-15T13:36:24.375373",
+          "message": "Script failed: phase7_images/relink_images.py",
+          "record_id": null
+        }
+      ]
+    },
+    "Phase 8: Post-Import Validation": {
+      "status": "failed",
+      "start_time": "2025-11-15T13:56:12.067422",
+      "end_time": "2025-11-15T13:58:13.272641",
+      "total_items": 2,
+      "processed_items": 2,
+      "success_count": 0,
+      "error_count": 2,
+      "skipped_count": 0,
+      "errors": [
+        {
+          "timestamp": "2025-11-15T13:58:13.272356",
+          "message": "Script failed: phase8_validation/validate_relationships.py",
+          "record_id": null
+        }
+      ]
+    },
+    "Phase 7: Link Images from CSV": {
+      "status": "completed",
+      "start_time": "2025-11-15T14:17:48.976099",
+      "end_time": "2025-11-15T14:18:10.980844",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    }
+  },
+  "overall_status": "failed"
+}

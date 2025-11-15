@@ -139,9 +139,10 @@ class Image(models.Model):
     
     # Image metadata
     category = models.CharField(
-        max_length=50,
-        choices=IMAGE_CATEGORIES,
-        default='other'
+        max_length=100,  # Increased from 50 to allow longer FileMaker types
+        blank=True,
+        default='',
+        help_text="Image category/type (flexible text field - can be standard category or custom)"
     )
     caption = models.TextField(blank=True, help_text="Optional caption/notes")
     date_taken = models.DateField(null=True, blank=True, help_text="Date photo was taken")
@@ -149,6 +150,14 @@ class Image(models.Model):
     # Upload tracking
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    # FileMaker import tracking
+    filemaker_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text='Original FileMaker image ID (from API_Images.id) - for imported images only'
+    )
     
     # Order within batch
     order = models.IntegerField(default=0, help_text="Display order within batch")

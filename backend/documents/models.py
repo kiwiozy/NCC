@@ -11,6 +11,8 @@ class Document(models.Model):
     Uses Generic Foreign Key to link to any model (Patient, Appointment, etc.)
     """
     
+    # Standard category choices (for reference in frontend)
+    # These are no longer enforced at model level to allow flexible categories
     CATEGORY_CHOICES = [
         ('erf', 'ERF'),
         ('purchase_order', 'Purchase Order'),
@@ -46,7 +48,12 @@ class Document(models.Model):
     s3_url = models.URLField(max_length=1024, blank=True, help_text="Pre-signed or public URL")
     
     # Metadata
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    category = models.CharField(
+        max_length=100,  # Increased from 50 to allow longer FileMaker types
+        blank=True,
+        default='',
+        help_text="Document category/type (flexible text field - can be standard category or custom)"
+    )
     description = models.TextField(blank=True)
     tags = models.JSONField(default=list, blank=True)
     
@@ -61,12 +68,26 @@ class Document(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     
+    # FileMaker import tracking
+    filemaker_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text='Original FileMaker document ID (from API_Docs.id) - for imported documents only'
+    )
+    filemaker_metadata = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='FileMaker import metadata (filemaker_clinic, xero_contact_id, imported_at, etc.)'
+    )
+    
     class Meta:
         ordering = ['-uploaded_at']
         indexes = [
             models.Index(fields=['content_type', 'object_id']),
             models.Index(fields=['category']),
             models.Index(fields=['uploaded_at']),
+            models.Index(fields=['filemaker_id']),  # For FileMaker import lookups
         ]
     
     def __str__(self):

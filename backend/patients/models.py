@@ -156,6 +156,13 @@ class Patient(models.Model):
         help_text="General notes about the patient"
     )
     
+    # FileMaker import tracking
+    filemaker_metadata = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='FileMaker import metadata (filemaker_id, filemaker_clinic, xero_contact_id, imported_at, etc.)'
+    )
+    
     # Archive fields (soft delete - never actually delete records)
     archived = models.BooleanField(
         default=False,

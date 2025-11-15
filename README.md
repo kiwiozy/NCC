@@ -2,6 +2,19 @@
 
 Modern cloud-native patient management system for Walk Easy Pedorthics.
 
+## 🎉 Latest Update: FileMaker Import Complete! (Nov 15, 2025)
+
+✅ **Successfully imported 40,568 records from FileMaker:**
+- 2,842 Patients (100%)
+- 9,837 Appointments (65%)
+- 11,210 Clinical Notes (98%)
+- 10,190 Documents with clean S3 paths (100%)
+- 6,489 Images (99.98%)
+
+📚 **[See Full Import Report →](scripts/reimport/IMPORT_SUCCESS_SUMMARY.md)**
+
+---
+
 ## 🚀 Quick Start
 
 ### ⭐ One-Command Startup (Recommended)

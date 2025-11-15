@@ -52,3 +52,10 @@ logs/
 .DS_Store
 Thumbs.db
 .dev-pids
+
+# Reimport backups and data
+backups/
+data/
+*.csv
+*.tab
+*.xlsx

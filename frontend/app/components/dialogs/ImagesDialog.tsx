@@ -427,9 +427,9 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
         }}
       >
         <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <Grid gutter="md" style={{ flex: 1, minHeight: 0 }}>
+          <Grid gutter="md" style={{ flex: 1, minHeight: 0, height: '100%' }}>
             {/* Left Panel (30%): Batch List with Accordions */}
-            <Grid.Col span={{ base: 12, md: 3.6 }}>
+            <Grid.Col span={{ base: 12, md: 3.6 }} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Stack gap="md" style={{ height: '100%' }}>
               <Button
                 leftSection={<IconPlus size={16} />}
@@ -552,7 +552,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
           </Grid.Col>
 
           {/* Right Panel (70%): Image Viewer */}
-          <Grid.Col span={{ base: 12, md: 8.4 }}>
+          <Grid.Col span={{ base: 12, md: 8.4 }} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {!selectedImage ? (
               <Stack align="center" justify="center" style={{ height: '100%' }}>
                 <IconPhoto size={64} style={{ opacity: 0.2 }} />
@@ -562,6 +562,7 @@ export default function ImagesDialog({ opened, onClose, patientId, patientName }
             ) : (
               <ImageViewer
                 image={selectedImage}
+                patientName={patientName}
                 onClose={() => setSelectedImage(null)}
                 onDelete={() => handleDeleteImage(selectedImage.id, selectedImage.original_name)}
                 onPrev={() => handleNavigateImage('prev')}
@@ -820,12 +821,36 @@ function BatchContent({
                   {/* Image Name */}
                   <Text size="xs" fw={500} truncate mb={4}>{image.original_name}</Text>
 
-                  {/* Category Dropdown (Below Image) */}
+                  {/* Category Dropdown - Hybrid list (standard + current value) */}
                   <Select
                     size="sm"
-                    value={image.category}
+                    value={image.category || ''}
                     onChange={(value) => onCategoryChange(image.id, value || 'other')}
-                    data={IMAGE_CATEGORY_GROUPS}
+                    data={(() => {
+                      // Start with standard categories
+                      const categories = IMAGE_CATEGORY_GROUPS;
+                      
+                      // Check if current category exists in the standard list
+                      const currentCategory = image.category;
+                      if (currentCategory) {
+                        const existsInList = categories.some(group => 
+                          group.items.some(item => item.value === currentCategory)
+                        );
+                        
+                        // If current category is NOT in the standard list, add it
+                        if (!existsInList) {
+                          return [
+                            {
+                              group: 'Current Category',
+                              items: [{ value: currentCategory, label: currentCategory }]
+                            },
+                            ...categories
+                          ];
+                        }
+                      }
+                      
+                      return categories;
+                    })()}
                     placeholder="Select category"
                     searchable
                     clearable={false}
@@ -855,6 +880,7 @@ function BatchContent({
 // Image Viewer Component
 function ImageViewer({
   image,
+  patientName,
   onClose,
   onDelete,
   onPrev,
@@ -862,6 +888,7 @@ function ImageViewer({
   hasMultiple,
 }: {
   image: Image;
+  patientName: string;
   onClose: () => void;
   onDelete: () => void;
   onPrev: () => void;
@@ -886,10 +913,22 @@ function ImageViewer({
       // Create a blob URL
       const blobUrl = URL.createObjectURL(blob);
       
+      // Get file extension
+      const extension = image.original_name.split('.').pop() || 'jpg';
+      
+      // Format patient name (FirstName_LastName)
+      const formattedPatientName = patientName.replace(/\s+/g, '_');
+      
+      // Format category (replace spaces with underscores)
+      const formattedCategory = image.category ? image.category.replace(/\s+/g, '_') : 'Uncategorized';
+      
+      // New filename: {FirstName}_{LastName}_{Category}.{ext}
+      const newFilename = `${formattedPatientName}_${formattedCategory}.${extension}`;
+      
       // Create a temporary anchor element to trigger download
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = image.original_name;
+      link.download = newFilename;
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
@@ -902,7 +941,7 @@ function ImageViewer({
       
       notifications.show({
         title: 'Download started',
-        message: `Downloading ${image.original_name}`,
+        message: `Downloading ${newFilename}`,
         color: 'blue',
       });
     } catch (error) {
@@ -916,61 +955,60 @@ function ImageViewer({
   };
 
   return (
-    <Stack style={{ height: '100%' }} gap="md">
-      {/* Header with Metadata */}
-      <Box
-        p="sm"
+    <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Compact Header with Actions */}
+      <Group
+        justify="space-between"
+        p="xs"
         style={{
           borderBottom: '1px solid var(--mantine-color-dark-4)',
           backgroundColor: 'var(--mantine-color-dark-6)',
+          flexShrink: 0,
         }}
       >
-        <Group justify="space-between" mb="xs">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Text fw={700} size="xl" truncate tt="uppercase">{image.category}</Text>
-          </div>
-          <Group gap="xs">
-            <ActionIcon variant="subtle" color="red" onClick={onDelete}>
-              <IconTrash size={20} />
-            </ActionIcon>
-            <ActionIcon variant="subtle" color="blue" onClick={handleDownload} title="Download image">
-              <IconDownload size={20} />
-            </ActionIcon>
-            <ActionIcon variant="subtle" onClick={onClose}>
-              <IconX size={20} />
-            </ActionIcon>
-          </Group>
+        <Text fw={700} size="lg" truncate tt="uppercase" style={{ flex: 1 }}>
+          {image.category}
+        </Text>
+        <Group gap="xs">
+          <ActionIcon variant="subtle" color="red" onClick={onDelete} title="Delete image">
+            <IconTrash size={18} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" color="blue" onClick={handleDownload} title="Download image">
+            <IconDownload size={18} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" onClick={onClose} title="Close viewer">
+            <IconX size={18} />
+          </ActionIcon>
         </Group>
+      </Group>
 
-        {/* Metadata Grid */}
-        <Grid gutter="xs">
-          {image.width && image.height && (
-            <Grid.Col span={6}>
-              <Text size="xs" c="dimmed">Dimensions</Text>
-              <Text size="sm" fw={500}>{image.width} × {image.height} px</Text>
-            </Grid.Col>
-          )}
-          <Grid.Col span={6}>
-            <Text size="xs" c="dimmed">Uploaded</Text>
-            <Text size="sm" fw={500}>
-              {new Date(image.uploaded_at).toLocaleDateString('en-AU', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </Text>
-          </Grid.Col>
-        </Grid>
-      </Box>
-
-      {/* Image Display */}
-      <Box style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
-        <MantineImage
+      {/* Image Display - Takes up all remaining space */}
+      <Box style={{ 
+        flex: 1, 
+        position: 'relative', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: 0, 
+        overflow: 'hidden',
+        padding: 0,
+        margin: 0,
+        height: 'calc(90vh - 120px)', // Modal height minus header and top bar
+      }}>
+        <img
           src={image.download_url}
           alt={image.original_name}
-          fit="contain"
-          style={{ maxHeight: '100%', maxWidth: '100%' }}
-          fallbackSrc="https://placehold.co/800x600?text=Image+Not+Found"
+          style={{ 
+            maxHeight: '100%', 
+            maxWidth: '100%', 
+            width: 'auto',
+            height: 'auto',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+          onError={(e) => {
+            e.currentTarget.src = 'https://placehold.co/800x600?text=Image+Not+Found';
+          }}
         />
         
         {/* Navigation Arrows */}
@@ -1005,7 +1043,7 @@ function ImageViewer({
           </>
         )}
       </Box>
-    </Stack>
+    </Box>
   );
 }
 

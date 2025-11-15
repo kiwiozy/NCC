@@ -33,6 +33,33 @@ class S3Service:
         unique_id = str(uuid.uuid4())
         return f"{folder}/{unique_id}{ext}"
     
+    def generate_filemaker_document_key(self, patient_id, doc_type, filemaker_id, extension):
+        """
+        Generate S3 key for FileMaker imported documents
+        
+        Args:
+            patient_id: Nexus patient UUID
+            doc_type: Document type (e.g., 'referrals', 'reports', 'other')
+            filemaker_id: Original FileMaker document UUID
+            extension: File extension (e.g., '.pdf', '.jpg')
+        
+        Returns:
+            S3 key: "patients/filemaker-import/documents/{patient_id}/{doc_type}/{filemaker_id}{ext}"
+        
+        Example:
+            generate_filemaker_document_key(
+                patient_id='a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                doc_type='referrals',
+                filemaker_id='F8E7D6C5-B4A3-2109-8765-4321FEDC',
+                extension='.pdf'
+            )
+            Returns: "patients/filemaker-import/documents/a1b2c3d4.../referrals/F8E7D6C5....pdf"
+        """
+        # Normalize doc_type to lowercase for consistency
+        doc_type = doc_type.lower().replace(' ', '-')
+        
+        return f"patients/filemaker-import/documents/{patient_id}/{doc_type}/{filemaker_id}{extension}"
+    
     def upload_file(self, file_obj, filename, folder='documents', metadata=None):
         """
         Upload a file to S3

@@ -19,7 +19,7 @@ class PatientSerializer(serializers.ModelSerializer):
             'id', 'mrn', 'first_name', 'last_name', 'middle_names',
             'dob', 'sex', 'title', 'health_number', 'funding_type', 'clinic',
             'coordinator_name', 'coordinator_date', 'plan_start_date', 'plan_end_date',
-            'plan_dates_json', 'notes', 'contact_json', 'address_json', 'emergency_json',
+            'plan_dates_json', 'notes', 'filemaker_metadata', 'contact_json', 'address_json', 'emergency_json',
             'flags_json', 'archived', 'archived_at', 'archived_by',
             'created_at', 'updated_at',
             'age', 'full_name', 'mobile', 'email'  # computed fields
@@ -42,6 +42,7 @@ class PatientSerializer(serializers.ModelSerializer):
             representation['clinic'] = {
                 'id': str(instance.clinic.id),
                 'name': instance.clinic.name,
+                'color': instance.clinic.color,
             }
         else:
             representation['clinic'] = None
@@ -79,6 +80,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             'contact_json', 'address_json', 'plan_dates_json',  # Include JSON fields for communication/address
             'coordinator_name', 'coordinator_date',  # Include coordinator info
             'notes',  # Include general notes field
+            'filemaker_metadata',  # Include FileMaker import metadata
         ]
     
     def to_representation(self, instance):
@@ -90,6 +92,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             representation['clinic'] = {
                 'id': str(instance.clinic.id),
                 'name': instance.clinic.name,
+                'color': instance.clinic.color,
             }
         else:
             representation['clinic'] = None
