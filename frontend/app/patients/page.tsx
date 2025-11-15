@@ -2387,20 +2387,7 @@ export default function ContactsPage() {
       <Modal
         opened={coordinatorListDialogOpened}
         onClose={() => setCoordinatorListDialogOpened(false)}
-        title={
-          <Group justify="space-between" style={{ width: '100%' }}>
-            <Text fw={600} size="lg">
-              {selectedContact && isNDISFunding(selectedContact) ? 'Coordinators' : 'Referrers'}
-            </Text>
-            <ActionIcon
-              variant="subtle"
-              onClick={() => setCoordinatorListDialogOpened(false)}
-              size="lg"
-            >
-              <IconX size={20} />
-            </ActionIcon>
-          </Group>
-        }
+        title={selectedContact && isNDISFunding(selectedContact) ? 'Coordinators' : 'Referrers'}
         size="md"
         styles={{
           header: {
@@ -2410,6 +2397,8 @@ export default function ContactsPage() {
           },
           title: {
             color: 'white',
+            fontSize: rem(18),
+            fontWeight: 600,
           },
         }}
       >
