@@ -18,6 +18,13 @@ interface ContactHeaderProps {
   onSmsClick?: () => void;
   patientId?: string; // For getting note and document counts
   selectedPatientName?: string; // Name of selected patient to display
+  selectedPatientAddress?: {
+    street?: string;
+    street2?: string;
+    suburb?: string;
+    postcode?: string;
+    state?: string;
+  };
   showFilters?: boolean;
   filterOptions?: {
     funding?: string[];
@@ -45,6 +52,7 @@ export default function ContactHeader({
   onSmsClick,
   patientId,
   selectedPatientName,
+  selectedPatientAddress,
   showFilters = true,
   filterOptions = {
     funding: ['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare'],
@@ -641,16 +649,52 @@ export default function ContactHeader({
               cursor: 'pointer',
               transition: 'color 0.2s ease',
             }}
-            onClick={() => {
-              navigator.clipboard.writeText(selectedPatientName);
-              // Optional: Show a brief visual feedback
-              const element = document.activeElement as HTMLElement;
-              if (element) {
+            onClick={(e) => {
+              // Single click - copy just the name
+              if (e.detail === 1) {
+                navigator.clipboard.writeText(selectedPatientName);
+                // Visual feedback
+                const element = e.currentTarget;
                 const originalColor = element.style.color;
                 element.style.color = '#228BE6'; // Blue color
                 setTimeout(() => {
                   element.style.color = originalColor;
                 }, 200);
+              }
+            }}
+            onDoubleClick={() => {
+              // Double click - copy name + address
+              if (selectedPatientAddress) {
+                const addressLines = [];
+                addressLines.push(selectedPatientName);
+                
+                if (selectedPatientAddress.street) {
+                  addressLines.push(selectedPatientAddress.street);
+                }
+                if (selectedPatientAddress.street2) {
+                  addressLines.push(selectedPatientAddress.street2);
+                }
+                if (selectedPatientAddress.suburb) {
+                  addressLines.push(selectedPatientAddress.suburb);
+                }
+                
+                // Last line: postcode, state
+                const lastLineParts = [];
+                if (selectedPatientAddress.postcode) {
+                  lastLineParts.push(selectedPatientAddress.postcode);
+                }
+                if (selectedPatientAddress.state) {
+                  lastLineParts.push(selectedPatientAddress.state);
+                }
+                if (lastLineParts.length > 0) {
+                  addressLines.push(lastLineParts.join(', '));
+                }
+                
+                const fullAddress = addressLines.join('\n');
+                navigator.clipboard.writeText(fullAddress);
+              } else {
+                // No address, just copy name
+                navigator.clipboard.writeText(selectedPatientName);
               }
             }}
             onMouseEnter={(e) => {
@@ -659,7 +703,7 @@ export default function ContactHeader({
             onMouseLeave={(e) => {
               e.currentTarget.style.color = ''; // Reset to default
             }}
-            title="Click to copy name"
+            title={selectedPatientAddress ? "Click to copy name | Double-click to copy name + address" : "Click to copy name"}
           >
             {selectedPatientName}
           </Title>

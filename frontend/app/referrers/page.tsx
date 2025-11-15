@@ -216,6 +216,7 @@ export default function ReferrersPage() {
           onArchive={() => setShowArchived(!showArchived)}
           showArchived={showArchived}
           selectedPatientName={selectedReferrer?.full_name}
+          selectedPatientAddress={selectedReferrer?.address_json}
           contactCount={referrers.length}
           filteredCount={filteredReferrers.length}
           showFilters={false}

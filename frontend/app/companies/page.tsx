@@ -155,6 +155,7 @@ export default function CompaniesPage() {
           onArchive={() => setShowArchived(!showArchived)}
           showArchived={showArchived}
           selectedPatientName={selectedCompany?.name}
+          selectedPatientAddress={selectedCompany?.address_json}
           contactCount={companies.length}
           filteredCount={filteredCompanies.length}
           showFilters={false}
