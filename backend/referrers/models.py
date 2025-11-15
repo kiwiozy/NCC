@@ -166,6 +166,11 @@ class PatientReferrer(models.Model):
         help_text="Referral status"
     )
     
+    is_primary = models.BooleanField(
+        default=False,
+        help_text="Is this the patient's primary/current coordinator/referrer?"
+    )
+    
     filemaker_id = models.UUIDField(
         unique=True,
         null=True,
@@ -179,10 +184,11 @@ class PatientReferrer(models.Model):
     class Meta:
         db_table = 'patient_referrers'
         unique_together = [('patient', 'referrer')]
-        ordering = ['-referral_date']
+        ordering = ['-is_primary', '-referral_date']
         indexes = [
             models.Index(fields=['patient', 'status']),
             models.Index(fields=['referrer', 'status']),
+            models.Index(fields=['patient', 'is_primary']),
         ]
         verbose_name = 'Patient Referrer'
         verbose_name_plural = 'Patient Referrers'

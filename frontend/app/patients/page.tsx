@@ -390,10 +390,12 @@ const transformPatientToContact = (patient: any): Contact => {
       ? patient.referrers.map((ref: any) => ({
           name: ref.name,
           date: formatDateShort(ref.referral_date),
+          is_primary: ref.is_primary || false,
         }))
       : (patient.coordinator_name ? [{
           name: patient.coordinator_name,
           date: formatDateShort(patient.coordinator_date),
+          is_primary: false,
         }] : undefined),
     planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date), // Legacy
     planDatesArray: patient.plan_dates_json ? (Array.isArray(patient.plan_dates_json) ? patient.plan_dates_json : []) : undefined,
@@ -2447,55 +2449,82 @@ export default function ContactsPage() {
                     <Box
                       key={index}
                       style={{
-                        padding: rem(12),
-                        borderRadius: rem(4),
-                        backgroundColor: isDark ? '#25262b' : '#f8f9fa',
-                        border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                         position: 'relative',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s ease',
                       }}
-                      onMouseEnter={(e) => {
-                        const deleteBtn = e.currentTarget.querySelector('.delete-coordinator-btn') as HTMLElement;
-                        if (deleteBtn) deleteBtn.style.display = 'flex';
-                        e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
-                      }}
-                      onMouseLeave={(e) => {
-                        const deleteBtn = e.currentTarget.querySelector('.delete-coordinator-btn') as HTMLElement;
-                        if (deleteBtn) deleteBtn.style.display = 'none';
-                        e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
-                      }}
-                      onClick={async (e) => {
-                        // Don't trigger if clicking the delete button
-                        if ((e.target as HTMLElement).closest('.delete-coordinator-btn')) {
-                          return;
-                        }
-                        
-                        if (!selectedContact) return;
+                    >
+                      <UnstyledButton
+                        style={{
+                          width: '100%',
+                          padding: rem(12),
+                          borderRadius: rem(4),
+                          backgroundColor: isDark ? '#25262b' : '#f8f9fa',
+                          border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => {
+                          const deleteBtn = e.currentTarget.parentElement?.querySelector('.delete-coordinator-btn') as HTMLElement;
+                          if (deleteBtn) deleteBtn.style.display = 'flex';
+                          e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
+                        }}
+                        onMouseLeave={(e) => {
+                          const deleteBtn = e.currentTarget.parentElement?.querySelector('.delete-coordinator-btn') as HTMLElement;
+                          if (deleteBtn) deleteBtn.style.display = 'none';
+                          e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                        }}
+                        onClick={async (e) => {
+                          console.log('🔵 CLICK EVENT FIRED!');
+                          
+                          if (!selectedContact) {
+                            console.log('❌ No selected contact');
+                            return;
+                          }
+                          
+                          console.log('🔵 Clicked on coordinator:', coordinator.name);
                         
                         try {
-                          // Find the PatientReferrer ID from the API
-                          const response = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
+                          // Step 1: Set all referrers for this patient to is_primary=False
+                          const allResponse = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
                             credentials: 'include',
                           });
                           
-                          if (!response.ok) throw new Error('Failed to fetch patient-referrer relationships');
+                          if (!allResponse.ok) throw new Error('Failed to fetch patient-referrer relationships');
                           
-                          const data = await response.json();
-                          const relationships = data.results || data;
+                          const allData = await allResponse.json();
+                          const allRelationships = allData.results || allData;
+                          console.log('Found relationships:', allRelationships);
                           
-                          // Find the relationship to update by matching name and date
-                          const toUpdate = relationships.find((pr: any) => 
-                            pr.referrer_name === coordinator.name && 
-                            pr.referral_date === coordinator.date.split('/').reverse().join('-')
+                          // Find the clicked referrer's relationship
+                          const toUpdate = allRelationships.find((pr: any) => 
+                            pr.referrer_name === coordinator.name
                           );
+                          
+                          console.log('Looking for:', coordinator.name);
+                          console.log('Found to update:', toUpdate);
                           
                           if (!toUpdate) {
                             throw new Error('Relationship not found');
                           }
                           
-                          // Update the relationship with today's date
+                          // Step 2: Update all OTHER referrers to is_primary=False
+                          const updatePromises = allRelationships
+                            .filter((pr: any) => pr.id !== toUpdate.id)
+                            .map((pr: any) => 
+                              fetch(`https://localhost:8000/api/patient-referrers/${pr.id}/`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ is_primary: false }),
+                              })
+                            );
+                          
+                          await Promise.all(updatePromises);
+                          console.log('✅ Set all others to is_primary=False');
+                          
+                          // Step 3: Set the clicked referrer to is_primary=True and update date
                           const today = dayjs().format('YYYY-MM-DD');
+                          console.log('Updating to is_primary=True and date:', today);
                           const updateResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toUpdate.id}/`, {
                             method: 'PATCH',
                             headers: {
@@ -2503,21 +2532,26 @@ export default function ContactsPage() {
                             },
                             credentials: 'include',
                             body: JSON.stringify({
+                              is_primary: true,
                               referral_date: today,
                               status: 'ACTIVE',
                             }),
                           });
                           
                           if (!updateResponse.ok) throw new Error('Failed to update relationship');
+                          console.log('✅ Updated successfully');
                           
                           // Refresh the patient data from backend
+                          console.log('Fetching fresh patient data...');
                           const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
                             credentials: 'include',
                           });
                           
                           if (patientResponse.ok) {
                             const updatedPatient = await patientResponse.json();
+                            console.log('Fresh patient data:', updatedPatient.referrers);
                             const transformedPatient = transformPatientToContact(updatedPatient);
+                            console.log('Transformed coordinators:', getCoordinators(transformedPatient));
                             
                             // Update all state
                             setSelectedContact(transformedPatient);
@@ -2527,45 +2561,53 @@ export default function ContactsPage() {
                             setContacts(prev => prev.map(c => 
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
+                            console.log('✅ State updated');
                           }
                           
                           // Close dialog immediately
+                          console.log('Closing dialog...');
                           setCoordinatorListDialogOpened(false);
                           
                         } catch (error) {
-                          console.error('Error updating coordinator/referrer:', error);
+                          console.error('❌ Error updating coordinator/referrer:', error);
                           alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         }
                       }}
-                    >
-                      <Group justify="space-between" align="flex-start">
-                        <Stack gap={4} style={{ flex: 1 }}>
-                          <Group gap="xs">
-                            <Text size="sm" fw={600}>{coordinator.name}</Text>
-                            {index === 0 && (
-                              <Badge size="xs" color="green" variant="filled">
-                                Primary
-                              </Badge>
-                            )}
-                          </Group>
-                          <Text size="xs" c="blue">{coordinator.date}</Text>
-                        </Stack>
-                        <ActionIcon
-                          className="delete-coordinator-btn"
-                          variant="subtle"
-                          color="red"
-                          size="sm"
-                          style={{ display: 'none' }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent box click
-                            setCoordinatorToDelete(coordinator);
-                            setDeleteCoordinatorOpened(true);
-                          }}
-                          title={`Remove ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Group>
+                      >
+                        <Group justify="space-between" align="flex-start">
+                          <Stack gap={4} style={{ flex: 1 }}>
+                            <Group gap="xs">
+                              <Text size="sm" fw={600}>{coordinator.name}</Text>
+                              {coordinator.is_primary && (
+                                <Badge size="xs" color="green" variant="filled">
+                                  Primary
+                                </Badge>
+                              )}
+                            </Group>
+                            <Text size="xs" c="blue">{coordinator.date}</Text>
+                          </Stack>
+                        </Group>
+                      </UnstyledButton>
+                      <ActionIcon
+                        className="delete-coordinator-btn"
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        style={{ 
+                          display: 'none',
+                          position: 'absolute',
+                          top: rem(8),
+                          right: rem(8),
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent box click
+                          setCoordinatorToDelete(coordinator);
+                          setDeleteCoordinatorOpened(true);
+                        }}
+                        title={`Remove ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
                     </Box>
                   ))}
                 </Stack>

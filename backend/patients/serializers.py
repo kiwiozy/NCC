@@ -73,7 +73,7 @@ class PatientSerializer(serializers.ModelSerializer):
             patient_referrers = PatientReferrer.objects.filter(
                 patient=obj,
                 status='ACTIVE'
-            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date', '-created_at')
+            ).select_related('referrer', 'referrer__specialty').order_by('-is_primary', '-referral_date', '-updated_at')
             
             return [{
                 'id': str(pr.id),
@@ -84,6 +84,7 @@ class PatientSerializer(serializers.ModelSerializer):
                 'referral_date': pr.referral_date.strftime('%Y-%m-%d') if pr.referral_date else None,
                 'referral_reason': pr.referral_reason,
                 'status': pr.status,
+                'is_primary': pr.is_primary,
             } for pr in patient_referrers]
         except Exception as e:
             # If referrers app not available or error, return empty list
@@ -148,7 +149,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             patient_referrers = PatientReferrer.objects.filter(
                 patient=obj,
                 status='ACTIVE'
-            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date', '-created_at')
+            ).select_related('referrer', 'referrer__specialty').order_by('-is_primary', '-referral_date', '-updated_at')
             
             return [{
                 'id': str(pr.id),
@@ -159,6 +160,7 @@ class PatientListSerializer(serializers.ModelSerializer):
                 'referral_date': pr.referral_date.strftime('%Y-%m-%d') if pr.referral_date else None,
                 'referral_reason': pr.referral_reason,
                 'status': pr.status,
+                'is_primary': pr.is_primary,
             } for pr in patient_referrers]
         except Exception as e:
             # If referrers app not available or error, return empty list
