@@ -1,12 +1,12 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T18:11:14.766288",
-  "current_phase": "Phase 8: Post-Import Validation",
+  "last_update": "2025-11-15T18:17:00.178572",
+  "current_phase": "Phase 6: Re-Link Documents with Clean S3 Paths",
   "phases": {
     "Phase 0: Pre-Import Validation": {
       "status": "completed",
-      "start_time": "2025-11-15T18:10:56.372921",
-      "end_time": "2025-11-15T18:10:57.976272",
+      "start_time": "2025-11-15T18:16:24.999464",
+      "end_time": "2025-11-15T18:16:26.100492",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -16,8 +16,8 @@
     },
     "Phase 2: Delete Existing Patient Data": {
       "status": "completed",
-      "start_time": "2025-11-15T18:10:57.976914",
-      "end_time": "2025-11-15T18:10:59.856778",
+      "start_time": "2025-11-15T18:16:26.101356",
+      "end_time": "2025-11-15T18:16:26.389504",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -38,8 +38,8 @@
     },
     "Phase 4: Import Appointments": {
       "status": "completed",
-      "start_time": "2025-11-15T18:11:02.065029",
-      "end_time": "2025-11-15T18:11:05.473569",
+      "start_time": "2025-11-15T18:16:34.067721",
+      "end_time": "2025-11-15T18:16:50.564985",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -49,8 +49,8 @@
     },
     "Phase 5: Import Notes & SMS": {
       "status": "completed",
-      "start_time": "2025-11-15T18:11:05.474154",
-      "end_time": "2025-11-15T18:11:07.083858",
+      "start_time": "2025-11-15T18:16:50.565641",
+      "end_time": "2025-11-15T18:17:00.179079",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -76,21 +76,15 @@
       ]
     },
     "Phase 6: Re-Link Documents with Clean S3 Paths": {
-      "status": "failed",
-      "start_time": "2025-11-15T18:11:07.084510",
-      "end_time": "2025-11-15T18:11:07.797549",
+      "status": "in_progress",
+      "start_time": "2025-11-15T18:17:00.179851",
+      "end_time": null,
       "total_items": 1,
-      "processed_items": 1,
+      "processed_items": 0,
       "success_count": 0,
-      "error_count": 2,
+      "error_count": 0,
       "skipped_count": 0,
-      "errors": [
-        {
-          "timestamp": "2025-11-15T18:11:07.797343",
-          "message": "Script failed: phase6_documents/relink_documents_clean.py",
-          "record_id": null
-        }
-      ]
+      "errors": []
     },
     "Phase 7: Re-Link Images": {
       "status": "failed",
@@ -133,8 +127,8 @@
     },
     "Phase 3: Import Patients from Excel": {
       "status": "completed",
-      "start_time": "2025-11-15T18:10:59.857496",
-      "end_time": "2025-11-15T18:11:02.064349",
+      "start_time": "2025-11-15T18:16:26.390159",
+      "end_time": "2025-11-15T18:16:34.066797",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
