@@ -2546,7 +2546,14 @@ export default function ContactsPage() {
                     >
                       <Group justify="space-between" align="flex-start">
                         <Stack gap={4} style={{ flex: 1 }}>
-                          <Text size="sm" fw={600}>{coordinator.name}</Text>
+                          <Group gap="xs">
+                            <Text size="sm" fw={600}>{coordinator.name}</Text>
+                            {index === 0 && (
+                              <Badge size="xs" color="green" variant="filled">
+                                Primary
+                              </Badge>
+                            )}
+                          </Group>
                           <Text size="xs" c="blue">{coordinator.date}</Text>
                         </Stack>
                         <ActionIcon
