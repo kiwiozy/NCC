@@ -631,7 +631,36 @@ export default function ContactHeader({
 
         {/* Center: Selected Patient Name */}
         {selectedPatientName && (
-          <Title order={3} style={{ flex: 1, textAlign: 'center', fontSize: rem(20), fontWeight: 500 }}>
+          <Title 
+            order={3} 
+            style={{ 
+              flex: 1, 
+              textAlign: 'center', 
+              fontSize: rem(20), 
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'color 0.2s ease',
+            }}
+            onClick={() => {
+              navigator.clipboard.writeText(selectedPatientName);
+              // Optional: Show a brief visual feedback
+              const element = document.activeElement as HTMLElement;
+              if (element) {
+                const originalColor = element.style.color;
+                element.style.color = '#228BE6'; // Blue color
+                setTimeout(() => {
+                  element.style.color = originalColor;
+                }, 200);
+              }
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#228BE6'; // Blue on hover
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = ''; // Reset to default
+            }}
+            title="Click to copy name"
+          >
             {selectedPatientName}
           </Title>
         )}
