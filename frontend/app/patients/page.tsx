@@ -2532,6 +2532,9 @@ export default function ContactsPage() {
                             ));
                           }
                           
+                          // Close the dialog after successful update
+                          setCoordinatorListDialogOpened(false);
+                          
                         } catch (error) {
                           console.error('Error updating coordinator/referrer date:', error);
                           alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
