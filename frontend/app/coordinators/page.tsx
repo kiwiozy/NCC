@@ -649,13 +649,12 @@ export default function CoordinatorsPage() {
                                   <Stack gap="md">
                                     {coordinatorPatients.slice(0, MAX_VISIBLE).map((pr) => (
                                       <Group key={pr.id} justify="space-between" align="center">
-                                        <Group gap="sm" style={{ flex: 1 }}>
-                                          <Box style={{ minWidth: rem(100) }}>
-                                            <Text size="sm" c="dimmed">Patient</Text>
-                                            <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
-                                          </Box>
+                                        <Group gap="md" style={{ flex: 1 }} align="center">
                                           <Text size="md" fw={600}>
                                             {pr.patient_name}
+                                          </Text>
+                                          <Text size="sm" c="dimmed">
+                                            {pr.referral_date ? formatDate(pr.referral_date) : 'No date'}
                                           </Text>
                                         </Group>
                                         {pr.is_primary && (
@@ -682,13 +681,12 @@ export default function CoordinatorsPage() {
                                       <Stack gap="md">
                                         {coordinatorPatients.slice(MAX_VISIBLE).map((pr) => (
                                           <Group key={pr.id} justify="space-between" align="center">
-                                            <Group gap="sm" style={{ flex: 1 }}>
-                                              <Box style={{ minWidth: rem(100) }}>
-                                                <Text size="sm" c="dimmed">Patient</Text>
-                                                <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
-                                              </Box>
+                                            <Group gap="md" style={{ flex: 1 }} align="center">
                                               <Text size="md" fw={600}>
                                                 {pr.patient_name}
+                                              </Text>
+                                              <Text size="sm" c="dimmed">
+                                                {pr.referral_date ? formatDate(pr.referral_date) : 'No date'}
                                               </Text>
                                             </Group>
                                             {pr.is_primary && (
@@ -709,13 +707,12 @@ export default function CoordinatorsPage() {
                                 <Stack gap="md">
                                   {coordinatorPatients.map((pr) => (
                                     <Group key={pr.id} justify="space-between" align="center">
-                                      <Group gap="sm" style={{ flex: 1 }}>
-                                        <Box style={{ minWidth: rem(100) }}>
-                                          <Text size="sm" c="dimmed">Patient</Text>
-                                          <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
-                                        </Box>
+                                      <Group gap="md" style={{ flex: 1 }} align="center">
                                         <Text size="md" fw={600}>
                                           {pr.patient_name}
+                                        </Text>
+                                        <Text size="sm" c="dimmed">
+                                          {pr.referral_date ? formatDate(pr.referral_date) : 'No date'}
                                         </Text>
                                       </Group>
                                       {pr.is_primary && (
