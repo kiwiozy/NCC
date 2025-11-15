@@ -15,6 +15,7 @@ import AppointmentsDialog from '../components/dialogs/AppointmentsDialog';
 import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
+import { PatientCache } from '../utils/patientCache';
 import dayjs from 'dayjs';
 
 type ContactType = 'patients' | 'referrers' | 'coordinator' | 'ndis-lac' | 'contacts' | 'companies' | 'clinics';
@@ -629,22 +630,56 @@ export default function ContactsPage() {
       
       isLoadingRef.current = true;
       setLoading(true);
-      // Clear ALL state first to prevent any stale data
-      setAllContacts([]);
-      setContacts([]);
-      setSelectedContact(null);
       
       try {
+        // Build filter object for cache
+        const archivedValue = activeFilters.archived === true || activeFilters.archived === 'true';
+        const cacheFilters = {
+          archived: archivedValue,
+          search: searchQuery || undefined,
+        };
+        
+        // Try to load from cache first
+        const cachedData = PatientCache.get(cacheFilters);
+        
+        if (cachedData) {
+          // Cache hit! Use cached data immediately
+          const transformed = cachedData.map((patient: any) => transformPatientToContact(patient));
+          setAllContacts(transformed);
+          applyFilters(transformed, searchQuery, activeFilters);
+          
+          if (transformed.length > 0) {
+            setSelectedContact(transformed[0]);
+          }
+          
+          setLoading(false);
+          isLoadingRef.current = false;
+          
+          // Trigger background refresh to update cache
+          PatientCache.backgroundRefresh(cacheFilters, (freshData) => {
+            console.log('🔄 Background refresh completed, updating UI...');
+            const freshTransformed = freshData.map((patient: any) => transformPatientToContact(patient));
+            setAllContacts(freshTransformed);
+            applyFilters(freshTransformed, searchQuery, activeFilters);
+          });
+          
+          return; // Early return - using cache
+        }
+        
+        // Cache miss - load from API
+        console.log('💾 Cache miss - loading from API...');
+        
+        // Clear ALL state first to prevent any stale data
+        setAllContacts([]);
+        setContacts([]);
+        setSelectedContact(null);
+        
         // Build query parameters
         const params = new URLSearchParams();
         if (searchQuery) {
           params.append('search', searchQuery);
         }
-        // Add archived filter from activeFilters
-        const archivedValue = activeFilters.archived === true || activeFilters.archived === 'true';
         params.append('archived', String(archivedValue));
-        // Note: Clinic and funding filtering is done client-side for now
-        // Can be enhanced to use API filtering later
 
         // Fetch ALL patients by paginating through all pages
         let allPatients: any[] = [];
@@ -673,6 +708,9 @@ export default function ContactsPage() {
         }
         
         console.log(`✅ Loaded ${allPatients.length} total patients in ${pageCount} pages`);
+        
+        // Cache the raw API data before transformation
+        PatientCache.set(allPatients, cacheFilters);
         
         // Transform fresh from API - always use ISO dates from API
         const transformed = allPatients.map((patient: any) => {
