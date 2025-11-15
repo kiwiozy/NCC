@@ -1379,9 +1379,6 @@ export default function ContactsPage() {
                                 {selectedContact.ndis_plan_end_date && formatDateOnlyAU(selectedContact.ndis_plan_end_date)}
                               </Text>
                             </Group>
-                            <Text size="xs" c="dimmed" fs="italic" mt={4}>
-                              From FileMaker import
-                            </Text>
                           </Box>
                         )}
 
