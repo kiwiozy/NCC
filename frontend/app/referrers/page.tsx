@@ -2,11 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem } from '@mantine/core';
-import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding } from '@tabler/icons-react';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider } from '@mantine/core';
+import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding, IconUsers } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
+
+interface ReferrerCompany {
+  id: string;
+  company_id: string;
+  company_name: string;
+  company_type: string;
+  position: string;
+  is_primary: boolean;
+}
+
+interface PatientReferral {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  referral_date: string;
+  referral_reason: string;
+  status: string;
+}
 
 interface Referrer {
   id: string;
@@ -49,7 +67,10 @@ export default function ReferrersPage() {
   const [referrers, setReferrers] = useState<Referrer[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedReferrer, setSelectedReferrer] = useState<Referrer | null>(null);
+  const [referrerCompanies, setReferrerCompanies] = useState<ReferrerCompany[]>([]);
+  const [referrerPatients, setReferrerPatients] = useState<PatientReferral[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRelations, setLoadingRelations] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
@@ -107,6 +128,47 @@ export default function ReferrersPage() {
     loadReferrers();
   }, [selectedId]);
 
+  // Load companies and patients for selected referrer
+  useEffect(() => {
+    const loadReferrerRelations = async () => {
+      if (!selectedReferrer) {
+        setReferrerCompanies([]);
+        setReferrerPatients([]);
+        return;
+      }
+
+      try {
+        setLoadingRelations(true);
+        
+        // Load companies
+        const companiesResponse = await fetch(`https://localhost:8000/api/referrer-companies/?referrer=${selectedReferrer.id}`, {
+          credentials: 'include',
+        });
+        if (companiesResponse.ok) {
+          const companiesData = await companiesResponse.json();
+          const companiesList = companiesData.results || companiesData;
+          setReferrerCompanies(companiesList);
+        }
+
+        // Load patients
+        const patientsResponse = await fetch(`https://localhost:8000/api/patient-referrers/?referrer=${selectedReferrer.id}&status=ACTIVE`, {
+          credentials: 'include',
+        });
+        if (patientsResponse.ok) {
+          const patientsData = await patientsResponse.json();
+          const patientsList = patientsData.results || patientsData;
+          setReferrerPatients(patientsList);
+        }
+      } catch (err) {
+        console.error('Error loading referrer relations:', err);
+      } finally {
+        setLoadingRelations(false);
+      }
+    };
+
+    loadReferrerRelations();
+  }, [selectedReferrer]);
+
   // Filter referrers
   const filteredReferrers = referrers.filter((referrer) => {
     const matchesSearch = referrer.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,6 +177,23 @@ export default function ReferrersPage() {
     const matchesSpecialty = filterSpecialty === 'all' || referrer.specialty === filterSpecialty;
     return matchesSearch && matchesSpecialty;
   });
+
+  // Format company type for display
+  const formatCompanyType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'MEDICAL_PRACTICE': 'Medical Practice',
+      'NDIS_PROVIDER': 'NDIS Provider',
+      'OTHER': 'Other',
+    };
+    return typeMap[type] || type;
+  };
+
+  // Format date
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   if (loading) {
     return (
@@ -324,6 +403,107 @@ export default function ReferrersPage() {
                         </Group>
                       </Paper>
                     )}
+
+                    {/* Companies/Practices */}
+                    <Paper p="xl" shadow="xs">
+                      <Group justify="space-between" align="center" mb="md">
+                        <Text size="lg" fw={600}>Companies & Practices</Text>
+                        <Badge size="lg" variant="light">
+                          {referrerCompanies.length}
+                        </Badge>
+                      </Group>
+                      {loadingRelations ? (
+                        <Center p="xl">
+                          <Loader size="sm" />
+                        </Center>
+                      ) : referrerCompanies.length > 0 ? (
+                        <Stack gap="md">
+                          {referrerCompanies.map((rc) => (
+                            <Paper key={rc.id} p="md" withBorder>
+                              <Group justify="space-between" align="flex-start">
+                                <Stack gap={4}>
+                                  <Group gap="sm">
+                                    <IconBuilding size={20} color={isDark ? '#909296' : '#495057'} />
+                                    <Text size="md" fw={500}>
+                                      {rc.company_name}
+                                    </Text>
+                                  </Group>
+                                  <Badge size="sm" variant="light" ml={28}>
+                                    {formatCompanyType(rc.company_type)}
+                                  </Badge>
+                                  {rc.position && (
+                                    <Text size="sm" c="dimmed" ml={28}>
+                                      {rc.position}
+                                    </Text>
+                                  )}
+                                </Stack>
+                                {rc.is_primary && (
+                                  <Badge size="sm" color="blue">
+                                    Primary
+                                  </Badge>
+                                )}
+                              </Group>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Text size="sm" c="dimmed" ta="center" py="xl">
+                          No companies associated with this referrer
+                        </Text>
+                      )}
+                    </Paper>
+
+                    {/* Referred Patients */}
+                    <Paper p="xl" shadow="xs">
+                      <Group justify="space-between" align="center" mb="md">
+                        <Text size="lg" fw={600}>Referred Patients</Text>
+                        <Badge size="lg" variant="light">
+                          {referrerPatients.length}
+                        </Badge>
+                      </Group>
+                      {loadingRelations ? (
+                        <Center p="xl">
+                          <Loader size="sm" />
+                        </Center>
+                      ) : referrerPatients.length > 0 ? (
+                        <Stack gap="md">
+                          {referrerPatients.slice(0, 10).map((pr) => (
+                            <Paper key={pr.id} p="md" withBorder>
+                              <Stack gap={4}>
+                                <Group gap="sm">
+                                  <IconUsers size={20} color={isDark ? '#909296' : '#495057'} />
+                                  <Text size="md" fw={500}>
+                                    {pr.patient_name}
+                                  </Text>
+                                </Group>
+                                {pr.referral_date && (
+                                  <Text size="sm" c="dimmed" ml={28}>
+                                    Referred: {formatDate(pr.referral_date)}
+                                  </Text>
+                                )}
+                                {pr.referral_reason && (
+                                  <Text size="sm" c="dimmed" ml={28} lineClamp={2}>
+                                    {pr.referral_reason}
+                                  </Text>
+                                )}
+                                <Badge size="sm" variant="light" ml={28}>
+                                  {pr.status}
+                                </Badge>
+                              </Stack>
+                            </Paper>
+                          ))}
+                          {referrerPatients.length > 10 && (
+                            <Text size="sm" c="dimmed" ta="center" mt="xs">
+                              Showing 10 of {referrerPatients.length} patients
+                            </Text>
+                          )}
+                        </Stack>
+                      ) : (
+                        <Text size="sm" c="dimmed" ta="center" py="xl">
+                          No active referrals from this referrer
+                        </Text>
+                      )}
+                    </Paper>
                   </Stack>
                 ) : (
                   <Center style={{ height: '50vh' }}>

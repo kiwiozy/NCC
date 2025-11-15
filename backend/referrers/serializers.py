@@ -51,6 +51,7 @@ class PatientReferrerSerializer(serializers.ModelSerializer):
     Serializer for PatientReferrer join table
     """
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    patient_id = serializers.UUIDField(source='patient.id', read_only=True)
     referrer_name = serializers.CharField(source='referrer.get_full_name', read_only=True)
     
     class Meta:
@@ -58,6 +59,7 @@ class PatientReferrerSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'patient',
+            'patient_id',
             'patient_name',
             'referrer',
             'referrer_name',
@@ -67,7 +69,7 @@ class PatientReferrerSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'referrer_name']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'patient_id', 'patient_name', 'referrer_name']
 
 
 class ReferrerCompanySerializer(serializers.ModelSerializer):
@@ -75,7 +77,10 @@ class ReferrerCompanySerializer(serializers.ModelSerializer):
     Serializer for ReferrerCompany join table
     """
     referrer_name = serializers.CharField(source='referrer.get_full_name', read_only=True)
+    referrer_specialty = serializers.CharField(source='referrer.specialty.name', read_only=True)
+    company_id = serializers.UUIDField(source='company.id', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
+    company_type = serializers.CharField(source='company.company_type', read_only=True)
     
     class Meta:
         model = ReferrerCompany
@@ -83,12 +88,15 @@ class ReferrerCompanySerializer(serializers.ModelSerializer):
             'id',
             'referrer',
             'referrer_name',
+            'referrer_specialty',
             'company',
+            'company_id',
             'company_name',
+            'company_type',
             'position',
             'is_primary',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'referrer_name', 'company_name']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'referrer_name', 'referrer_specialty', 'company_id', 'company_name', 'company_type']
 

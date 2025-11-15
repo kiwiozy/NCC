@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem } from '@mantine/core';
-import { IconBuilding, IconPhone, IconMail, IconMapPin } from '@tabler/icons-react';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider } from '@mantine/core';
+import { IconBuilding, IconPhone, IconMail, IconMapPin, IconStethoscope } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
+
+interface ReferrerCompany {
+  id: string;
+  referrer: {
+    id: string;
+    full_name: string;
+    specialty_name: string;
+  };
+  position: string;
+  is_primary: boolean;
+}
 
 interface Company {
   id: string;
@@ -37,7 +48,9 @@ export default function CompaniesPage() {
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [companyReferrers, setCompanyReferrers] = useState<ReferrerCompany[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingReferrers, setLoadingReferrers] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
@@ -74,6 +87,34 @@ export default function CompaniesPage() {
 
     loadCompanies();
   }, [selectedId]);
+
+  // Load referrers for selected company
+  useEffect(() => {
+    const loadCompanyReferrers = async () => {
+      if (!selectedCompany) {
+        setCompanyReferrers([]);
+        return;
+      }
+
+      try {
+        setLoadingReferrers(true);
+        const response = await fetch(`https://localhost:8000/api/referrer-companies/?company=${selectedCompany.id}`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const referrersList = data.results || data;
+          setCompanyReferrers(referrersList);
+        }
+      } catch (err) {
+        console.error('Error loading company referrers:', err);
+      } finally {
+        setLoadingReferrers(false);
+      }
+    };
+
+    loadCompanyReferrers();
+  }, [selectedCompany]);
 
   // Filter companies
   const filteredCompanies = companies.filter((company) => {
@@ -286,6 +327,57 @@ export default function CompaniesPage() {
                         </Group>
                       </Paper>
                     )}
+
+                    {/* Referrers at this Company */}
+                    <Paper p="xl" shadow="xs">
+                      <Group justify="space-between" align="center" mb="md">
+                        <Text size="lg" fw={600}>Referrers at this Practice</Text>
+                        <Badge size="lg" variant="light">
+                          {companyReferrers.length}
+                        </Badge>
+                      </Group>
+                      {loadingReferrers ? (
+                        <Center p="xl">
+                          <Loader size="sm" />
+                        </Center>
+                      ) : companyReferrers.length > 0 ? (
+                        <Stack gap="md">
+                          {companyReferrers.map((rc) => (
+                            <Paper key={rc.id} p="md" withBorder>
+                              <Group justify="space-between" align="flex-start">
+                                <Stack gap={4}>
+                                  <Group gap="sm">
+                                    <IconStethoscope size={20} color={isDark ? '#909296' : '#495057'} />
+                                    <Text size="md" fw={500}>
+                                      {rc.referrer.full_name}
+                                    </Text>
+                                  </Group>
+                                  {rc.referrer.specialty_name && (
+                                    <Badge size="sm" variant="light" ml={28}>
+                                      {rc.referrer.specialty_name}
+                                    </Badge>
+                                  )}
+                                  {rc.position && (
+                                    <Text size="sm" c="dimmed" ml={28}>
+                                      {rc.position}
+                                    </Text>
+                                  )}
+                                </Stack>
+                                {rc.is_primary && (
+                                  <Badge size="sm" color="blue">
+                                    Primary Practice
+                                  </Badge>
+                                )}
+                              </Group>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Text size="sm" c="dimmed" ta="center" py="xl">
+                          No referrers associated with this company
+                        </Text>
+                      )}
+                    </Paper>
                   </Stack>
                 ) : (
                   <Center style={{ height: '50vh' }}>
