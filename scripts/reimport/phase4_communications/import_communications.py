@@ -131,7 +131,8 @@ def import_communications(excel_file: str = "Coms.xlsx", dry_run: bool = False) 
                 })
         
         elif comm_type == 'Email':
-            email = row_data.get('Email default')
+            # For Email type, the email address is in 'ph' column, NOT 'Email default'
+            email = row_data.get('ph') or row_data.get('Email default')
             if email:
                 patient_comms[patient_id]['emails'].append({
                     'address': str(email).strip(),
