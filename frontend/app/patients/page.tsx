@@ -441,6 +441,10 @@ export default function ContactsPage() {
   // Coordinator list dialog state
   const [coordinatorListDialogOpened, setCoordinatorListDialogOpened] = useState(false);
   
+  // Delete coordinator confirmation dialog
+  const [deleteCoordinatorOpened, setDeleteCoordinatorOpened] = useState(false);
+  const [coordinatorToDelete, setCoordinatorToDelete] = useState<{name: string, date: string} | null>(null);
+  
   // Communication dialog state
   const [communicationDialogOpened, setCommunicationDialogOpened] = useState(false);
   const [communicationType, setCommunicationType] = useState<string>('');
@@ -2472,68 +2476,9 @@ export default function ContactsPage() {
                           color="red"
                           size="sm"
                           style={{ display: 'none' }}
-                          onClick={async () => {
-                            if (!selectedContact) return;
-                            
-                            if (!confirm(`Remove ${coordinator.name} as ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}?`)) {
-                              return;
-                            }
-                            
-                            try {
-                              // Find the PatientReferrer ID from the API
-                              const response = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
-                                credentials: 'include',
-                              });
-                              
-                              if (!response.ok) throw new Error('Failed to fetch patient-referrer relationships');
-                              
-                              const data = await response.json();
-                              const relationships = data.results || data;
-                              
-                              // Find the relationship to delete by matching name and date
-                              const toDelete = relationships.find((pr: any) => 
-                                pr.referrer_name === coordinator.name && 
-                                pr.referral_date === coordinator.date.split('/').reverse().join('-')
-                              );
-                              
-                              if (!toDelete) {
-                                throw new Error('Relationship not found');
-                              }
-                              
-                              // Delete the relationship
-                              const deleteResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toDelete.id}/`, {
-                                method: 'DELETE',
-                                credentials: 'include',
-                              });
-                              
-                              if (!deleteResponse.ok) throw new Error('Failed to delete relationship');
-                              
-                              // Update local state - remove from coordinators array
-                              const updatedCoordinators = getCoordinators(selectedContact).filter(
-                                c => !(c.name === coordinator.name && c.date === coordinator.date)
-                              );
-                              
-                              setSelectedContact({
-                                ...selectedContact,
-                                coordinators: updatedCoordinators.length > 0 ? updatedCoordinators : undefined,
-                                coordinator: updatedCoordinators.length > 0 ? updatedCoordinators[0] : undefined,
-                              });
-                              
-                              // Update in allContacts too
-                              setAllContacts(prev => prev.map(c => 
-                                c.id === selectedContact.id 
-                                  ? {
-                                      ...c,
-                                      coordinators: updatedCoordinators.length > 0 ? updatedCoordinators : undefined,
-                                      coordinator: updatedCoordinators.length > 0 ? updatedCoordinators[0] : undefined,
-                                    }
-                                  : c
-                              ));
-                              
-                            } catch (error) {
-                              console.error('Error deleting coordinator/referrer:', error);
-                              alert(`Failed to delete ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                            }
+                          onClick={() => {
+                            setCoordinatorToDelete(coordinator);
+                            setDeleteCoordinatorOpened(true);
                           }}
                           title={`Remove ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
                         >
@@ -2546,6 +2491,104 @@ export default function ContactsPage() {
               </ScrollArea>
             );
           })()}
+        </Stack>
+      </Modal>
+
+      {/* Delete Coordinator/Referrer Confirmation Dialog */}
+      <Modal
+        opened={deleteCoordinatorOpened}
+        onClose={() => {
+          setDeleteCoordinatorOpened(false);
+          setCoordinatorToDelete(null);
+        }}
+        title="Confirm Removal"
+        size="sm"
+        centered
+      >
+        <Stack gap="lg">
+          <Text>
+            Remove <strong>{coordinatorToDelete?.name}</strong> as {isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}?
+          </Text>
+          
+          <Group justify="flex-end" gap="sm">
+            <Button
+              variant="default"
+              onClick={() => {
+                setDeleteCoordinatorOpened(false);
+                setCoordinatorToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              onClick={async () => {
+                if (!selectedContact || !coordinatorToDelete) return;
+                
+                try {
+                  // Find the PatientReferrer ID from the API
+                  const response = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
+                    credentials: 'include',
+                  });
+                  
+                  if (!response.ok) throw new Error('Failed to fetch patient-referrer relationships');
+                  
+                  const data = await response.json();
+                  const relationships = data.results || data;
+                  
+                  // Find the relationship to delete by matching name and date
+                  const toDelete = relationships.find((pr: any) => 
+                    pr.referrer_name === coordinatorToDelete.name && 
+                    pr.referral_date === coordinatorToDelete.date.split('/').reverse().join('-')
+                  );
+                  
+                  if (!toDelete) {
+                    throw new Error('Relationship not found');
+                  }
+                  
+                  // Delete the relationship
+                  const deleteResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toDelete.id}/`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                  });
+                  
+                  if (!deleteResponse.ok) throw new Error('Failed to delete relationship');
+                  
+                  // Update local state - remove from coordinators array
+                  const updatedCoordinators = getCoordinators(selectedContact).filter(
+                    c => !(c.name === coordinatorToDelete.name && c.date === coordinatorToDelete.date)
+                  );
+                  
+                  setSelectedContact({
+                    ...selectedContact,
+                    coordinators: updatedCoordinators.length > 0 ? updatedCoordinators : undefined,
+                    coordinator: updatedCoordinators.length > 0 ? updatedCoordinators[0] : undefined,
+                  });
+                  
+                  // Update in allContacts too
+                  setAllContacts(prev => prev.map(c => 
+                    c.id === selectedContact.id 
+                      ? {
+                          ...c,
+                          coordinators: updatedCoordinators.length > 0 ? updatedCoordinators : undefined,
+                          coordinator: updatedCoordinators.length > 0 ? updatedCoordinators[0] : undefined,
+                        }
+                      : c
+                  ));
+                  
+                  // Close dialog
+                  setDeleteCoordinatorOpened(false);
+                  setCoordinatorToDelete(null);
+                  
+                } catch (error) {
+                  console.error('Error deleting coordinator/referrer:', error);
+                  alert(`Failed to delete ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          </Group>
         </Stack>
       </Modal>
 
