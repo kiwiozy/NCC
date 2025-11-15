@@ -73,7 +73,7 @@ class PatientSerializer(serializers.ModelSerializer):
             patient_referrers = PatientReferrer.objects.filter(
                 patient=obj,
                 status='ACTIVE'
-            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date')
+            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date', '-created_at')
             
             return [{
                 'id': str(pr.id),
@@ -148,7 +148,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             patient_referrers = PatientReferrer.objects.filter(
                 patient=obj,
                 status='ACTIVE'
-            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date')
+            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date', '-created_at')
             
             return [{
                 'id': str(pr.id),
