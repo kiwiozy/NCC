@@ -2531,8 +2531,10 @@ export default function ContactsPage() {
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
                             
-                            // Close the dialog AFTER successful update
-                            setCoordinatorListDialogOpened(false);
+                            // Wait a moment for React to re-render, then close dialog
+                            setTimeout(() => {
+                              setCoordinatorListDialogOpened(false);
+                            }, 100);
                           }
                           
                         } catch (error) {
