@@ -2531,6 +2531,7 @@ export default function ContactsPage() {
                           if (patientResponse.ok) {
                             const updatedPatient = await patientResponse.json();
                             console.log('   Raw patient data from API:', updatedPatient.referrers);
+                            console.log('   Raw referral dates:', updatedPatient.referrers?.map((r: any) => ({name: r.name, date: r.referral_date})));
                             
                             const transformedPatient = transformPatientToContact(updatedPatient);
                             console.log('   Transformed coordinators:', getCoordinators(transformedPatient));
