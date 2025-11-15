@@ -134,6 +134,28 @@ class ReimportOrchestrator:
                 'stop_on_error': True,
             },
             {
+                'name': 'companies',
+                'number': 9,
+                'description': 'Import Companies from Excel',
+                'scripts': [
+                    'phase9_companies/import_companies.py',  # NEW: Import companies
+                ],
+                'required': False,  # Non-blocking
+                'stop_on_error': False,
+            },
+            {
+                'name': 'referrers',
+                'number': 10,
+                'description': 'Import Referrers and Relationships',
+                'scripts': [
+                    'phase10_referrers/import_referrers.py',  # Import referrers
+                    'phase10_referrers/import_patient_referrers.py',  # Patient-Referrer relationships
+                    'phase10_referrers/import_referrer_companies.py',  # Referrer-Company relationships
+                ],
+                'required': False,  # Non-blocking
+                'stop_on_error': False,
+            },
+            {
                 'name': 'validation-post',
                 'number': 8,
                 'description': 'Post-Import Validation',
