@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider, Box } from '@mantine/core';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider, Box } from '@mantine/core';book 
 import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding, IconUsers } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
@@ -497,105 +497,247 @@ export default function ReferrersPage() {
                     )}
 
                     {/* Companies/Practices */}
-                    <Paper p="xl" shadow="xs">
-                      <Group justify="space-between" align="center" mb="md">
-                        <Text size="lg" fw={600}>Companies & Practices</Text>
-                        <Badge size="lg" variant="light">
-                          {referrerCompanies.length}
-                        </Badge>
-                      </Group>
+                    <Box>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Companies & Practices</Text>
+                      <Divider mb="md" />
                       {loadingRelations ? (
                         <Center p="xl">
                           <Loader size="sm" />
                         </Center>
                       ) : referrerCompanies.length > 0 ? (
-                        <Stack gap="md">
-                          {referrerCompanies.map((rc) => (
-                            <Paper key={rc.id} p="md" withBorder>
-                              <Group justify="space-between" align="flex-start">
-                                <Stack gap={4}>
-                                  <Group gap="sm">
-                                    <IconBuilding size={20} color={isDark ? '#909296' : '#495057'} />
-                                    <Text size="md" fw={500}>
-                                      {rc.company_name}
-                                    </Text>
-                                  </Group>
-                                  <Badge size="sm" variant="light" ml={28}>
-                                    {formatCompanyType(rc.company_type)}
-                                  </Badge>
-                                  {rc.position && (
-                                    <Text size="sm" c="dimmed" ml={28}>
-                                      {rc.position}
-                                    </Text>
-                                  )}
+                        <Paper p="lg" withBorder>
+                          <Stack gap="md">
+                            {(() => {
+                              const MAX_VISIBLE = 3;
+                              const hasMore = referrerCompanies.length > MAX_VISIBLE;
+                              const remainingCount = referrerCompanies.length - MAX_VISIBLE;
+
+                              return hasMore ? (
+                                <>
+                                  <Stack gap="md">
+                                    {referrerCompanies.slice(0, MAX_VISIBLE).map((rc) => (
+                                      <Group key={rc.id} justify="space-between" align="center">
+                                        <Group gap="sm" style={{ flex: 1 }}>
+                                          <Box style={{ minWidth: rem(100) }}>
+                                            <Text size="sm" c="dimmed">Company</Text>
+                                            <Text size="xs" c="dimmed">{formatCompanyType(rc.company_type)}</Text>
+                                          </Box>
+                                          <Stack gap={4}>
+                                            <Text size="md" fw={600}>
+                                              {rc.company_name}
+                                            </Text>
+                                            {rc.position && (
+                                              <Text size="sm" c="dimmed">
+                                                {rc.position}
+                                              </Text>
+                                            )}
+                                          </Stack>
+                                        </Group>
+                                        {rc.is_primary && (
+                                          <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                            Primary
+                                          </Badge>
+                                        )}
+                                      </Group>
+                                    ))}
+                                  </Stack>
+                                  <div
+                                    style={{ 
+                                      position: 'relative',
+                                      pointerEvents: 'none'
+                                    }}
+                                    onWheel={(e) => e.stopPropagation()}
+                                    onTouchMove={(e) => e.stopPropagation()}
+                                  >
+                                    <ScrollArea
+                                      h={152}
+                                      offsetScrollbars
+                                      style={{ pointerEvents: 'auto' }}
+                                    >
+                                      <Stack gap="md">
+                                        {referrerCompanies.slice(MAX_VISIBLE).map((rc) => (
+                                          <Group key={rc.id} justify="space-between" align="center">
+                                            <Group gap="sm" style={{ flex: 1 }}>
+                                              <Box style={{ minWidth: rem(100) }}>
+                                                <Text size="sm" c="dimmed">Company</Text>
+                                                <Text size="xs" c="dimmed">{formatCompanyType(rc.company_type)}</Text>
+                                              </Box>
+                                              <Stack gap={4}>
+                                                <Text size="md" fw={600}>
+                                                  {rc.company_name}
+                                                </Text>
+                                                {rc.position && (
+                                                  <Text size="sm" c="dimmed">
+                                                    {rc.position}
+                                                  </Text>
+                                                )}
+                                              </Stack>
+                                            </Group>
+                                            {rc.is_primary && (
+                                              <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                                Primary
+                                              </Badge>
+                                            )}
+                                          </Group>
+                                        ))}
+                                      </Stack>
+                                    </ScrollArea>
+                                  </div>
+                                  <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
+                                    Scroll for {remainingCount} more...
+                                  </Text>
+                                </>
+                              ) : (
+                                <Stack gap="md">
+                                  {referrerCompanies.map((rc) => (
+                                    <Group key={rc.id} justify="space-between" align="center">
+                                      <Group gap="sm" style={{ flex: 1 }}>
+                                        <Box style={{ minWidth: rem(100) }}>
+                                          <Text size="sm" c="dimmed">Company</Text>
+                                          <Text size="xs" c="dimmed">{formatCompanyType(rc.company_type)}</Text>
+                                        </Box>
+                                        <Stack gap={4}>
+                                          <Text size="md" fw={600}>
+                                            {rc.company_name}
+                                          </Text>
+                                          {rc.position && (
+                                            <Text size="sm" c="dimmed">
+                                              {rc.position}
+                                            </Text>
+                                          )}
+                                        </Stack>
+                                      </Group>
+                                      {rc.is_primary && (
+                                        <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                          Primary
+                                        </Badge>
+                                      )}
+                                    </Group>
+                                  ))}
                                 </Stack>
-                                {rc.is_primary && (
-                                  <Badge size="sm" color="blue">
-                                    Primary
-                                  </Badge>
-                                )}
-                              </Group>
-                            </Paper>
-                          ))}
-                        </Stack>
+                              );
+                            })()}
+                          </Stack>
+                        </Paper>
                       ) : (
-                        <Text size="sm" c="dimmed" ta="center" py="xl">
-                          No companies associated with this referrer
-                        </Text>
+                        <Paper p="lg" withBorder>
+                          <Text size="sm" c="dimmed" ta="center" py="xl">
+                            No companies associated with this referrer
+                          </Text>
+                        </Paper>
                       )}
-                    </Paper>
+                    </Box>
 
                     {/* Referred Patients */}
-                    <Paper p="xl" shadow="xs">
-                      <Group justify="space-between" align="center" mb="md">
-                        <Text size="lg" fw={600}>Referred Patients</Text>
-                        <Badge size="lg" variant="light">
-                          {referrerPatients.length}
-                        </Badge>
-                      </Group>
+                    <Box>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Referred Patients</Text>
+                      <Divider mb="md" />
                       {loadingRelations ? (
                         <Center p="xl">
                           <Loader size="sm" />
                         </Center>
                       ) : referrerPatients.length > 0 ? (
-                        <Stack gap="md">
-                          {referrerPatients.slice(0, 10).map((pr) => (
-                            <Paper key={pr.id} p="md" withBorder>
-                              <Stack gap={4}>
-                                <Group gap="sm">
-                                  <IconUsers size={20} color={isDark ? '#909296' : '#495057'} />
-                                  <Text size="md" fw={500}>
-                                    {pr.patient_name}
+                        <Paper p="lg" withBorder>
+                          <Stack gap="md">
+                            {(() => {
+                              const MAX_VISIBLE = 3;
+                              const hasMore = referrerPatients.length > MAX_VISIBLE;
+                              const remainingCount = referrerPatients.length - MAX_VISIBLE;
+
+                              return hasMore ? (
+                                <>
+                                  <Stack gap="md">
+                                    {referrerPatients.slice(0, MAX_VISIBLE).map((pr) => (
+                                      <Group key={pr.id} justify="space-between" align="center">
+                                        <Group gap="sm" style={{ flex: 1 }}>
+                                          <Box style={{ minWidth: rem(100) }}>
+                                            <Text size="sm" c="dimmed">Patient</Text>
+                                            <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
+                                          </Box>
+                                          <Text size="md" fw={600}>
+                                            {pr.patient_name}
+                                          </Text>
+                                        </Group>
+                                        {pr.is_primary && (
+                                          <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                            Primary
+                                          </Badge>
+                                        )}
+                                      </Group>
+                                    ))}
+                                  </Stack>
+                                  <div
+                                    style={{ 
+                                      position: 'relative',
+                                      pointerEvents: 'none'
+                                    }}
+                                    onWheel={(e) => e.stopPropagation()}
+                                    onTouchMove={(e) => e.stopPropagation()}
+                                  >
+                                    <ScrollArea
+                                      h={152}
+                                      offsetScrollbars
+                                      style={{ pointerEvents: 'auto' }}
+                                    >
+                                      <Stack gap="md">
+                                        {referrerPatients.slice(MAX_VISIBLE).map((pr) => (
+                                          <Group key={pr.id} justify="space-between" align="center">
+                                            <Group gap="sm" style={{ flex: 1 }}>
+                                              <Box style={{ minWidth: rem(100) }}>
+                                                <Text size="sm" c="dimmed">Patient</Text>
+                                                <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
+                                              </Box>
+                                              <Text size="md" fw={600}>
+                                                {pr.patient_name}
+                                              </Text>
+                                            </Group>
+                                            {pr.is_primary && (
+                                              <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                                Primary
+                                              </Badge>
+                                            )}
+                                          </Group>
+                                        ))}
+                                      </Stack>
+                                    </ScrollArea>
+                                  </div>
+                                  <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
+                                    Scroll for {remainingCount} more...
                                   </Text>
-                                </Group>
-                                {pr.referral_date && (
-                                  <Text size="sm" c="dimmed" ml={28}>
-                                    Referred: {formatDate(pr.referral_date)}
-                                  </Text>
-                                )}
-                                {pr.referral_reason && (
-                                  <Text size="sm" c="dimmed" ml={28} lineClamp={2}>
-                                    {pr.referral_reason}
-                                  </Text>
-                                )}
-                                <Badge size="sm" variant="light" ml={28}>
-                                  {pr.status}
-                                </Badge>
-                              </Stack>
-                            </Paper>
-                          ))}
-                          {referrerPatients.length > 10 && (
-                            <Text size="sm" c="dimmed" ta="center" mt="xs">
-                              Showing 10 of {referrerPatients.length} patients
-                            </Text>
-                          )}
-                        </Stack>
+                                </>
+                              ) : (
+                                <Stack gap="md">
+                                  {referrerPatients.map((pr) => (
+                                    <Group key={pr.id} justify="space-between" align="center">
+                                      <Group gap="sm" style={{ flex: 1 }}>
+                                        <Box style={{ minWidth: rem(100) }}>
+                                          <Text size="sm" c="dimmed">Patient</Text>
+                                          <Text size="xs" c="dimmed">{pr.referral_date ? formatDate(pr.referral_date) : 'No date'}</Text>
+                                        </Box>
+                                        <Text size="md" fw={600}>
+                                          {pr.patient_name}
+                                        </Text>
+                                      </Group>
+                                      {pr.is_primary && (
+                                        <Badge size="sm" color="blue" style={{ marginLeft: rem(40) }}>
+                                          Primary
+                                        </Badge>
+                                      )}
+                                    </Group>
+                                  ))}
+                                </Stack>
+                              );
+                            })()}
+                          </Stack>
+                        </Paper>
                       ) : (
-                        <Text size="sm" c="dimmed" ta="center" py="xl">
-                          No active referrals from this referrer
-                        </Text>
+                        <Paper p="lg" withBorder>
+                          <Text size="sm" c="dimmed" ta="center" py="xl">
+                            No active referrals from this referrer
+                          </Text>
+                        </Paper>
                       )}
-                    </Paper>
+                    </Box>
                   </Stack>
                 ) : (
                   <Center style={{ height: '50vh' }}>
