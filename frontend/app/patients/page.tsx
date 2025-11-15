@@ -2097,40 +2097,6 @@ export default function ContactsPage() {
                     />
                   </Box>
 
-                  {/* FileMaker Metadata */}
-                  {selectedContact.filemaker_metadata && (
-                    <Box>
-                      <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="md">FileMaker Import Info</Text>
-                      <Paper p="sm" withBorder style={{ backgroundColor: 'var(--mantine-color-dark-6)' }}>
-                        <Stack gap="xs">
-                          {selectedContact.filemaker_metadata.filemaker_id && (
-                            <Group gap="xs">
-                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>FileMaker ID:</Text>
-                              <Text size="xs" style={{ fontFamily: 'monospace' }}>{selectedContact.filemaker_metadata.filemaker_id}</Text>
-                            </Group>
-                          )}
-                          {selectedContact.filemaker_metadata.filemaker_clinic && (
-                            <Group gap="xs">
-                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Clinic:</Text>
-                              <Text size="xs">{selectedContact.filemaker_metadata.filemaker_clinic}</Text>
-                            </Group>
-                          )}
-                          {selectedContact.filemaker_metadata.xero_contact_id && (
-                            <Group gap="xs">
-                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Xero Contact ID:</Text>
-                              <Text size="xs" style={{ fontFamily: 'monospace' }}>{selectedContact.filemaker_metadata.xero_contact_id}</Text>
-                            </Group>
-                          )}
-                          {selectedContact.filemaker_metadata.imported_at && (
-                            <Group gap="xs">
-                              <Text size="xs" c="dimmed" style={{ minWidth: '120px' }}>Imported:</Text>
-                              <Text size="xs">{new Date(selectedContact.filemaker_metadata.imported_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}</Text>
-                            </Group>
-                          )}
-                        </Stack>
-                      </Paper>
-                    </Box>
-                  )}
                 </Stack>
               ) : (
                 <Center h={400}>
