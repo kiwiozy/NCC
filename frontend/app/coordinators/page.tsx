@@ -481,9 +481,6 @@ export default function CoordinatorsPage() {
                                       </Stack>
                                     </ScrollArea>
                                   </div>
-                                  <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
-                                    Scroll for {remainingCount} more...
-                                  </Text>
                                 </>
                               ) : (
                                 <Stack gap="md">
@@ -583,9 +580,6 @@ export default function CoordinatorsPage() {
                                       </Stack>
                                     </ScrollArea>
                                   </div>
-                                  <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
-                                    Scroll for {remainingCount} more...
-                                  </Text>
                                 </>
                               ) : (
                                 <Stack gap="md">
@@ -699,9 +693,6 @@ export default function CoordinatorsPage() {
                                       </Stack>
                                     </ScrollArea>
                                   </div>
-                                  <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
-                                    Scroll for {remainingCount} more...
-                                  </Text>
                                 </>
                               ) : (
                                 <Stack gap="md">
