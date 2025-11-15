@@ -385,6 +385,16 @@ const transformPatientToContact = (patient: any): Contact => {
       name: patient.coordinator_name,
       date: formatDateShort(patient.coordinator_date),
     } : undefined,
+    // Load referrers from the API if available
+    coordinators: patient.referrers && Array.isArray(patient.referrers) && patient.referrers.length > 0
+      ? patient.referrers.map((ref: any) => ({
+          name: ref.name,
+          date: formatDateShort(ref.referral_date),
+        }))
+      : (patient.coordinator_name ? [{
+          name: patient.coordinator_name,
+          date: formatDateShort(patient.coordinator_date),
+        }] : undefined),
     planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date), // Legacy
     planDatesArray: patient.plan_dates_json ? (Array.isArray(patient.plan_dates_json) ? patient.plan_dates_json : []) : undefined,
     communication: communication,

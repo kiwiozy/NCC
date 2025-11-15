@@ -12,6 +12,7 @@ class PatientSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     mobile = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+    referrers = serializers.SerializerMethodField()
     
     class Meta:
         model = Patient
@@ -22,9 +23,9 @@ class PatientSerializer(serializers.ModelSerializer):
             'plan_dates_json', 'notes', 'filemaker_metadata', 'contact_json', 'address_json', 'emergency_json',
             'flags_json', 'archived', 'archived_at', 'archived_by',
             'created_at', 'updated_at',
-            'age', 'full_name', 'mobile', 'email'  # computed fields
+            'age', 'full_name', 'mobile', 'email', 'referrers'  # computed fields
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'archived_at', 'age', 'full_name', 'mobile', 'email']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'archived_at', 'age', 'full_name', 'mobile', 'email', 'referrers']
     
     def to_representation(self, instance):
         """Customize serialization to include related object names"""
@@ -64,6 +65,29 @@ class PatientSerializer(serializers.ModelSerializer):
     def get_email(self, obj):
         """Get patient email"""
         return obj.get_email()
+    
+    def get_referrers(self, obj):
+        """Get patient's referrers (PatientReferrer relationships)"""
+        try:
+            from referrers.models import PatientReferrer
+            patient_referrers = PatientReferrer.objects.filter(
+                patient=obj,
+                status='ACTIVE'
+            ).select_related('referrer', 'referrer__specialty').order_by('-referral_date')
+            
+            return [{
+                'id': str(pr.id),
+                'referrer_id': str(pr.referrer.id),
+                'name': pr.referrer.get_full_name(),
+                'specialty': pr.referrer.specialty.name if pr.referrer.specialty else None,
+                'practice_name': pr.referrer.practice_name,
+                'referral_date': pr.referral_date.strftime('%Y-%m-%d') if pr.referral_date else None,
+                'referral_reason': pr.referral_reason,
+                'status': pr.status,
+            } for pr in patient_referrers]
+        except Exception as e:
+            # If referrers app not available or error, return empty list
+            return []
 
 
 class PatientListSerializer(serializers.ModelSerializer):
