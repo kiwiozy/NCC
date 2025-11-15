@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, rem, ActionIcon } from '@mantine/core';
-import { IconSearch, IconBuilding, IconPhone, IconMail, IconMapPin } from '@tabler/icons-react';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem } from '@mantine/core';
+import { IconBuilding, IconPhone, IconMail, IconMapPin } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
+import ContactHeader from '../components/ContactHeader';
 
 interface Company {
   id: string;
@@ -39,6 +40,7 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Load companies
   useEffect(() => {
@@ -104,33 +106,20 @@ export default function CompaniesPage() {
   return (
     <Navigation>
       <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Paper 
-          shadow="xs" 
-          p="md" 
-          style={{ 
-            borderRadius: 0,
-            backgroundColor: isDark ? '#25262b' : '#fff',
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#e9ecef'}`,
-          }}
-        >
-          <Group justify="space-between" align="center">
-            <Group gap="md">
-              <IconBuilding size={32} color={isDark ? '#fff' : '#228be6'} />
-              <div>
-                <Text size="xl" fw={700} style={{ color: isDark ? '#fff' : '#000' }}>
-                  Companies
-                </Text>
-                <Text size="sm" c="dimmed">
-                  {filteredCompanies.length} {filteredCompanies.length === 1 ? 'company' : 'companies'}
-                </Text>
-              </div>
-            </Group>
-          </Group>
-        </Paper>
+        {/* Header with Search, Filter, Archive, Add, Delete */}
+        <ContactHeader
+          title="Companies"
+          onSearch={(term) => setSearchTerm(term)}
+          onAddNew={() => console.log('Add new company')}
+          onArchive={() => setShowArchived(!showArchived)}
+          showArchived={showArchived}
+          contactCount={companies.length}
+          filteredCount={filteredCompanies.length}
+          showFilters={false}
+        />
 
         {/* Main content */}
-        <Grid gutter={0} style={{ height: 'calc(100vh - 140px)', display: 'flex', overflow: 'hidden' }}>
+        <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex', overflow: 'hidden' }}>
           {/* Left Panel - Company List */}
           <Grid.Col span={3} style={{
             height: '100%',
@@ -140,38 +129,6 @@ export default function CompaniesPage() {
             borderRight: `1px solid ${isDark ? '#373A40' : '#e9ecef'}`,
             backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
           }}>
-            {/* Search and Filter */}
-            <Stack gap="xs" p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#e9ecef'}` }}>
-              <TextInput
-                placeholder="Search companies..."
-                leftSection={<IconSearch size={16} />}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.currentTarget.value)}
-                rightSection={
-                  searchTerm && (
-                    <ActionIcon
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => setSearchTerm('')}
-                    >
-                      ×
-                    </ActionIcon>
-                  )
-                }
-              />
-              <Select
-                placeholder="Filter by type"
-                data={[
-                  { value: 'all', label: 'All Types' },
-                  { value: 'MEDICAL_PRACTICE', label: 'Medical Practice' },
-                  { value: 'NDIS_PROVIDER', label: 'NDIS Provider' },
-                  { value: 'OTHER', label: 'Other' },
-                ]}
-                value={filterType}
-                onChange={(value) => setFilterType(value || 'all')}
-              />
-            </Stack>
-
             {/* Company List */}
             <ScrollArea
               style={{ flex: 1 }}

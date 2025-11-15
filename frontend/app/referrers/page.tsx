@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, TextInput, Select, rem, ActionIcon } from '@mantine/core';
-import { IconSearch, IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding } from '@tabler/icons-react';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem } from '@mantine/core';
+import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
+import ContactHeader from '../components/ContactHeader';
 
 interface Referrer {
   id: string;
@@ -51,6 +52,7 @@ export default function ReferrersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState<string>('all');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Load specialties
   useEffect(() => {
@@ -127,33 +129,20 @@ export default function ReferrersPage() {
   return (
     <Navigation>
       <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Paper 
-          shadow="xs" 
-          p="md" 
-          style={{ 
-            borderRadius: 0,
-            backgroundColor: isDark ? '#25262b' : '#fff',
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#e9ecef'}`,
-          }}
-        >
-          <Group justify="space-between" align="center">
-            <Group gap="md">
-              <IconStethoscope size={32} color={isDark ? '#fff' : '#228be6'} />
-              <div>
-                <Text size="xl" fw={700} style={{ color: isDark ? '#fff' : '#000' }}>
-                  Referrers
-                </Text>
-                <Text size="sm" c="dimmed">
-                  {filteredReferrers.length} {filteredReferrers.length === 1 ? 'referrer' : 'referrers'}
-                </Text>
-              </div>
-            </Group>
-          </Group>
-        </Paper>
+        {/* Header with Search, Filter, Archive, Add, Delete */}
+        <ContactHeader
+          title="Referrers"
+          onSearch={(term) => setSearchTerm(term)}
+          onAddNew={() => console.log('Add new referrer')}
+          onArchive={() => setShowArchived(!showArchived)}
+          showArchived={showArchived}
+          contactCount={referrers.length}
+          filteredCount={filteredReferrers.length}
+          showFilters={false}
+        />
 
         {/* Main content */}
-        <Grid gutter={0} style={{ height: 'calc(100vh - 140px)', display: 'flex', overflow: 'hidden' }}>
+        <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex', overflow: 'hidden' }}>
           {/* Left Panel - Referrer List */}
           <Grid.Col span={3} style={{
             height: '100%',
@@ -163,36 +152,6 @@ export default function ReferrersPage() {
             borderRight: `1px solid ${isDark ? '#373A40' : '#e9ecef'}`,
             backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
           }}>
-            {/* Search and Filter */}
-            <Stack gap="xs" p="md" style={{ borderBottom: `1px solid ${isDark ? '#373A40' : '#e9ecef'}` }}>
-              <TextInput
-                placeholder="Search referrers..."
-                leftSection={<IconSearch size={16} />}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.currentTarget.value)}
-                rightSection={
-                  searchTerm && (
-                    <ActionIcon
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => setSearchTerm('')}
-                    >
-                      ×
-                    </ActionIcon>
-                  )
-                }
-              />
-              <Select
-                placeholder="Filter by specialty"
-                data={[
-                  { value: 'all', label: 'All Specialties' },
-                  ...specialties.map(s => ({ value: s.id, label: s.name }))
-                ]}
-                value={filterSpecialty}
-                onChange={(value) => setFilterSpecialty(value || 'all')}
-              />
-            </Stack>
-
             {/* Referrer List */}
             <ScrollArea
               style={{ flex: 1 }}
