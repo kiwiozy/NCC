@@ -641,12 +641,47 @@ export default function ContactsPage() {
         
         console.log('🔍 Loading patients with filters:', cacheFilters);
         
+        // Check if we're navigating to a specific patient (e.g., from referrer page)
+        const patientId = searchParams?.get('id');
+        
         // Try to load from cache first
         const cachedData = await PatientCache.get(cacheFilters);
         
-        if (cachedData) {
-          // Cache hit! Use cached data immediately
+        if (cachedData && patientId) {
+          // We have cache AND a specific patient ID - use cache, skip API call entirely!
+          console.log(`⚡ Using cached data to select patient ${patientId}`);
           const transformed = cachedData.map((patient: any) => transformPatientToContact(patient));
+          setAllContacts(transformed);
+          applyFilters(transformed, searchQuery, activeFilters);
+          
+          // Find and select the specific patient
+          const targetPatient = transformed.find((p: Contact) => p.id === patientId);
+          if (targetPatient) {
+            setSelectedContact(targetPatient);
+            console.log(`✅ Selected patient: ${targetPatient.name}`);
+          } else {
+            // Patient not in cache (maybe archived?) - fetch just that one patient
+            console.log(`⚠️ Patient ${patientId} not in cache, fetching individually...`);
+            const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`);
+            if (response.ok) {
+              const patient = await response.json();
+              const transformedPatient = transformPatientToContact(patient);
+              setSelectedContact(transformedPatient);
+              console.log(`✅ Fetched and selected patient: ${transformedPatient.name}`);
+            }
+          }
+          
+          setLoading(false);
+          isLoadingRef.current = false;
+          return; // Early return - no need to load all patients
+        }
+        
+        // Try to load from cache first (no specific patient ID)
+        const cachedDataGeneral = await PatientCache.get(cacheFilters);
+        
+        if (cachedDataGeneral) {
+          // Cache hit! Use cached data immediately
+          const transformed = cachedDataGeneral.map((patient: any) => transformPatientToContact(patient));
           setAllContacts(transformed);
           applyFilters(transformed, searchQuery, activeFilters);
           
