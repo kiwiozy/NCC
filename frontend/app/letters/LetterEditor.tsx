@@ -4,10 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Extension } from '@tiptap/core';
-// TextStyle import - handle both default and named exports
-// @ts-ignore - TextStyle may have different export formats
-import * as TextStyleModule from '@tiptap/extension-text-style';
-const TextStyle = TextStyleModule.default || TextStyleModule.TextStyle || TextStyleModule;
+import TextStyle from '@tiptap/extension-text-style';
 import FontFamily from '@tiptap/extension-font-family';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';

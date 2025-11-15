@@ -1,7 +1,5 @@
 import { Extension } from '@tiptap/core';
-// @ts-ignore - TextStyle may have different export formats
-import * as TextStyleModule from '@tiptap/extension-text-style';
-const TextStyle = TextStyleModule.default || TextStyleModule.TextStyle || TextStyleModule;
+import TextStyle from '@tiptap/extension-text-style';
 
 export interface FontSizeOptions {
   types: string[];
