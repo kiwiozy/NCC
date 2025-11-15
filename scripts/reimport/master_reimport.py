@@ -92,6 +92,16 @@ class ReimportOrchestrator:
                 'stop_on_error': True,
             },
             {
+                'name': 'communications',
+                'number': 4.5,
+                'description': 'Import Communication Data (Phones, Emails, Addresses)',
+                'scripts': [
+                    'phase4_communications/import_communications.py',  # NEW: Import from Coms.xlsx
+                ],
+                'required': False,  # Non-blocking - patients created in Phase 3
+                'stop_on_error': False,
+            },
+            {
                 'name': 'notes',
                 'number': 5,
                 'description': 'Import Notes & SMS',
@@ -102,20 +112,16 @@ class ReimportOrchestrator:
                 'required': False,
                 'stop_on_error': False,
             },
-            # PHASE 6: COMMENTED OUT - S3 reorganization takes 30-60 minutes
-            # Documents already work fine in their current S3 locations
-            # Only needed for "perfect" S3 organization (cosmetic)
-            # Uncomment if you need clean S3 paths for production
-            # {
-            #     'name': 'documents',
-            #     'number': 6,
-            #     'description': 'Re-Link Documents with Clean S3 Paths',
-            #     'scripts': [
-            #         'phase6_documents/relink_documents_clean.py',  # NEW: Clean S3 paths
-            #     ],
-            #     'required': False,  # Non-blocking - some docs may not have patients
-            #     'stop_on_error': False,
-            # },
+            {
+                'name': 'documents',
+                'number': 6,
+                'description': 'Link Documents to Patients (Excel-based)',
+                'scripts': [
+                    'phase6_documents/link_documents_from_excel.py',  # NEW: Fast linking (no S3 operations)
+                ],
+                'required': False,  # Non-blocking - some docs may not have patients
+                'stop_on_error': False,
+            },
             {
                 'name': 'images',
                 'number': 7,
