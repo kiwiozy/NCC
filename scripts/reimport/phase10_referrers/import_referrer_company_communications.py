@@ -140,8 +140,8 @@ def import_referrer_company_communications(excel_file: str = None, dry_run: bool
         stats['total_rows'] += 1
         row_count += 1
 
-        # Get contact ID
-        contact_id_str = row_data.get('id_Contact')
+        # Get contact ID (id.key is the FK to Contact - could be Patient, Referrer, or Company)
+        contact_id_str = row_data.get('id.key')
         if not contact_id_str:
             stats['skipped'] += 1
             continue
@@ -152,12 +152,20 @@ def import_referrer_company_communications(excel_file: str = None, dry_run: bool
             stats['skipped'] += 1
             continue
 
+        # Get communication type and value
+        com_type = row_data.get('type') or ''
+        com_value = str(row_data.get('ph') or '').strip()
+        
+        # Skip if no value
+        if not com_value:
+            stats['skipped'] += 1
+            continue
+
         # Build communication record
         com_record = {
-            'type': row_data.get('Type') or '',
-            'value': row_data.get('ph') or '',  # Phone/Email value
-            'label': row_data.get('label') or '',
-            'is_default': str(row_data.get('default')).lower() == '1' if row_data.get('default') else False,
+            'type': com_type,
+            'value': com_value,
+            'label': row_data.get('Name') or '',  # "Name" field is the label
         }
 
         # Check if this is a referrer
@@ -174,6 +182,7 @@ def import_referrer_company_communications(excel_file: str = None, dry_run: bool
             company_coms[contact_id].append(com_record)
             stats['company_coms'] += 1
         else:
+            # Not a referrer or company (probably a patient - skip)
             stats['skipped'] += 1
 
         # Progress every 100 rows
@@ -214,14 +223,13 @@ def import_referrer_company_communications(excel_file: str = None, dry_run: bool
                             'type': 'mobile' if 'mobile' in com_type else 'phone',
                             'number': value,
                             'label': com['label'] or ('Mobile' if 'mobile' in com_type else 'Phone'),
-                            'is_default': com['is_default']
                         })
                     elif 'email' in com_type:
                         emails.append({
                             'address': value,
                             'label': com['label'] or 'Email',
-                            'is_default': com['is_default']
                         })
+                    # Note: Address types are stored in address_json, not contact_json
 
                 # Update contact_json
                 if phones:
@@ -263,14 +271,13 @@ def import_referrer_company_communications(excel_file: str = None, dry_run: bool
                             'type': 'fax' if 'fax' in com_type else ('mobile' if 'mobile' in com_type else 'phone'),
                             'number': value,
                             'label': com['label'] or ('Fax' if 'fax' in com_type else ('Mobile' if 'mobile' in com_type else 'Phone')),
-                            'is_default': com['is_default']
                         })
                     elif 'email' in com_type:
                         emails.append({
                             'address': value,
                             'label': com['label'] or 'Email',
-                            'is_default': com['is_default']
                         })
+                    # Note: Address types are stored in address_json, not contact_json
 
                 # Update contact_json
                 if phones:
