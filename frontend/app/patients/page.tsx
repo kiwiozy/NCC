@@ -1176,7 +1176,7 @@ export default function ContactsPage() {
           <ScrollArea 
             style={{ 
               flex: 1,
-              height: '100%',
+              maxHeight: '100%',
             }}
             type="scroll"
           >
