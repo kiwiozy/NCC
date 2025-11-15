@@ -15,7 +15,7 @@ import AppointmentsDialog from '../components/dialogs/AppointmentsDialog';
 import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
-import { PatientCache } from '../utils/patientCache';
+import { PatientCacheIDB as PatientCache } from '../utils/patientCacheIDB';
 import dayjs from 'dayjs';
 
 type ContactType = 'patients' | 'referrers' | 'coordinator' | 'ndis-lac' | 'contacts' | 'companies' | 'clinics';
@@ -642,7 +642,7 @@ export default function ContactsPage() {
         console.log('🔍 Loading patients with filters:', cacheFilters);
         
         // Try to load from cache first
-        const cachedData = PatientCache.get(cacheFilters);
+        const cachedData = await PatientCache.get(cacheFilters);
         
         if (cachedData) {
           // Cache hit! Use cached data immediately
@@ -712,7 +712,7 @@ export default function ContactsPage() {
         console.log(`✅ Loaded ${allPatients.length} total patients in ${pageCount} pages`);
         
         // Cache the raw API data before transformation
-        PatientCache.set(allPatients, cacheFilters);
+        await PatientCache.set(allPatients, cacheFilters);
         
         // Transform fresh from API - always use ISO dates from API
         const transformed = allPatients.map((patient: any) => {
