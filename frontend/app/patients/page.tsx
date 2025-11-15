@@ -2071,9 +2071,13 @@ export default function ContactsPage() {
                                     <Stack gap="md">
                                       {sortedElements.slice(0, MAX_VISIBLE)}
                                     </Stack>
+                                    <Divider my="md" />
+                                    <Text size="xs" c="dimmed" ta="center" mb="xs">
+                                      Additional Contacts ({remainingCount} more)
+                                    </Text>
                                     {/* Scrollable area for remaining items */}
-                                    <ScrollArea h={150} mt="md">
-                                      <Stack gap="md">
+                                    <ScrollArea h={150} style={{ border: '1px solid var(--mantine-color-gray-7)' }}>
+                                      <Stack gap="md" p="sm">
                                         {sortedElements.slice(MAX_VISIBLE)}
                                       </Stack>
                                     </ScrollArea>
@@ -2082,11 +2086,6 @@ export default function ContactsPage() {
                                   <Stack gap="md">
                                     {sortedElements}
                                   </Stack>
-                                )}
-                                {hasMore && (
-                                  <Text size="xs" c="dimmed" ta="center" mt="xs">
-                                    Scroll for more... ({remainingCount} more)
-                                  </Text>
                                 )}
                               </>
                             );
