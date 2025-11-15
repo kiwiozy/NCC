@@ -108,7 +108,7 @@ def import_companies(excel_file: str = None, dry_run: bool = False) -> bool:
         try:
             # Extract fields
             filemaker_id = row_data.get('id')
-            name = row_data.get('Company') or ''
+            name = row_data.get('Name') or ''  # Fixed: Column is 'Name', not 'Company'
             abn = row_data.get('ABN') or ''
             company_type = row_data.get('Type') or 'OTHER'
 

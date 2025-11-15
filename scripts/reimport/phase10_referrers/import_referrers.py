@@ -115,9 +115,9 @@ def import_referrers(excel_file: str = None, dry_run: bool = False) -> bool:
         try:
             # Extract fields
             filemaker_id = row_data.get('id')
-            title = row_data.get('Title') or ''
-            first_name = row_data.get('First Name') or ''
-            last_name = row_data.get('Last Name') or ''
+            title = row_data.get('title') or ''  # Fixed: lowercase
+            first_name = row_data.get('nameFirst') or ''  # Fixed: changed from 'First Name'
+            last_name = row_data.get('nameLast') or ''  # Fixed: changed from 'Last Name'
             specialty_name = row_data.get('Specialty') or ''
             practice_name = row_data.get('Practice') or ''
 
