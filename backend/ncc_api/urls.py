@@ -23,6 +23,7 @@ from appointments.views import AppointmentViewSet, EncounterViewSet
 from reminders.views import ReminderViewSet
 from notes.views import NoteViewSet
 from companies.views import CompanyViewSet
+from referrers.views import ReferrerViewSet, SpecialtyViewSet, PatientReferrerViewSet, ReferrerCompanyViewSet
 from . import auth_views
 
 # Create API router
@@ -35,6 +36,10 @@ router.register(r'encounters', EncounterViewSet, basename='encounter')
 router.register(r'reminders', ReminderViewSet, basename='reminder')
 router.register(r'notes', NoteViewSet, basename='note')
 router.register(r'companies', CompanyViewSet, basename='company')
+router.register(r'referrers', ReferrerViewSet, basename='referrer')
+router.register(r'specialties', SpecialtyViewSet, basename='specialty')
+router.register(r'patient-referrers', PatientReferrerViewSet, basename='patient-referrer')
+router.register(r'referrer-companies', ReferrerCompanyViewSet, basename='referrer-company')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

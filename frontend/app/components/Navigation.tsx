@@ -191,7 +191,7 @@ export default function Navigation({ children }: NavigationProps) {
 
   const contactSubItems = [
     { icon: <IconUsers size={subIconSize} stroke={1.5} />, label: 'Patients', href: '/patients?type=patients' },
-    { icon: <IconStethoscope size={subIconSize} stroke={1.5} />, label: 'Referrers', href: '/patients?type=referrers' },
+    { icon: <IconStethoscope size={subIconSize} stroke={1.5} />, label: 'Referrers', href: '/referrers' },
     { icon: <IconUserCircle size={subIconSize} stroke={1.5} />, label: 'Coordinator', href: '/patients?type=coordinator' },
     { icon: <IconDisabled size={subIconSize} stroke={1.5} />, label: 'NDIS LAC', href: '/patients?type=ndis-lac' },
     { icon: <IconHandStop size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/patients?type=contacts' },
