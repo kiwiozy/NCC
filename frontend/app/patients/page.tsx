@@ -261,12 +261,69 @@ const transformPatientToContact = (patient: any): Contact => {
   const clinicColor = patient.clinic?.color || undefined;
   const fundingName = patient.funding_type?.name || '';
 
-  // Extract contact info - handle both old string format and new object format
+  // Extract contact info - handle both old string format and new array format
   const contactJson = patient.contact_json || {};
   
   // Build communication object - preserve the structure from backend
   let communication: any = undefined;
-  if (contactJson.phone || contactJson.mobile || contactJson.email) {
+  
+  // Check if we have the new array format (phones, emails) or old format (phone, mobile, email)
+  const hasNewFormat = contactJson.phones || contactJson.emails;
+  const hasOldFormat = contactJson.phone || contactJson.mobile || contactJson.email;
+  
+  if (hasNewFormat) {
+    // NEW FORMAT: phones and emails are arrays
+    communication = {};
+    
+    // Convert phones array to the format the UI expects
+    if (contactJson.phones && Array.isArray(contactJson.phones)) {
+      const phonesByType: any = {};
+      
+      contactJson.phones.forEach((phoneEntry: any, index: number) => {
+        const label = phoneEntry.label || `Phone ${index + 1}`;
+        const number = phoneEntry.number || '';
+        const type = phoneEntry.type || 'phone'; // 'mobile' or 'phone'
+        
+        // Group by type (mobile vs phone)
+        if (type === 'mobile') {
+          if (!communication.mobile) communication.mobile = {};
+          communication.mobile[label] = {
+            value: number,
+            default: index === 0 // First one is default
+          };
+        } else {
+          if (!communication.phone) communication.phone = {};
+          communication.phone[label] = {
+            value: number,
+            default: index === 0 // First one is default
+          };
+        }
+      });
+    }
+    
+    // Convert emails array to the format the UI expects
+    if (contactJson.emails && Array.isArray(contactJson.emails)) {
+      communication.email = {};
+      contactJson.emails.forEach((emailEntry: any, index: number) => {
+        const label = emailEntry.label || `Email ${index + 1}`;
+        const address = emailEntry.address || '';
+        communication.email[label] = {
+          value: address,
+          default: index === 0 // First one is default
+        };
+      });
+    }
+    
+    // Also check for primary email (backwards compatibility)
+    if (contactJson.email && typeof contactJson.email === 'string') {
+      if (!communication.email) communication.email = {};
+      communication.email['Primary'] = {
+        value: contactJson.email,
+        default: true
+      };
+    }
+  } else if (hasOldFormat) {
+    // OLD FORMAT: phone, mobile, email as strings or objects
     communication = {};
     
     // Handle phone - can be string or object
