@@ -7,6 +7,13 @@
   --foreground: #171717;
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
