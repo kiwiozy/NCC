@@ -25,6 +25,8 @@ from patients.models import Patient
 from appointments.models import Appointment
 from documents.models import Document
 from images.models import Image, ImageBatch
+from companies.models import Company
+from referrers.models import Referrer, Specialty, PatientReferrer, ReferrerCompany
 
 
 def delete_existing_data(dry_run: bool = False) -> bool:
@@ -58,12 +60,22 @@ def delete_existing_data(dry_run: bool = False) -> bool:
         document_count = Document.objects.count()
         image_count = Image.objects.count()
         batch_count = ImageBatch.objects.count()
+        company_count = Company.objects.count()
+        referrer_count = Referrer.objects.count()
+        specialty_count = Specialty.objects.count()
+        patient_referrer_count = PatientReferrer.objects.count()
+        referrer_company_count = ReferrerCompany.objects.count()
         
         logger.info(f"Current Patients: {patient_count}")
         logger.info(f"Current Appointments: {appointment_count}")
         logger.info(f"Current Documents: {document_count}")
         logger.info(f"Current Images: {image_count}")
         logger.info(f"Current Image Batches: {batch_count}")
+        logger.info(f"Current Companies: {company_count}")
+        logger.info(f"Current Referrers: {referrer_count}")
+        logger.info(f"Current Specialties: {specialty_count}")
+        logger.info(f"Current Patient-Referrer Links: {patient_referrer_count}")
+        logger.info(f"Current Referrer-Company Links: {referrer_company_count}")
         logger.info("")
         
         # ========================================
@@ -75,6 +87,11 @@ def delete_existing_data(dry_run: bool = False) -> bool:
         logger.warning(f"❌ Will DELETE {patient_count} patients")
         logger.warning(f"❌ Will CASCADE DELETE {appointment_count} appointments")
         logger.warning(f"❌ Will CASCADE DELETE all notes, letters, reminders, SMS")
+        logger.warning(f"❌ Will DELETE {company_count} companies")
+        logger.warning(f"❌ Will DELETE {referrer_count} referrers")
+        logger.warning(f"❌ Will DELETE {specialty_count} specialties")
+        logger.warning(f"❌ Will CASCADE DELETE {patient_referrer_count} patient-referrer links")
+        logger.warning(f"❌ Will CASCADE DELETE {referrer_company_count} referrer-company links")
         logger.warning("")
         logger.warning(f"✅ Will PRESERVE {document_count} document records (orphaned)")
         logger.warning(f"✅ Will PRESERVE {image_count} image records (orphaned)")
@@ -101,19 +118,31 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             # and user has reviewed the deletion plan
             
             # ========================================
-            # ========================================
             # Delete Appointments first (due to PROTECT on patient FK)
             # ========================================
             logger.warning("🗑️  Starting deletion...")
             logger.info("")
             
-            logger.info("Step 1: Deleting appointments...")
+            # Step 1: Delete relationship tables first (they reference patients/referrers/companies)
+            logger.info("Step 1: Deleting patient-referrer relationships...")
+            patient_referrer_count_before = PatientReferrer.objects.count()
+            PatientReferrer.objects.all().delete()
+            logger.success(f"✅ Deleted {patient_referrer_count_before} patient-referrer links")
+            
+            logger.info("")
+            logger.info("Step 2: Deleting referrer-company relationships...")
+            referrer_company_count_before = ReferrerCompany.objects.count()
+            ReferrerCompany.objects.all().delete()
+            logger.success(f"✅ Deleted {referrer_company_count_before} referrer-company links")
+            
+            logger.info("")
+            logger.info("Step 3: Deleting appointments...")
             appointment_count_before = Appointment.objects.count()
             Appointment.objects.all().delete()
             logger.success(f"✅ Deleted {appointment_count_before} appointments")
             
             logger.info("")
-            logger.info("Step 2: Deleting patients (this will take 30-60 seconds)...")
+            logger.info("Step 4: Deleting patients (this will take 30-60 seconds)...")
             logger.info("")
             
             # DELETE using batch processing to avoid overwhelming output
@@ -137,6 +166,27 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             logger.info("")
             logger.success(f"✅ Deleted {total_deleted} patients and all related records (CASCADE)")
             
+            # Step 5: Delete referrers
+            logger.info("")
+            logger.info("Step 5: Deleting referrers...")
+            referrer_count_before = Referrer.objects.count()
+            Referrer.objects.all().delete()
+            logger.success(f"✅ Deleted {referrer_count_before} referrers")
+            
+            # Step 6: Delete companies
+            logger.info("")
+            logger.info("Step 6: Deleting companies...")
+            company_count_before = Company.objects.count()
+            Company.objects.all().delete()
+            logger.success(f"✅ Deleted {company_count_before} companies")
+            
+            # Step 7: Delete specialties
+            logger.info("")
+            logger.info("Step 7: Deleting specialties...")
+            specialty_count_before = Specialty.objects.count()
+            Specialty.objects.all().delete()
+            logger.success(f"✅ Deleted {specialty_count_before} specialties")
+            
             # ========================================
             # Verify Deletion
             # ========================================
@@ -148,9 +198,19 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             remaining_documents = Document.objects.count()
             remaining_images = Image.objects.count()
             remaining_batches = ImageBatch.objects.count()
+            remaining_companies = Company.objects.count()
+            remaining_referrers = Referrer.objects.count()
+            remaining_specialties = Specialty.objects.count()
+            remaining_patient_referrers = PatientReferrer.objects.count()
+            remaining_referrer_companies = ReferrerCompany.objects.count()
             
             logger.info(f"Remaining Patients: {remaining_patients}")
             logger.info(f"Remaining Appointments: {remaining_appointments}")
+            logger.info(f"Remaining Companies: {remaining_companies}")
+            logger.info(f"Remaining Referrers: {remaining_referrers}")
+            logger.info(f"Remaining Specialties: {remaining_specialties}")
+            logger.info(f"Remaining Patient-Referrer Links: {remaining_patient_referrers}")
+            logger.info(f"Remaining Referrer-Company Links: {remaining_referrer_companies}")
             logger.info(f"Remaining Documents: {remaining_documents} (should match original)")
             logger.info(f"Remaining Images: {remaining_images} (should match original)")
             logger.info(f"Remaining Image Batches: {remaining_batches} (should match original)")
@@ -164,13 +224,21 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             logger.info("=" * 70)
             logger.info(f"Patients deleted: {total_deleted}")
             logger.info(f"Appointments deleted: {appointment_count_before}")
-            logger.info(f"Total records deleted: {total_deleted + appointment_count_before}")
+            logger.info(f"Companies deleted: {company_count_before}")
+            logger.info(f"Referrers deleted: {referrer_count_before}")
+            logger.info(f"Specialties deleted: {specialty_count_before}")
+            logger.info(f"Patient-Referrer links deleted: {patient_referrer_count_before}")
+            logger.info(f"Referrer-Company links deleted: {referrer_company_count_before}")
+            logger.info(f"Total records deleted: {total_deleted + appointment_count_before + company_count_before + referrer_count_before + specialty_count_before + patient_referrer_count_before + referrer_company_count_before}")
             logger.info("")
             logger.info(f"Documents preserved: {remaining_documents}")
             logger.info(f"Images preserved: {remaining_images}")
             logger.info(f"Image batches preserved: {remaining_batches}")
             
-            if remaining_patients == 0 and remaining_appointments == 0:
+            if (remaining_patients == 0 and remaining_appointments == 0 and 
+                remaining_companies == 0 and remaining_referrers == 0 and 
+                remaining_specialties == 0 and remaining_patient_referrers == 0 and 
+                remaining_referrer_companies == 0):
                 logger.success("")
                 logger.success("✅ Deletion completed successfully!")
                 logger.success("Database is now ready for fresh import")
@@ -180,7 +248,10 @@ def delete_existing_data(dry_run: bool = False) -> bool:
             else:
                 logger.error("")
                 logger.error("❌ Deletion incomplete!")
-                logger.error(f"Still have {remaining_patients} patients and {remaining_appointments} appointments")
+                logger.error(f"Still have: {remaining_patients} patients, {remaining_appointments} appointments")
+                logger.error(f"            {remaining_companies} companies, {remaining_referrers} referrers")
+                logger.error(f"            {remaining_specialties} specialties, {remaining_patient_referrers} patient-referrer links")
+                logger.error(f"            {remaining_referrer_companies} referrer-company links")
                 logger.error("")
                 logger.phase_end(success=False)
                 return False
