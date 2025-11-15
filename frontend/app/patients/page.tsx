@@ -2550,6 +2550,7 @@ export default function ContactsPage() {
                           if (patientResponse.ok) {
                             const updatedPatient = await patientResponse.json();
                             console.log('Fresh patient data:', updatedPatient.referrers);
+                            console.log('Raw is_primary values:', updatedPatient.referrers?.map((r: any) => ({name: r.name, is_primary: r.is_primary})));
                             const transformedPatient = transformPatientToContact(updatedPatient);
                             console.log('Transformed coordinators:', getCoordinators(transformedPatient));
                             

@@ -66,6 +66,7 @@ class PatientReferrerSerializer(serializers.ModelSerializer):
             'referral_date',
             'referral_reason',
             'status',
+            'is_primary',
             'created_at',
             'updated_at',
         ]
