@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Test files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FileMaker sync (large files we don't need in production)
+*.csv
+sync_*.log
+link_images*.log
+extract_filemaker*.py
+convert_fm_tab_to_csv.py
+test_*.py
+filemaker_images_metadata.csv
+
+# Scripts directory (not needed in production)
+scripts/
+
+# Temporary files
+*.tmp
+tmp/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+

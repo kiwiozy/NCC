@@ -1,7 +1,24 @@
 # 📚 WalkEasy Nexus - Documentation Index
 
-**Last Updated:** November 2025  
-**Project:** WalkEasy Nexus - Patient Management System
+**Last Updated:** November 15, 2025  
+**Project:** WalkEasy Nexus - Patient Management System  
+**Status:** 🎉 **PRODUCTION DEPLOYED!**
+
+---
+
+## 🎉 **Production Deployment**
+
+| Document | Description |
+|----------|-------------|
+| **[Production Quick Start](../PRODUCTION_QUICK_START.md)** | ⚡ Quick commands to access production |
+| **[Deployment Complete Summary](deployment/DEPLOYMENT_COMPLETE_SUMMARY.md)** | 📋 Full deployment summary |
+| **[Production Status Report](deployment/PRODUCTION_DEPLOYMENT_STATUS.md)** | 📊 Detailed status and specs |
+| **[Production Credentials](deployment/PRODUCTION_CREDENTIALS.md)** | 🔐 Credentials inventory |
+| **[Deployment Checklist](../DEPLOYMENT_CHECKLIST.md)** | ✅ Full deployment plan |
+
+**🌐 Backend URL:** https://nexus-production-backend-892000689828.australia-southeast1.run.app  
+**💾 Database:** Cloud SQL PostgreSQL (50GB, HA)  
+**📦 Project:** `nexus-walkeasy-prod`
 
 ---
 

@@ -2,7 +2,18 @@
 
 Modern cloud-native patient management system for Walk Easy Pedorthics.
 
-## 🎉 Latest Update: FileMaker Import Complete! (Nov 16, 2025)
+## 🎉 **PRODUCTION DEPLOYED!** (Nov 15, 2025)
+
+✅ **Backend Live:** https://nexus-production-backend-892000689828.australia-southeast1.run.app  
+✅ **Database:** Cloud SQL PostgreSQL (50GB, HA)  
+✅ **Project:** `nexus-walkeasy-prod` (Google Cloud)  
+✅ **Region:** australia-southeast1 (Sydney)
+
+**📋 Next:** [Production Quick Start →](./PRODUCTION_QUICK_START.md)
+
+---
+
+## 📊 FileMaker Import Complete! (Nov 16, 2025)
 
 ✅ **Successfully imported 44,000+ records from FileMaker:**
 - 2,842 Patients (100%)

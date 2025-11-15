@@ -11,6 +11,10 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
+# Use production settings if ENVIRONMENT is production
+if os.getenv('ENVIRONMENT') == 'production':
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings_production')
+else:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc_api.settings')
 
 application = get_wsgi_application()
