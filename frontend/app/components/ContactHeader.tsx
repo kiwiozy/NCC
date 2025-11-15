@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
@@ -71,6 +71,7 @@ export default function ContactHeader({
   const isDark = colorScheme === 'dark';
   const [filterOpened, setFilterOpened] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [notesCount, setNotesCount] = useState<number>(0);
   const [documentsCount, setDocumentsCount] = useState<number>(0);
   const [imagesCount, setImagesCount] = useState<number>(0);
@@ -84,6 +85,87 @@ export default function ContactHeader({
     status: '',
     archived: showArchived || false, // Include archived in filters
   });
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleNameClick = (e: React.MouseEvent<HTMLHeadingElement>) => {
+    // Clear any existing timer
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    
+    // Wait to see if it's a double click
+    clickTimerRef.current = setTimeout(() => {
+      // Single click - copy just the name
+      navigator.clipboard.writeText(selectedPatientName || '');
+      // Visual feedback
+      const element = e.currentTarget;
+      const originalColor = element.style.color;
+      element.style.color = '#228BE6'; // Blue color
+      setTimeout(() => {
+        element.style.color = originalColor;
+      }, 200);
+      clickTimerRef.current = null;
+    }, 250); // Wait 250ms to detect double click
+  };
+  
+  const handleNameDoubleClick = (e: React.MouseEvent<HTMLHeadingElement>) => {
+    // Clear the single click timer
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    
+    // Double click - copy name + address
+    if (selectedPatientAddress && selectedPatientName) {
+      const addressLines = [];
+      addressLines.push(selectedPatientName);
+      
+      if (selectedPatientAddress.street) {
+        addressLines.push(selectedPatientAddress.street);
+      }
+      if (selectedPatientAddress.street2) {
+        addressLines.push(selectedPatientAddress.street2);
+      }
+      if (selectedPatientAddress.suburb) {
+        addressLines.push(selectedPatientAddress.suburb);
+      }
+      
+      // Last line: postcode, state
+      const lastLineParts = [];
+      if (selectedPatientAddress.postcode) {
+        lastLineParts.push(selectedPatientAddress.postcode);
+      }
+      if (selectedPatientAddress.state) {
+        lastLineParts.push(selectedPatientAddress.state);
+      }
+      if (lastLineParts.length > 0) {
+        addressLines.push(lastLineParts.join(', '));
+      }
+      
+      const fullAddress = addressLines.join('\n');
+      navigator.clipboard.writeText(fullAddress);
+      
+      // Visual feedback
+      const element = e.currentTarget;
+      const originalColor = element.style.color;
+      element.style.color = '#228BE6'; // Blue color
+      setTimeout(() => {
+        element.style.color = originalColor;
+      }, 200);
+    } else if (selectedPatientName) {
+      // No address, just copy name
+      navigator.clipboard.writeText(selectedPatientName);
+    }
+  };
 
   // Get images count for patient
   useEffect(() => {
@@ -649,54 +731,8 @@ export default function ContactHeader({
               cursor: 'pointer',
               transition: 'color 0.2s ease',
             }}
-            onClick={(e) => {
-              // Single click - copy just the name
-              if (e.detail === 1) {
-                navigator.clipboard.writeText(selectedPatientName);
-                // Visual feedback
-                const element = e.currentTarget;
-                const originalColor = element.style.color;
-                element.style.color = '#228BE6'; // Blue color
-                setTimeout(() => {
-                  element.style.color = originalColor;
-                }, 200);
-              }
-            }}
-            onDoubleClick={() => {
-              // Double click - copy name + address
-              if (selectedPatientAddress) {
-                const addressLines = [];
-                addressLines.push(selectedPatientName);
-                
-                if (selectedPatientAddress.street) {
-                  addressLines.push(selectedPatientAddress.street);
-                }
-                if (selectedPatientAddress.street2) {
-                  addressLines.push(selectedPatientAddress.street2);
-                }
-                if (selectedPatientAddress.suburb) {
-                  addressLines.push(selectedPatientAddress.suburb);
-                }
-                
-                // Last line: postcode, state
-                const lastLineParts = [];
-                if (selectedPatientAddress.postcode) {
-                  lastLineParts.push(selectedPatientAddress.postcode);
-                }
-                if (selectedPatientAddress.state) {
-                  lastLineParts.push(selectedPatientAddress.state);
-                }
-                if (lastLineParts.length > 0) {
-                  addressLines.push(lastLineParts.join(', '));
-                }
-                
-                const fullAddress = addressLines.join('\n');
-                navigator.clipboard.writeText(fullAddress);
-              } else {
-                // No address, just copy name
-                navigator.clipboard.writeText(selectedPatientName);
-              }
-            }}
+            onClick={handleNameClick}
+            onDoubleClick={handleNameDoubleClick}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#228BE6'; // Blue on hover
             }}
