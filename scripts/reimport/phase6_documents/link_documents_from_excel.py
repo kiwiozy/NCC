@@ -119,7 +119,8 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
         patient_id = row_data.get('id_Contact')  # Patient FileMaker ID (corrected from 'id.key')
         
         if doc_id and patient_id:
-            doc_to_patient_map[str(doc_id)] = str(patient_id)
+            # Normalize to lowercase for consistent matching
+            doc_to_patient_map[str(doc_id).lower()] = str(patient_id).lower()
         
         # Progress every 1000 rows
         if row_count % 1000 == 0:
@@ -181,8 +182,8 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
                 stats['no_mapping'] += 1
                 continue
             
-            # Find patient FileMaker ID from mapping
-            patient_fm_id = doc_to_patient_map.get(str(doc_fm_id))
+            # Find patient FileMaker ID from mapping (normalize to lowercase)
+            patient_fm_id = doc_to_patient_map.get(str(doc_fm_id).lower())
             
             if not patient_fm_id:
                 stats['no_mapping'] += 1
