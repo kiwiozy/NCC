@@ -140,7 +140,8 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
     for patient in Patient.objects.all():
         fm_id = patient.filemaker_metadata.get('filemaker_id') if patient.filemaker_metadata else None
         if fm_id:
-            patient_lookup[str(fm_id)] = patient
+            # Normalize to lowercase for case-insensitive matching
+            patient_lookup[str(fm_id).lower()] = patient
     
     logger.success(f"✅ Loaded {len(patient_lookup):,} patients")
     
