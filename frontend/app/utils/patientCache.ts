@@ -29,9 +29,19 @@ export class PatientCache {
   static isValid(filters: { archived: boolean; search?: string }): boolean {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return false;
+      if (!cached) {
+        console.log('💾 No cache found');
+        return false;
+      }
 
       const entry: CacheEntry = JSON.parse(cached);
+      
+      console.log('💾 Cache found:', {
+        version: entry.version,
+        age: Math.round((Date.now() - entry.timestamp) / 1000) + 's',
+        filters: entry.filters,
+        requestedFilters: filters,
+      });
       
       // Check version
       if (entry.version !== CACHE_VERSION) {
@@ -50,12 +60,12 @@ export class PatientCache {
 
       // Check if filters match
       if (entry.filters.archived !== filters.archived) {
-        console.log('🔍 Filter mismatch (archived), cache invalid');
+        console.log('🔍 Filter mismatch (archived)', entry.filters.archived, '!==', filters.archived);
         return false;
       }
 
       if (entry.filters.search !== filters.search) {
-        console.log('🔍 Filter mismatch (search), cache invalid');
+        console.log('🔍 Filter mismatch (search)', JSON.stringify(entry.filters.search), '!==', JSON.stringify(filters.search));
         return false;
       }
 

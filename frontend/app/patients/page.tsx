@@ -639,6 +639,8 @@ export default function ContactsPage() {
           search: searchQuery || undefined,
         };
         
+        console.log('🔍 Loading patients with filters:', cacheFilters);
+        
         // Try to load from cache first
         const cachedData = PatientCache.get(cacheFilters);
         
