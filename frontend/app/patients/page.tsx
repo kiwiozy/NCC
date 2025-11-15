@@ -2316,9 +2316,16 @@ export default function ContactsPage() {
                               const updatedPatient = await patientResponse.json();
                               const transformedPatient = transformPatientToContact(updatedPatient);
                               
-                              // Update both selected contact and all contacts
+                              // Update selected contact
                               setSelectedContact(transformedPatient);
+                              
+                              // Update all contacts
                               setAllContacts(prev => prev.map(c => 
+                                c.id === transformedPatient.id ? transformedPatient : c
+                              ));
+                              
+                              // Update filtered contacts list
+                              setContacts(prev => prev.map(c => 
                                 c.id === transformedPatient.id ? transformedPatient : c
                               ));
                             }
@@ -2511,9 +2518,16 @@ export default function ContactsPage() {
                             const updatedPatient = await patientResponse.json();
                             const transformedPatient = transformPatientToContact(updatedPatient);
                             
-                            // Update both selected contact and all contacts
+                            // Update selected contact
                             setSelectedContact(transformedPatient);
+                            
+                            // Update all contacts
                             setAllContacts(prev => prev.map(c => 
+                              c.id === transformedPatient.id ? transformedPatient : c
+                            ));
+                            
+                            // Update filtered contacts list
+                            setContacts(prev => prev.map(c => 
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
                           }
@@ -2652,9 +2666,16 @@ export default function ContactsPage() {
                       const updatedPatient = await patientResponse.json();
                       const transformedPatient = transformPatientToContact(updatedPatient);
                       
-                      // Update both selected contact and all contacts
+                      // Update selected contact
                       setSelectedContact(transformedPatient);
+                      
+                      // Update all contacts
                       setAllContacts(prev => prev.map(c => 
+                        c.id === transformedPatient.id ? transformedPatient : c
+                      ));
+                      
+                      // Update filtered contacts list
+                      setContacts(prev => prev.map(c => 
                         c.id === transformedPatient.id ? transformedPatient : c
                       ));
                     }
