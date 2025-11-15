@@ -1,12 +1,12 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T18:26:40.684253",
+  "last_update": "2025-11-15T18:34:22.830076",
   "current_phase": "Phase 8: Post-Import Validation",
   "phases": {
     "Phase 0: Pre-Import Validation": {
       "status": "completed",
-      "start_time": "2025-11-15T18:25:43.430159",
-      "end_time": "2025-11-15T18:25:44.960378",
+      "start_time": "2025-11-15T18:33:18.285472",
+      "end_time": "2025-11-15T18:33:19.855739",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -16,8 +16,8 @@
     },
     "Phase 2: Delete Existing Patient Data": {
       "status": "completed",
-      "start_time": "2025-11-15T18:25:44.961370",
-      "end_time": "2025-11-15T18:25:46.653520",
+      "start_time": "2025-11-15T18:33:19.856465",
+      "end_time": "2025-11-15T18:33:21.590362",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -38,8 +38,8 @@
     },
     "Phase 4: Import Appointments": {
       "status": "completed",
-      "start_time": "2025-11-15T18:25:53.756872",
-      "end_time": "2025-11-15T18:26:10.122628",
+      "start_time": "2025-11-15T18:33:29.041237",
+      "end_time": "2025-11-15T18:33:45.337754",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -49,8 +49,8 @@
     },
     "Phase 5: Import Notes & SMS": {
       "status": "completed",
-      "start_time": "2025-11-15T18:26:10.123291",
-      "end_time": "2025-11-15T18:26:19.849832",
+      "start_time": "2025-11-15T18:33:48.586375",
+      "end_time": "2025-11-15T18:33:58.193367",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -105,8 +105,8 @@
     },
     "Phase 8: Post-Import Validation": {
       "status": "failed",
-      "start_time": "2025-11-15T18:26:40.106234",
-      "end_time": "2025-11-15T18:26:40.683402",
+      "start_time": "2025-11-15T18:34:22.251785",
+      "end_time": "2025-11-15T18:34:22.829616",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 0,
@@ -114,7 +114,7 @@
       "skipped_count": 0,
       "errors": [
         {
-          "timestamp": "2025-11-15T18:26:40.682961",
+          "timestamp": "2025-11-15T18:34:22.829356",
           "message": "Script failed: phase8_validation/validate_relationships.py",
           "record_id": null
         }
@@ -122,8 +122,8 @@
     },
     "Phase 7: Link Images from CSV": {
       "status": "completed",
-      "start_time": "2025-11-15T18:26:19.850391",
-      "end_time": "2025-11-15T18:26:40.105657",
+      "start_time": "2025-11-15T18:34:00.798624",
+      "end_time": "2025-11-15T18:34:22.250938",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -133,8 +133,30 @@
     },
     "Phase 3: Import Patients from Excel": {
       "status": "completed",
-      "start_time": "2025-11-15T18:25:46.654096",
-      "end_time": "2025-11-15T18:25:53.756233",
+      "start_time": "2025-11-15T18:33:21.591160",
+      "end_time": "2025-11-15T18:33:29.040355",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 4.5: Import Communication Data (Phones, Emails, Addresses)": {
+      "status": "completed",
+      "start_time": "2025-11-15T18:33:45.338455",
+      "end_time": "2025-11-15T18:33:48.585368",
+      "total_items": 1,
+      "processed_items": 1,
+      "success_count": 1,
+      "error_count": 0,
+      "skipped_count": 0,
+      "errors": []
+    },
+    "Phase 6: Link Documents to Patients (Excel-based)": {
+      "status": "completed",
+      "start_time": "2025-11-15T18:33:58.194035",
+      "end_time": "2025-11-15T18:34:00.798048",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,

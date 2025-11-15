@@ -131,7 +131,7 @@ def validate_relationships() -> bool:
         logger.info(f"Appointments without clinic: {appointments_without_clinic}")
         logger.info(f"Appointments without clinician: {appointments_without_clinician}")
         logger.info(f"Appointments without type: {appointments_without_type}")
-        logger.info(f"Documents without patient: {documents_without_patient}")
+        # Note: Document validation skipped (uses Generic Foreign Keys)
         logger.info(f"Image batches not linked to patients: {batches_not_linked}")
         
         if all_valid:
