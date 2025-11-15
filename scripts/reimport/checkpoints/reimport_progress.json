@@ -1,7 +1,7 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T18:34:22.830076",
-  "current_phase": "Phase 8: Post-Import Validation",
+  "last_update": "2025-11-15T18:37:07.719132",
+  "current_phase": "Phase 6: Link Documents to Patients (Excel-based)",
   "phases": {
     "Phase 0: Pre-Import Validation": {
       "status": "completed",
@@ -155,8 +155,8 @@
     },
     "Phase 6: Link Documents to Patients (Excel-based)": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:58.194035",
-      "end_time": "2025-11-15T18:34:00.798048",
+      "start_time": "2025-11-15T18:37:05.171674",
+      "end_time": "2025-11-15T18:37:07.719629",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,

@@ -181,11 +181,6 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
                 stats['no_mapping'] += 1
                 continue
             
-            # Check if already linked to a patient
-            if doc.content_type == patient_content_type and doc.object_id:
-                stats['already_linked'] += 1
-                continue
-            
             # Find patient FileMaker ID from mapping
             patient_fm_id = doc_to_patient_map.get(str(doc_fm_id))
             
@@ -200,7 +195,12 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
                 stats['patient_not_found'] += 1
                 continue
             
-            # Link document to patient!
+            # Check if already linked to correct patient (NEW UUID check)
+            if doc.content_type == patient_content_type and doc.object_id == str(patient.id):
+                stats['already_linked'] += 1
+                continue
+            
+            # Link/Re-link document to patient (handles both new links and OLD UUID updates)
             if not dry_run:
                 with transaction.atomic():
                     doc.content_type = patient_content_type
