@@ -131,11 +131,19 @@ class Command(BaseCommand):
                 stats['skipped'] += 1
                 continue
             
-            # Find Nexus patient by filemaker_id in filemaker_metadata JSON
+            # Find Nexus patient - try UUID first (for new exports), then FileMaker ID (for old exports)
+            patient = None
             try:
-                # filemaker_metadata contains JSON like: {"filemaker_id": "UUID", ...}
-                patient = Patient.objects.get(filemaker_metadata__filemaker_id=id_contact)
-            except (Patient.DoesNotExist, Patient.MultipleObjectsReturned):
+                # Try direct UUID lookup first (for exports with UUIDs in id_Contact)
+                patient = Patient.objects.get(id=id_contact)
+            except (Patient.DoesNotExist, ValueError):
+                # Fall back to FileMaker ID lookup (for old CSV exports)
+                try:
+                    patient = Patient.objects.get(filemaker_metadata__filemaker_id=id_contact)
+                except (Patient.DoesNotExist, Patient.MultipleObjectsReturned):
+                    pass
+            
+            if not patient:
                 stats['skipped'] += 1
                 continue
             

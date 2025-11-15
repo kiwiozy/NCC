@@ -71,10 +71,10 @@ class ReimportOrchestrator:
             {
                 'name': 'patients',
                 'number': 3,
-                'description': 'Import Patients',
+                'description': 'Import Patients from Excel',
                 'scripts': [
-                    'phase3_patients/fetch_patients_from_filemaker.py',
-                    'phase3_patients/import_patients.py',
+                    # NEW: Excel-based import (no FileMaker API required!)
+                    'phase3_patients/import_patients_from_excel.py',
                 ],
                 'required': True,
                 'stop_on_error': True,
