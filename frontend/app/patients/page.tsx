@@ -2073,7 +2073,14 @@ export default function ContactsPage() {
                               <>
                                 {hasMore ? (
                                   <>
-                                    <ScrollArea h={containerHeight} offsetScrollbars>
+                                    <ScrollArea 
+                                      h={containerHeight} 
+                                      offsetScrollbars
+                                      onWheel={(e) => {
+                                        // Stop wheel events from propagating to parent ScrollArea
+                                        e.stopPropagation();
+                                      }}
+                                    >
                                       <Stack gap="md">
                                         {sortedElements}
                                       </Stack>
