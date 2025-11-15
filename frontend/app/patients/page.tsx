@@ -2073,11 +2073,17 @@ export default function ContactsPage() {
                             
                             return (
                               <>
-                                <ScrollArea h={containerHeight} offsetScrollbars>
+                                {hasMore ? (
+                                  <ScrollArea h={containerHeight} offsetScrollbars>
+                                    <Stack gap="md">
+                                      {sortedElements}
+                                    </Stack>
+                                  </ScrollArea>
+                                ) : (
                                   <Stack gap="md">
                                     {sortedElements}
                                   </Stack>
-                                </ScrollArea>
+                                )}
                               </>
                             );
                           })()}
