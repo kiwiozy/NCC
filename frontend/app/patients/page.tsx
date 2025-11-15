@@ -2464,14 +2464,84 @@ export default function ContactsPage() {
                         backgroundColor: isDark ? '#25262b' : '#f8f9fa',
                         border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                         position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
                         const deleteBtn = e.currentTarget.querySelector('.delete-coordinator-btn') as HTMLElement;
                         if (deleteBtn) deleteBtn.style.display = 'flex';
+                        e.currentTarget.style.backgroundColor = isDark ? '#2C2E33' : '#e9ecef';
                       }}
                       onMouseLeave={(e) => {
                         const deleteBtn = e.currentTarget.querySelector('.delete-coordinator-btn') as HTMLElement;
                         if (deleteBtn) deleteBtn.style.display = 'none';
+                        e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
+                      }}
+                      onClick={async (e) => {
+                        // Don't trigger if clicking the delete button
+                        if ((e.target as HTMLElement).closest('.delete-coordinator-btn')) {
+                          return;
+                        }
+                        
+                        if (!selectedContact) return;
+                        
+                        try {
+                          // Find the PatientReferrer ID from the API
+                          const response = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
+                            credentials: 'include',
+                          });
+                          
+                          if (!response.ok) throw new Error('Failed to fetch patient-referrer relationships');
+                          
+                          const data = await response.json();
+                          const relationships = data.results || data;
+                          
+                          // Find the relationship to update by matching name and date
+                          const toUpdate = relationships.find((pr: any) => 
+                            pr.referrer_name === coordinator.name && 
+                            pr.referral_date === coordinator.date.split('/').reverse().join('-')
+                          );
+                          
+                          if (!toUpdate) {
+                            throw new Error('Relationship not found');
+                          }
+                          
+                          // Update the relationship with today's date
+                          const today = dayjs().format('YYYY-MM-DD');
+                          const updateResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toUpdate.id}/`, {
+                            method: 'PATCH',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              referral_date: today,
+                              status: 'ACTIVE',
+                            }),
+                          });
+                          
+                          if (!updateResponse.ok) throw new Error('Failed to update relationship');
+                          
+                          // Refresh the patient data from backend
+                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                            credentials: 'include',
+                          });
+                          
+                          if (patientResponse.ok) {
+                            const updatedPatient = await patientResponse.json();
+                            const transformedPatient = transformPatientToContact(updatedPatient);
+                            
+                            // Update both selected contact and all contacts
+                            setSelectedContact(transformedPatient);
+                            setAllContacts(prev => prev.map(c => 
+                              c.id === transformedPatient.id ? transformedPatient : c
+                            ));
+                          }
+                          
+                        } catch (error) {
+                          console.error('Error updating coordinator/referrer date:', error);
+                          alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        }
                       }}
                     >
                       <Group justify="space-between" align="flex-start">
@@ -2485,7 +2555,8 @@ export default function ContactsPage() {
                           color="red"
                           size="sm"
                           style={{ display: 'none' }}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent box click
                             setCoordinatorToDelete(coordinator);
                             setDeleteCoordinatorOpened(true);
                           }}
