@@ -104,6 +104,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             'id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 
             'first_name', 'last_name', 'middle_names', 'title', 'health_number',
             'contact_json', 'address_json', 'plan_dates_json',  # Include JSON fields for communication/address
+            'ndis_plan_start_date', 'ndis_plan_end_date',  # Include NDIS plan dates from import
             'coordinator_name', 'coordinator_date',  # Include coordinator info
             'notes',  # Include general notes field
             'filemaker_metadata',  # Include FileMaker import metadata
