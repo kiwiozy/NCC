@@ -1084,7 +1084,7 @@ export default function ContactsPage() {
         onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
         selectedPatientName={selectedContact?.name}
-        selectedPatientAddress={selectedContact?.address}
+        selectedPatientAddress={selectedContact?.address_json}
         onFilterApply={handleFilterApply}
         showFilters={true}
         filterOptions={{

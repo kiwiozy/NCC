@@ -96,6 +96,7 @@ export default function ContactHeader({
   }, []);
 
   const handleNameClick = (e: React.MouseEvent<HTMLHeadingElement>) => {
+    console.log('Single click detected');
     // Clear any existing timer
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
@@ -105,6 +106,7 @@ export default function ContactHeader({
     // Wait to see if it's a double click
     clickTimerRef.current = setTimeout(() => {
       // Single click - copy just the name
+      console.log('Single click executed - copying name:', selectedPatientName);
       navigator.clipboard.writeText(selectedPatientName || '');
       // Visual feedback
       const element = e.currentTarget;
@@ -118,6 +120,8 @@ export default function ContactHeader({
   };
   
   const handleNameDoubleClick = (e: React.MouseEvent<HTMLHeadingElement>) => {
+    console.log('Double click detected');
+    console.log('Address data:', selectedPatientAddress);
     // Clear the single click timer
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
@@ -152,6 +156,7 @@ export default function ContactHeader({
       }
       
       const fullAddress = addressLines.join('\n');
+      console.log('Double click executed - copying address:', fullAddress);
       navigator.clipboard.writeText(fullAddress);
       
       // Visual feedback
@@ -163,6 +168,7 @@ export default function ContactHeader({
       }, 200);
     } else if (selectedPatientName) {
       // No address, just copy name
+      console.log('No address - copying just name:', selectedPatientName);
       navigator.clipboard.writeText(selectedPatientName);
     }
   };
