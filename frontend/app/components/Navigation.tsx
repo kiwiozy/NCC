@@ -195,7 +195,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconUserCircle size={subIconSize} stroke={1.5} />, label: 'Coordinator', href: '/patients?type=coordinator' },
     { icon: <IconDisabled size={subIconSize} stroke={1.5} />, label: 'NDIS LAC', href: '/patients?type=ndis-lac' },
     { icon: <IconHandStop size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/patients?type=contacts' },
-    { icon: <IconBuilding size={subIconSize} stroke={1.5} />, label: 'Companies', href: '/patients?type=companies' },
+    { icon: <IconBuilding size={subIconSize} stroke={1.5} />, label: 'Companies', href: '/companies' },
     { icon: <IconBuildingHospital size={subIconSize} stroke={1.5} />, label: 'Clinics', href: '/patients?type=clinics' },
   ];
 
