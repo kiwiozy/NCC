@@ -36,7 +36,6 @@ from referrers.models import Referrer, PatientReferrer, Specialty
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 from scripts.reimport.utils.logger import create_logger
-from scripts.reimport.utils.progress_tracker import ProgressTracker
 
 
 def split_name(full_name: str) -> tuple:
@@ -138,11 +137,14 @@ def link_patients_to_coordinators(dry_run: bool = False) -> bool:
         'errors': 0,
     }
 
-    progress = ProgressTracker(patients_with_coordinators.count(), logger, "Linking patients to coordinators")
+    total_patients = patients_with_coordinators.count()
 
     for i, patient in enumerate(patients_with_coordinators, 1):
         stats['total'] += 1
-        progress.update_progress(i)
+        
+        # Progress updates every 10 patients
+        if i % 10 == 0 or i == total_patients:
+            logger.info(f"💓 Processed {i}/{total_patients} patients...")
 
         try:
             # Get coordinator name from metadata
