@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider } from '@mantine/core';
+import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider, Box } from '@mantine/core';
 import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding, IconUsers } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import Navigation from '../components/Navigation';
@@ -352,39 +352,121 @@ export default function ReferrersPage() {
                       </Stack>
                     </Paper>
 
-                    {/* Contact Information */}
+                    {/* Communication */}
                     {selectedReferrer.contact_json && (
                       <Paper p="xl" shadow="xs">
-                        <Text size="lg" fw={600} mb="md">Contact Information</Text>
-                        <Stack gap="md">
-                          {selectedReferrer.contact_json.phone && (
-                            <Group gap="sm">
-                              <IconPhone size={20} color={isDark ? '#909296' : '#495057'} />
-                              <div>
-                                <Text size="sm" c="dimmed">Phone</Text>
-                                <Text size="md">{selectedReferrer.contact_json.phone}</Text>
+                        <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="md">COMMUNICATION</Text>
+                        <Divider mb="md" />
+                        {(() => {
+                          const contactJson = selectedReferrer.contact_json || {};
+                          const items: JSX.Element[] = [];
+                          const MAX_VISIBLE = 3;
+
+                          // Handle phones array
+                          if (contactJson.phones && Array.isArray(contactJson.phones)) {
+                            contactJson.phones.forEach((phone: any, index: number) => {
+                              items.push(
+                                <Group key={`phone-${index}`}>
+                                  <Box style={{ minWidth: rem(100) }}>
+                                    <Text size="sm" c="dimmed">Phone</Text>
+                                    <Text size="xs" c="dimmed">{phone.label || phone.type || 'Phone'}</Text>
+                                  </Box>
+                                  <Text size="md" fw={600}>{phone.number || phone.value || phone}</Text>
+                                </Group>
+                              );
+                            });
+                          }
+                          // Fallback for old format
+                          else if (contactJson.phone) {
+                            items.push(
+                              <Group key="phone">
+                                <Box style={{ minWidth: rem(100) }}>
+                                  <Text size="sm" c="dimmed">Phone</Text>
+                                  <Text size="xs" c="dimmed">Phone</Text>
+                                </Box>
+                                <Text size="md" fw={600}>{contactJson.phone}</Text>
+                              </Group>
+                            );
+                          }
+                          if (contactJson.mobile) {
+                            items.push(
+                              <Group key="mobile">
+                                <Box style={{ minWidth: rem(100) }}>
+                                  <Text size="sm" c="dimmed">Mobile</Text>
+                                  <Text size="xs" c="dimmed">Mobile</Text>
+                                </Box>
+                                <Text size="md" fw={600}>{contactJson.mobile}</Text>
+                              </Group>
+                            );
+                          }
+
+                          // Handle emails array
+                          if (contactJson.emails && Array.isArray(contactJson.emails)) {
+                            contactJson.emails.forEach((email: any, index: number) => {
+                              items.push(
+                                <Group key={`email-${index}`}>
+                                  <Box style={{ minWidth: rem(100) }}>
+                                    <Text size="sm" c="dimmed">Email</Text>
+                                    <Text size="xs" c="dimmed">{email.label || 'Email'}</Text>
+                                  </Box>
+                                  <Text size="md" fw={600}>{email.address || email.value || email}</Text>
+                                </Group>
+                              );
+                            });
+                          }
+                          // Fallback for old format
+                          else if (contactJson.email) {
+                            items.push(
+                              <Group key="email">
+                                <Box style={{ minWidth: rem(100) }}>
+                                  <Text size="sm" c="dimmed">Email</Text>
+                                  <Text size="xs" c="dimmed">Email</Text>
+                                </Box>
+                                <Text size="md" fw={600}>{contactJson.email}</Text>
+                              </Group>
+                            );
+                          }
+
+                          const hasMore = items.length > MAX_VISIBLE;
+                          const remainingCount = items.length - MAX_VISIBLE;
+
+                          if (items.length === 0) {
+                            return <Text size="sm" c="dimmed" fs="italic">No contact information</Text>;
+                          }
+
+                          return hasMore ? (
+                            <>
+                              <Stack gap="md">
+                                {items.slice(0, MAX_VISIBLE)}
+                              </Stack>
+                              <div
+                                style={{ 
+                                  position: 'relative',
+                                  pointerEvents: 'none'
+                                }}
+                                onWheel={(e) => e.stopPropagation()}
+                                onTouchMove={(e) => e.stopPropagation()}
+                              >
+                                <ScrollArea
+                                  h={152}
+                                  offsetScrollbars
+                                  style={{ pointerEvents: 'auto' }}
+                                >
+                                  <Stack gap="md">
+                                    {items.slice(MAX_VISIBLE)}
+                                  </Stack>
+                                </ScrollArea>
                               </div>
-                            </Group>
-                          )}
-                          {selectedReferrer.contact_json.mobile && (
-                            <Group gap="sm">
-                              <IconPhone size={20} color={isDark ? '#909296' : '#495057'} />
-                              <div>
-                                <Text size="sm" c="dimmed">Mobile</Text>
-                                <Text size="md">{selectedReferrer.contact_json.mobile}</Text>
-                              </div>
-                            </Group>
-                          )}
-                          {selectedReferrer.contact_json.email && (
-                            <Group gap="sm">
-                              <IconMail size={20} color={isDark ? '#909296' : '#495057'} />
-                              <div>
-                                <Text size="sm" c="dimmed">Email</Text>
-                                <Text size="md">{selectedReferrer.contact_json.email}</Text>
-                              </div>
-                            </Group>
-                          )}
-                        </Stack>
+                              <Text size="xs" c="dimmed" fs="italic" mt={4} ta="center">
+                                Scroll for {remainingCount} more...
+                              </Text>
+                            </>
+                          ) : (
+                            <Stack gap="md">
+                              {items}
+                            </Stack>
+                          );
+                        })()}
                       </Paper>
                     )}
 
