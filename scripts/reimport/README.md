@@ -1,9 +1,9 @@
 # 🚀 FileMaker Reimport System (100% Excel-Based)
 
 **Status:** ✅ **PRODUCTION READY**  
-**Last Updated:** November 15, 2025 @ 18:50  
-**Import Speed:** ~70 seconds (full import)  
-**Success Rate:** 99.6%  
+**Last Updated:** November 16, 2025 @ 04:13  
+**Import Speed:** ~82 seconds (full import)  
+**Success Rate:** 99.7%  
 
 Complete reimport of all FileMaker data into Nexus Core Clinic using Excel exports.
 
@@ -18,9 +18,13 @@ Complete reimport of all FileMaker data into Nexus Core Clinic using Excel expor
 | Communications | 7,147 | 100% | ~10 sec |
 | Notes | 11,210 | 98.3% | ~12 sec |
 | Documents | 10,148 | 99.6% | ~10 sec |
-| Images | 6,489 | 99.98% | ~20 sec |
+| Images | 6,489 (1,661 batches) | 99.98% | ~20 sec |
+| Companies | 93 | 100% | <1 sec |
+| Referrers | 228 | 97.4% | <1 sec |
+| Patient-Referrer Links | 1,705 | 99.2% | <1 sec |
+| Referrer-Company Links | 63 | 87.5% | <1 sec |
 
-**Total:** ~40,000 records imported in **~70 seconds** ⚡
+**Total:** ~44,000 records imported in **~82 seconds** ⚡
 
 ---
 
@@ -40,6 +44,8 @@ cd /Users/craig/Documents/nexus-core-clinic/scripts/reimport
 ./run_master.sh --phase notes
 ./run_master.sh --phase documents
 ./run_master.sh --phase images
+./run_master.sh --phase companies
+./run_master.sh --phase referrers
 ```
 
 ### Dry Run (Preview):
@@ -58,10 +64,14 @@ Place these files in **`scripts/Export_Filemaker/`** before running:
 3. **`Coms.xlsx`** - Phone numbers, emails, addresses
 4. **`Notes.xlsx`** (1.9 MB) - 11,408 clinical notes from FileMaker
 5. **`Docs.xlsx`** (584 KB) - 11,274 document→patient mappings
+6. **`Companies.xlsx`** - Company/practice information
+7. **`Referrers.xlsx`** - Referrer information
+8. **`PatientToReferrer.xlsx`** - Patient-Referrer relationships
+9. **`ReferrerToCompanies.xlsx`** - Referrer-Company relationships
 
 Place these files in **project root**:
 
-6. **`Image_dataV9.csv`** (792 KB) - 6,662 image metadata records
+10. **`Image_dataV9.csv`** (792 KB) - 6,662 image metadata records
 
 ---
 
@@ -121,6 +131,21 @@ Place these files in **project root**:
 - ✅ Links 6,489 images (99.98%)
 - ⏭️ Skips 1 (metadata issue)
 
+### **Phase 9: Companies** (<1 second) ⭐ NEW!
+- ✅ Reads from `Companies.xlsx`
+- ✅ Imports company/practice information
+- ✅ 93 companies imported (100%)
+- ✅ Supports: Medical Practices, NDIS Providers, Other
+- ✅ Includes: ABN, contact info, address
+
+### **Phase 10: Referrers & Relationships** (<1 second) ⭐ NEW!
+- ✅ Reads from `Referrers.xlsx`, `PatientToReferrer.xlsx`, `ReferrerToCompanies.xlsx`
+- ✅ Imports 228 referrers (97.4%)
+- ✅ Links 1,705 patient-referrer relationships (99.2%)
+- ✅ Links 63 referrer-company relationships (87.5%)
+- ✅ Auto-creates specialty records
+- ✅ Includes: Names, specialties, contact info, practice affiliations
+
 ### **Phase 8: Post-Import Validation** (~3 seconds)
 - ✅ Verifies data counts against Excel files
 - ✅ Checks relationships
@@ -166,6 +191,10 @@ cp Appointments.xlsx scripts/Export_Filemaker/
 cp Coms.xlsx scripts/Export_Filemaker/
 cp Notes.xlsx scripts/Export_Filemaker/
 cp Docs.xlsx scripts/Export_Filemaker/
+cp Companies.xlsx scripts/Export_Filemaker/
+cp Referrers.xlsx scripts/Export_Filemaker/
+cp PatientToReferrer.xlsx scripts/Export_Filemaker/
+cp ReferrerToCompanies.xlsx scripts/Export_Filemaker/
 
 # Copy CSV to project root
 cp Image_dataV9.csv /Users/craig/Documents/nexus-core-clinic/
@@ -194,17 +223,29 @@ cp Image_dataV9.csv /Users/craig/Documents/nexus-core-clinic/
 - **FIX:** Re-links to new patient UUIDs after patient reimport
 - **RESULT:** 60x faster (45 min → 10 sec), 99.6% success
 
+### ⭐ Phase 9 & 10: Companies & Referrers (NEW!)
+- **NEW:** Import companies, referrers, and their relationships
+- **FIX:** Correct column names (`nameFirst`/`nameLast` for referrers, `Name` for companies)
+- **FIX:** Column name `id_Perscriber` (typo in FileMaker export)
+- **FIX:** Auto-create specialty records
+- **FIX:** `ignore_conflicts=True` for duplicate patient-referrer links
+- **RESULT:** Full referrer network imported with relationships
+
 ### 🎨 UI Improvements
+- **NEW:** Companies page with list view and detail panel
+- **NEW:** Referrers page with list view and detail panel
+- **NEW:** Referrer relationships display on Companies page
+- **NEW:** Company & patient relationships display on Referrers page
 - **FIX:** Frontend now reads phones/emails from new array format
 - **FIX:** FileMaker Import Info section removed from UI
-- **RESULT:** Cleaner patient detail view, all data displays correctly
+- **RESULT:** Complete referrer management system with relationship tracking
 
 ---
 
 ## 🔧 Troubleshooting
 
 ### "Excel file not found":
-- Ensure `Contacts.xlsx`, `Appointments.xlsx`, `Coms.xlsx`, `Notes.xlsx`, `Docs.xlsx` are in **`scripts/Export_Filemaker/`**
+- Ensure `Contacts.xlsx`, `Appointments.xlsx`, `Coms.xlsx`, `Notes.xlsx`, `Docs.xlsx`, `Companies.xlsx`, `Referrers.xlsx`, `PatientToReferrer.xlsx`, `ReferrerToCompanies.xlsx` are in **`scripts/Export_Filemaker/`**
 - Ensure `Image_dataV9.csv` is in **project root**
 - Check exact filenames match (case-sensitive)
 
@@ -270,6 +311,11 @@ cp Image_dataV9.csv /Users/craig/Documents/nexus-core-clinic/
 - Currently all skipped (no patient phone match)
 - SMS data preserved in database for future implementation
 
+### 6. Referrer-Company Links (12.5% skipped)
+- **9 links skipped** (8 referrers not found, 1 company not found)
+- Expected - some records may not have matching IDs
+- Most relationships imported successfully
+
 ---
 
 ## 🎯 Next Steps After Import
@@ -288,6 +334,10 @@ open https://localhost:3000
 # - Appointments appear on calendar
 # - Documents download correctly
 # - Images display properly
+# - Companies page displays 93 companies
+# - Referrers page displays 228 referrers
+# - Company-referrer relationships appear correctly
+# - Patient-referrer relationships visible
 ```
 
 ### 2. Run Tests:
@@ -299,8 +349,8 @@ python manage.py test
 ### 3. Commit Changes:
 ```bash
 git add .
-git commit -m "feat: Complete FileMaker reimport - 40,656 records imported"
-git push origin filemaker-import-docs-clean
+git commit -m "feat: Complete FileMaker reimport with Companies & Referrers - 44,000+ records"
+git push origin companies
 ```
 
 ---
@@ -313,9 +363,10 @@ git push origin filemaker-import-docs-clean
 - S3 files are NOT modified (documents and images remain in place)
 
 ### 🚀 Performance:
-- **Full import: ~70 seconds** (vs. 1 hour 20 minutes with API)
+- **Full import: ~82 seconds** (vs. 1 hour 20 minutes with API)
 - **100% offline** - No FileMaker server required
 - **Reliable** - No network timeouts or API limits
+- **New:** Companies & Referrers add <2 seconds to total time
 
 ### 🔒 Security:
 - Never commit `.env` to Git
@@ -340,6 +391,6 @@ For issues or questions:
 
 ---
 
-**Last Updated:** November 15, 2025 @ 18:50  
-**Version:** 2.0 (100% Excel-Based)  
+**Last Updated:** November 16, 2025 @ 04:13  
+**Version:** 2.1 (100% Excel-Based + Companies & Referrers)  
 **Status:** ✅ Production Ready - Fast & Reliable
