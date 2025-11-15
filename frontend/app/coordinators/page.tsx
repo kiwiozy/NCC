@@ -95,7 +95,7 @@ export default function CoordinatorsPage() {
     loadSpecialties();
   }, []);
 
-  // Load coordinators (same endpoint as referrers)
+  // Load coordinators (filter referrers by specialty containing "Support Coordinator" or "NDIS")
   useEffect(() => {
     const loadCoordinators = async () => {
       try {
@@ -105,7 +105,16 @@ export default function CoordinatorsPage() {
         });
         if (response.ok) {
           const data = await response.json();
-          const coordinatorsList = data.results || data;
+          const allReferrers = data.results || data;
+          
+          // Filter to only show Support Coordinators / NDIS Coordinators
+          const coordinatorsList = allReferrers.filter((referrer: Coordinator) => {
+            const specialty = referrer.specialty_name?.toLowerCase() || '';
+            return specialty.includes('support coordinator') || 
+                   specialty.includes('ndis coordinator') ||
+                   specialty.includes('plan manager');
+          });
+          
           setCoordinators(coordinatorsList);
 
           // Auto-select from URL or first coordinator
