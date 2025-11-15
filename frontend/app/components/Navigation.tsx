@@ -630,7 +630,8 @@ export default function Navigation({ children }: NavigationProps) {
           backgroundColor: mounted ? (isDark ? '#1A1B1E' : '#f5f5f5') : '#f5f5f5',
           padding: 0,
           // Ensure content is scrollable and doesn't conflict with sticky header
-          minHeight: '100vh',
+          height: '100vh',
+          overflow: 'hidden',
         }}
       >
         {children}
