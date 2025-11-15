@@ -1,12 +1,12 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T18:39:54.235207",
-  "current_phase": "Phase 6: Link Documents to Patients (Excel-based)",
+  "last_update": "2025-11-15T18:43:49.476941",
+  "current_phase": "Phase 8: Post-Import Validation",
   "phases": {
     "Phase 0: Pre-Import Validation": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:18.285472",
-      "end_time": "2025-11-15T18:33:19.855739",
+      "start_time": "2025-11-15T18:42:39.007112",
+      "end_time": "2025-11-15T18:42:40.656368",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -16,8 +16,8 @@
     },
     "Phase 2: Delete Existing Patient Data": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:19.856465",
-      "end_time": "2025-11-15T18:33:21.590362",
+      "start_time": "2025-11-15T18:42:40.656996",
+      "end_time": "2025-11-15T18:42:42.426371",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -38,8 +38,8 @@
     },
     "Phase 4: Import Appointments": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:29.041237",
-      "end_time": "2025-11-15T18:33:45.337754",
+      "start_time": "2025-11-15T18:42:49.703678",
+      "end_time": "2025-11-15T18:43:06.403263",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -49,8 +49,8 @@
     },
     "Phase 5: Import Notes & SMS": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:48.586375",
-      "end_time": "2025-11-15T18:33:58.193367",
+      "start_time": "2025-11-15T18:43:09.622950",
+      "end_time": "2025-11-15T18:43:19.264194",
       "total_items": 2,
       "processed_items": 2,
       "success_count": 1,
@@ -104,26 +104,20 @@
       ]
     },
     "Phase 8: Post-Import Validation": {
-      "status": "failed",
-      "start_time": "2025-11-15T18:34:22.251785",
-      "end_time": "2025-11-15T18:34:22.829616",
+      "status": "completed",
+      "start_time": "2025-11-15T18:43:48.914626",
+      "end_time": "2025-11-15T18:43:49.476265",
       "total_items": 2,
       "processed_items": 2,
-      "success_count": 0,
-      "error_count": 2,
+      "success_count": 1,
+      "error_count": 0,
       "skipped_count": 0,
-      "errors": [
-        {
-          "timestamp": "2025-11-15T18:34:22.829356",
-          "message": "Script failed: phase8_validation/validate_relationships.py",
-          "record_id": null
-        }
-      ]
+      "errors": []
     },
     "Phase 7: Link Images from CSV": {
       "status": "completed",
-      "start_time": "2025-11-15T18:34:00.798624",
-      "end_time": "2025-11-15T18:34:22.250938",
+      "start_time": "2025-11-15T18:43:28.448973",
+      "end_time": "2025-11-15T18:43:48.914030",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -133,8 +127,8 @@
     },
     "Phase 3: Import Patients from Excel": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:21.591160",
-      "end_time": "2025-11-15T18:33:29.040355",
+      "start_time": "2025-11-15T18:42:42.427041",
+      "end_time": "2025-11-15T18:42:49.702721",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -144,8 +138,8 @@
     },
     "Phase 4.5: Import Communication Data (Phones, Emails, Addresses)": {
       "status": "completed",
-      "start_time": "2025-11-15T18:33:45.338455",
-      "end_time": "2025-11-15T18:33:48.585368",
+      "start_time": "2025-11-15T18:43:06.403996",
+      "end_time": "2025-11-15T18:43:09.622206",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -155,8 +149,8 @@
     },
     "Phase 6: Link Documents to Patients (Excel-based)": {
       "status": "completed",
-      "start_time": "2025-11-15T18:39:53.221643",
-      "end_time": "2025-11-15T18:39:54.235673",
+      "start_time": "2025-11-15T18:43:19.264905",
+      "end_time": "2025-11-15T18:43:28.448277",
       "total_items": 1,
       "processed_items": 1,
       "success_count": 1,
@@ -165,5 +159,5 @@
       "errors": []
     }
   },
-  "overall_status": "failed"
+  "overall_status": "completed"
 }

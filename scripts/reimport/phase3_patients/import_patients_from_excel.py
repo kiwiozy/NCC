@@ -259,6 +259,7 @@ def import_patients_from_excel(excel_file: str = None, dry_run: bool = False) ->
                 'title': title or '',
                 'dob': dob,  # Note: field is 'dob' not 'date_of_birth'
                 'sex': gender,  # Note: field is 'sex' not 'gender'
+                'health_number': row_data.get('Health Number') or '',  # Health number (Medicare, etc.)
                 'clinic': clinic,
                 'funding_type': funding_source,  # Note: field is 'funding_type' not 'funding_source'
                 'filemaker_metadata': {
@@ -268,7 +269,6 @@ def import_patients_from_excel(excel_file: str = None, dry_run: bool = False) ->
                     'contact_type': row_data.get('contactType') or '',
                     'cys_id': row_data.get('CYS_ID') or '',
                     'diabetes': row_data.get('Diabetes') or '',
-                    'health_number': row_data.get('Health Number') or '',
                     'id_clinic': row_data.get('id_Clinic') or '',
                 },
                 'notes': ''  # Will be populated by Phase 5
