@@ -763,34 +763,40 @@ export default function ContactsPage() {
     loadFundingSources();
   }, []);
 
-  // Search coordinators
+  // Search coordinators/referrers
   const searchCoordinators = async (query: string) => {
     if (typeof window === 'undefined') return;
     
     setCoordinatorLoading(true);
     try {
-      // TODO: Replace with actual coordinator API endpoint when available
-      // For now, using mock data or searching contacts with type=coordinator
-      // When coordinator API exists: GET /api/coordinators/?search={query}
+      // Use Referrers API endpoint
+      const searchParam = query ? `search=${encodeURIComponent(query)}&` : '';
+      const response = await fetch(
+        `https://localhost:8000/api/referrers/?${searchParam}ordering=last_name,first_name&t=${Date.now()}`,
+        {
+          credentials: 'include',
+        }
+      );
       
-      // Mock coordinator data for now
-      const mockCoordinators = [
-        { id: '1', name: 'Warda - Ability Connect', organization: 'Ability Connect' },
-        { id: '2', name: 'Sarah Johnson - NDIS Support', organization: 'NDIS Support Services' },
-        { id: '3', name: 'Michael Chen - Support Coordination', organization: 'Support Coordination Plus' },
-      ];
-      
-      // Filter by search query
-      const filtered = query 
-        ? mockCoordinators.filter(c => 
-            c.name.toLowerCase().includes(query.toLowerCase()) ||
-            c.organization.toLowerCase().includes(query.toLowerCase())
-          )
-        : mockCoordinators;
-      
-      setCoordinatorSearchResults(filtered);
+      if (response.ok) {
+        const data = await response.json();
+        const referrers = data.results || data;
+        
+        // Transform to match expected format
+        const transformed = referrers.map((ref: any) => ({
+          id: ref.id,
+          name: ref.full_name,
+          specialty: ref.specialty_name || '',
+          practice: ref.practice_name || '',
+        }));
+        
+        setCoordinatorSearchResults(transformed);
+      } else {
+        console.error('Failed to fetch referrers:', response.status);
+        setCoordinatorSearchResults([]);
+      }
     } catch (error) {
-      console.error('Error searching coordinators:', error);
+      console.error('Error searching coordinators/referrers:', error);
       setCoordinatorSearchResults([]);
     } finally {
       setCoordinatorLoading(false);
@@ -2264,26 +2270,53 @@ export default function ContactsPage() {
                 {coordinatorSearchResults.map((coordinator) => (
                   <UnstyledButton
                     key={coordinator.id}
-                    onClick={() => {
+                    onClick={async () => {
                       if (selectedContact && coordinatorDate) {
-                        const dateStr = dayjs(coordinatorDate).format('YYYY-MM-DD');
-                        const coordinators = getCoordinators(selectedContact);
-                        const newCoordinator = {
-                          name: coordinator.name,
-                          date: dateStr,
-                        };
-                        // Add to coordinators array (avoid duplicates)
-                        const updatedCoordinators = [...coordinators, newCoordinator];
-                        setSelectedContact({
-                          ...selectedContact,
-                          coordinators: updatedCoordinators,
-                          // Keep legacy coordinator for backwards compatibility (most recent)
-                          coordinator: newCoordinator,
-                        });
-                        setCoordinatorDialogOpened(false);
-                        setCoordinatorSearchQuery('');
-                        setCoordinatorSearchResults([]);
-                        setCoordinatorDate(null);
+                        try {
+                          const dateStr = dayjs(coordinatorDate).format('YYYY-MM-DD');
+                          
+                          // Create patient-referrer relationship in the database
+                          const response = await fetch('https://localhost:8000/api/patient-referrers/', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              patient: selectedContact.id,
+                              referrer: coordinator.id,
+                              referral_date: dateStr,
+                              status: 'ACTIVE',
+                            }),
+                          });
+                          
+                          if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({ detail: 'Failed to create relationship' }));
+                            throw new Error(errorData.detail || `HTTP ${response.status}`);
+                          }
+                          
+                          // Update local state for display
+                          const coordinators = getCoordinators(selectedContact);
+                          const newCoordinator = {
+                            name: coordinator.name,
+                            date: dateStr,
+                          };
+                          const updatedCoordinators = [...coordinators, newCoordinator];
+                          setSelectedContact({
+                            ...selectedContact,
+                            coordinators: updatedCoordinators,
+                            coordinator: newCoordinator,
+                          });
+                          
+                          // Close dialog and reset
+                          setCoordinatorDialogOpened(false);
+                          setCoordinatorSearchQuery('');
+                          setCoordinatorSearchResults([]);
+                          setCoordinatorDate(null);
+                        } catch (error) {
+                          console.error('Error creating patient-referrer relationship:', error);
+                          alert(`Failed to add ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        }
                       }
                     }}
                     disabled={!coordinatorDate}
@@ -2294,6 +2327,7 @@ export default function ContactsPage() {
                       border: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
                       transition: 'background-color 0.2s ease',
                       opacity: coordinatorDate ? 1 : 0.5,
+                      cursor: coordinatorDate ? 'pointer' : 'not-allowed',
                     }}
                     onMouseEnter={(e) => {
                       if (coordinatorDate) {
@@ -2308,8 +2342,11 @@ export default function ContactsPage() {
                   >
                     <Stack gap={4}>
                       <Text size="sm" fw={600}>{coordinator.name}</Text>
-                      {coordinator.organization && (
-                        <Text size="xs" c="dimmed">{coordinator.organization}</Text>
+                      {coordinator.specialty && (
+                        <Text size="xs" c="blue">{coordinator.specialty}</Text>
+                      )}
+                      {coordinator.practice && (
+                        <Text size="xs" c="dimmed">{coordinator.practice}</Text>
                       )}
                     </Stack>
                   </UnstyledButton>
@@ -2318,11 +2355,15 @@ export default function ContactsPage() {
             </ScrollArea>
           ) : coordinatorSearchQuery ? (
             <Center py="xl">
-              <Text c="dimmed" size="sm">No coordinators found</Text>
+              <Text c="dimmed" size="sm">
+                {selectedContact && isNDISFunding(selectedContact) ? 'No coordinators found' : 'No referrers found'}
+              </Text>
             </Center>
           ) : (
             <Center py="xl">
-              <Text c="dimmed" size="sm">Start typing to search coordinators</Text>
+              <Text c="dimmed" size="sm">
+                {selectedContact && isNDISFunding(selectedContact) ? 'Start typing to search coordinators' : 'Start typing to search referrers'}
+              </Text>
             </Center>
           )}
         </Stack>
