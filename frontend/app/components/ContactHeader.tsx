@@ -241,6 +241,10 @@ export default function ContactHeader({
           });
           if (response.ok) {
             const data = await response.json();
+            console.log('Appointments API response:', data); // DEBUG
+            console.log('data.count:', data.count); // DEBUG
+            console.log('data.results length:', data.results?.length); // DEBUG
+            
             // Check if API returns a 'count' field (Django REST pagination)
             if (data.count !== undefined) {
               setAppointmentsCount(data.count);
