@@ -2078,7 +2078,7 @@ export default function ContactsPage() {
                                         {sortedElements}
                                       </Stack>
                                     </ScrollArea>
-                                    <Text size="xs" c="dimmed" ta="center" mt="xs">
+                                    <Text size="xs" c="dimmed" ta="center" mt={4}>
                                       {remainingCount} more
                                     </Text>
                                   </>
