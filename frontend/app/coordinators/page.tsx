@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Container, Paper, Text, Loader, Center, Grid, Stack, ScrollArea, UnstyledButton, Badge, Group, rem, Divider, Box } from '@mantine/core';
 import { IconStethoscope, IconPhone, IconMail, IconMapPin, IconBuilding, IconUsers } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
@@ -61,6 +61,7 @@ interface Specialty {
 export default function CoordinatorsPage() {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
+  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get('id');
 
@@ -644,7 +645,13 @@ export default function CoordinatorsPage() {
                                     {coordinatorPatients.slice(0, MAX_VISIBLE).map((pr) => (
                                       <Group key={pr.id} justify="space-between" align="center">
                                         <Group gap="md" style={{ flex: 1 }} align="center">
-                                          <Text size="md" fw={600}>
+                                          <Text 
+                                            size="md" 
+                                            fw={600}
+                                            style={{ cursor: 'pointer' }}
+                                            c="blue"
+                                            onClick={() => router.push(`/patients?id=${pr.patient_id}`)}
+                                          >
                                             {pr.patient_name}
                                           </Text>
                                           <Text size="sm" c="dimmed">
@@ -676,7 +683,13 @@ export default function CoordinatorsPage() {
                                         {coordinatorPatients.slice(MAX_VISIBLE).map((pr) => (
                                           <Group key={pr.id} justify="space-between" align="center">
                                             <Group gap="md" style={{ flex: 1 }} align="center">
-                                              <Text size="md" fw={600}>
+                                              <Text 
+                                                size="md" 
+                                                fw={600}
+                                                style={{ cursor: 'pointer' }}
+                                                c="blue"
+                                                onClick={() => router.push(`/patients?id=${pr.patient_id}`)}
+                                              >
                                                 {pr.patient_name}
                                               </Text>
                                               <Text size="sm" c="dimmed">
@@ -699,7 +712,13 @@ export default function CoordinatorsPage() {
                                   {coordinatorPatients.map((pr) => (
                                     <Group key={pr.id} justify="space-between" align="center">
                                       <Group gap="md" style={{ flex: 1 }} align="center">
-                                        <Text size="md" fw={600}>
+                                        <Text 
+                                          size="md" 
+                                          fw={600}
+                                          style={{ cursor: 'pointer' }}
+                                          c="blue"
+                                          onClick={() => router.push(`/patients?id=${pr.patient_id}`)}
+                                        >
                                           {pr.patient_name}
                                         </Text>
                                         <Text size="sm" c="dimmed">
