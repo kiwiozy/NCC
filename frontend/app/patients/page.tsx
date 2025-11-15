@@ -47,6 +47,9 @@ interface Contact {
     end_date: string;
     type: string;
   }>;
+  // NDIS-specific plan dates (imported from FileMaker)
+  ndis_plan_start_date?: string;
+  ndis_plan_end_date?: string;
   communication?: {
     phone?: string | { [key: string]: string | { value: string; default?: boolean } };
     mobile?: string | { [key: string]: string | { value: string; default?: boolean } };
@@ -399,6 +402,9 @@ const transformPatientToContact = (patient: any): Contact => {
         }] : undefined),
     planDates: formatDateRange(patient.plan_start_date, patient.plan_end_date), // Legacy
     planDatesArray: patient.plan_dates_json ? (Array.isArray(patient.plan_dates_json) ? patient.plan_dates_json : []) : undefined,
+    // NDIS plan dates from FileMaker import
+    ndis_plan_start_date: patient.ndis_plan_start_date || undefined,
+    ndis_plan_end_date: patient.ndis_plan_end_date || undefined,
     communication: communication,
     address_json: patient.address_json ? {
       street: patient.address_json.street,
@@ -798,8 +804,23 @@ export default function ContactsPage() {
         const data = await response.json();
         const referrers = data.results || data;
         
+        // Determine if we should show coordinators or referrers based on patient's funding
+        const isNDIS = selectedContact ? isNDISFunding(selectedContact) : false;
+        
+        // Filter based on funding type
+        const filtered = referrers.filter((ref: any) => {
+          const specialty = ref.specialty_name?.toLowerCase() || '';
+          const isCoordinator = specialty.includes('support coordinator') || 
+                               specialty.includes('ndis coordinator') ||
+                               specialty.includes('plan manager');
+          
+          // If NDIS funding: ONLY show coordinators
+          // If other funding: EXCLUDE coordinators (show only referrers)
+          return isNDIS ? isCoordinator : !isCoordinator;
+        });
+        
         // Transform to match expected format
-        const transformed = referrers.map((ref: any) => ({
+        const transformed = filtered.map((ref: any) => ({
           id: ref.id,
           name: ref.full_name,
           specialty: ref.specialty_name || '',
@@ -1344,6 +1365,25 @@ export default function ContactsPage() {
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
+
+                        {/* NDIS Plan Dates (from FileMaker Import) - Show for all NDIS patients */}
+                        {isNDISFunding(selectedContact) && (selectedContact.ndis_plan_start_date || selectedContact.ndis_plan_end_date) && (
+                          <Box style={{ width: '100%' }}>
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">
+                              NDIS Plan Dates (Imported)
+                            </Text>
+                            <Group gap="xs" align="flex-start">
+                              <Text size="md" fw={700}>
+                                {selectedContact.ndis_plan_start_date && formatDateOnlyAU(selectedContact.ndis_plan_start_date)}
+                                {selectedContact.ndis_plan_start_date && selectedContact.ndis_plan_end_date && ' → '}
+                                {selectedContact.ndis_plan_end_date && formatDateOnlyAU(selectedContact.ndis_plan_end_date)}
+                              </Text>
+                            </Group>
+                            <Text size="xs" c="dimmed" fs="italic" mt={4}>
+                              From FileMaker import
+                            </Text>
+                          </Box>
+                        )}
 
                         {/* Plan Dates Section - Only show if funding is NDIS */}
                         {isNDISFunding(selectedContact) && (
