@@ -1491,7 +1491,9 @@ export default function ContactsPage() {
                       <Stack gap="md" align="flex-start">
                         <Box style={{ width: '100%' }}>
                           <Group gap="xs" align="flex-end" mb="xs">
-                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>Coordinator</Text>
+                            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ flex: 1 }}>
+                              {isNDISFunding(selectedContact) ? 'Coordinator' : 'Referrer'}
+                            </Text>
                             {(() => {
                               const currentCoordinator = getCurrentCoordinator(selectedContact);
                               const coordinators = getCoordinators(selectedContact);
@@ -1505,7 +1507,7 @@ export default function ContactsPage() {
                                         variant="subtle" 
                                         color="blue"
                                         onClick={() => setCoordinatorListDialogOpened(true)}
-                                        title="View all coordinators"
+                                        title={`View all ${isNDISFunding(selectedContact) ? 'coordinators' : 'referrers'}`}
                                       >
                                         <IconListCheck size={20} />
                                       </ActionIcon>
@@ -1517,7 +1519,7 @@ export default function ContactsPage() {
                                         setCoordinatorDate(new Date());
                                         setCoordinatorDialogOpened(true);
                                       }}
-                                      title="Add coordinator"
+                                      title={`Add ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
                                     >
                                 <IconPlus size={20} />
                               </ActionIcon>
@@ -1532,7 +1534,7 @@ export default function ContactsPage() {
                                       setCoordinatorDate(new Date());
                                       setCoordinatorDialogOpened(true);
                                     }}
-                                    title="Add coordinator"
+                                    title={`Add ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
                                   >
                                     <IconPlus size={20} />
                                   </ActionIcon>
@@ -1552,7 +1554,7 @@ export default function ContactsPage() {
                             } else {
                               return (
                               <TextInput
-                                placeholder="Select coordinator"
+                                placeholder={`Select ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}`}
                                   readOnly
                                   styles={{ input: { height: 'auto', minHeight: rem(36) } }}
                                   value=""
@@ -2188,7 +2190,9 @@ export default function ContactsPage() {
         }}
         title={
           <Group justify="space-between" style={{ width: '100%' }}>
-            <Text fw={600} size="lg">Add Coordinator</Text>
+            <Text fw={600} size="lg">
+              {selectedContact && isNDISFunding(selectedContact) ? 'Add Coordinator' : 'Add Referrer'}
+            </Text>
             <ActionIcon
               variant="subtle"
               onClick={() => {
@@ -2243,8 +2247,8 @@ export default function ContactsPage() {
           />
           
           <TextInput
-            label="SEARCH COORDINATORS"
-            placeholder="Search coordinators..."
+            label={selectedContact && isNDISFunding(selectedContact) ? 'SEARCH COORDINATORS' : 'SEARCH REFERRERS'}
+            placeholder={selectedContact && isNDISFunding(selectedContact) ? 'Search coordinators...' : 'Search referrers...'}
             leftSection={<IconSearch size={16} />}
             value={coordinatorSearchQuery}
             onChange={(e) => setCoordinatorSearchQuery(e.currentTarget.value)}
@@ -2330,7 +2334,9 @@ export default function ContactsPage() {
         onClose={() => setCoordinatorListDialogOpened(false)}
         title={
           <Group justify="space-between" style={{ width: '100%' }}>
-            <Text fw={600} size="lg">Coordinators</Text>
+            <Text fw={600} size="lg">
+              {selectedContact && isNDISFunding(selectedContact) ? 'Coordinators' : 'Referrers'}
+            </Text>
             <ActionIcon
               variant="subtle"
               onClick={() => setCoordinatorListDialogOpened(false)}
@@ -2358,7 +2364,9 @@ export default function ContactsPage() {
             if (coordinators.length === 0) {
               return (
                 <Center py="xl">
-                  <Text c="dimmed" size="sm">No coordinators assigned</Text>
+                  <Text c="dimmed" size="sm">
+                    {selectedContact && isNDISFunding(selectedContact) ? 'No coordinators assigned' : 'No referrers assigned'}
+                  </Text>
                 </Center>
               );
             }
