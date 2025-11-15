@@ -17,6 +17,7 @@ interface ContactHeaderProps {
   onLettersClick?: () => void;
   onSmsClick?: () => void;
   patientId?: string; // For getting note and document counts
+  selectedPatientName?: string; // Name of selected patient to display
   showFilters?: boolean;
   filterOptions?: {
     funding?: string[];
@@ -43,6 +44,7 @@ export default function ContactHeader({
   onLettersClick,
   onSmsClick,
   patientId,
+  selectedPatientName,
   showFilters = true,
   filterOptions = {
     funding: ['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare'],
@@ -626,6 +628,13 @@ export default function ContactHeader({
             </Text>
           )}
         </Stack>
+
+        {/* Center: Selected Patient Name */}
+        {selectedPatientName && (
+          <Title order={3} style={{ flex: 1, textAlign: 'center', fontSize: rem(20), fontWeight: 500 }}>
+            {selectedPatientName}
+          </Title>
+        )}
 
         {/* Right: Hamburger Menu */}
         <Popover

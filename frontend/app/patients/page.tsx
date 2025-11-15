@@ -1083,6 +1083,7 @@ export default function ContactsPage() {
         onLettersClick={() => setLettersDialogOpened(true)}
         onSmsClick={() => setSmsDialogOpened(true)}
         patientId={selectedContact?.id}
+        selectedPatientName={selectedContact?.name}
         onFilterApply={handleFilterApply}
         showFilters={true}
         filterOptions={{
