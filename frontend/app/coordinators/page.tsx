@@ -353,7 +353,7 @@ export default function CoordinatorsPage() {
                     </Paper>
 
                     {/* Communication */}
-                    {selectedCoordinator.contact_json && (
+                    {(selectedCoordinator.contact_json || selectedCoordinator.address_json) && (
                       <Box>
                         <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Communication</Text>
                         <Divider mb="md" />
@@ -429,6 +429,28 @@ export default function CoordinatorsPage() {
                                 );
                               }
 
+                              // Handle address
+                              if (selectedCoordinator.address_json) {
+                                const addr = selectedCoordinator.address_json;
+                                const addressStr = [
+                                  addr.street,
+                                  addr.street2,
+                                  addr.suburb,
+                                  addr.postcode,
+                                  addr.state,
+                                ].filter(Boolean).join(', ');
+                                
+                                items.push(
+                                  <Group key="address">
+                                    <Box style={{ minWidth: rem(100) }}>
+                                      <Text size="sm" c="dimmed">Address</Text>
+                                      <Text size="xs" c="dimmed">{addr.type ? addr.type.charAt(0).toUpperCase() + addr.type.slice(1) : 'Home'}</Text>
+                                    </Box>
+                                    <Text size="md" fw={600}>{addressStr}</Text>
+                                  </Group>
+                                );
+                              }
+
                               const hasMore = items.length > MAX_VISIBLE;
                               const remainingCount = items.length - MAX_VISIBLE;
 
@@ -472,33 +494,6 @@ export default function CoordinatorsPage() {
                           </Stack>
                         </Paper>
                       </Box>
-                    )}
-
-                    {/* Address */}
-                    {selectedCoordinator.address_json && (
-                      <Paper p="xl" shadow="xs">
-                        <Text size="lg" fw={600} mb="md">Address</Text>
-                        <Group gap="sm" align="flex-start">
-                          <IconMapPin size={20} color={isDark ? '#909296' : '#495057'} />
-                          <Stack gap={2}>
-                            {selectedCoordinator.address_json.street && (
-                              <Text size="md">{selectedCoordinator.address_json.street}</Text>
-                            )}
-                            {selectedCoordinator.address_json.street2 && (
-                              <Text size="md">{selectedCoordinator.address_json.street2}</Text>
-                            )}
-                            {(selectedCoordinator.address_json.suburb || selectedCoordinator.address_json.state || selectedCoordinator.address_json.postcode) && (
-                              <Text size="md">
-                                {[
-                                  selectedCoordinator.address_json.suburb,
-                                  selectedCoordinator.address_json.state,
-                                  selectedCoordinator.address_json.postcode
-                                ].filter(Boolean).join(' ')}
-                              </Text>
-                            )}
-                          </Stack>
-                        </Group>
-                      </Paper>
                     )}
 
                     {/* Companies/Practices */}
