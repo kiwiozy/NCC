@@ -2396,7 +2396,6 @@ export default function ContactsPage() {
         onClose={() => setCoordinatorListDialogOpened(false)}
         title={selectedContact && isNDISFunding(selectedContact) ? 'Coordinators' : 'Referrers'}
         size="md"
-        key={`coordinator-list-${selectedContact?.id}-${JSON.stringify(getCoordinators(selectedContact))}`}
         styles={{
           header: {
             backgroundColor: '#228BE6',
@@ -2413,8 +2412,6 @@ export default function ContactsPage() {
         <Stack gap="md">
           {(() => {
             const coordinators = getCoordinators(selectedContact);
-            console.log('🟢 MODAL RENDER: Coordinators list rendering with:', coordinators);
-            console.log('   Modal key:', `coordinator-list-${selectedContact?.id}-${JSON.stringify(coordinators)}`);
             
             if (coordinators.length === 0) {
               return (
@@ -2476,12 +2473,8 @@ export default function ContactsPage() {
                         
                         if (!selectedContact) return;
                         
-                        console.log('🔵 STEP 1: Clicked on coordinator:', coordinator.name);
-                        console.log('   Current coordinators BEFORE update:', getCoordinators(selectedContact));
-                        
                         try {
                           // Find the PatientReferrer ID from the API
-                          console.log('🔵 STEP 2: Fetching patient-referrer relationships...');
                           const response = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
                             credentials: 'include',
                           });
@@ -2490,7 +2483,6 @@ export default function ContactsPage() {
                           
                           const data = await response.json();
                           const relationships = data.results || data;
-                          console.log('   Found relationships:', relationships.length);
                           
                           // Find the relationship to update by matching name and date
                           const toUpdate = relationships.find((pr: any) => 
@@ -2502,11 +2494,8 @@ export default function ContactsPage() {
                             throw new Error('Relationship not found');
                           }
                           
-                          console.log('   Found relationship to update:', toUpdate.id);
-                          
                           // Update the relationship with today's date
                           const today = dayjs().format('YYYY-MM-DD');
-                          console.log('🔵 STEP 3: Updating relationship date to:', today);
                           const updateResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toUpdate.id}/`, {
                             method: 'PATCH',
                             headers: {
@@ -2520,50 +2509,31 @@ export default function ContactsPage() {
                           });
                           
                           if (!updateResponse.ok) throw new Error('Failed to update relationship');
-                          console.log('   ✅ Relationship updated successfully');
                           
                           // Refresh the patient data from backend
-                          console.log('🔵 STEP 4: Fetching fresh patient data...');
                           const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
                             credentials: 'include',
                           });
                           
                           if (patientResponse.ok) {
                             const updatedPatient = await patientResponse.json();
-                            console.log('   Raw patient data from API:', updatedPatient.referrers);
-                            console.log('   Raw referral dates:', updatedPatient.referrers?.map((r: any) => ({name: r.name, date: r.referral_date})));
-                            
                             const transformedPatient = transformPatientToContact(updatedPatient);
-                            console.log('   Transformed coordinators:', getCoordinators(transformedPatient));
                             
-                            console.log('🔵 STEP 5: Updating state...');
-                            // Update selected contact
+                            // Update all state
                             setSelectedContact(transformedPatient);
-                            console.log('   ✅ Updated selectedContact');
-                            
-                            // Update all contacts
                             setAllContacts(prev => prev.map(c => 
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
-                            console.log('   ✅ Updated allContacts');
-                            
-                            // Update filtered contacts list
                             setContacts(prev => prev.map(c => 
                               c.id === transformedPatient.id ? transformedPatient : c
                             ));
-                            console.log('   ✅ Updated contacts');
-                            
-                            console.log('🔵 STEP 6: Waiting 100ms for re-render...');
-                            // Wait a moment for React to re-render, then close dialog
-                            setTimeout(() => {
-                              console.log('🔵 STEP 7: Closing dialog');
-                              setCoordinatorListDialogOpened(false);
-                              console.log('✅ COMPLETE: Dialog closed');
-                            }, 100);
                           }
                           
+                          // Close dialog immediately
+                          setCoordinatorListDialogOpened(false);
+                          
                         } catch (error) {
-                          console.error('❌ ERROR in workflow:', error);
+                          console.error('Error updating coordinator/referrer:', error);
                           alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         }
                       }}
