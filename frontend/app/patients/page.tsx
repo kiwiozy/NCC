@@ -2066,22 +2066,16 @@ export default function ContactsPage() {
                             return (
                               <>
                                 {hasMore ? (
-                                  <>
-                                    {/* Show first MAX_VISIBLE items (defaults) without scroll */}
-                                    <Stack gap="md">
-                                      {sortedElements.slice(0, MAX_VISIBLE)}
-                                    </Stack>
-                                    <Divider my="md" />
-                                    <Text size="xs" c="dimmed" ta="center" mb="xs">
-                                      Additional Contacts ({remainingCount} more)
-                                    </Text>
-                                    {/* Scrollable area for remaining items */}
-                                    <ScrollArea h={150} style={{ border: '1px solid var(--mantine-color-gray-7)' }}>
-                                      <Stack gap="md" p="sm">
+                                  <Stack gap="md">
+                                    {/* Show first MAX_VISIBLE items */}
+                                    {sortedElements.slice(0, MAX_VISIBLE)}
+                                    {/* Scrollable area for remaining items - seamless */}
+                                    <ScrollArea h={100} offsetScrollbars>
+                                      <Stack gap="md">
                                         {sortedElements.slice(MAX_VISIBLE)}
                                       </Stack>
                                     </ScrollArea>
-                                  </>
+                                  </Stack>
                                 ) : (
                                   <Stack gap="md">
                                     {sortedElements}
