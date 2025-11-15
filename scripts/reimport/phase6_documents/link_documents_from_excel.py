@@ -116,7 +116,7 @@ def link_documents_from_excel(excel_file: str = None, dry_run: bool = False) -> 
         row_count += 1
         
         doc_id = row_data.get('id')  # Document FileMaker ID
-        patient_id = row_data.get('id.key')  # Patient FileMaker ID
+        patient_id = row_data.get('id_Contact')  # Patient FileMaker ID (corrected from 'id.key')
         
         if doc_id and patient_id:
             doc_to_patient_map[str(doc_id)] = str(patient_id)
