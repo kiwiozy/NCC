@@ -1170,15 +1170,13 @@ export default function ContactsPage() {
         {/* Right Panel - Contact Details */}
         <Grid.Col span={9} style={{ 
           height: '100%',
+          maxHeight: '100%',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
         }}>
           <ScrollArea 
-            style={{ 
-              flex: 1,
-              maxHeight: '100%',
-            }}
+            h="100%"
             type="scroll"
           >
             <Container size="xl" py="xl">
