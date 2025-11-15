@@ -276,7 +276,39 @@ def import_patients_from_excel(excel_file: str = None, dry_run: bool = False) ->
             
             # Add NDIS data if present
             ndis_coordinator_name = row_data.get('NDIS Coordinator Name')
+            ndis_plan_start_date = None
+            ndis_plan_end_date = None
+            
             if ndis_coordinator_name:
+                # Parse NDIS plan dates
+                plan_start_raw = row_data.get('NDIS Plan Start Date')
+                plan_end_raw = row_data.get('NDIS Plan End Date')
+                
+                # Try to parse start date
+                if plan_start_raw:
+                    try:
+                        from datetime import datetime
+                        if isinstance(plan_start_raw, datetime):
+                            ndis_plan_start_date = plan_start_raw.date()
+                        elif isinstance(plan_start_raw, str):
+                            # Try to parse string date
+                            ndis_plan_start_date = datetime.strptime(plan_start_raw.split(' ')[0], '%Y-%m-%d').date()
+                    except (ValueError, AttributeError):
+                        pass  # Skip if can't parse
+                
+                # Try to parse end date
+                if plan_end_raw:
+                    try:
+                        from datetime import datetime
+                        if isinstance(plan_end_raw, datetime):
+                            ndis_plan_end_date = plan_end_raw.date()
+                        elif isinstance(plan_end_raw, str):
+                            # Try to parse string date
+                            ndis_plan_end_date = datetime.strptime(plan_end_raw.split(' ')[0], '%Y-%m-%d').date()
+                    except (ValueError, AttributeError):
+                        pass  # Skip if can't parse
+                
+                # Store in filemaker_metadata for reference
                 patient_data['filemaker_metadata']['ndis'] = {
                     'coordinator_name': ndis_coordinator_name,
                     'coordinator_email': row_data.get('NDIS Coordinator Email') or '',
@@ -285,6 +317,10 @@ def import_patients_from_excel(excel_file: str = None, dry_run: bool = False) ->
                     'plan_end_date': str(row_data.get('NDIS Plan End Date') or ''),
                     'notes': row_data.get('NDIS notes') or '',
                 }
+            
+            # Add NDIS plan dates to patient record
+            patient_data['ndis_plan_start_date'] = ndis_plan_start_date
+            patient_data['ndis_plan_end_date'] = ndis_plan_end_date
             
             # ========================================
             # Save Patient
