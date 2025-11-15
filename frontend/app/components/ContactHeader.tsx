@@ -65,6 +65,7 @@ export default function ContactHeader({
   const [documentsCount, setDocumentsCount] = useState<number>(0);
   const [imagesCount, setImagesCount] = useState<number>(0);
   const [batchesCount, setBatchesCount] = useState<number>(0);
+  const [appointmentsCount, setAppointmentsCount] = useState<number>(0);
   const [lettersCount, setLettersCount] = useState<number>(0);
   const [smsUnreadCount, setSmsUnreadCount] = useState<number>(0);
   const [filters, setFilters] = useState({
@@ -228,6 +229,58 @@ export default function ContactHeader({
     };
   }, [patientId, menuOpened]);
 
+  // Get appointments count for patient
+  useEffect(() => {
+    const getAppointmentsCount = async () => {
+      try {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+          // Load from API for patient-specific appointments
+          const response = await fetch(`https://localhost:8000/api/appointments/?patient_id=${patientId}&t=${Date.now()}`, {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const appointmentsList = data.results || data;
+            setAppointmentsCount(Array.isArray(appointmentsList) ? appointmentsList.length : 0);
+          } else {
+            setAppointmentsCount(0);
+          }
+        } else {
+          setAppointmentsCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading appointments count:', err);
+        setAppointmentsCount(0);
+      }
+    };
+
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getAppointmentsCount();
+    }
+    
+    // Listen for custom event when appointments change
+    const handleAppointmentsChange = () => {
+      if (menuOpened) {
+        getAppointmentsCount();
+      }
+    };
+    
+    window.addEventListener('appointmentsUpdated', handleAppointmentsChange);
+    
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getAppointmentsCount, 5000); // Every 5 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+      window.removeEventListener('appointmentsUpdated', handleAppointmentsChange);
+    };
+  }, [patientId, menuOpened]);
+
   // Get letters count for patient
   useEffect(() => {
     const getLettersCount = async () => {
@@ -369,7 +422,7 @@ export default function ContactHeader({
     { icon: <IconNote size={20} />, label: 'Notes', onClick: () => { onNotesClick?.(); setMenuOpened(false); }, count: notesCount },
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
-    { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); } },
+    { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); }, count: appointmentsCount },
     { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => console.log('Accounts') },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
@@ -620,9 +673,10 @@ export default function ContactHeader({
                         <Text size="sm" c={isDark ? '#C1C2C5' : '#495057'}>
                           {item.label}
                         </Text>
-                        {/* Badges for Notes, Documents, Letters, and SMS */}
+                        {/* Badges for Notes, Documents, Appointments, Letters, and SMS */}
                         {((item.label === 'Notes' && notesCount > 0) || 
                           (item.label === 'Documents' && documentsCount > 0) || 
+                          (item.label === 'Appointments' && appointmentsCount > 0) ||
                           (item.label === 'Letters' && lettersCount > 0) ||
                           (item.label === 'SMS' && smsUnreadCount > 0)) ? (
                           <Badge
@@ -648,6 +702,8 @@ export default function ContactHeader({
                               ? (notesCount > 99 ? '99+' : notesCount)
                               : item.label === 'Documents'
                               ? (documentsCount > 99 ? '99+' : documentsCount)
+                              : item.label === 'Appointments'
+                              ? (appointmentsCount > 99 ? '99+' : appointmentsCount)
                               : item.label === 'Letters'
                               ? (lettersCount > 99 ? '99+' : lettersCount)
                               : (smsUnreadCount > 99 ? '99+' : smsUnreadCount)
