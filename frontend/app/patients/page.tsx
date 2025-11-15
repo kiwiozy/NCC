@@ -2073,18 +2073,26 @@ export default function ContactsPage() {
                               <>
                                 {hasMore ? (
                                   <>
-                                    <ScrollArea 
-                                      h={containerHeight} 
-                                      offsetScrollbars
+                                    <div
                                       onWheel={(e) => {
-                                        // Stop wheel events from propagating to parent ScrollArea
+                                        // Stop wheel events from propagating to parent
                                         e.stopPropagation();
                                       }}
+                                      onTouchMove={(e) => {
+                                        // Stop touch events from propagating (for trackpad)
+                                        e.stopPropagation();
+                                      }}
+                                      style={{ width: '100%' }}
                                     >
-                                      <Stack gap="md">
-                                        {sortedElements}
-                                      </Stack>
-                                    </ScrollArea>
+                                      <ScrollArea 
+                                        h={containerHeight} 
+                                        offsetScrollbars
+                                      >
+                                        <Stack gap="md">
+                                          {sortedElements}
+                                        </Stack>
+                                      </ScrollArea>
+                                    </div>
                                     <Text size="xs" c="dimmed" ta="center" mt={4}>
                                       Scroll for {remainingCount} more...
                                     </Text>
