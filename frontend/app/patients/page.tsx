@@ -2079,7 +2079,7 @@ export default function ContactsPage() {
                                       </Stack>
                                     </ScrollArea>
                                     <Text size="xs" c="dimmed" ta="center" mt={4}>
-                                      {remainingCount} more
+                                      Scroll for {remainingCount} more...
                                     </Text>
                                   </>
                                 ) : (
