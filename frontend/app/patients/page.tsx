@@ -2065,11 +2065,17 @@ export default function ContactsPage() {
                             
                             return (
                               <>
-                                <ScrollArea h={hasMore ? 200 : undefined}>
+                                {hasMore ? (
+                                  <ScrollArea h={200}>
+                                    <Stack gap="md">
+                                      {sortedElements}
+                                    </Stack>
+                                  </ScrollArea>
+                                ) : (
                                   <Stack gap="md">
                                     {sortedElements}
                                   </Stack>
-                                </ScrollArea>
+                                )}
                                 {hasMore && (
                                   <Text size="xs" c="dimmed" ta="center" mt="xs">
                                     Scroll for more... ({remainingCount} more)
