@@ -1070,6 +1070,7 @@ export default function ContactsPage() {
 
   return (
     <Navigation>
+      <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ContactHeader
         title={getPageTitle()}
         onSearch={handleSearch}
@@ -1095,7 +1096,7 @@ export default function ContactsPage() {
         achievedCount={archivedCount}
       />
       
-      <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex' }}>
+      <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex', overflow: 'hidden' }}>
         {/* Left Panel - Contact List */}
         <Grid.Col span={3} style={{ 
           borderRight: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
@@ -3274,6 +3275,7 @@ export default function ContactsPage() {
         patientId={selectedContact?.id || ''}
         patientName={selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : ''}
       />
+      </div>
     </Navigation>
   );
 }
