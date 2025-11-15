@@ -1,14 +1,14 @@
 {
   "start_time": "2025-11-14T20:04:09.325798",
-  "last_update": "2025-11-15T14:18:10.980428",
-  "current_phase": "Phase 7: Link Images from CSV",
+  "last_update": "2025-11-15T18:06:52.958930",
+  "current_phase": "Phase 0: Pre-Import Validation",
   "phases": {
     "Phase 0: Pre-Import Validation": {
-      "status": "completed",
-      "start_time": "2025-11-15T12:17:06.605542",
-      "end_time": "2025-11-15T12:23:10.767789",
+      "status": "in_progress",
+      "start_time": "2025-11-15T18:06:45.723690",
+      "end_time": null,
       "total_items": 4,
-      "processed_items": 4,
+      "processed_items": 1,
       "success_count": 1,
       "error_count": 0,
       "skipped_count": 0,

@@ -48,9 +48,10 @@ class ReimportOrchestrator:
                 'number': 0,
                 'description': 'Pre-Import Validation',
                 'scripts': [
-                    # 'phase0_validation/backup_s3_files.py',  # COMMENTED OUT: Skipping S3 backup (already have backup from this morning)
-                    'phase0_validation/validate_filemaker_connection.py',
-                    'phase0_validation/validate_filemaker_data.py',
+                    # REMOVED: FileMaker validation (no longer needed - 100% Excel-based!)
+                    # 'phase0_validation/validate_filemaker_connection.py',
+                    # 'phase0_validation/validate_filemaker_data.py',
+                    # 'phase0_validation/backup_s3_files.py',  # S3 backup (skipped - already have backup)
                     'phase0_validation/validate_system_config.py',
                     'phase0_validation/create_backup.py',
                 ],

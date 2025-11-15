@@ -117,81 +117,37 @@
 
 ---
 
-### **❌ NOT Migrating** (REVISED: Now Migrating!)
+### **❌ NOT Migrating** (Web Scraping System)
+**Definition:** Sophisticated system that stays in PinsV5, document decision in Nexus
 
-~~**System:** Web Scraping for Healthcare Provider Discovery~~
+**System:** Web Scraping for Healthcare Provider Discovery
 
-**UPDATE:** Decision reversed - **Web scraping IS migrating to Nexus** for all-in-one solution.
+**Complexity:**
+- 100+ files of scraping logic
+- 2+ years of development and refinement
+- 4-phase automation pipeline (href discovery → extraction → organization → import)
+- Profession-specific scrapers (Podiatrists, Physiotherapists, OTs)
+- AI-powered data enrichment
+- 98%+ geocoding accuracy
+- Geographic boundary validation
 
-**New Status:** ✅ **MIGRATING** (see below)
+**Why NOT Migrating:**
+1. **Different Business Function:** Provider discovery (B2B marketing) vs patient management (clinic operations)
+2. **High Maintenance:** Requires constant updates when websites change
+3. **Complex Infrastructure:** Playwright browser automation, OpenAI Vision, extensive APIs
+4. **Not Needed:** Nexus manages existing referrers, not discovering new ones
+5. **Legal/Ethical:** Web scraping complexity not justified for Nexus use case
 
----
+**PinsV5 Docs:**
+- `docs/scraping/` (11 documents)
+- `web/scripts/api-server-v2/scrapers/` (scraper code)
+- Root-level status updates (3 docs)
 
-## 🔍 **Web Scraping System - NOW MIGRATING**
+**Nexus Documentation:**
+- ✅ Created: `docs/features/WEB_SCRAPING_ANALYSIS.md` - Detailed analysis of system and decision
+- ✅ Referenced: In `NEXUS_MARKETING_MIGRATION_PLAN.md` - Link to analysis
 
-### **Copy & Integrate Strategy:**
-
-**Why NOW Migrating:**
-- All-in-one platform strategy
-- Complete marketing solution (discovery → campaigns → analytics)
-- Unified infrastructure
-- No need to maintain separate PinsV5 system
-
-**PinsV5 Docs to Copy:**
-
-1. **`docs/scraping/`** (11 documents) → **`docs/marketing/provider-discovery/`**
-   - README.md
-   - ULTIMATE_AUTOMATION_DOCUMENTATION_SUMMARY.md
-   - SCRAPING_SYSTEM_REFINEMENT_PLAN.md
-   - GEOCODING_AND_BOUNDARY_VALIDATION.md
-   - PHASE_2_5_GEOCODING_TECHNICAL_SUMMARY.md
-   - GEOCODING_ENHANCEMENT_CHANGELOG.md
-   - scraping-podiatrists.md
-   - scraping-physio.md
-   - scraping-ot.md
-   - SYSTEM_REFACTORING_ROADMAP.md
-   - api-server-overview.md
-
-2. **Root-level status docs:**
-   - WEB_SCRAPING_STATUS_UPDATE.md
-   - WEB_SCRAPING_DEEP_DIVE_ANALYSIS.md
-   - Copy to `docs/marketing/provider-discovery/archive/`
-
-**PinsV5 Code to Copy:**
-
-1. **Scraper code:** `web/scripts/api-server-v2/scrapers/` → `backend/provider_discovery/scrapers/`
-   - BaseScraper.js
-   - PodiatristScraper.js
-   - PhysiotherapistScraper.js
-   - OTScraper.js
-   - run-complete-*.js (automation scripts)
-
-2. **Supporting services:**
-   - Geocoding service
-   - Screenshot service
-   - Boundary validation
-
-**Adaptations Needed:**
-
-1. **Django Integration:**
-   - Create `provider_discovery` Django app
-   - Models: ProviderScrapeSession, ScrapedProvider, ProviderCompany
-   - API endpoints to trigger/monitor scraping
-   - Service layer to bridge Django ↔ Node.js
-
-2. **Frontend UI:**
-   - Provider Discovery Dashboard
-   - Map view (Google Maps integration)
-   - Import workflow (discovered providers → referrers)
-   - Scraping job control panel
-
-3. **Documentation Updates:**
-   - Update paths to Nexus structure
-   - Add Django integration details
-   - Document UI workflows
-   - Add troubleshooting for Nexus environment
-
-**Migration Timeline:** ~17-25 days (see WEB_SCRAPING_ANALYSIS.md)
+**Action:** Preserve all PinsV5 docs as valuable technical reference, no migration needed
 
 **Location:** `/Users/craig/Documents/1.PinsV5/docs/`
 
