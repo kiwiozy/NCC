@@ -2072,11 +2072,16 @@ export default function ContactsPage() {
                             return (
                               <>
                                 {hasMore ? (
-                                  <ScrollArea h={containerHeight} offsetScrollbars>
-                                    <Stack gap="md">
-                                      {sortedElements}
-                                    </Stack>
-                                  </ScrollArea>
+                                  <>
+                                    <ScrollArea h={containerHeight} offsetScrollbars>
+                                      <Stack gap="md">
+                                        {sortedElements}
+                                      </Stack>
+                                    </ScrollArea>
+                                    <Text size="xs" c="dimmed" ta="center" mt="xs">
+                                      {remainingCount} more
+                                    </Text>
+                                  </>
                                 ) : (
                                   <Stack gap="md">
                                     {sortedElements}
