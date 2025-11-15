@@ -154,6 +154,7 @@ export default function CompaniesPage() {
           onAddNew={() => console.log('Add new company')}
           onArchive={() => setShowArchived(!showArchived)}
           showArchived={showArchived}
+          selectedPatientName={selectedCompany?.name}
           contactCount={companies.length}
           filteredCount={filteredCompanies.length}
           showFilters={false}

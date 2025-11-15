@@ -215,6 +215,7 @@ export default function ReferrersPage() {
           onAddNew={() => console.log('Add new referrer')}
           onArchive={() => setShowArchived(!showArchived)}
           showArchived={showArchived}
+          selectedPatientName={selectedReferrer?.full_name}
           contactCount={referrers.length}
           filteredCount={filteredReferrers.length}
           showFilters={false}
