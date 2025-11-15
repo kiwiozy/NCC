@@ -232,6 +232,32 @@ def import_patient_referrers(excel_file: str = None, dry_run: bool = False) -> b
                 )
                 logger.success(f"✅ Updated {len(relationships_to_update):,} relationships")
 
+        # Set the most recent referrer as primary for each patient
+        logger.info("")
+        logger.info("Setting primary referrers for each patient...")
+        
+        patients_with_referrers = Patient.objects.filter(patient_referrers__isnull=False).distinct()
+        primary_count = 0
+        
+        for patient in patients_with_referrers:
+            # Get all active referrers for this patient, ordered by most recent date
+            patient_referrers = PatientReferrer.objects.filter(
+                patient=patient,
+                status='ACTIVE'
+            ).order_by('-referral_date', '-created_at')
+            
+            if patient_referrers.exists():
+                # Set the first (most recent) as primary
+                most_recent = patient_referrers.first()
+                most_recent.is_primary = True
+                most_recent.save(update_fields=['is_primary'])
+                
+                # Set all others as non-primary
+                patient_referrers.exclude(id=most_recent.id).update(is_primary=False)
+                primary_count += 1
+        
+        logger.success(f"✅ Set primary referrers for {primary_count:,} patients")
+
     # Summary
     logger.info("")
     logger.info("=" * 70)
