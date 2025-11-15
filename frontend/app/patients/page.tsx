@@ -2322,6 +2322,26 @@ export default function ContactsPage() {
                             coordinator: newCoordinator,
                           });
                           
+                          // Refresh the patient data from backend to get updated referrer count
+                          try {
+                            const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                              credentials: 'include',
+                            });
+                            if (patientResponse.ok) {
+                              const updatedPatient = await patientResponse.json();
+                              const transformedPatient = transformPatientToContact(updatedPatient);
+                              
+                              // Update both selected contact and all contacts
+                              setSelectedContact(transformedPatient);
+                              setAllContacts(prev => prev.map(c => 
+                                c.id === transformedPatient.id ? transformedPatient : c
+                              ));
+                            }
+                          } catch (refreshError) {
+                            console.error('Error refreshing patient data:', refreshError);
+                            // Don't show error to user, the coordinator was added successfully
+                          }
+                          
                           // Close dialog and reset
                           setCoordinatorDialogOpened(false);
                           setCoordinatorSearchQuery('');
@@ -2564,6 +2584,26 @@ export default function ContactsPage() {
                         }
                       : c
                   ));
+                  
+                  // Refresh the patient data from backend to get updated referrer count
+                  try {
+                    const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                      credentials: 'include',
+                    });
+                    if (patientResponse.ok) {
+                      const updatedPatient = await patientResponse.json();
+                      const transformedPatient = transformPatientToContact(updatedPatient);
+                      
+                      // Update both selected contact and all contacts
+                      setSelectedContact(transformedPatient);
+                      setAllContacts(prev => prev.map(c => 
+                        c.id === transformedPatient.id ? transformedPatient : c
+                      ));
+                    }
+                  } catch (refreshError) {
+                    console.error('Error refreshing patient data:', refreshError);
+                    // Don't show error to user, the coordinator was deleted successfully
+                  }
                   
                   // Close dialog
                   setDeleteCoordinatorOpened(false);
