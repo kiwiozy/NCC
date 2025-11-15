@@ -149,6 +149,19 @@ class Patient(models.Model):
         help_text="Array of plan dates: [{\"start_date\": \"YYYY-MM-DD\", \"end_date\": \"YYYY-MM-DD\", \"type\": \"1 Year Plan\"}, ...]"
     )
     
+    # NDIS Plan Information (imported from FileMaker)
+    ndis_plan_start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="NDIS plan start date (from FileMaker Contacts.xlsx)"
+    )
+    
+    ndis_plan_end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="NDIS plan end date (from FileMaker Contacts.xlsx)"
+    )
+    
     # General Notes
     notes = models.TextField(
         null=True,

@@ -84,6 +84,12 @@ class Referrer(models.Model):
         help_text="Links to medical practice/company"
     )
     
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Notes about this referrer/coordinator (NDIS notes from FileMaker will be stored here)"
+    )
+    
     filemaker_id = models.UUIDField(
         unique=True,
         null=True,
