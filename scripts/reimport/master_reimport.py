@@ -70,6 +70,16 @@ class ReimportOrchestrator:
                 'requires_confirm': True,
             },
             {
+                'name': 'coordinators-extract',
+                'number': 2.5,
+                'description': 'Extract NDIS Coordinators from Contacts (for Patient Linking)',
+                'scripts': [
+                    'phase2_coordinators/extract_coordinators_from_contacts.py',  # Extract coordinators BEFORE patient import
+                ],
+                'required': False,  # Non-blocking - patients can be imported without coordinators
+                'stop_on_error': False,
+            },
+            {
                 'name': 'patients',
                 'number': 3,
                 'description': 'Import Patients from Excel',
@@ -79,6 +89,16 @@ class ReimportOrchestrator:
                 ],
                 'required': True,
                 'stop_on_error': True,
+            },
+            {
+                'name': 'coordinators-link',
+                'number': 3.5,
+                'description': 'Link Patients to NDIS Coordinators',
+                'scripts': [
+                    'phase3_patients/link_patients_to_coordinators.py',  # Link patients to coordinators AFTER patient import
+                ],
+                'required': False,  # Non-blocking - not all patients have coordinators
+                'stop_on_error': False,
             },
             {
                 'name': 'appointments',
@@ -153,6 +173,16 @@ class ReimportOrchestrator:
                     'phase10_referrers/import_referrer_companies.py',  # Referrer-Company relationships
                 ],
                 'required': False,  # Non-blocking
+                'stop_on_error': False,
+            },
+            {
+                'name': 'communications-referrers',
+                'number': 10.5,
+                'description': 'Import Communications for Referrers & Companies',
+                'scripts': [
+                    'phase10_referrers/import_referrer_company_communications.py',  # Update contact_json from Coms.xlsx
+                ],
+                'required': False,  # Non-blocking - referrers/companies can exist without contact details
                 'stop_on_error': False,
             },
             {
