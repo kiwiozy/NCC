@@ -2063,19 +2063,21 @@ export default function ContactsPage() {
                               return null;
                             }
                             
+                            // Calculate height for exactly MAX_VISIBLE items
+                            // Each item: ~40px (text + padding), gap: 16px (md)
+                            // Height = (items × 40px) + ((items - 1) × 16px)
+                            const itemHeight = 40;
+                            const gapSize = 16;
+                            const containerHeight = (MAX_VISIBLE * itemHeight) + ((MAX_VISIBLE - 1) * gapSize);
+                            
                             return (
                               <>
                                 {hasMore ? (
-                                  <Stack gap="md">
-                                    {/* Show first MAX_VISIBLE items */}
-                                    {sortedElements.slice(0, MAX_VISIBLE)}
-                                    {/* Scrollable area for remaining items - seamless */}
-                                    <ScrollArea h={100} offsetScrollbars>
-                                      <Stack gap="md">
-                                        {sortedElements.slice(MAX_VISIBLE)}
-                                      </Stack>
-                                    </ScrollArea>
-                                  </Stack>
+                                  <ScrollArea h={containerHeight} offsetScrollbars>
+                                    <Stack gap="md">
+                                      {sortedElements}
+                                    </Stack>
+                                  </ScrollArea>
                                 ) : (
                                   <Stack gap="md">
                                     {sortedElements}
