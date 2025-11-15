@@ -2396,6 +2396,7 @@ export default function ContactsPage() {
         onClose={() => setCoordinatorListDialogOpened(false)}
         title={selectedContact && isNDISFunding(selectedContact) ? 'Coordinators' : 'Referrers'}
         size="md"
+        key={`coordinator-list-${selectedContact?.id}-${JSON.stringify(getCoordinators(selectedContact))}`}
         styles={{
           header: {
             backgroundColor: '#228BE6',
