@@ -131,8 +131,8 @@ def import_patient_referrers(excel_file: str = None, dry_run: bool = False) -> b
             # Extract fields
             filemaker_id = row_data.get('id')
             patient_fm_id = row_data.get('id_Contact')
-            referrer_fm_id = row_data.get('id_Referrer')
-            referral_date = row_data.get('Date')
+            referrer_fm_id = row_data.get('id_Perscriber')  # Fixed: Typo in FileMaker - it's 'Perscriber' not 'Referrer'
+            referral_date = row_data.get('date')  # Fixed: lowercase
             referral_reason = row_data.get('Reason') or ''
             status = row_data.get('Status') or 'ACTIVE'
 
