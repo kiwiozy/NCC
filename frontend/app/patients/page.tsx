@@ -2474,106 +2474,86 @@ export default function ContactsPage() {
                           e.currentTarget.style.backgroundColor = isDark ? '#25262b' : '#f8f9fa';
                         }}
                         onClick={async (e) => {
-                          console.log('🔵 CLICK EVENT FIRED!');
+                          if (!selectedContact) return;
                           
-                          if (!selectedContact) {
-                            console.log('❌ No selected contact');
-                            return;
-                          }
-                          
-                          console.log('🔵 Clicked on coordinator:', coordinator.name);
-                        
-                        try {
-                          // Step 1: Set all referrers for this patient to is_primary=False
-                          const allResponse = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
-                            credentials: 'include',
-                          });
-                          
-                          if (!allResponse.ok) throw new Error('Failed to fetch patient-referrer relationships');
-                          
-                          const allData = await allResponse.json();
-                          const allRelationships = allData.results || allData;
-                          console.log('Found relationships:', allRelationships);
-                          
-                          // Find the clicked referrer's relationship
-                          const toUpdate = allRelationships.find((pr: any) => 
-                            pr.referrer_name === coordinator.name
-                          );
-                          
-                          console.log('Looking for:', coordinator.name);
-                          console.log('Found to update:', toUpdate);
-                          
-                          if (!toUpdate) {
-                            throw new Error('Relationship not found');
-                          }
-                          
-                          // Step 2: Update all OTHER referrers to is_primary=False
-                          const updatePromises = allRelationships
-                            .filter((pr: any) => pr.id !== toUpdate.id)
-                            .map((pr: any) => 
-                              fetch(`https://localhost:8000/api/patient-referrers/${pr.id}/`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                credentials: 'include',
-                                body: JSON.stringify({ is_primary: false }),
-                              })
-                            );
-                          
-                          await Promise.all(updatePromises);
-                          console.log('✅ Set all others to is_primary=False');
-                          
-                          // Step 3: Set the clicked referrer to is_primary=True and update date
-                          const today = dayjs().format('YYYY-MM-DD');
-                          console.log('Updating to is_primary=True and date:', today);
-                          const updateResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toUpdate.id}/`, {
-                            method: 'PATCH',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            credentials: 'include',
-                            body: JSON.stringify({
-                              is_primary: true,
-                              referral_date: today,
-                              status: 'ACTIVE',
-                            }),
-                          });
-                          
-                          if (!updateResponse.ok) throw new Error('Failed to update relationship');
-                          console.log('✅ Updated successfully');
-                          
-                          // Refresh the patient data from backend
-                          console.log('Fetching fresh patient data...');
-                          const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
-                            credentials: 'include',
-                          });
-                          
-                          if (patientResponse.ok) {
-                            const updatedPatient = await patientResponse.json();
-                            console.log('Fresh patient data:', updatedPatient.referrers);
-                            console.log('Raw is_primary values:', updatedPatient.referrers?.map((r: any) => ({name: r.name, is_primary: r.is_primary})));
-                            const transformedPatient = transformPatientToContact(updatedPatient);
-                            console.log('Transformed coordinators:', getCoordinators(transformedPatient));
+                          try {
+                            // Step 1: Set all referrers for this patient to is_primary=False
+                            const allResponse = await fetch(`https://localhost:8000/api/patient-referrers/?patient=${selectedContact.id}`, {
+                              credentials: 'include',
+                            });
                             
-                            // Update all state
-                            setSelectedContact(transformedPatient);
-                            setAllContacts(prev => prev.map(c => 
-                              c.id === transformedPatient.id ? transformedPatient : c
-                            ));
-                            setContacts(prev => prev.map(c => 
-                              c.id === transformedPatient.id ? transformedPatient : c
-                            ));
-                            console.log('✅ State updated');
+                            if (!allResponse.ok) throw new Error('Failed to fetch patient-referrer relationships');
+                            
+                            const allData = await allResponse.json();
+                            const allRelationships = allData.results || allData;
+                            
+                            // Find the clicked referrer's relationship
+                            const toUpdate = allRelationships.find((pr: any) => 
+                              pr.referrer_name === coordinator.name
+                            );
+                            
+                            if (!toUpdate) {
+                              throw new Error('Relationship not found');
+                            }
+                            
+                            // Step 2: Update all OTHER referrers to is_primary=False
+                            const updatePromises = allRelationships
+                              .filter((pr: any) => pr.id !== toUpdate.id)
+                              .map((pr: any) => 
+                                fetch(`https://localhost:8000/api/patient-referrers/${pr.id}/`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  credentials: 'include',
+                                  body: JSON.stringify({ is_primary: false }),
+                                })
+                              );
+                            
+                            await Promise.all(updatePromises);
+                            
+                            // Step 3: Set the clicked referrer to is_primary=True and update date
+                            const today = dayjs().format('YYYY-MM-DD');
+                            const updateResponse = await fetch(`https://localhost:8000/api/patient-referrers/${toUpdate.id}/`, {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              credentials: 'include',
+                              body: JSON.stringify({
+                                is_primary: true,
+                                referral_date: today,
+                                status: 'ACTIVE',
+                              }),
+                            });
+                            
+                            if (!updateResponse.ok) throw new Error('Failed to update relationship');
+                            
+                            // Refresh the patient data from backend
+                            const patientResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/?t=${Date.now()}`, {
+                              credentials: 'include',
+                            });
+                            
+                            if (patientResponse.ok) {
+                              const updatedPatient = await patientResponse.json();
+                              const transformedPatient = transformPatientToContact(updatedPatient);
+                              
+                              // Update all state
+                              setSelectedContact(transformedPatient);
+                              setAllContacts(prev => prev.map(c => 
+                                c.id === transformedPatient.id ? transformedPatient : c
+                              ));
+                              setContacts(prev => prev.map(c => 
+                                c.id === transformedPatient.id ? transformedPatient : c
+                              ));
+                            }
+                            
+                            // Close dialog immediately
+                            setCoordinatorListDialogOpened(false);
+                            
+                          } catch (error) {
+                            console.error('Error updating coordinator/referrer:', error);
+                            alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
                           }
-                          
-                          // Close dialog immediately
-                          console.log('Closing dialog...');
-                          setCoordinatorListDialogOpened(false);
-                          
-                        } catch (error) {
-                          console.error('❌ Error updating coordinator/referrer:', error);
-                          alert(`Failed to update ${isNDISFunding(selectedContact) ? 'coordinator' : 'referrer'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                        }
-                      }}
+                        }}
                       >
                         <Group justify="space-between" align="flex-start">
                           <Stack gap={4} style={{ flex: 1 }}>
