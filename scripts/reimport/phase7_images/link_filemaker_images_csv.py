@@ -96,17 +96,20 @@ def link_filemaker_images_csv(dry_run: bool = False, limit: int = 0) -> bool:
                 logger.info("Run without --dry-run to link images to database")
             else:
                 logger.success("✅ Image linking completed successfully")
-                progress.update_progress("phase7_images_csv", 100, 100, complete=True)
+            logger.phase_end(success=True)
             return True
         else:
             logger.error(f"❌ Image linking failed with exit code {result.returncode}")
+            logger.phase_end(success=False)
             return False
     
     except subprocess.CalledProcessError as e:
         logger.error(f"❌ Command failed: {e}")
+        logger.phase_end(success=False)
         return False
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")
+        logger.phase_end(success=False)
         return False
 
 

@@ -75,7 +75,7 @@ docs/
 │   ├── MARKETING_SECTION_UI_SUMMARY.md     ⭐ NEW
 │   ├── MMS_SUPPORT_PLAN.md
 │   ├── PATIENT_IMAGE_MANAGEMENT.md
-│   ├── PINSV5_TO_NEXUS_MIGRATION_PLAN.md
+│   ├── NEXUS_MARKETING_MIGRATION_PLAN.md
 │   └── SMS_NOTIFICATION_WIDGET_PLAN.md
 │
 ├── integrations/                    🔌 External APIs (6 files)
@@ -206,7 +206,7 @@ d38959e docs: Phase 2 - move completed features to archive
 
 ### **New Features:**
 1. `docs/features/MARKETING_SECTION_UI_SUMMARY.md` - Marketing UI
-2. `docs/features/PINSV5_TO_NEXUS_MIGRATION_PLAN.md` - Email campaigns
+2. `docs/features/NEXUS_MARKETING_MIGRATION_PLAN.md` - Nexus Marketing email campaigns (formerly PinsV5)
 3. `docs/features/CALENDAR_CLINICS_WORKFLOW_PLAN.md` - Calendar system
 
 ---

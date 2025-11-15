@@ -30,6 +30,60 @@ from clinicians.models import Clinic, Clinician
 from django.db import transaction
 
 
+def combine_date_time(date_str: str, time_str: str) -> datetime:
+    """
+    Combine separate date and time strings from FileMaker into a datetime.
+    
+    Args:
+        date_str: Date string (e.g., "2017-10-05T00:00:00" or "10/12/2016")
+        time_str: Time string (e.g., "0:00:00" or "14:30:00" or "1 day, 0:00:00")
+    
+    Returns:
+        Python datetime object or None
+    """
+    if not date_str:
+        return None
+    
+    # Default time to midnight if not provided
+    if not time_str or time_str.strip() == '':
+        time_str = '00:00:00'
+    
+    # Handle "1 day, HH:MM:SS" format (weird FileMaker export)
+    if 'day' in time_str:
+        time_str = time_str.split(', ')[1] if ', ' in time_str else '00:00:00'
+    
+    # Handle "24:00:00" (end of day) - convert to 23:59:59
+    if time_str == '24:00:00':
+        time_str = '23:59:59'
+    
+    try:
+        # Parse date (could be ISO or MM/DD/YYYY)
+        if 'T' in date_str:
+            # ISO format: 2017-10-05T00:00:00
+            date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        else:
+            # Try MM/DD/YYYY format
+            try:
+                date_obj = datetime.strptime(date_str, '%m/%d/%Y')
+            except:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        
+        # Parse time
+        time_parts = time_str.split(':')
+        if len(time_parts) == 3:
+            hour = int(time_parts[0])
+            minute = int(time_parts[1])
+            second = int(float(time_parts[2]))
+            
+            # Replace time part
+            return date_obj.replace(hour=hour, minute=minute, second=second, microsecond=0)
+        else:
+            return date_obj
+            
+    except Exception as e:
+        return None
+
+
 def transform_datetime(datetime_str: str) -> datetime:
     """
     Transform FileMaker datetime to Python datetime.
@@ -192,11 +246,23 @@ def import_appointments(import_file: str, dry_run: bool = False, fix_missing_cli
                     logger.debug(f"Appointment {filemaker_id} - no appointment type found")
                 
                 # Transform dates
+                # Try combined 'Start' field first (if it exists), otherwise combine separate date/time fields
                 start_time = transform_datetime(appointment_data.get('Start'))
+                if not start_time:
+                    # FileMaker Excel export has separate date and time fields
+                    start_date = appointment_data.get('startDate')
+                    start_time_str = appointment_data.get('startTime')
+                    start_time = combine_date_time(start_date, start_time_str)
+                
                 end_time = transform_datetime(appointment_data.get('End'))
+                if not end_time:
+                    # FileMaker Excel export has separate date and time fields
+                    end_date = appointment_data.get('endDate')
+                    end_time_str = appointment_data.get('endTime')
+                    end_time = combine_date_time(end_date, end_time_str)
                 
                 if not start_time:
-                    logger.warning(f"Appointment {filemaker_id} - no start time, skipping")
+                    logger.warning(f"Appointment {filemaker_id} - no start date/time found, skipping")
                     skipped_count += 1
                     continue
                 

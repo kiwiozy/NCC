@@ -130,7 +130,11 @@ def import_notes_and_sms(notes_file: str = None, sms_file: str = None, dry_run: 
                     
                     try:
                         # Get patient
-                        patient_filemaker_id = note_data.get('id_Contact') or note_data.get('patient_id')
+                        patient_filemaker_id = (
+                            note_data.get('id_Contact') or 
+                            note_data.get('patient_id') or
+                            note_data.get('id_Key')  # FileMaker Excel export uses id_Key
+                        )
                         patient = patient_map.get(patient_filemaker_id)
                         
                         if not patient:

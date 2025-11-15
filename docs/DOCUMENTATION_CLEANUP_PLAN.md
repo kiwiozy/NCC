@@ -87,7 +87,7 @@ nexus-core-clinic/
 │   │   ├── MARKETING_SECTION_UI_SUMMARY.md            ✅ Keep - NEW
 │   │   ├── MMS_SUPPORT_PLAN.md                        ✅ Keep
 │   │   ├── PATIENT_IMAGE_MANAGEMENT.md                ✅ Keep
-│   │   ├── PINSV5_TO_NEXUS_MIGRATION_PLAN.md          ✅ Keep - CRITICAL
+│   │   ├── NEXUS_MARKETING_MIGRATION_PLAN.md          ✅ Keep - CRITICAL (Nexus Marketing, formerly PinsV5)
 │   │   └── SMS_NOTIFICATION_WIDGET_PLAN.md            ✅ Keep
 │   │
 │   ├── integrations/                🔌 External APIs

@@ -48,7 +48,7 @@ class ReimportOrchestrator:
                 'number': 0,
                 'description': 'Pre-Import Validation',
                 'scripts': [
-                    'phase0_validation/backup_s3_files.py',  # NEW: Backup S3 files FIRST
+                    # 'phase0_validation/backup_s3_files.py',  # COMMENTED OUT: Skipping S3 backup (already have backup from this morning)
                     'phase0_validation/validate_filemaker_connection.py',
                     'phase0_validation/validate_filemaker_data.py',
                     'phase0_validation/validate_system_config.py',
@@ -84,7 +84,7 @@ class ReimportOrchestrator:
                 'number': 4,
                 'description': 'Import Appointments',
                 'scripts': [
-                    'phase4_appointments/fetch_appointments_from_filemaker.py',
+                    'phase4_appointments/fetch_appointments_from_excel.py',  # NEW: Read from Excel instead of API
                     'phase4_appointments/import_appointments.py',
                 ],
                 'required': True,
@@ -95,7 +95,7 @@ class ReimportOrchestrator:
                 'number': 5,
                 'description': 'Import Notes & SMS',
                 'scripts': [
-                    'phase5_notes/fetch_notes_from_filemaker.py',
+                    'phase5_notes/fetch_notes_from_excel.py',  # NEW: Read from Excel instead of API
                     'phase5_notes/import_notes.py',
                 ],
                 'required': False,
@@ -104,20 +104,20 @@ class ReimportOrchestrator:
             {
                 'name': 'documents',
                 'number': 6,
-                'description': 'Re-Link Documents',
+                'description': 'Re-Link Documents with Clean S3 Paths',
                 'scripts': [
-                    'phase6_documents/relink_documents.py',
+                    'phase6_documents/relink_documents_clean.py',  # NEW: Clean S3 paths
                 ],
-                'required': True,
-                'stop_on_error': True,
+                'required': False,  # Non-blocking - some docs may not have patients
+                'stop_on_error': False,
             },
             {
                 'name': 'images',
                 'number': 7,
-                'description': 'Re-Link Images',
+                'description': 'Link Images from CSV',
                 'scripts': [
-                    'phase7_images/relink_images.py',
-                    'phase7_images/link_filemaker_images_csv.py',
+                    # 'phase7_images/relink_images.py',  # SKIP: Only for old orphaned batches (we have none)
+                    'phase7_images/link_filemaker_images_csv.py',  # Creates new batches with correct patient links
                 ],
                 'required': True,
                 'stop_on_error': True,

@@ -4,6 +4,9 @@
 **Status:** 🚧 Phase 1 UI Complete - Backend Pending  
 **Purpose:** Migrate MailChimp replacement features into Nexus Marketing module
 
+**📂 Source Code Location:** `/Users/craig/Documents/1.PinsV5`  
+*(Original standalone application built over 6 years - reference for migration)*
+
 **Note:** This module was previously called "PinsV5" - a standalone healthcare provider management and email marketing platform developed over 6 years. It is being integrated into Nexus as the "Marketing" module.
 
 **Current Progress:**
@@ -37,6 +40,8 @@
 4. ✅ Integrate analytics and reporting
 5. ❌ **NOT migrating:** Web scraping, Google Maps integration, provider discovery
 
+**📝 Note:** See [Web Scraping Analysis](./WEB_SCRAPING_ANALYSIS.md) for detailed documentation of the sophisticated scraping system that will remain in PinsV5 (100+ files, 2+ years development, NOT migrating to Nexus).
+
 ### **Current Implementation Status:**
 - ✅ **Marketing Section Navigation:** Top-level tab in main navigation with hover submenu
 - ✅ **Marketing Dashboard:** `/marketing` - Wireframe complete
@@ -51,7 +56,7 @@
 
 ## 📊 **Feature Comparison Matrix**
 
-| Feature | PinsV5 | Nexus (Current) | Migration Priority | Complexity |
+| Feature | Source System | Nexus (Current) | Migration Priority | Complexity |
 |---------|--------|-----------------|-------------------|------------|
 | **Email Campaigns** | ✅ Full Listmonk integration | ❌ None | 🔥 **High** | Medium |
 | **Drag & Drop Email Builder** | ✅ 18+ components | ❌ None | 🔥 **High** | High |
@@ -106,7 +111,7 @@
 
 ### **Technology Stack Mapping**
 
-| Component | PinsV5 | Nexus | Migration Strategy |
+| Component | Source System | Nexus | Migration Strategy |
 |-----------|--------|-------|-------------------|
 | **Frontend** | React 18 | Next.js 14 | ✅ Port components to Next.js |
 | **UI Library** | Mantine v8 | Mantine v7 | ✅ Already compatible |
@@ -120,6 +125,260 @@
 ---
 
 ## 📦 **Core Features to Migrate**
+
+### **🎯 File Migration Reference** ⭐ **NEW**
+
+This section details the **hard-to-code** components from PinsV5 that need to be copied to Nexus. These files represent hundreds of hours of development work and should be preserved.
+
+---
+
+#### **1️⃣ Email Builder** (Priority: 🔥 CRITICAL)
+
+**Source Location:** `/Users/craig/Documents/1.PinsV5/web/src/components/email-builder/`  
+**Target Location:** `frontend/app/components/marketing/email-builder/`
+
+**Main Components (18 files):**
+```
+1. EmailBuilderV2Modular.tsx           # Main email builder interface
+2. VisualFrameworkBuilderV2.tsx        # Visual framework builder
+3. VisualFrameworkBuilder.tsx          # Legacy framework builder (backup)
+4. CompanyProfileEmailBuilder.tsx      # Company profile integration
+5. CanvasArea.tsx                      # Drag & drop canvas
+6. ComponentPalette.tsx                # Component selection palette
+7. PropertyPanel.tsx                   # Properties editor panel
+8. ComponentCard.tsx                   # Individual component card
+9. EmailComponent.tsx                  # Base component wrapper
+10. EmailFrameworkConfig.tsx           # Framework configuration
+11. AssetLibrary.tsx                   # Asset library main
+12. AssetLibraryDialog.tsx             # Asset library modal
+13. AssetLibraryButton.tsx             # Asset library trigger button
+14. AssetPicker.tsx                    # Asset picker component
+15. AssetSelector.tsx                  # Asset selector dropdown
+16. SmartUploadDialog.tsx              # Smart asset upload
+17. IconSelector.tsx                   # Icon selection tool
+18. BulletPointSelector.tsx            # Bullet point styles
+```
+
+**Email Components (23 files in `components/` subfolder):**
+```
+components/
+├── AssetPickerModal.tsx               # Asset picking modal
+├── Button.tsx                         # Button component (simple)
+├── ButtonComponent.tsx                # Button component (advanced)
+├── Contact.tsx                        # Contact component (simple)
+├── ContactComponent.tsx               # Contact component (advanced)
+├── DividerComponent.tsx               # Divider/line component
+├── Footer.tsx                         # Footer component (simple)
+├── FooterComponent.tsx                # Footer component (advanced)
+├── Header.tsx                         # Header component (simple)
+├── HeaderComponent.tsx                # Header component (advanced)
+├── iconData.ts                        # Icon data definitions
+├── IconSelector.tsx                   # Icon selector UI
+├── iconUtils.ts                       # Icon utilities
+├── ImageComponent.tsx                 # Image component
+├── ImageCropModal.tsx                 # Image cropping tool
+├── index.ts                           # Component exports
+├── MapsComponent.tsx                  # Google Maps component
+├── RemoveButton.tsx                   # Component remove button
+├── Social.tsx                         # Social links (simple)
+├── SocialLinksComponent.tsx           # Social links (advanced)
+├── SpacerComponent.tsx                # Spacer component
+├── Text.tsx                           # Text component (simple)
+└── TextComponent.tsx                  # Text component (advanced)
+```
+
+**Supporting Files:**
+```
+constants.ts                           # Email builder constants
+types.ts                              # TypeScript interfaces
+mjml-generators.ts                    # MJML generation logic
+index.ts                              # Main exports
+
+hooks/
+├── useDragAndDrop.ts                 # Drag & drop hook
+└── useEmailBuilder.ts                # Main builder hook
+
+utils/
+├── emailTracking.ts                  # Email tracking utilities
+└── responsiveFonts.ts                # Responsive font system
+
+styles/
+└── (all style files if present)
+```
+
+**Total: ~45 files** | **Estimated LOC:** 8,000+ lines
+
+---
+
+#### **2️⃣ Email Framework** (Priority: 🔥 HIGH)
+
+**Source Location:** `/Users/craig/Documents/1.PinsV5/web/src/services/`  
+**Target Location:** `frontend/app/services/email/`
+
+**Core Services (8 files):**
+```
+1. emailService.ts                     # Main email service
+2. emailFrameworkTemplates.ts          # Email templates
+3. emailHtmlGenerator.ts               # HTML generation
+4. componentGeneration.ts              # Component generator
+5. companyEmailTemplateService.ts      # Company templates
+6. contactCardDefaultsService.ts       # Contact card defaults
+7. emailAssetManager.ts                # Asset management
+8. sesService.ts                       # AWS SES integration
+```
+
+**Type Definitions:**
+```
+types/emailTypes.ts                    # Email type definitions
+```
+
+**Total: 9 files** | **Estimated LOC:** 3,000+ lines
+
+---
+
+#### **3️⃣ Company Profile** (Priority: 🟡 MEDIUM)
+
+**Source Location:** `/Users/craig/Documents/1.PinsV5/web/src/components/content/`  
+**Target Location:** `frontend/app/components/marketing/company-profile/`
+
+**Main Components (2 files):**
+```
+1. CompanyProfile.tsx                  # Main company profile UI
+2. services/companyProfile.ts          # Company profile service
+```
+
+**Type Definitions:**
+```
+types/company.ts                       # Company type definitions
+```
+
+**Total: 3 files** | **Estimated LOC:** 1,500+ lines
+
+---
+
+#### **4️⃣ Asset Management System** (Priority: 🔥 HIGH)
+
+**Source Location:** `/Users/craig/Documents/1.PinsV5/web/src/services/`  
+**Target Location:** `frontend/app/services/assets/`
+
+**Asset Services (4 files):**
+```
+1. assetService.ts                     # Main asset service
+2. assetCacheService.ts                # Asset caching
+3. firebaseAssetService.ts             # Firebase storage (adapt to S3)
+4. imageOptimizationService.ts         # Image optimization
+```
+
+**Total: 4 files** | **Estimated LOC:** 1,200+ lines
+
+---
+
+### **📊 Migration Summary**
+
+| Feature | Files | Lines of Code | Priority | Complexity |
+|---------|-------|---------------|----------|------------|
+| **Email Builder** | 45 | ~8,000 | 🔥 Critical | Very High |
+| **Email Framework** | 9 | ~3,000 | 🔥 High | High |
+| **Company Profile** | 3 | ~1,500 | 🟡 Medium | Medium |
+| **Asset Management** | 4 | ~1,200 | 🔥 High | Medium |
+| **TOTAL** | **61** | **~13,700** | **Very High Value** | **High** |
+
+---
+
+### **🗂️ Nexus Directory Structure** (After Migration)
+
+```
+frontend/app/
+├── components/
+│   └── marketing/
+│       ├── email-builder/                    # 📧 Email Builder (45 files)
+│       │   ├── EmailBuilderV2Modular.tsx
+│       │   ├── VisualFrameworkBuilderV2.tsx
+│       │   ├── CompanyProfileEmailBuilder.tsx
+│       │   ├── CanvasArea.tsx
+│       │   ├── ComponentPalette.tsx
+│       │   ├── PropertyPanel.tsx
+│       │   ├── components/                   # Email components (23 files)
+│       │   ├── hooks/                        # Custom hooks (2 files)
+│       │   ├── utils/                        # Utilities (2 files)
+│       │   ├── types.ts
+│       │   └── constants.ts
+│       │
+│       └── company-profile/                  # 🏢 Company Profile (2 files)
+│           └── CompanyProfile.tsx
+│
+├── services/
+│   ├── email/                               # 📬 Email Framework (9 files)
+│   │   ├── emailService.ts
+│   │   ├── emailFrameworkTemplates.ts
+│   │   ├── emailHtmlGenerator.ts
+│   │   ├── componentGeneration.ts
+│   │   ├── companyEmailTemplateService.ts
+│   │   └── sesService.ts                    # (Adapt to Gmail API)
+│   │
+│   └── assets/                              # 🖼️ Asset Management (4 files)
+│       ├── assetService.ts
+│       ├── assetCacheService.ts
+│       ├── s3AssetService.ts                # (Adapted from firebaseAssetService)
+│       └── imageOptimizationService.ts
+│
+└── types/
+    ├── emailTypes.ts                        # Email type definitions
+    └── company.ts                           # Company type definitions
+```
+
+---
+
+### **🔄 Adaptation Requirements**
+
+When copying these files, the following adaptations are needed:
+
+1. **Firebase → S3 Migration**
+   - Replace `firebaseAssetService.ts` with S3-based implementation
+   - Update asset URLs to use S3 presigned URLs
+   - Adapt `assetService.ts` to use Nexus S3 integration
+
+2. **SES → Gmail API**
+   - Replace `sesService.ts` with Gmail API integration
+   - Update email sending logic
+   - Maintain compatibility with Listmonk
+
+3. **Mantine v8 → Mantine v7**
+   - Check for any Mantine v8-specific features
+   - Adjust imports if needed (mostly compatible)
+   - Test all UI components
+
+4. **Firebase Firestore → Django API**
+   - Replace Firestore queries with Django REST API calls
+   - Update service calls to use `/api/marketing/` endpoints
+   - Implement Django models for email templates, campaigns, etc.
+
+5. **Authentication**
+   - Replace Firebase Auth with Django Allauth
+   - Update auth checks in services
+   - Use Nexus session management
+
+---
+
+### **⚠️ Critical Files - DO NOT MODIFY**
+
+These files represent **years of development work** and should be **copied as-is**, then adapted:
+
+**Email Builder Core:**
+- `EmailBuilderV2Modular.tsx` - Main builder (400+ lines)
+- `VisualFrameworkBuilderV2.tsx` - Framework builder (350+ lines)
+- `mjml-generators.ts` - MJML generation (500+ lines)
+
+**Component System:**
+- All 23 email component files (150-300 lines each)
+- `useDragAndDrop.ts` - Drag & drop logic (200+ lines)
+- `useEmailBuilder.ts` - Builder state management (300+ lines)
+
+**Email Framework:**
+- `emailFrameworkTemplates.ts` - Template system (400+ lines)
+- `emailHtmlGenerator.ts` - HTML generation (350+ lines)
+
+---
 
 ### **1. Email Campaign System** 🔥 **HIGH PRIORITY**
 
@@ -664,7 +923,7 @@ LISTMONK_ADMIN_PASSWORD=your_admin_password
 
 ### **Infrastructure Costs:**
 
-| Service | PinsV5 (Monthly) | Nexus (Current) | Nexus (After Migration) | Difference |
+| Service | Legacy System (Monthly) | Nexus (Current) | Nexus (After Migration) | Difference |
 |---------|------------------|-----------------|-------------------------|------------|
 | **Firebase** | $50 | $0 | $0 | -$50 |
 | **Google Cloud** | $20 | $0 | $0 | -$20 |
@@ -685,7 +944,7 @@ LISTMONK_ADMIN_PASSWORD=your_admin_password
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
 | **Listmonk Integration Issues** | High | Medium | Thorough testing, fallback to Gmail API |
-| **Data Migration Complexity** | Medium | Low | Not migrating PinsV5 data, fresh start |
+| **Data Migration Complexity** | Medium | Low | Not migrating legacy data, fresh start |
 | **Performance with Large Lists** | Medium | Low | Proper indexing, pagination, caching |
 | **Email Deliverability** | High | Medium | Use Gmail API initially, monitor bounce rates |
 | **UI/UX Consistency** | Low | Low | Both use Mantine, easy port |
@@ -838,12 +1097,34 @@ LISTMONK_ADMIN_PASSWORD=your_admin_password
 
 ## 🔗 **Related Documentation**
 
+### **Nexus Marketing Documentation:**
+- `docs/features/FILE_MIGRATION_CHECKLIST.md` - Step-by-step file migration checklist ⭐ NEW
+- `docs/features/DOCUMENTATION_STRATEGY.md` - How to handle PinsV5 documentation ⭐ NEW
+- `docs/features/NEXUS_MARKETING_NAME_CHANGE.md` - PinsV5 → Nexus Marketing naming ⭐ NEW
+- `docs/features/MARKETING_SECTION_UI_SUMMARY.md` - Marketing UI implementation
+- `docs/architecture/PAGES_INDEX.md` - All pages including Marketing pages
+- `docs/INDEX.md` - Main documentation index
+
 ### **Source System Documentation:**
 - `/Users/craig/Documents/1.PinsV5/README.md` - Legacy system README
-- `/Users/craig/Documents/1.PinsV5/docs/` - Legacy system documentation folder
+- `/Users/craig/Documents/1.PinsV5/docs/` - Legacy system documentation folder (60+ docs)
 - **Note:** Original system codebase preserved in separate directory for reference
 
-### **Nexus Documentation:**
+**Key PinsV5 Docs (Keep as Reference):**
+- `docs/EMAIL_SYSTEM_QUICK_REFERENCE.md` - Email system troubleshooting (⭐ Copy & adapt)
+- `docs/Email_Stack_Guide.md` - Complete email stack overview (⭐ Copy & adapt)
+- `docs/EMAIL_SERVICE_TROUBLESHOOTING_GUIDE.md` - Troubleshooting guide (⭐ Copy & adapt)
+- `docs/AWS_SES_EMAIL_SERVICE_GUIDE.md` - AWS SES integration (🔄 Adapt to Gmail)
+- `web/src/components/email-builder/README_AssetLibraryDialog.md` - Asset library system (⭐ Copy)
+
+**Documentation Strategy:**
+- ✅ Keep all PinsV5 docs as reference (never delete)
+- ✅ Copy critical technical docs to `docs/marketing/`
+- ✅ Write new Nexus-specific user guides
+- ✅ Link to PinsV5 docs in code comments for complex systems
+- See: `docs/features/DOCUMENTATION_STRATEGY.md` for complete strategy
+
+### **Nexus Integration Docs:**
 - `docs/features/MARKETING_SECTION_UI_SUMMARY.md` - Marketing UI implementation ⭐ NEW
 - `docs/architecture/PAGES_INDEX.md` - All pages including Marketing pages ⭐ UPDATED
 - `docs/INDEX.md` - Main documentation index ⭐ UPDATED

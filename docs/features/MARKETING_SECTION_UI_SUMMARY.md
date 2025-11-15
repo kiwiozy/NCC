@@ -170,7 +170,7 @@ Used to show the target audience for each campaign:
 **Scope:**
 - Email campaigns to healthcare providers (referrers)
 - Uses existing referrer data from Nexus
-- Feature parity with PinsV5 referrer marketing
+- Feature parity with Nexus Marketing referrer campaigns (legacy PinsV5)
 - Marketing dashboard focused on referrer engagement
 
 **Target Audience:**
@@ -188,7 +188,7 @@ Used to show the target audience for each campaign:
 - Educational content for providers
 
 **Why Start Here:**
-- Matches PinsV5's existing purpose (provider marketing)
+- Matches Nexus Marketing's existing purpose (provider marketing, formerly PinsV5)
 - Simpler audience (fewer contacts than patients)
 - Clear ROI (referral relationships drive revenue)
 - Easier compliance (B2B, not B2C)
@@ -374,7 +374,7 @@ Used to show the target audience for each campaign:
 ### **Why Referrers First?**
 - **Known Audience:** Existing referrer data in Nexus
 - **B2B Simplicity:** Fewer compliance requirements than patient marketing
-- **PinsV5 Parity:** Matches what PinsV5 already does
+- **Nexus Marketing Parity:** Matches what the legacy marketing system (PinsV5) already does
 - **Clear ROI:** Referrer relationships directly impact revenue
 
 ### **Why Mantine UI?**
@@ -417,7 +417,7 @@ Used to show the target audience for each campaign:
 
 ## 📚 **Related Documentation**
 
-- **Main Migration Plan:** `docs/features/PINSV5_TO_NEXUS_MIGRATION_PLAN.md`
+- **Main Migration Plan:** `docs/features/NEXUS_MARKETING_MIGRATION_PLAN.md` (formerly PINSV5_TO_NEXUS_MIGRATION_PLAN.md)
 - **Database Schema:** `docs/architecture/DATABASE_SCHEMA.md`
 - **Navigation Component:** `frontend/app/components/Navigation.tsx`
 - **Project Rules:** `.cursorrules`

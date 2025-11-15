@@ -241,16 +241,25 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:
         
         with create_filemaker_client() as fm:
             # ========================================
-            # Fetch Notes from FileMaker
+            # Fetch Notes from FileMaker (Limited to 10,000 by FileMaker OData)
             # ========================================
             logger.info("Fetching notes from FileMaker via OData...")
             logger.info(f"OData API: {fm.odata_base_url}")
-            logger.warning("⚠️  Using OData workaround: fetch first batch only (~11,408 expected)")
+            logger.warning("⚠️  ⚠️  ⚠️  KNOWN LIMITATION ⚠️  ⚠️  ⚠️")
+            logger.warning("FileMaker OData has HARD 10,000 record limit per request")
+            logger.warning("Pagination ($skip) does NOT work - always returns same 10k records")
+            logger.warning("Expected: 11,408 notes | Will fetch: ~10,000 notes")
+            logger.warning("⚠️  ~1,400 notes will be MISSING from import")
+            logger.warning("=" * 70)
             
-            # Fetch notes using OData workaround
+            # Fetch notes using OData (will get first 10k only)
             notes = []
             try:
-                notes = fetch_first_batch_only_odata(fm, 'API_Notes', logger=logger)
+                response = fm.odata_query('API_Notes', top=50000, skip=0)
+                notes = response.get('value', [])
+                logger.success(f"✅ Fetched {len(notes)} notes from FileMaker")
+                if len(notes) >= 10000:
+                    logger.warning(f"⚠️  Hit 10,000 record limit - approximately {11408 - len(notes)} notes missing")
             except Exception as e:
                 logger.error(f"Failed to fetch notes: {str(e)}")
                 notes = []
@@ -274,7 +283,7 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:
                     'export_timestamp': timestamp,
                     'export_date': datetime.now().isoformat(),
                     'total_notes': len(notes),
-                    'source': 'FileMaker OData API',
+                    'source': 'FileMaker OData API (API_Notes, large batch workaround)',
                     'notes': notes
                 }
                 
@@ -288,12 +297,14 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:
             # ========================================
             logger.info("")
             logger.info("Fetching SMS messages from FileMaker via OData...")
-            logger.warning("⚠️  Using OData workaround: fetch first batch only (~5,353 expected)")
+            logger.info(f"Expecting ~5,353 SMS (under 10k limit, should get all in one request)")
             
-            # Fetch SMS using OData workaround
+            # Fetch SMS using OData (should get all since under 10k)
             sms_messages = []
             try:
-                sms_messages = fetch_first_batch_only_odata(fm, 'API_Messages', logger=logger)
+                response = fm.odata_query('API_Messages', top=50000, skip=0)
+                sms_messages = response.get('value', [])
+                logger.success(f"✅ Fetched {len(sms_messages)} SMS messages from FileMaker")
             except Exception as e:
                 logger.error(f"Failed to fetch SMS: {str(e)}")
                 sms_messages = []
@@ -319,7 +330,7 @@ def fetch_notes_from_filemaker(output_dir: str = "data/reimport") -> tuple:
                     'export_timestamp': timestamp,
                     'export_date': datetime.now().isoformat(),
                     'total_sms': len(sms_messages),
-                    'source': 'FileMaker OData API',
+                    'source': 'FileMaker OData API (API_Messages, large batch workaround)',
                     'sms_messages': sms_messages
                 }
                 
