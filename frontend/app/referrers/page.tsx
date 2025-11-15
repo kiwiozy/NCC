@@ -95,7 +95,7 @@ export default function ReferrersPage() {
     loadSpecialties();
   }, []);
 
-  // Load referrers
+  // Load referrers (exclude coordinators)
   useEffect(() => {
     const loadReferrers = async () => {
       try {
@@ -105,7 +105,16 @@ export default function ReferrersPage() {
         });
         if (response.ok) {
           const data = await response.json();
-          const referrersList = data.results || data;
+          const allReferrers = data.results || data;
+          
+          // EXCLUDE Support Coordinators / NDIS Coordinators (they belong on /coordinators page)
+          const referrersList = allReferrers.filter((referrer: Referrer) => {
+            const specialty = referrer.specialty_name?.toLowerCase() || '';
+            return !specialty.includes('support coordinator') && 
+                   !specialty.includes('ndis coordinator') &&
+                   !specialty.includes('plan manager');
+          });
+          
           setReferrers(referrersList);
 
           // Auto-select from URL or first referrer
