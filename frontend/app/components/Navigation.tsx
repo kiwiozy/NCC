@@ -211,7 +211,6 @@ export default function Navigation({ children }: NavigationProps) {
   const testingSubItems = [
     { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Gmail', href: '/testing?tab=gmail' },
     { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Letters', href: '/testing?tab=letters' },
-    { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Integration', href: '/testing?tab=xero' },
     { icon: <IconMessage size={subIconSize} stroke={1.5} />, label: 'SMS', href: '/testing?tab=sms' },
     { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'S3 Storage', href: '/testing?tab=s3' },
     { icon: <IconPhoto size={subIconSize} stroke={1.5} />, label: 'Images Test', href: '/testing?tab=images' },
