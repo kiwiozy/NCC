@@ -108,8 +108,12 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
     Generate PDF for a Xero invoice link
     
     GET /api/invoices/xero/<invoice_link_id>/pdf/
+    GET /api/invoices/xero/<invoice_link_id>/pdf/?debug=true  (for layout debugging)
     """
     try:
+        # Check for debug mode
+        debug_mode = request.GET.get('debug', 'false').lower() == 'true'
+        
         from xero_integration.models import XeroInvoiceLink
         from patients.models import Patient
         from companies.models import Company
@@ -210,7 +214,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
         }
         
         # Generate PDF
-        pdf_buffer = generate_invoice_pdf(invoice_data)
+        pdf_buffer = generate_invoice_pdf(invoice_data, debug=debug_mode)
         
         # Return PDF
         response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')

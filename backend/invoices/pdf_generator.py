@@ -30,7 +30,7 @@ class InvoicePDFGenerator:
     ACCOUNT = "222796921"
     PROVIDER_REGISTRATION = "4050009706"
     
-    def __init__(self, invoice_data):
+    def __init__(self, invoice_data, debug=False):
         """
         Initialize with invoice data
         
@@ -70,6 +70,7 @@ class InvoicePDFGenerator:
         }
         """
         self.invoice_data = invoice_data
+        self.debug = debug
         self.width, self.height = A4
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
@@ -118,6 +119,29 @@ class InvoicePDFGenerator:
             leading=12,
         ))
     
+    def _debug_box(self, element, label=""):
+        """
+        Wrap an element with a red border for debugging layout
+        
+        Args:
+            element: The element to wrap
+            label: Optional label for the box
+        
+        Returns:
+            The element wrapped in a table with red border if debug=True, otherwise returns element as-is
+        """
+        if not self.debug:
+            return element
+        
+        # Wrap in a table with red border
+        wrapper_table = Table([[element]])
+        wrapper_table.setStyle(TableStyle([
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.red),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        
+        return wrapper_table
+    
     def generate(self):
         """Generate the PDF and return as BytesIO"""
         buffer = BytesIO()
@@ -136,32 +160,46 @@ class InvoicePDFGenerator:
         story = []
         
         # Add logo and header
-        story.extend(self._build_header())
+        header_elements = self._build_header()
+        for elem in header_elements:
+            story.append(self._debug_box(elem, "Header"))
         story.append(Spacer(1, 0.5*cm))
         
         # Add patient and invoice info
-        story.extend(self._build_info_section())
+        info_elements = self._build_info_section()
+        for elem in info_elements:
+            story.append(self._debug_box(elem, "Patient Info"))
         story.append(Spacer(1, 0.5*cm))
         
         # Add line items table
-        story.extend(self._build_line_items_table())
+        line_items_elements = self._build_line_items_table()
+        for elem in line_items_elements:
+            story.append(self._debug_box(elem, "Line Items"))
         story.append(Spacer(1, 0.5*cm))
         
         # Add payments section if any
         if self.invoice_data.get('payments'):
-            story.extend(self._build_payments_section())
+            payment_elements = self._build_payments_section()
+            for elem in payment_elements:
+                story.append(self._debug_box(elem, "Payments"))
             story.append(Spacer(1, 0.3*cm))
         
         # Add totals
-        story.extend(self._build_totals_section())
+        totals_elements = self._build_totals_section()
+        for elem in totals_elements:
+            story.append(self._debug_box(elem, "Totals"))
         story.append(Spacer(1, 0.5*cm))
         
         # Add payment terms
-        story.extend(self._build_payment_terms())
+        terms_elements = self._build_payment_terms()
+        for elem in terms_elements:
+            story.append(self._debug_box(elem, "Payment Terms"))
         story.append(Spacer(1, 0.3*cm))
         
         # Add footer
-        story.extend(self._build_footer())
+        footer_elements = self._build_footer()
+        for elem in footer_elements:
+            story.append(self._debug_box(elem, "Footer"))
         
         # Build PDF
         doc.build(story)
@@ -444,16 +482,17 @@ class InvoicePDFGenerator:
         return elements
 
 
-def generate_invoice_pdf(invoice_data):
+def generate_invoice_pdf(invoice_data, debug=False):
     """
     Convenience function to generate invoice PDF
     
     Args:
         invoice_data: Dictionary with invoice data (see InvoicePDFGenerator.__init__)
+        debug: Boolean, if True shows red borders around all components for layout debugging
     
     Returns:
         BytesIO: PDF file buffer
     """
-    generator = InvoicePDFGenerator(invoice_data)
+    generator = InvoicePDFGenerator(invoice_data, debug=debug)
     return generator.generate()
 

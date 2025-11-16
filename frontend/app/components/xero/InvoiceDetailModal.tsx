@@ -158,6 +158,49 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
     }
   };
 
+  const handleDownloadDebugPDF = async () => {
+    if (!invoice) return;
+    
+    setDownloadingPDF(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/?debug=true`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+      
+      // Get the PDF blob
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice_${invoice.xero_invoice_number}_DEBUG.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Debug PDF downloaded successfully',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to generate PDF',
+        color: 'red',
+      });
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -261,6 +304,16 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
                 loading={downloadingPDF}
               >
                 Download PDF
+              </Button>
+              
+              <Button
+                variant="light"
+                color="orange"
+                leftSection={<IconDownload size={16} />}
+                onClick={handleDownloadDebugPDF}
+                loading={downloadingPDF}
+              >
+                Debug Layout
               </Button>
               
               <Button
