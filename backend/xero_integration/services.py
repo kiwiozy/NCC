@@ -847,7 +847,7 @@ class XeroService:
             
             # Build invoice
             from datetime import timedelta
-            from xero_python.accounting import Contact as XeroContact
+            from xero_python.accounting import Contact as XeroContact, CurrencyCode
             
             # Determine invoice date and due date
             if invoice_date is None:
@@ -863,7 +863,7 @@ class XeroService:
                 due_date=due_date,
                 reference=reference,
                 status='DRAFT',
-                currency_code='AUD'
+                currency_code=CurrencyCode.AUD
             )
             
             # Add tracking category if provided
@@ -1151,6 +1151,7 @@ class XeroService:
             original_quote = quote_response.quotes[0]
             
             # Create invoice with same details
+            from xero_python.accounting import CurrencyCode
             invoice = Invoice(
                 type='ACCREC',
                 contact=original_quote.contact,  # Same contact
@@ -1158,7 +1159,7 @@ class XeroService:
                 reference=f"Quote #{original_quote.quote_number}",
                 date=timezone.now().date(),
                 status='DRAFT',
-                currency_code='AUD'
+                currency_code=CurrencyCode.AUD
             )
             
             # Create invoice in Xero
