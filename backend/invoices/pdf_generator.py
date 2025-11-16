@@ -146,17 +146,17 @@ class InvoicePDFGenerator:
         """Generate the PDF and return as BytesIO"""
         buffer = BytesIO()
         
-        # Create the PDF document
+        # Create the PDF document with custom page template for fixed footer
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
             rightMargin=2*cm,
             leftMargin=2*cm,
-            topMargin=0.5*cm,  # Minimal margin - as close to top as safe for printing
-            bottomMargin=2*cm,
+            topMargin=0.5*cm,
+            bottomMargin=4.5*cm,  # Extra space for footer (payment terms + footer bar)
         )
         
-        # Build the story (content)
+        # Build the story (content) - everything EXCEPT footer
         story = []
         
         # Add logo and header
@@ -189,31 +189,44 @@ class InvoicePDFGenerator:
         for elem in totals_elements:
             story.append(self._debug_box(elem, "Totals"))
         
-        # Add large spacer to push footer to bottom
-        # A4 height = 29.7cm, with 0.5cm top margin and 2cm bottom margin = 27.2cm usable
-        # We want footer at the bottom, so add a large spacer
-        # This spacer should be large enough to push footer down, but content will override if needed
-        story.append(Spacer(1, 10*cm))  # Large spacer to push footer down
+        # Build PDF with custom page template that adds footer
+        def add_page_footer(canvas_obj, doc_obj):
+            """Add footer to every page at fixed position"""
+            canvas_obj.saveState()
+            
+            # Position footer at bottom (2cm from page bottom)
+            # A4 height = 29.7cm, footer starts at 2cm from bottom = 27.7cm from top
+            # But we measure from bottom, so: 2cm up from bottom
+            footer_y = 2*cm
+            
+            # Payment terms text
+            terms_days = self.invoice_data.get('payment_terms_days', 7)
+            due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
+            
+            # Draw payment terms box
+            canvas_obj.setFont('Helvetica-Bold', 10)
+            canvas_obj.rect(2*cm, footer_y + 2*cm, 17*cm, 1*cm, stroke=1, fill=0)
+            canvas_obj.drawString(2.2*cm, footer_y + 2.65*cm, 
+                f"Please note this is a {terms_days} Day Account. Due on the {due_date}")
+            
+            # Draw bank details box
+            canvas_obj.setFont('Helvetica', 10)
+            canvas_obj.rect(2*cm, footer_y + 0.8*cm, 17*cm, 1*cm, stroke=1, fill=0)
+            canvas_obj.drawString(2.2*cm, footer_y + 1.25*cm,
+                f"EFT | {self.BUSINESS_NAME} | BSB: {self.BSB} ACC: {self.ACCOUNT} | Please use last name as reference")
+            
+            # Draw blue footer bar
+            canvas_obj.setFillColor(colors.HexColor('#3B5998'))
+            canvas_obj.rect(2*cm, footer_y, 17*cm, 0.6*cm, stroke=0, fill=1)
+            canvas_obj.setFillColor(colors.white)
+            canvas_obj.setFont('Helvetica', 9)
+            canvas_obj.drawCentredString(10.5*cm, footer_y + 0.2*cm,
+                f"{self.WEBSITE} | {self.EMAIL} | A.B.N {self.ABN}")
+            
+            canvas_obj.restoreState()
         
-        # Add payment terms and footer - keep them together at bottom
-        footer_content = []
-        
-        # Add payment terms
-        terms_elements = self._build_payment_terms()
-        for elem in terms_elements:
-            footer_content.append(self._debug_box(elem, "Payment Terms"))
-        footer_content.append(Spacer(1, 0.3*cm))
-        
-        # Add footer
-        footer_elements = self._build_footer()
-        for elem in footer_elements:
-            footer_content.append(self._debug_box(elem, "Footer"))
-        
-        # Keep footer elements together at bottom
-        story.append(KeepTogether(footer_content))
-        
-        # Build PDF
-        doc.build(story)
+        # Build PDF with footer callback
+        doc.build(story, onFirstPage=add_page_footer, onLaterPages=add_page_footer)
         
         # Get the PDF data
         buffer.seek(0)
