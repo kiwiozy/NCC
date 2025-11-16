@@ -174,17 +174,14 @@ class InvoicePDFGenerator:
         """Build logo and business info header"""
         elements = []
         
-        # Try to load logo
-        logo_path = os.path.join(settings.BASE_DIR, '../frontend/public/images/walkeasy-logo.png')
-        if not os.path.exists(logo_path):
-            # Fallback to letterhead
-            logo_path = os.path.join(settings.BASE_DIR, '../frontend/public/letterhead.png')
+        # Try to load logo - use Logo_Nexus.png
+        logo_path = os.path.join(settings.BASE_DIR, '../frontend/public/images/Logo_Nexus.png')
         
         # Create header table with logo and business info
         header_data = []
         
         if os.path.exists(logo_path):
-            logo = Image(logo_path, width=5*cm, height=5*cm, kind='proportional')
+            logo = Image(logo_path, width=4*cm, height=4*cm, kind='proportional')
             business_info = Paragraph(
                 f"<b>{self.BUSINESS_NAME}</b><br/>"
                 f"<i>P:</i> {self.POSTAL_ADDRESS} | <i>A:</i> {self.PHYSICAL_ADDRESS}<br/>"
@@ -205,16 +202,32 @@ class InvoicePDFGenerator:
             
             header_data.append([logo, business_info, date_info])
         else:
-            # No logo, just text
+            # No logo, just business info and date info
+            invoice_date = self.invoice_data['invoice_date'].strftime('%d/%m/%Y')
+            due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
+            
             business_info = Paragraph(
                 f"<b>{self.BUSINESS_NAME}</b><br/>"
                 f"<i>P:</i> {self.POSTAL_ADDRESS} | <i>A:</i> {self.PHYSICAL_ADDRESS}<br/>"
                 f"<i>Ph:</i> {self.PHONE}",
                 self.styles['HeaderInfo']
             )
-            header_data.append([business_info])
+            
+            date_info = Paragraph(
+                f"<b>Invoice Date</b><br/>{invoice_date}<br/>"
+                f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/>"
+                f"<b>Due Date</b><br/>{due_date}",
+                self.styles['RightInfo']
+            )
+            
+            header_data.append([business_info, date_info])
         
-        header_table = Table(header_data, colWidths=[5*cm, 10*cm, 4*cm])
+        # Adjust column widths based on whether logo exists
+        if os.path.exists(logo_path):
+            header_table = Table(header_data, colWidths=[4*cm, 9*cm, 4*cm])
+        else:
+            header_table = Table(header_data, colWidths=[13*cm, 4*cm])
+        
         header_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'LEFT'),
