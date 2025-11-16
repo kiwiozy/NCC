@@ -268,6 +268,49 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'appointment']
     
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve to include line items from Xero
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        # Fetch line items from Xero
+        try:
+            from xero_python.accounting import AccountingApi
+            api_client = xero_service.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if connection:
+                accounting_api = AccountingApi(api_client)
+                response = accounting_api.get_invoice(
+                    xero_tenant_id=connection.tenant_id,
+                    invoice_id=instance.xero_invoice_id
+                )
+                
+                xero_invoice = response.invoices[0]
+                
+                # Convert line items to frontend format
+                line_items = []
+                if xero_invoice.line_items:
+                    for idx, item in enumerate(xero_invoice.line_items):
+                        line_items.append({
+                            'id': str(idx + 1),
+                            'description': item.description or '',
+                            'quantity': float(item.quantity) if item.quantity else 1,
+                            'unit_amount': float(item.unit_amount) if item.unit_amount else 0,
+                            'account_code': item.account_code or '200',
+                            'tax_type': item.tax_type or 'EXEMPTINPUT',
+                        })
+                
+                data['line_items'] = line_items
+        except Exception as e:
+            # If fetching from Xero fails, just return without line items
+            print(f"Error fetching line items from Xero: {e}")
+        
+        return Response(data)
+    
     @action(detail=False, methods=['post'])
     def create_invoice(self, request):
         """Create a draft invoice in Xero for an appointment"""
