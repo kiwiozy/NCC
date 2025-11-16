@@ -215,7 +215,18 @@ class InvoicePDFGenerator:
         # Try to load logo - use Logo_Nexus.png
         logo_path = os.path.join(settings.BASE_DIR, '../frontend/public/images/Logo_Nexus.png')
         
-        # Create header table with logo and business info
+        # Invoice date info (right side)
+        invoice_date = self.invoice_data['invoice_date'].strftime('%d/%m/%Y')
+        due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
+        
+        date_info = Paragraph(
+            f"<b>Invoice Date</b><br/>{invoice_date}<br/>"
+            f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/>"
+            f"<b>Due Date</b><br/>{due_date}",
+            self.styles['RightInfo']
+        )
+        
+        # Create header table - 3 equal columns
         header_data = []
         
         if os.path.exists(logo_path):
@@ -227,23 +238,10 @@ class InvoicePDFGenerator:
                 self.styles['HeaderInfo']
             )
             
-            # Invoice date info (right side)
-            invoice_date = self.invoice_data['invoice_date'].strftime('%d/%m/%Y')
-            due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
-            
-            date_info = Paragraph(
-                f"<b>Invoice Date</b><br/>{invoice_date}<br/>"
-                f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/>"
-                f"<b>Due Date</b><br/>{due_date}",
-                self.styles['RightInfo']
-            )
-            
             header_data.append([logo, business_info, date_info])
+            colWidths = [5.67*cm, 5.67*cm, 5.67*cm]  # 3 equal columns
         else:
-            # No logo, just business info and date info
-            invoice_date = self.invoice_data['invoice_date'].strftime('%d/%m/%Y')
-            due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
-            
+            # No logo, just business info and date info (2 columns)
             business_info = Paragraph(
                 f"<b>{self.BUSINESS_NAME}</b><br/>"
                 f"<i>P:</i> {self.POSTAL_ADDRESS} | <i>A:</i> {self.PHYSICAL_ADDRESS}<br/>"
@@ -251,25 +249,14 @@ class InvoicePDFGenerator:
                 self.styles['HeaderInfo']
             )
             
-            date_info = Paragraph(
-                f"<b>Invoice Date</b><br/>{invoice_date}<br/>"
-                f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/>"
-                f"<b>Due Date</b><br/>{due_date}",
-                self.styles['RightInfo']
-            )
-            
             header_data.append([business_info, date_info])
+            colWidths = [11.34*cm, 5.67*cm]  # 2 columns
         
-        # Adjust column widths based on whether logo exists
-        if os.path.exists(logo_path):
-            header_table = Table(header_data, colWidths=[4*cm, 9*cm, 4*cm])
-        else:
-            header_table = Table(header_data, colWidths=[13*cm, 4*cm])
-        
+        header_table = Table(header_data, colWidths=colWidths)
         header_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
-            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER' if os.path.exists(logo_path) else 'LEFT'),
+            ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ]))
         
