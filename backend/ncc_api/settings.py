@@ -251,3 +251,8 @@ SOCIALACCOUNT_PROVIDERS = {
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'  # Will redirect to frontend via login_redirect view
 LOGOUT_REDIRECT_URL = 'https://localhost:3000/login/'
+
+# Xero Integration Settings
+XERO_CLIENT_ID = os.getenv('XERO_CLIENT_ID')
+XERO_CLIENT_SECRET = os.getenv('XERO_CLIENT_SECRET')
+XERO_REDIRECT_URI = os.getenv('XERO_REDIRECT_URI', 'https://localhost:8000/xero/oauth/callback/')
