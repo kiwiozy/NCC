@@ -194,10 +194,9 @@ class InvoicePDFGenerator:
             """Add footer to every page at fixed position"""
             canvas_obj.saveState()
             
-            # Position footer at bottom (2cm from page bottom)
-            # A4 height = 29.7cm, footer starts at 2cm from bottom = 27.7cm from top
-            # But we measure from bottom, so: 2cm up from bottom
-            footer_y = 2*cm
+            # Position footer at bottom (0.8cm from page bottom - closer to edge)
+            # A4 height = 29.7cm, footer starts at 0.8cm from bottom
+            footer_y = 0.8*cm
             
             # Payment terms text
             terms_days = self.invoice_data.get('payment_terms_days', 7)
