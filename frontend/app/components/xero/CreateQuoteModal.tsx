@@ -300,11 +300,12 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={handleClose}
-      title="Create Xero Quote"
-      size="1480px"
+    <>
+      <Modal
+        opened={opened}
+        onClose={handleClose}
+        title="Create Xero Quote"
+        size="1480px"
       closeOnClickOutside={false}
     >
       <Stack gap="md">
@@ -554,5 +555,6 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         </Button>
       </Stack>
     </Modal>
+    </>
   );
 }

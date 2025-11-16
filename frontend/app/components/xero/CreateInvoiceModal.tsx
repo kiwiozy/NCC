@@ -283,11 +283,12 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={handleClose}
-      title="Create Xero Invoice"
-      size="1480px"
+    <>
+      <Modal
+        opened={opened}
+        onClose={handleClose}
+        title="Create Xero Invoice"
+        size="1480px"
       closeOnClickOutside={false}
     >
       <Stack gap="md">
@@ -534,6 +535,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
         </Button>
       </Stack>
     </Modal>
+    </>
   );
 }
 
