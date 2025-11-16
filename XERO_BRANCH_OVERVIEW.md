@@ -49,6 +49,16 @@ Your Xero integration is **production-ready** with these features:
 
 ---
 
+## 🎯 Top Enhancement Suggestions
+
+1. **Company & Referrer Sync** ⭐⭐⭐ - Sync your new models to Xero
+2. **Invoice Templates** ⭐⭐⭐ - Save common NDIS item codes/services
+3. **Account Codes Dropdown** ⭐⭐ - Fetch chart of accounts from Xero
+4. **Enhanced Sync Logs** ⭐⭐ - Better filtering, export, retry
+5. **Payment Webhooks** ⭐ - Real-time payment notifications
+
+---
+
 ## 🎯 Potential Enhancements for This Branch
 
 Here are improvements you could make on the `xero` branch:
