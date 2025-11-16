@@ -1151,10 +1151,23 @@ class XeroService:
             
             accounting_api = AccountingApi(api_client)
             
-            # Delete invoice in Xero (voids it)
-            accounting_api.delete_invoice(
+            # For DRAFT invoices, we need to update status to DELETED
+            # Fetch the current invoice
+            response = accounting_api.get_invoice(
                 xero_tenant_id=connection.tenant_id,
                 invoice_id=invoice_link.xero_invoice_id
+            )
+            xero_invoice = response.invoices[0]
+            
+            # Update status to DELETED
+            xero_invoice.status = 'DELETED'
+            
+            # Update invoice in Xero
+            invoices = Invoices(invoices=[xero_invoice])
+            accounting_api.update_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id,
+                invoices=invoices
             )
             
             # Delete from local database
