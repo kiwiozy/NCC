@@ -7,6 +7,7 @@ import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
+import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -59,6 +60,9 @@ export default function XeroInvoicesPage() {
   // Invoice detail modal
   const [detailModalOpened, setDetailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  
+  // Edit invoice modal
+  const [editModalOpened, setEditModalOpened] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -403,6 +407,24 @@ export default function XeroInvoicesPage() {
             setSelectedInvoiceId(null);
           }}
           invoiceId={selectedInvoiceId}
+          onEdit={() => {
+            setDetailModalOpened(false);
+            setEditModalOpened(true);
+          }}
+        />
+      )}
+      
+      {/* Edit Invoice Modal */}
+      {selectedInvoiceId && (
+        <EditInvoiceModal
+          opened={editModalOpened}
+          onClose={() => {
+            setEditModalOpened(false);
+          }}
+          invoiceId={selectedInvoiceId}
+          onSuccess={() => {
+            fetchInvoices();
+          }}
         />
       )}
     </Navigation>

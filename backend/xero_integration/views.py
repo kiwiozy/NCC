@@ -629,3 +629,79 @@ def create_xero_quote(request):
             'detail': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
+
+
+@api_view(['PUT'])
+def update_xero_invoice(request, xero_invoice_id):
+    """
+    Update a Xero invoice (DRAFT only)
+    Added Nov 2025: Edit invoice details within Nexus
+    
+    Request body:
+    {
+        "line_items": [...],
+        "invoice_date": "YYYY-MM-DD",
+        "due_date": "YYYY-MM-DD",
+        "billing_notes": "..."
+    }
+    """
+    try:
+        # Get invoice link
+        try:
+            invoice_link = XeroInvoiceLink.objects.get(xero_invoice_id=xero_invoice_id)
+        except XeroInvoiceLink.DoesNotExist:
+            return JsonResponse({
+                'error': f'Invoice with Xero ID {xero_invoice_id} not found'
+            }, status=404)
+        
+        # Validate invoice is editable (DRAFT only)
+        if invoice_link.status != 'DRAFT':
+            return JsonResponse({
+                'error': f'Cannot edit invoice in {invoice_link.status} status. Only DRAFT invoices can be edited.',
+                'detail': 'Submit the invoice to Xero first if you need to make changes'
+            }, status=400)
+        
+        # Parse dates if provided
+        invoice_date = None
+        due_date = None
+        
+        if request.data.get('invoice_date'):
+            try:
+                from datetime import datetime
+                invoice_date = datetime.fromisoformat(request.data.get('invoice_date').replace('Z', '+00:00')).date()
+            except (ValueError, AttributeError):
+                pass
+        
+        if request.data.get('due_date'):
+            try:
+                from datetime import datetime
+                due_date = datetime.fromisoformat(request.data.get('due_date').replace('Z', '+00:00')).date()
+            except (ValueError, AttributeError):
+                pass
+        
+        # Update invoice via Xero service
+        updated_link = xero_service.update_invoice(
+            invoice_link=invoice_link,
+            line_items=request.data.get('line_items'),
+            invoice_date=invoice_date,
+            due_date=due_date,
+            billing_notes=request.data.get('billing_notes')
+        )
+        
+        return JsonResponse({
+            'message': 'Invoice updated successfully',
+            'invoice_id': str(updated_link.id),
+            'xero_invoice_id': updated_link.xero_invoice_id,
+            'xero_invoice_number': updated_link.xero_invoice_number,
+            'status': updated_link.status,
+            'total': str(updated_link.total)
+        })
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': 'Failed to update invoice',
+            'detail': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+

@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh } from '@tabler/icons-react';
+import { IconExternalLink, IconRefresh, IconEdit } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
@@ -10,6 +10,7 @@ interface InvoiceDetailModalProps {
   opened: boolean;
   onClose: () => void;
   invoiceId: string;
+  onEdit?: () => void;
 }
 
 interface InvoiceDetail {
@@ -39,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   'DELETED': 'red',
 };
 
-export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetailModalProps) {
+export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit }: InvoiceDetailModalProps) {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -167,16 +168,29 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
 
           {/* Actions */}
           <Group justify="space-between">
-            <Button
-              variant="light"
-              leftSection={<IconExternalLink size={16} />}
-              component="a"
-              href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open in Xero
-            </Button>
+            <Group>
+              <Button
+                variant="light"
+                leftSection={<IconExternalLink size={16} />}
+                component="a"
+                href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Xero
+              </Button>
+              
+              {onEdit && invoice.status === 'DRAFT' && (
+                <Button
+                  variant="light"
+                  color="blue"
+                  leftSection={<IconEdit size={16} />}
+                  onClick={onEdit}
+                >
+                  Edit Invoice
+                </Button>
+              )}
+            </Group>
             
             <Group>
               <Button
