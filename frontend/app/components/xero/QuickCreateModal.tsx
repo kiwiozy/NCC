@@ -74,6 +74,31 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
     }
   };
 
+  const handleContactSelect = (id: string, type: 'patient' | 'company') => {
+    // Set the selected ID
+    if (type === 'patient') {
+      setSelectedPatientId(id);
+    } else {
+      setSelectedCompanyId(id);
+    }
+    
+    // Immediately open appropriate modal
+    if (documentType === 'invoice') {
+      onCreateInvoice(
+        type === 'patient' ? id : undefined,
+        type === 'company' ? id : undefined
+      );
+    } else {
+      onCreateQuote(
+        type === 'patient' ? id : undefined,
+        type === 'company' ? id : undefined
+      );
+    }
+    
+    // Close wizard
+    handleClose();
+  };
+
   const handleNext = () => {
     if (active === 2) {
       // Validate selection
@@ -238,7 +263,7 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
                                 cursor: 'pointer',
                                 backgroundColor: selectedPatientId === patient.id ? '#e7f5ff' : undefined
                               }}
-                              onClick={() => setSelectedPatientId(patient.id)}
+                              onClick={() => handleContactSelect(patient.id, 'patient')}
                             >
                               <Group justify="space-between">
                                 <div>
@@ -263,7 +288,7 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
                                 cursor: 'pointer',
                                 backgroundColor: selectedCompanyId === company.id ? '#e7f5ff' : undefined
                               }}
-                              onClick={() => setSelectedCompanyId(company.id)}
+                              onClick={() => handleContactSelect(company.id, 'company')}
                             >
                               <Group justify="space-between">
                                 <Text fw={500}>{company.name}</Text>
