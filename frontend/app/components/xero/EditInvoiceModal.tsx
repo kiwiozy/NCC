@@ -37,12 +37,12 @@ interface InvoiceData {
 }
 
 const TAX_TYPES = [
+  { value: 'EXEMPTOUTPUT', label: 'GST Free' },
   { value: 'OUTPUT2', label: 'GST on Income (10%)' },
-  { value: 'EXEMPTOUTPUT', label: 'GST Free Expenses' },
-  { value: 'NONE', label: 'No GST' },
-  { value: 'EXEMPTINPUT', label: 'GST Free' },
   { value: 'INPUT2', label: 'GST on Expenses (10%)' },
+  { value: 'EXEMPTINPUT', label: 'GST Free Purchases' },
   { value: 'BASEXCLUDED', label: 'Tax Exclusive' },
+  { value: 'NONE', label: 'No GST' },
   { value: 'RRINPUT', label: 'Reduced Rate Input' },
   { value: 'RROUTPUT', label: 'Reduced Rate Output' },
 ];
