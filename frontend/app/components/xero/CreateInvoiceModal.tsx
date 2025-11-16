@@ -272,7 +272,10 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
               <Select
                 label="Select Patient"
                 placeholder="Search patients..."
-                data={patients.map(p => ({ value: p.id, label: `${p.full_name} (${p.mrn})` }))}
+                data={patients.map(p => ({ 
+                  value: p.id, 
+                  label: p.mrn ? `${p.full_name} (${p.mrn})` : p.full_name 
+                }))}
                 value={selectedPatient}
                 onChange={setSelectedPatient}
                 searchable
