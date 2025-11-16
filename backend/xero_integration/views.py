@@ -17,10 +17,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from patients.models import Patient
 from appointments.models import Appointment
+from companies.models import Company
 from .models import (
     XeroConnection,
     XeroContactLink,
     XeroInvoiceLink,
+    XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
     XeroSyncLog
@@ -29,6 +31,7 @@ from .serializers import (
     XeroConnectionSerializer,
     XeroContactLinkSerializer,
     XeroInvoiceLinkSerializer,
+    XeroQuoteLinkSerializer,
     XeroItemMappingSerializer,
     XeroTrackingCategorySerializer,
     XeroSyncLogSerializer,
@@ -307,3 +310,256 @@ class XeroSyncLogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = XeroSyncLogSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['operation_type', 'status', 'local_entity_type']
+
+
+class XeroQuoteLinkViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing quote links
+    Added Nov 2025: Support for Xero quotes (estimates)
+    """
+    queryset = XeroQuoteLink.objects.all()
+    serializer_class = XeroQuoteLinkSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status']
+    
+    @action(detail=True, methods=['post'])
+    def convert_to_invoice(self, request, pk=None):
+        """Convert a quote to an invoice"""
+        try:
+            quote_link = self.get_object()
+            
+            # Validate quote can be converted
+            if not quote_link.can_convert_to_invoice():
+                return Response({
+                    'error': 'Quote cannot be converted',
+                    'detail': f'Quote must be SENT or ACCEPTED and not already converted (current status: {quote_link.status})'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Convert quote to invoice
+            invoice_link = xero_service.convert_quote_to_invoice(quote_link)
+            
+            return Response({
+                'message': 'Quote converted to invoice successfully',
+                'invoice': XeroInvoiceLinkSerializer(invoice_link).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Failed to convert quote',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def create_xero_invoice(request):
+    """
+    Create a Xero invoice with flexible contact selection
+    Updated Nov 2025: Supports patient OR company as primary contact
+    
+    Request body:
+    {
+        "patient_id": "uuid",
+        "company_id": "uuid" (optional),
+        "contact_type": "patient" or "company",
+        "line_items": [...],
+        "billing_notes": "...",
+        "invoice_date": "YYYY-MM-DD",
+        "due_date": "YYYY-MM-DD",
+        "appointment_id": "uuid" (optional)
+    }
+    """
+    try:
+        # Validate required fields
+        patient_id = request.data.get('patient_id')
+        contact_type = request.data.get('contact_type', 'patient')
+        line_items = request.data.get('line_items', [])
+        
+        if not patient_id:
+            return JsonResponse({
+                'error': 'patient_id is required'
+            }, status=400)
+        
+        if contact_type == 'company' and not request.data.get('company_id'):
+            return JsonResponse({
+                'error': 'company_id is required when contact_type is company'
+            }, status=400)
+        
+        if not line_items or len(line_items) == 0:
+            return JsonResponse({
+                'error': 'At least one line item is required'
+            }, status=400)
+        
+        # Get patient
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            return JsonResponse({
+                'error': f'Patient with id {patient_id} not found'
+            }, status=404)
+        
+        # Get company (if specified)
+        company = None
+        company_id = request.data.get('company_id')
+        if company_id:
+            try:
+                company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Company with id {company_id} not found'
+                }, status=404)
+        
+        # Get or create appointment (if specified)
+        appointment = None
+        appointment_id = request.data.get('appointment_id')
+        if appointment_id:
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+                
+                # Update appointment with billing info
+                appointment.invoice_contact_type = contact_type
+                appointment.billing_company = company
+                appointment.billing_notes = request.data.get('billing_notes', '')
+                appointment.save()
+                
+            except Appointment.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Appointment with id {appointment_id} not found'
+                }, status=404)
+        else:
+            # Create a dummy appointment for invoice tracking
+            from datetime import datetime
+            appointment = Appointment.objects.create(
+                patient=patient,
+                clinic=patient.clinic if hasattr(patient, 'clinic') else None,
+                start_time=datetime.now(),
+                end_time=datetime.now(),
+                appointment_type='Invoice Only',
+                status='completed',
+                invoice_contact_type=contact_type,
+                billing_company=company,
+                billing_notes=request.data.get('billing_notes', '')
+            )
+        
+        # Create invoice via Xero service
+        invoice_link = xero_service.create_invoice(
+            appointment=appointment,
+            line_items=line_items,
+            tracking_category=None
+        )
+        
+        return JsonResponse({
+            'message': 'Invoice created successfully',
+            'invoice_id': str(invoice_link.id),
+            'xero_invoice_id': invoice_link.xero_invoice_id,
+            'xero_invoice_number': invoice_link.xero_invoice_number,
+            'status': invoice_link.status,
+            'total': str(invoice_link.total)
+        }, status=201)
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': 'Failed to create invoice',
+            'detail': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
+
+@api_view(['POST'])
+def create_xero_quote(request):
+    """
+    Create a Xero quote with flexible contact selection
+    Added Nov 2025: Quotes (estimates) before service delivery
+    
+    Request body:
+    {
+        "patient_id": "uuid",
+        "company_id": "uuid" (optional),
+        "contact_type": "patient" or "company",
+        "line_items": [...],
+        "billing_notes": "...",
+        "quote_date": "YYYY-MM-DD",
+        "expiry_date": "YYYY-MM-DD",
+        "appointment_id": "uuid" (optional)
+    }
+    """
+    try:
+        # Validate required fields
+        patient_id = request.data.get('patient_id')
+        contact_type = request.data.get('contact_type', 'patient')
+        line_items = request.data.get('line_items', [])
+        expiry_date = request.data.get('expiry_date')
+        
+        if not patient_id:
+            return JsonResponse({
+                'error': 'patient_id is required'
+            }, status=400)
+        
+        if contact_type == 'company' and not request.data.get('company_id'):
+            return JsonResponse({
+                'error': 'company_id is required when contact_type is company'
+            }, status=400)
+        
+        if not line_items or len(line_items) == 0:
+            return JsonResponse({
+                'error': 'At least one line item is required'
+            }, status=400)
+        
+        if not expiry_date:
+            return JsonResponse({
+                'error': 'expiry_date is required'
+            }, status=400)
+        
+        # Get patient
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            return JsonResponse({
+                'error': f'Patient with id {patient_id} not found'
+            }, status=404)
+        
+        # Get company (if specified)
+        company = None
+        company_id = request.data.get('company_id')
+        if company_id:
+            try:
+                company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Company with id {company_id} not found'
+                }, status=404)
+        
+        # Get appointment (optional for quotes)
+        appointment = None
+        appointment_id = request.data.get('appointment_id')
+        if appointment_id:
+            try:
+                appointment = Appointment.objects.get(id=appointment_id)
+            except Appointment.DoesNotExist:
+                pass  # OK for quotes to not have appointment
+        
+        # Create quote via Xero service
+        quote_link = xero_service.create_quote(
+            patient=patient,
+            company=company,
+            line_items=line_items,
+            expiry_date=expiry_date,
+            appointment=appointment
+        )
+        
+        return JsonResponse({
+            'message': 'Quote created successfully',
+            'quote_id': str(quote_link.id),
+            'xero_quote_id': quote_link.xero_quote_id,
+            'xero_quote_number': quote_link.xero_quote_number,
+            'status': quote_link.status,
+            'total': str(quote_link.total)
+        }, status=201)
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': 'Failed to create quote',
+            'detail': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)

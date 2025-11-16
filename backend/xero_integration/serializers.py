@@ -6,6 +6,7 @@ from .models import (
     XeroConnection,
     XeroContactLink,
     XeroInvoiceLink,
+    XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
     XeroSyncLog
@@ -134,4 +135,46 @@ class SyncContactSerializer(serializers.Serializer):
     """Serializer for syncing contacts"""
     patient_id = serializers.UUIDField()
     force_update = serializers.BooleanField(default=False)
+
+
+class XeroQuoteLinkSerializer(serializers.ModelSerializer):
+    """
+    Serializer for quote links
+    Added Nov 2025: Support for Xero quotes (estimates)
+    """
+    appointment_details = serializers.SerializerMethodField()
+    converted_invoice_details = serializers.SerializerMethodField()
+    can_convert = serializers.BooleanField(source='can_convert_to_invoice', read_only=True)
+    
+    class Meta:
+        model = XeroQuoteLink
+        fields = [
+            'id', 'appointment', 'appointment_details',
+            'xero_quote_id', 'xero_quote_number', 'status',
+            'total', 'subtotal', 'total_tax', 'currency',
+            'quote_date', 'expiry_date',
+            'converted_invoice', 'converted_invoice_details', 'converted_at', 'can_convert',
+            'last_synced_at', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_appointment_details(self, obj):
+        if obj.appointment:
+            return {
+                'id': str(obj.appointment.id),
+                'patient_name': obj.appointment.patient.get_full_name() if obj.appointment.patient else None,
+                'start_time': obj.appointment.start_time,
+            }
+        return None
+    
+    def get_converted_invoice_details(self, obj):
+        if obj.converted_invoice:
+            return {
+                'id': str(obj.converted_invoice.id),
+                'xero_invoice_number': obj.converted_invoice.xero_invoice_number,
+                'status': obj.converted_invoice.status,
+                'total': str(obj.converted_invoice.total),
+            }
+        return None
+
 

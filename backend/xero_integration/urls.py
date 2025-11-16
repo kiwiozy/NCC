@@ -9,6 +9,7 @@ router = DefaultRouter()
 router.register(r'connections', views.XeroConnectionViewSet, basename='xero-connection')
 router.register(r'contacts', views.XeroContactLinkViewSet, basename='xero-contact')
 router.register(r'invoices', views.XeroInvoiceLinkViewSet, basename='xero-invoice')
+router.register(r'quotes', views.XeroQuoteLinkViewSet, basename='xero-quote')
 router.register(r'items', views.XeroItemMappingViewSet, basename='xero-item')
 router.register(r'tracking', views.XeroTrackingCategoryViewSet, basename='xero-tracking')
 router.register(r'logs', views.XeroSyncLogViewSet, basename='xero-log')
@@ -21,6 +22,10 @@ urlpatterns = [
     path('oauth/callback/', views.xero_callback, name='callback'),
     path('oauth/disconnect/', views.xero_disconnect, name='disconnect'),
     path('oauth/refresh/', views.xero_refresh_token, name='refresh'),
+    
+    # Invoice/Quote creation endpoints (Added Nov 2025)
+    path('create-invoice/', views.create_xero_invoice, name='create-invoice'),
+    path('create-quote/', views.create_xero_quote, name='create-quote'),
     
     # API endpoints
     path('', include(router.urls)),
