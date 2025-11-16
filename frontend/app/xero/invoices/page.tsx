@@ -1,55 +1,37 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Title, 
-  Paper, 
-  Table, 
-  Badge, 
-  Group, 
-  Text, 
-  Button,
-  TextInput,
-  Select,
-  Stack,
-  ActionIcon,
-  Loader,
-  Center,
-  Tooltip,
-  Modal
-} from '@mantine/core';
-import { 
-  IconSearch, 
-  IconRefresh, 
-  IconExternalLink,
-  IconEye,
-  IconFileInvoice
-} from '@tabler/icons-react';
-import { useRouter } from 'next/navigation';
+import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Modal, NumberInput, Textarea, rem } from '@mantine/core';
+import { IconSearch, IconRefresh, IconCheck, IconX, IconExternalLink, IconFileInvoice, IconPlus, IconClock, IconCurrencyDollar } from '@tabler/icons-react';
+import { DateInput } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
-import { formatDateAU, formatCurrency } from '../../utils/formatting';
+import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
-interface XeroInvoice {
+interface XeroInvoiceLink {
   id: string;
+  appointment: string | null;
+  appointment_details: {
+    id: string;
+    patient_name: string;
+    start_time: string;
+  } | null;
   xero_invoice_id: string;
   xero_invoice_number: string;
+  xero_invoice_type: string;
   status: string;
   total: string;
   subtotal: string;
   total_tax: string;
   amount_due: string;
   amount_paid: string;
-  invoice_date: string;
-  due_date: string;
-  appointment?: {
-    id: string;
-    patient: {
-      full_name: string;
-      mrn: string;
-    };
-  };
-  last_synced_at: string;
+  currency: string;
+  invoice_date: string | null;
+  due_date: string | null;
+  fully_paid_on_date: string | null;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -58,290 +40,323 @@ const STATUS_COLORS: Record<string, string> = {
   'AUTHORISED': 'cyan',
   'PAID': 'green',
   'VOIDED': 'red',
-  'DELETED': 'dark',
+  'DELETED': 'red',
 };
 
 export default function XeroInvoicesPage() {
-  const router = useRouter();
-  const [invoices, setInvoices] = useState<XeroInvoice[]>([]);
+  const [invoices, setInvoices] = useState<XeroInvoiceLink[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<XeroInvoiceLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedInvoice, setSelectedInvoice] = useState<XeroInvoice | null>(null);
-  const [detailsOpened, setDetailsOpened] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
-  const loadInvoices = async () => {
+  // Stats
+  const [stats, setStats] = useState({
+    total: 0,
+    draft: 0,
+    submitted: 0,
+    paid: 0,
+    totalAmount: 0,
+    amountPaid: 0,
+    amountDue: 0,
+  });
+
+  const fetchInvoices = async () => {
     setLoading(true);
     try {
-      let url = 'https://localhost:8000/api/xero-invoice-links/';
-      const params = new URLSearchParams();
+      const response = await fetch('https://localhost:8000/api/xero-invoice-links/');
+      if (!response.ok) throw new Error('Failed to fetch invoices');
       
-      if (statusFilter) {
-        params.append('status', statusFilter);
-      }
-      if (searchQuery) {
-        params.append('search', searchQuery);
-      }
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setInvoices(data.results || data);
-      }
+      const data = await response.json();
+      const invoicesList = data.results || data;
+      setInvoices(invoicesList);
+      setFilteredInvoices(invoicesList);
+
+      // Calculate stats
+      const newStats = {
+        total: invoicesList.length,
+        draft: invoicesList.filter((i: XeroInvoiceLink) => i.status === 'DRAFT').length,
+        submitted: invoicesList.filter((i: XeroInvoiceLink) => i.status === 'SUBMITTED' || i.status === 'AUTHORISED').length,
+        paid: invoicesList.filter((i: XeroInvoiceLink) => i.status === 'PAID').length,
+        totalAmount: invoicesList.reduce((sum: number, i: XeroInvoiceLink) => sum + parseFloat(i.total || '0'), 0),
+        amountPaid: invoicesList.reduce((sum: number, i: XeroInvoiceLink) => sum + parseFloat(i.amount_paid || '0'), 0),
+        amountDue: invoicesList.reduce((sum: number, i: XeroInvoiceLink) => sum + parseFloat(i.amount_due || '0'), 0),
+      };
+      setStats(newStats);
     } catch (error) {
-      console.error('Error loading invoices:', error);
+      console.error('Error fetching Xero invoices:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to load Xero invoices',
+        color: 'red',
+        icon: <IconX />,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInvoices();
-  }, [statusFilter]);
+    fetchInvoices();
+  }, []);
 
-  const handleSearch = () => {
-    loadInvoices();
+  // Filter invoices based on search and status
+  useEffect(() => {
+    let filtered = invoices;
+
+    // Filter by status
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(i => i.status === statusFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(i =>
+        i.xero_invoice_number.toLowerCase().includes(query) ||
+        i.appointment_details?.patient_name.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredInvoices(filtered);
+  }, [invoices, searchQuery, statusFilter]);
+
+  const getXeroInvoiceUrl = (invoiceId: string) => {
+    return `https://go.xero.com/AccountsReceivable/Edit.aspx?InvoiceID=${invoiceId}`;
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
+  const formatCurrency = (amount: string | number) => {
+    return `$${parseFloat(amount.toString()).toFixed(2)}`;
+  };
+
+  if (loading) {
     return (
-      invoice.xero_invoice_number?.toLowerCase().includes(query) ||
-      invoice.appointment?.patient?.full_name?.toLowerCase().includes(query) ||
-      invoice.appointment?.patient?.mrn?.toLowerCase().includes(query)
+      <Navigation>
+        <Container size="xl" py="xl">
+          <Center h={400}>
+            <Loader size="lg" />
+          </Center>
+        </Container>
+      </Navigation>
     );
-  });
-
-  const openInXero = (invoice: XeroInvoice) => {
-    // Open Xero invoice in new tab
-    const xeroUrl = `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${invoice.xero_invoice_id}`;
-    window.open(xeroUrl, '_blank');
-  };
-
-  const viewDetails = (invoice: XeroInvoice) => {
-    setSelectedInvoice(invoice);
-    setDetailsOpened(true);
-  };
+  }
 
   return (
     <Navigation>
       <Container size="xl" py="xl">
-        <Group justify="space-between" mb="xl">
-          <Title order={2}>Xero Invoices</Title>
-          <Button
-            leftSection={<IconRefresh size={16} />}
-            onClick={loadInvoices}
-            variant="light"
-          >
-            Refresh
-          </Button>
-        </Group>
-
-        {/* Filters */}
-        <Paper p="md" mb="xl" withBorder>
-          <Group>
-            <TextInput
-              placeholder="Search invoices, patients, MRN..."
-              leftSection={<IconSearch size={16} />}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              style={{ flex: 1 }}
-            />
-            <Select
-              placeholder="Filter by status"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              data={[
-                { value: 'DRAFT', label: 'Draft' },
-                { value: 'SUBMITTED', label: 'Submitted' },
-                { value: 'AUTHORISED', label: 'Authorised' },
-                { value: 'PAID', label: 'Paid' },
-                { value: 'VOIDED', label: 'Voided' },
-              ]}
-              clearable
-              style={{ width: 200 }}
-            />
-            <Button onClick={handleSearch}>Search</Button>
-          </Group>
-        </Paper>
-
-        {/* Invoices Table */}
-        <Paper withBorder>
-          {loading ? (
-            <Center p="xl">
-              <Loader />
-            </Center>
-          ) : filteredInvoices.length === 0 ? (
-            <Center p="xl">
-              <Stack align="center" gap="sm">
-                <IconFileInvoice size={48} opacity={0.3} />
-                <Text c="dimmed">No invoices found</Text>
-              </Stack>
-            </Center>
-          ) : (
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Invoice #</Table.Th>
-                  <Table.Th>Patient</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Due Date</Table.Th>
-                  <Table.Th>Total</Table.Th>
-                  <Table.Th>Paid</Table.Th>
-                  <Table.Th>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {filteredInvoices.map((invoice) => (
-                  <Table.Tr key={invoice.id}>
-                    <Table.Td>
-                      <Text fw={600}>{invoice.xero_invoice_number || 'Draft'}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      {invoice.appointment ? (
-                        <Stack gap={0}>
-                          <Text size="sm">{invoice.appointment.patient.full_name}</Text>
-                          <Text size="xs" c="dimmed">MRN: {invoice.appointment.patient.mrn}</Text>
-                        </Stack>
-                      ) : (
-                        <Text size="sm" c="dimmed">No appointment</Text>
-                      )}
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge color={STATUS_COLORS[invoice.status] || 'gray'}>
-                        {invoice.status}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{invoice.invoice_date ? formatDateAU(invoice.invoice_date) : '-'}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm">{invoice.due_date ? formatDateAU(invoice.due_date) : '-'}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm" fw={600}>{formatCurrency(parseFloat(invoice.total))}</Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="sm" c={parseFloat(invoice.amount_paid) > 0 ? 'green' : 'dimmed'}>
-                        {formatCurrency(parseFloat(invoice.amount_paid))}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Group gap="xs">
-                        <Tooltip label="View details">
-                          <ActionIcon 
-                            variant="subtle" 
-                            color="blue"
-                            onClick={() => viewDetails(invoice)}
-                          >
-                            <IconEye size={18} />
-                          </ActionIcon>
-                        </Tooltip>
-                        <Tooltip label="Open in Xero">
-                          <ActionIcon 
-                            variant="subtle" 
-                            color="cyan"
-                            onClick={() => openInXero(invoice)}
-                          >
-                            <IconExternalLink size={18} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          )}
-        </Paper>
-
-        {/* Invoice Details Modal */}
-        <Modal
-          opened={detailsOpened}
-          onClose={() => setDetailsOpened(false)}
-          title="Invoice Details"
-          size="lg"
-        >
-          {selectedInvoice && (
-            <Stack gap="md">
-              <Group justify="space-between">
-                <Text fw={600}>Invoice #{selectedInvoice.xero_invoice_number || 'Draft'}</Text>
-                <Badge color={STATUS_COLORS[selectedInvoice.status] || 'gray'} size="lg">
-                  {selectedInvoice.status}
-                </Badge>
-              </Group>
-
-              {selectedInvoice.appointment && (
-                <Paper p="md" withBorder>
-                  <Text size="sm" fw={600} mb="xs">Patient</Text>
-                  <Text>{selectedInvoice.appointment.patient.full_name}</Text>
-                  <Text size="sm" c="dimmed">MRN: {selectedInvoice.appointment.patient.mrn}</Text>
-                </Paper>
-              )}
-
-              <Paper p="md" withBorder>
-                <Text size="sm" fw={600} mb="xs">Financial Details</Text>
-                <Stack gap="xs">
-                  <Group justify="space-between">
-                    <Text size="sm">Subtotal:</Text>
-                    <Text size="sm">{formatCurrency(parseFloat(selectedInvoice.subtotal))}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm">Tax (GST):</Text>
-                    <Text size="sm">{formatCurrency(parseFloat(selectedInvoice.total_tax))}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text fw={600}>Total:</Text>
-                    <Text fw={600}>{formatCurrency(parseFloat(selectedInvoice.total))}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm" c="green">Amount Paid:</Text>
-                    <Text size="sm" c="green">{formatCurrency(parseFloat(selectedInvoice.amount_paid))}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm" c="red">Amount Due:</Text>
-                    <Text size="sm" c="red">{formatCurrency(parseFloat(selectedInvoice.amount_due))}</Text>
-                  </Group>
-                </Stack>
-              </Paper>
-
-              <Paper p="md" withBorder>
-                <Text size="sm" fw={600} mb="xs">Dates</Text>
-                <Stack gap="xs">
-                  <Group justify="space-between">
-                    <Text size="sm">Invoice Date:</Text>
-                    <Text size="sm">{selectedInvoice.invoice_date ? formatDateAU(selectedInvoice.invoice_date) : '-'}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm">Due Date:</Text>
-                    <Text size="sm">{selectedInvoice.due_date ? formatDateAU(selectedInvoice.due_date) : '-'}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm">Last Synced:</Text>
-                    <Text size="sm">{selectedInvoice.last_synced_at ? formatDateAU(selectedInvoice.last_synced_at) : '-'}</Text>
-                  </Group>
-                </Stack>
-              </Paper>
-
+        <Stack gap="xl">
+          {/* Header */}
+          <Group justify="space-between" align="flex-start">
+            <div>
+              <Title order={2}>Xero Invoices</Title>
+              <Text c="dimmed" size="sm" mt="xs">
+                Manage invoices synced to Xero
+              </Text>
+            </div>
+            <Group>
               <Button
-                fullWidth
-                leftSection={<IconExternalLink size={16} />}
-                onClick={() => openInXero(selectedInvoice)}
+                leftSection={<IconRefresh size={16} />}
+                onClick={fetchInvoices}
+                variant="light"
               >
-                Open in Xero
+                Refresh
               </Button>
-            </Stack>
-          )}
-        </Modal>
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={() => {
+                  notifications.show({
+                    title: 'Coming Soon',
+                    message: 'Invoice creation will be available soon',
+                    color: 'blue',
+                  });
+                }}
+              >
+                Create Invoice
+              </Button>
+            </Group>
+          </Group>
+
+          {/* Stats */}
+          <Group gap="md" grow>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Invoices</Text>
+                  <Text size="xl" fw={700}>{stats.total}</Text>
+                </div>
+                <IconFileInvoice size={32} style={{ opacity: 0.3 }} />
+              </Group>
+            </Paper>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Draft</Text>
+                  <Text size="xl" fw={700}>{stats.draft}</Text>
+                </div>
+                <IconClock size={32} style={{ opacity: 0.3 }} />
+              </Group>
+            </Paper>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Submitted</Text>
+                  <Text size="xl" fw={700}>{stats.submitted}</Text>
+                </div>
+                <IconClock size={32} style={{ opacity: 0.3 }} />
+              </Group>
+            </Paper>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Paid</Text>
+                  <Text size="xl" fw={700}>{stats.paid}</Text>
+                </div>
+                <IconCheck size={32} style={{ opacity: 0.3 }} />
+              </Group>
+            </Paper>
+          </Group>
+
+          {/* Financial Stats */}
+          <Group gap="md" grow>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Amount</Text>
+                  <Text size="xl" fw={700}>{formatCurrency(stats.totalAmount)}</Text>
+                </div>
+                <IconCurrencyDollar size={32} style={{ opacity: 0.3 }} />
+              </Group>
+            </Paper>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Amount Paid</Text>
+                  <Text size="xl" fw={700} c="green">{formatCurrency(stats.amountPaid)}</Text>
+                </div>
+                <IconCheck size={32} style={{ opacity: 0.3, color: 'green' }} />
+              </Group>
+            </Paper>
+            <Paper p="md" withBorder>
+              <Group justify="space-between">
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Amount Due</Text>
+                  <Text size="xl" fw={700} c="orange">{formatCurrency(stats.amountDue)}</Text>
+                </div>
+                <IconClock size={32} style={{ opacity: 0.3, color: 'orange' }} />
+              </Group>
+            </Paper>
+          </Group>
+
+          {/* Filters */}
+          <Paper p="md" withBorder>
+            <Group>
+              <TextInput
+                placeholder="Search invoices..."
+                leftSection={<IconSearch size={16} />}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <Select
+                placeholder="Filter by status"
+                data={[
+                  { value: 'all', label: 'All Statuses' },
+                  { value: 'DRAFT', label: 'Draft' },
+                  { value: 'SUBMITTED', label: 'Submitted' },
+                  { value: 'AUTHORISED', label: 'Authorised' },
+                  { value: 'PAID', label: 'Paid' },
+                  { value: 'VOIDED', label: 'Voided' },
+                ]}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                style={{ width: 200 }}
+              />
+            </Group>
+          </Paper>
+
+          {/* Invoices Table */}
+          <Paper shadow="sm" p="0" withBorder>
+            {filteredInvoices.length === 0 ? (
+              <Center p="xl">
+                <Stack align="center" gap="xs">
+                  <IconFileInvoice size={48} style={{ opacity: 0.3 }} />
+                  <Text c="dimmed">
+                    {searchQuery || statusFilter !== 'all' ? 'No invoices match your filters' : 'No invoices created yet'}
+                  </Text>
+                </Stack>
+              </Center>
+            ) : (
+              <Table.ScrollContainer minWidth={1000}>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Invoice Number</Table.Th>
+                      <Table.Th>Patient</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Invoice Date</Table.Th>
+                      <Table.Th>Due Date</Table.Th>
+                      <Table.Th>Total</Table.Th>
+                      <Table.Th>Amount Paid</Table.Th>
+                      <Table.Th>Amount Due</Table.Th>
+                      <Table.Th style={{ width: '80px' }}>Actions</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {filteredInvoices.map((invoice) => (
+                      <Table.Tr key={invoice.id}>
+                        <Table.Td>
+                          <Text fw={600}>{invoice.xero_invoice_number}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{invoice.appointment_details?.patient_name || '—'}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={STATUS_COLORS[invoice.status] || 'gray'} variant="light">
+                            {invoice.status}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="dimmed">
+                            {invoice.invoice_date ? formatDateOnlyAU(invoice.invoice_date) : '—'}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="dimmed">
+                            {invoice.due_date ? formatDateOnlyAU(invoice.due_date) : '—'}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text fw={500}>{formatCurrency(invoice.total)}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="green">{formatCurrency(invoice.amount_paid)}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="orange">{formatCurrency(invoice.amount_due)}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Tooltip label="View in Xero">
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              component="a"
+                              href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <IconExternalLink size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            )}
+          </Paper>
+        </Stack>
       </Container>
     </Navigation>
   );
 }
-
