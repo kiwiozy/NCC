@@ -111,7 +111,12 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
         from companies.models import Company
         
         # Get invoice link
-        invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
+        try:
+            invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
+        except XeroInvoiceLink.DoesNotExist:
+            return Response({
+                'error': 'Invoice not found'
+            }, status=404)
         
         # Get patient or company info
         patient_info = {
@@ -187,7 +192,11 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
         return response
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error generating PDF: {error_details}")
         return Response({
-            'error': str(e)
+            'error': str(e),
+            'details': error_details
         }, status=400)
 
