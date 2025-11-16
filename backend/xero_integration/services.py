@@ -20,13 +20,14 @@ from xero_python.api_client import ApiClient
 from xero_python.api_client.configuration import Configuration
 from xero_python.api_client.oauth2 import OAuth2Token
 from xero_python.identity import IdentityApi
-from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices
+from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes
 from xero_python.exceptions import AccountingBadRequestException
 
 from .models import (
     XeroConnection,
     XeroContactLink,
     XeroInvoiceLink,
+    XeroQuoteLink,
     XeroSyncLog
 )
 
@@ -761,6 +762,274 @@ class XeroService:
                 operation_type='payment_sync',
                 status='failed',
                 xero_entity_id=invoice_link.xero_invoice_id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
+    def create_quote(
+        self,
+        patient,
+        company,
+        line_items: List[Dict[str, Any]],
+        expiry_date,
+        appointment=None
+    ) -> XeroQuoteLink:
+        """
+        Create a quote in Xero
+        Added Nov 2025: Support for quotes (estimates) before service delivery
+        
+        Args:
+            patient: Patient object (service recipient)
+            company: Company object (optional - who pays)
+            line_items: List of service line items
+            expiry_date: Quote expiry date (datetime.date)
+            appointment: Optional appointment to link to
+        
+        Returns:
+            XeroQuoteLink object
+        """
+        start_time = time.time()
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            accounting_api = AccountingApi(api_client)
+            
+            # Determine primary contact (company or patient)
+            if company:
+                primary_contact_link = self.sync_company_contact(company)
+                reference = f"Service for: {patient.full_name}"
+                reference += f"\nMRN: {patient.mrn}"
+                if patient.dob:
+                    reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
+            else:
+                primary_contact_link = self.sync_contact(patient)
+                reference = f"Quote for: {patient.full_name}"
+            
+            # Build line items
+            xero_line_items = []
+            for item in line_items:
+                line_item = LineItem(
+                    description=item['description'],
+                    quantity=item.get('quantity', 1),
+                    unit_amount=float(item['unit_amount']),
+                    account_code=item.get('account_code', '200'),
+                    tax_type=item.get('tax_type', 'OUTPUT2'),
+                )
+                xero_line_items.append(line_item)
+            
+            # Build quote
+            from xero_python.accounting import Contact as XeroContact
+            quote = Quote(
+                contact=XeroContact(contact_id=primary_contact_link.xero_contact_id),
+                date=timezone.now().date(),
+                expiry_date=expiry_date,
+                reference=reference,
+                line_items=xero_line_items,
+                status='DRAFT',
+                terms="Quote valid until expiry date. Services subject to availability.",
+                title="Service Quote"
+            )
+            
+            # Create quote in Xero
+            quotes = Quotes(quotes=[quote])
+            response = accounting_api.create_quotes(
+                xero_tenant_id=connection.tenant_id,
+                quotes=quotes
+            )
+            
+            created_quote = response.quotes[0]
+            
+            # Create link record
+            quote_link = XeroQuoteLink.objects.create(
+                appointment=appointment,
+                xero_quote_id=created_quote.quote_id,
+                xero_quote_number=created_quote.quote_number or '',
+                status=created_quote.status,
+                total=float(created_quote.total) if created_quote.total else 0,
+                subtotal=float(created_quote.sub_total) if created_quote.sub_total else 0,
+                total_tax=float(created_quote.total_tax) if created_quote.total_tax else 0,
+                quote_date=created_quote.date,
+                expiry_date=created_quote.expiry_date,
+                last_synced_at=timezone.now()
+            )
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='quote_create',
+                status='success',
+                local_entity_type='patient',
+                local_entity_id=patient.id,
+                xero_entity_id=created_quote.quote_id,
+                duration_ms=int((time.time() - start_time) * 1000),
+                request_data={'line_items': line_items}
+            )
+            
+            return quote_link
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='quote_create',
+                status='failed',
+                local_entity_type='patient',
+                local_entity_id=patient.id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
+    def convert_quote_to_invoice(self, quote_link: XeroQuoteLink) -> XeroInvoiceLink:
+        """
+        Convert an accepted quote to an invoice
+        Added Nov 2025: One-click quote conversion
+        
+        Args:
+            quote_link: XeroQuoteLink object to convert
+        
+        Returns:
+            XeroInvoiceLink object (new invoice)
+        """
+        start_time = time.time()
+        
+        try:
+            # Validate quote can be converted
+            if not quote_link.can_convert_to_invoice():
+                raise ValueError(f"Quote {quote_link.xero_quote_number} cannot be converted (status: {quote_link.status})")
+            
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the original quote from Xero
+            quote_response = accounting_api.get_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id
+            )
+            original_quote = quote_response.quotes[0]
+            
+            # Create invoice with same details
+            invoice = Invoice(
+                type='ACCREC',
+                contact=original_quote.contact,  # Same contact
+                line_items=original_quote.line_items,  # Same line items
+                reference=f"Quote #{original_quote.quote_number}",
+                date=timezone.now().date(),
+                status='DRAFT',
+                currency_code='AUD'
+            )
+            
+            # Create invoice in Xero
+            invoices = Invoices(invoices=[invoice])
+            response = accounting_api.create_invoices(
+                xero_tenant_id=connection.tenant_id,
+                invoices=invoices
+            )
+            
+            created_invoice = response.invoices[0]
+            
+            # Create invoice link
+            invoice_link = XeroInvoiceLink.objects.create(
+                appointment=quote_link.appointment,  # Link to same appointment if any
+                xero_invoice_id=created_invoice.invoice_id,
+                xero_invoice_number=created_invoice.invoice_number or '',
+                status=created_invoice.status,
+                total=float(created_invoice.total) if created_invoice.total else 0,
+                subtotal=float(created_invoice.sub_total) if created_invoice.sub_total else 0,
+                total_tax=float(created_invoice.total_tax) if created_invoice.total_tax else 0,
+                amount_due=float(created_invoice.amount_due) if created_invoice.amount_due else 0,
+                amount_paid=float(created_invoice.amount_paid) if created_invoice.amount_paid else 0,
+                invoice_date=created_invoice.date,
+                due_date=created_invoice.due_date,
+                last_synced_at=timezone.now()
+            )
+            
+            # Update quote link to mark as converted
+            quote_link.status = 'INVOICED'
+            quote_link.converted_invoice = invoice_link
+            quote_link.converted_at = timezone.now()
+            quote_link.save()
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='quote_convert',
+                status='success',
+                xero_entity_id=quote_link.xero_quote_id,
+                duration_ms=int((time.time() - start_time) * 1000),
+                response_data={
+                    'quote_id': quote_link.xero_quote_id,
+                    'invoice_id': invoice_link.xero_invoice_id
+                }
+            )
+            
+            return invoice_link
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='quote_convert',
+                status='failed',
+                xero_entity_id=quote_link.xero_quote_id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
+    def sync_quote_status(self, quote_link: XeroQuoteLink) -> XeroQuoteLink:
+        """
+        Fetch latest quote status from Xero
+        Added Nov 2025: Keep quote status in sync
+        
+        Args:
+            quote_link: XeroQuoteLink object to sync
+        
+        Returns:
+            Updated XeroQuoteLink object
+        """
+        start_time = time.time()
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch quote
+            response = accounting_api.get_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id
+            )
+            
+            xero_quote = response.quotes[0]
+            
+            # Update link
+            quote_link.status = xero_quote.status
+            quote_link.total = float(xero_quote.total) if xero_quote.total else 0
+            quote_link.subtotal = float(xero_quote.sub_total) if xero_quote.sub_total else 0
+            quote_link.total_tax = float(xero_quote.total_tax) if xero_quote.total_tax else 0
+            quote_link.last_synced_at = timezone.now()
+            quote_link.save()
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='quote_sync',
+                status='success',
+                xero_entity_id=quote_link.xero_quote_id,
+                duration_ms=int((time.time() - start_time) * 1000),
+                response_data={'status': xero_quote.status}
+            )
+            
+            return quote_link
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='quote_sync',
+                status='failed',
+                xero_entity_id=quote_link.xero_quote_id,
                 error_message=str(e),
                 duration_ms=int((time.time() - start_time) * 1000)
             )
