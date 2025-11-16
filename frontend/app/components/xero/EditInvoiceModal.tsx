@@ -91,7 +91,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
           quantity: 1,
           unit_amount: 0,
           account_code: '200',
-          tax_type: 'EXEMPTINPUT',
+          tax_type: 'EXEMPTOUTPUT',
         },
       ]);
       setBillingNotes(data.billing_notes || '');
@@ -120,7 +120,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
       quantity: 1,
       unit_amount: 0,
       account_code: '200',
-      tax_type: 'EXEMPTINPUT',
+      tax_type: 'EXEMPTOUTPUT',
     };
     setLineItems([...lineItems, newItem]);
   };

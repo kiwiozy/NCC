@@ -301,7 +301,7 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
                             'quantity': float(item.quantity) if item.quantity else 1,
                             'unit_amount': float(item.unit_amount) if item.unit_amount else 0,
                             'account_code': item.account_code or '200',
-                            'tax_type': item.tax_type or 'EXEMPTINPUT',
+                            'tax_type': item.tax_type or 'EXEMPTOUTPUT',
                         })
                 
                 data['line_items'] = line_items
