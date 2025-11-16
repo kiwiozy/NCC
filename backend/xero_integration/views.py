@@ -688,10 +688,16 @@ def create_xero_quote(request):
         
     except Exception as e:
         import traceback
+        error_traceback = traceback.format_exc()
+        print("=" * 80)
+        print("QUOTE CREATION ERROR:")
+        print(f"Error: {str(e)}")
+        print(f"Traceback:\n{error_traceback}")
+        print("=" * 80)
         return JsonResponse({
             'error': 'Failed to create quote',
             'detail': str(e),
-            'traceback': traceback.format_exc()
+            'traceback': error_traceback
         }, status=500)
 
 
