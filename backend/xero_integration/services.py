@@ -1289,7 +1289,7 @@ class XeroService:
                 appointment=appointment,
                 xero_quote_id=created_quote.quote_id,
                 xero_quote_number=created_quote.quote_number or '',
-                status=created_quote.status,
+                status=created_quote.status.value if hasattr(created_quote.status, 'value') else str(created_quote.status),
                 total=float(created_quote.total) if created_quote.total else 0,
                 subtotal=float(created_quote.sub_total) if created_quote.sub_total else 0,
                 total_tax=float(created_quote.total_tax) if created_quote.total_tax else 0,
@@ -1302,8 +1302,8 @@ class XeroService:
             XeroSyncLog.objects.create(
                 operation_type='quote_create',
                 status='success',
-                local_entity_type='patient',
-                local_entity_id=patient.id,
+                local_entity_type='patient' if patient else 'company',
+                local_entity_id=str(patient.id) if patient else str(company.id),
                 xero_entity_id=created_quote.quote_id,
                 duration_ms=int((time.time() - start_time) * 1000),
                 request_data={'line_items': line_items}
@@ -1316,8 +1316,8 @@ class XeroService:
             XeroSyncLog.objects.create(
                 operation_type='quote_create',
                 status='failed',
-                local_entity_type='patient',
-                local_entity_id=patient.id,
+                local_entity_type='patient' if patient else 'company',
+                local_entity_id=str(patient.id) if patient else (str(company.id) if company else None),
                 error_message=str(e),
                 duration_ms=int((time.time() - start_time) * 1000)
             )
