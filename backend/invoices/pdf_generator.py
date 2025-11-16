@@ -314,11 +314,22 @@ class InvoicePDFGenerator:
         ref_info = Paragraph(ref_info_text, self.styles['RightInfo'])
         
         info_table = Table([[patient_address, ref_info]], colWidths=[10*cm, 7*cm])
-        info_table.setStyle(TableStyle([
+        
+        # Build table style - add borders in debug mode
+        info_table_style = [
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
+        ]
+        
+        # Add grid lines in debug mode
+        if self.debug:
+            info_table_style.extend([
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.blue),  # Blue grid lines
+                ('LINEAFTER', (0, 0), (0, -1), 1, colors.red),  # Vertical line between columns
+            ])
+        
+        info_table.setStyle(TableStyle(info_table_style))
         
         elements.append(info_table)
         
