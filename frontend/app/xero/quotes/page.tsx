@@ -79,6 +79,14 @@ export default function XeroQuotesPage() {
     }
   };
 
+  const normalizeStatus = (status: string): string => {
+    // Handle old quotes that have "QuoteStatusCodes.DRAFT" format
+    if (status && status.includes('QuoteStatusCodes.')) {
+      return status.replace('QuoteStatusCodes.', '');
+    }
+    return status;
+  };
+
   const filterQuotes = () => {
     console.log('🔍 Filtering quotes...');
     console.log('📋 Total quotes:', quotes.length);
@@ -100,7 +108,7 @@ export default function XeroQuotesPage() {
 
     // Filter by status
     if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(quote => quote.status === statusFilter);
+      filtered = filtered.filter(quote => normalizeStatus(quote.status) === statusFilter);
       console.log('📋 After status filter:', filtered.length);
     }
 
@@ -128,9 +136,9 @@ export default function XeroQuotesPage() {
     console.log('📋 Filtered quotes for stats:', filteredQuotes.length);
     
     const total = filteredQuotes.reduce((sum, quote) => sum + parseFloat(quote.total || '0'), 0);
-    const draftCount = filteredQuotes.filter(q => q.status === 'DRAFT').length;
-    const sentCount = filteredQuotes.filter(q => q.status === 'SENT').length;
-    const acceptedCount = filteredQuotes.filter(q => q.status === 'ACCEPTED').length;
+    const draftCount = filteredQuotes.filter(q => normalizeStatus(q.status) === 'DRAFT').length;
+    const sentCount = filteredQuotes.filter(q => normalizeStatus(q.status) === 'SENT').length;
+    const acceptedCount = filteredQuotes.filter(q => normalizeStatus(q.status) === 'ACCEPTED').length;
 
     const stats = { total, draftCount, sentCount, acceptedCount, totalCount: filteredQuotes.length };
     console.log('📈 Stats:', stats);
@@ -307,7 +315,7 @@ export default function XeroQuotesPage() {
                           <Text size="sm" c="dimmed">—</Text>
                         )}
                       </Table.Td>
-                      <Table.Td>{getStatusBadge(quote.status)}</Table.Td>
+                      <Table.Td>{getStatusBadge(normalizeStatus(quote.status))}</Table.Td>
                       <Table.Td>{quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}</Table.Td>
                       <Table.Td>{quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}</Table.Td>
                       <Table.Td>
