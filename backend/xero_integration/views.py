@@ -595,18 +595,25 @@ def create_xero_quote(request):
     try:
         # Validate required fields
         patient_id = request.data.get('patient_id')
+        company_id = request.data.get('company_id')
         contact_type = request.data.get('contact_type', 'patient')
         line_items = request.data.get('line_items', [])
         expiry_date = request.data.get('expiry_date')
         
-        if not patient_id:
+        # Validate that we have at least one contact (patient or company)
+        if not patient_id and not company_id:
             return JsonResponse({
-                'error': 'patient_id is required'
+                'error': 'Either patient_id or company_id is required'
             }, status=400)
         
-        if contact_type == 'company' and not request.data.get('company_id'):
+        if contact_type == 'company' and not company_id:
             return JsonResponse({
                 'error': 'company_id is required when contact_type is company'
+            }, status=400)
+        
+        if contact_type == 'patient' and not patient_id:
+            return JsonResponse({
+                'error': 'patient_id is required when contact_type is patient'
             }, status=400)
         
         if not line_items or len(line_items) == 0:
@@ -619,17 +626,18 @@ def create_xero_quote(request):
                 'error': 'expiry_date is required'
             }, status=400)
         
-        # Get patient
-        try:
-            patient = Patient.objects.get(id=patient_id)
-        except Patient.DoesNotExist:
-            return JsonResponse({
-                'error': f'Patient with id {patient_id} not found'
-            }, status=404)
+        # Get patient (if provided)
+        patient = None
+        if patient_id:
+            try:
+                patient = Patient.objects.get(id=patient_id)
+            except Patient.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Patient with id {patient_id} not found'
+                }, status=404)
         
-        # Get company (if specified)
+        # Get company (if provided)
         company = None
-        company_id = request.data.get('company_id')
         if company_id:
             try:
                 company = Company.objects.get(id=company_id)

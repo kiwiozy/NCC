@@ -1234,12 +1234,18 @@ class XeroService:
             # Determine primary contact (company or patient)
             if company:
                 primary_contact_link = self.sync_company_contact(company)
-                patient_name = f"{patient.first_name} {patient.last_name}"
-                reference = f"Service for: {patient_name}"
-                reference += f"\nMRN: {patient.mrn}"
-                if patient.dob:
-                    reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
+                if patient:
+                    patient_name = f"{patient.first_name} {patient.last_name}"
+                    reference = f"Service for: {patient_name}"
+                    reference += f"\nMRN: {patient.mrn}"
+                    if patient.dob:
+                        reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
+                else:
+                    reference = f"Quote for: {company.name}"
             else:
+                # Patient is primary contact
+                if not patient:
+                    raise ValueError("Either patient or company must be provided")
                 primary_contact_link = self.sync_contact(patient)
                 patient_name = f"{patient.first_name} {patient.last_name}"
                 reference = f"Quote for: {patient_name}"

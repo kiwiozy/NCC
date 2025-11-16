@@ -189,7 +189,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         },
         body: JSON.stringify({
           patient_id: contactType === 'patient' ? selectedPatient : undefined,
-          company_id: contactType === 'company' ? selectedCompany : selectedPatient, // If patient selected but company type, use patient as company
+          company_id: contactType === 'company' ? selectedCompany : undefined,
           contact_type: contactType,
           line_items: lineItems.map(item => ({
             description: item.description,
