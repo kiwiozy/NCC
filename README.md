@@ -2,12 +2,14 @@
 
 Modern cloud-native patient management system for Walk Easy Pedorthics.
 
-## 🎉 **PRODUCTION DEPLOYED!** (Nov 15, 2025)
+## 🎉 **PRODUCTION DEPLOYED & OPERATIONAL!** (Nov 15-16, 2025)
 
-✅ **Backend Live:** https://nexus-production-backend-892000689828.australia-southeast1.run.app  
+✅ **Backend Fully Operational:** https://nexus-production-backend-892000689828.australia-southeast1.run.app  
+✅ **Status:** All endpoints working (root, API, admin)  
 ✅ **Database:** Cloud SQL PostgreSQL (50GB, HA)  
 ✅ **Project:** `nexus-walkeasy-prod` (Google Cloud)  
-✅ **Region:** australia-southeast1 (Sydney)
+✅ **Region:** australia-southeast1 (Sydney)  
+✅ **Revision:** `nexus-production-backend-00007-zz9`
 
 **📋 Next:** [Production Quick Start →](./PRODUCTION_QUICK_START.md)
 

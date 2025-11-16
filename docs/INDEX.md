@@ -1,7 +1,7 @@
 # 📚 WalkEasy Nexus - Documentation Index
 
 **Last Updated:** November 15, 2025  
-**Project:** WalkEasy Nexus - Patient Management System  
+**Project:** WalkEasy Nexus - Patient Management System
 **Status:** 🎉 **PRODUCTION DEPLOYED!**
 
 ---

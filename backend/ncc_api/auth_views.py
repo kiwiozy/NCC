@@ -47,11 +47,21 @@ def user_info(request):
         }, status=401)
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def login_redirect(request):
     """
-    Redirect to frontend after successful login
+    Root endpoint - return API info instead of redirecting
     """
-    return redirect('https://localhost:3000/')
+    return Response({
+        'message': 'Nexus Core Clinic API',
+        'version': '1.0',
+        'endpoints': {
+            'api': '/api/',
+            'admin': '/admin/',
+            'docs': 'See API endpoints at /api/'
+        }
+    })
 
 
 def google_login_direct(request):

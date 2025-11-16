@@ -21,7 +21,10 @@ ALLOWED_HOSTS = [
 ]
 
 # Production Security Settings
-SECURE_SSL_REDIRECT = True
+# Note: SECURE_SSL_REDIRECT disabled - Cloud Run handles HTTPS at load balancer
+SECURE_SSL_REDIRECT = False
+# Disable trailing slash redirects to prevent redirect loops
+APPEND_SLASH = False
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
@@ -107,6 +110,19 @@ CORS_ALLOWED_ORIGINS = [
     'https://nexus.walkeasy.com.au',
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# Override middleware to remove CommonMiddleware (prevents trailing slash redirect loops)
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    # 'django.middleware.common.CommonMiddleware',  # REMOVED - causes redirect loops on Cloud Run
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+]
 
 # Logging - Simplified for local proxy connection
 LOGGING = {
