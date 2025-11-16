@@ -72,7 +72,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       quantity: 1,
       unit_amount: 0,
       account_code: '200',
-      tax_type: 'OUTPUT2',
+      tax_type: 'EXEMPTINPUT',
     },
   ]);
 
@@ -83,7 +83,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       quantity: 1,
       unit_amount: 0,
       account_code: '200',
-      tax_type: 'OUTPUT2',
+      tax_type: 'EXEMPTINPUT',
     };
     setLineItems([...lineItems, newItem]);
   };
