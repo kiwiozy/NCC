@@ -150,7 +150,7 @@ export default function XeroDashboard() {
               <Button
                 variant="light"
                 leftSection={<IconRefresh size={16} />}
-                onClick={() => router.push('/testing?tab=xero')}
+                onClick={() => router.push('/xero/settings')}
               >
                 Manage Connection
               </Button>
@@ -265,7 +265,7 @@ export default function XeroDashboard() {
           <Stack gap="sm">
             <Title order={4}>Need Help?</Title>
             <Text size="sm" c="dimmed">
-              View the <Text component="span" fw={600} c="blue" style={{ cursor: 'pointer' }} onClick={() => router.push('/testing?tab=xero')}>
+              View the <Text component="span" fw={600} c="blue" style={{ cursor: 'pointer' }} onClick={() => router.push('/xero/settings')}>
                 connection settings
               </Text> to manage your Xero integration, view sync logs, or troubleshoot connection issues.
             </Text>
