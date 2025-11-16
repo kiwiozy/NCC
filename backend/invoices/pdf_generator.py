@@ -253,12 +253,26 @@ class InvoicePDFGenerator:
             colWidths = [11.34*cm, 5.67*cm]  # 2 columns
         
         header_table = Table(header_data, colWidths=colWidths)
-        header_table.setStyle(TableStyle([
+        
+        # Build table style - add grid lines in debug mode
+        table_style = [
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'CENTER' if os.path.exists(logo_path) else 'LEFT'),
             ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
+        ]
+        
+        # Add grid lines in debug mode
+        if self.debug:
+            table_style.extend([
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.blue),  # Blue grid lines
+                ('LINEAFTER', (0, 0), (0, -1), 1, colors.red),  # Vertical line after col 1
+                ('LINEAFTER', (1, 0), (1, -1), 1, colors.red) if len(colWidths) > 2 else None,  # Vertical line after col 2
+            ])
+            # Remove None if it exists
+            table_style = [s for s in table_style if s is not None]
+        
+        header_table.setStyle(TableStyle(table_style))
         
         elements.append(header_table)
         
