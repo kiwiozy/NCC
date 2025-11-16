@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
+import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconAlertTriangle, IconDownload } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
@@ -46,6 +46,7 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   useEffect(() => {
     if (opened && invoiceId) {
@@ -111,6 +112,49 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+    
+    setDownloadingPDF(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+      
+      // Get the PDF blob
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice_${invoice.xero_invoice_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Invoice PDF downloaded successfully',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to generate PDF',
+        color: 'red',
+      });
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -210,6 +254,15 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
           {/* Actions */}
           <Group justify="space-between">
             <Group>
+              <Button
+                variant="light"
+                leftSection={<IconDownload size={16} />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPDF}
+              >
+                Download PDF
+              </Button>
+              
               <Button
                 variant="light"
                 leftSection={<IconExternalLink size={16} />}

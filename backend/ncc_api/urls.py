@@ -83,4 +83,5 @@ urlpatterns = [
     path('api/settings/', include('settings.urls')),  # Settings management (Funding Sources)
     path('api/letters/', include('letters.urls')),  # Patient letters
     path('api/data-management/', include('data_management.urls')),  # Data management and reimport
+    path('api/invoices/', include('invoices.urls')),  # Invoice PDF generation
 ]

@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'notes',  # Patient notes (clinical notes, clinic dates, etc.)
     'images',  # Patient images (photos, x-rays, etc.)
     'letters',  # Patient letters (correspondence, support letters, etc.)
+    'invoices',  # Invoice PDF generation
     # FileMaker migration apps
     'referrers',  # Medical referrers (GPs, specialists, etc.)
     'coordinators',  # NDIS Support Coordinators and LAC
