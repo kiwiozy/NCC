@@ -41,8 +41,11 @@ python manage.py loaddata production_data.json --settings=ncc_api.settings_produ
 ```bash
 cd /Users/craig/Documents/nexus-core-clinic/frontend
 
-# Update API URL
-echo "NEXT_PUBLIC_API_URL=https://nexus-production-backend-892000689828.australia-southeast1.run.app" > .env.production
+# Update API URL and Google Maps key
+cat > .env.production << EOF
+NEXT_PUBLIC_API_URL=https://nexus-production-backend-892000689828.australia-southeast1.run.app
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyA9ubuJ8vpf70GxfAzzDIdpPtKfwawQLrk
+EOF
 
 # Build and deploy
 npm run build

@@ -6,8 +6,6 @@ Secrets are managed via Google Cloud Secret Manager.
 """
 
 import os
-import google.auth
-from google.cloud import secretmanager
 from .settings import *
 
 # Environment
@@ -38,20 +36,37 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Database - Cloud SQL PostgreSQL
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'nexus_production',
-        'USER': 'postgres',
-        'PASSWORD': os.getenv('DB_PASSWORD'),  # From Secret Manager
-        'HOST': '/cloudsql/nexus-walkeasy-prod:australia-southeast1:nexus-production-db',
-        'PORT': '5432',
-        'CONN_MAX_AGE': 600,  # Connection pooling
-        'OPTIONS': {
-            'connect_timeout': 10,
+# When connecting via Cloud SQL Proxy locally, use 127.0.0.1
+# When running on Cloud Run, use Unix socket
+if os.getenv('USE_CLOUD_SQL_PROXY'):
+    # Local development via proxy
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'nexus_production',
+            'USER': 'postgres',
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),  # From Secret Manager or env
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+            'CONN_MAX_AGE': 600,
         }
     }
-}
+else:
+    # Cloud Run production
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'nexus_production',
+            'USER': 'postgres',
+            'PASSWORD': os.getenv('DB_PASSWORD'),  # From Secret Manager
+            'HOST': '/cloudsql/nexus-walkeasy-prod:australia-southeast1:nexus-production-db',
+            'PORT': '5432',
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {
+                'connect_timeout': 10,
+            }
+        }
+    }
 
 # Static files for Cloud Run
 STATIC_URL = '/static/'
@@ -93,32 +108,18 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-# Logging
+# Logging - Simplified for local proxy connection
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'json': {
-            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-            'format': '%(asctime)s %(name)s %(levelname)s %(message)s'
-        },
-    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'json',
         },
     },
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
     },
 }
 
