@@ -28,7 +28,8 @@ import {
   IconPencil,
   IconFlask,
   IconPhoto,
-  IconLogout
+  IconLogout,
+  IconFileInvoice
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
