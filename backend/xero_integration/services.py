@@ -51,26 +51,36 @@ class XeroService:
         """
         Create and configure Xero API client with OAuth2 token
         """
-        configuration = Configuration()
-        configuration.debug = settings.DEBUG
+        # Get stored token first
+        token_dict = self._get_stored_token()
         
-        # Create API client
+        if not token_dict:
+            # No token available, return unconfigured client
+            configuration = Configuration()
+            configuration.debug = settings.DEBUG
+            return ApiClient(configuration)
+        
+        # Create OAuth2Token object
+        oauth2_token = OAuth2Token(
+            client_id=self.client_id,
+            client_secret=self.client_secret
+        )
+        oauth2_token.token = token_dict
+        
+        # Create configuration WITH the oauth2_token
+        configuration = Configuration(
+            debug=settings.DEBUG,
+            oauth2_token=oauth2_token
+        )
+        
+        # Create API client with the configured Configuration
         api_client = ApiClient(configuration)
         
         # Set up token getter callback on the API client
         def token_getter_callback():
-            """Callback to retrieve current token"""
+            """Callback to retrieve current token as a dict"""
             try:
-                token_dict = self._get_stored_token()
-                if token_dict:
-                    # Create OAuth2Token object
-                    oauth2_token = OAuth2Token(
-                        client_id=self.client_id,
-                        client_secret=self.client_secret
-                    )
-                    oauth2_token.token = token_dict
-                    return oauth2_token
-                return None
+                return self._get_stored_token()  # Returns dict
             except Exception as e:
                 print(f"Error retrieving token: {e}")
                 return None
@@ -96,20 +106,8 @@ class XeroService:
         api_client.oauth2_token_getter(token_getter_callback)
         api_client.oauth2_token_saver(token_refresh_callback)
         
-        # Get stored token and set it initially
-        token_dict = self._get_stored_token()
-        if token_dict:
-            # Create OAuth2Token object
-            oauth2_token = OAuth2Token(
-                client_id=self.client_id,
-                client_secret=self.client_secret
-            )
-            
-            # Set token data
-            oauth2_token.token = token_dict
-            
-            # Set the token on the API client
-            api_client.set_oauth2_token(oauth2_token)
+        # Set the token on the API client (this updates the runtime token)
+        api_client.set_oauth2_token(oauth2_token)
         
         return api_client
     
@@ -154,12 +152,18 @@ class XeroService:
                 return None
             
             # Return token as a dict (for set_oauth2_token)
+            # Calculate expires_in (seconds until expiration)
+            expires_at_timestamp = connection.expires_at.timestamp()
+            now_timestamp = timezone.now().timestamp()
+            expires_in = int(expires_at_timestamp - now_timestamp)
+            
             return {
                 'access_token': connection.access_token,
                 'refresh_token': connection.refresh_token,
                 'id_token': connection.id_token,
                 'token_type': connection.token_type,
-                'expires_at': connection.expires_at.timestamp(),
+                'expires_at': expires_at_timestamp,
+                'expires_in': expires_in,  # Required by xero-python library
                 'scope': connection.scopes.split()
             }
         except Exception as e:
@@ -794,7 +798,8 @@ class XeroService:
                 primary_contact_link = self.sync_company_contact(company)
                 
                 # Patient details go in reference
-                reference = f"Service for: {patient.full_name}"
+                patient_name = f"{patient.first_name} {patient.last_name}"
+                reference = f"Service for: {patient_name}"
                 reference += f"\nMRN: {patient.mrn}"
                 if patient.dob:
                     reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
@@ -803,7 +808,7 @@ class XeroService:
                 enhanced_line_items = []
                 for item in line_items:
                     item_copy = item.copy()
-                    item_copy['description'] = f"{item['description']} (Patient: {patient.full_name})"
+                    item_copy['description'] = f"{item['description']} (Patient: {patient_name})"
                     enhanced_line_items.append(item_copy)
                 line_items = enhanced_line_items
                 
@@ -817,7 +822,8 @@ class XeroService:
                     if hasattr(company, 'abn') and company.abn:
                         reference += f"\nABN: {company.abn}"
                 else:
-                    reference = f"Invoice for {patient.full_name}"
+                    patient_name = f"{patient.first_name} {patient.last_name}"
+                    reference = f"Invoice for {patient_name}"
             
             # Add billing notes to reference
             if billing_notes:
@@ -1031,13 +1037,15 @@ class XeroService:
             # Determine primary contact (company or patient)
             if company:
                 primary_contact_link = self.sync_company_contact(company)
-                reference = f"Service for: {patient.full_name}"
+                patient_name = f"{patient.first_name} {patient.last_name}"
+                reference = f"Service for: {patient_name}"
                 reference += f"\nMRN: {patient.mrn}"
                 if patient.dob:
                     reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
             else:
                 primary_contact_link = self.sync_contact(patient)
-                reference = f"Quote for: {patient.full_name}"
+                patient_name = f"{patient.first_name} {patient.last_name}"
+                reference = f"Quote for: {patient_name}"
             
             # Build line items
             xero_line_items = []
