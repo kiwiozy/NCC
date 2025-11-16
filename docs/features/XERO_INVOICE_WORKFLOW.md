@@ -312,7 +312,92 @@ Appointment → Patient → Xero Contact → Xero Invoice (DRAFT)
 
 ## 🎨 Proposed Solution: Xero Contact Strategy
 
-### **Option A: Patient as Primary Contact, Company in Reference** ⭐ RECOMMENDED
+### ⭐ **CHOSEN SOLUTION: Flexible Contact Selection (User Decides Per Invoice)**
+
+**Decision Date:** November 2025  
+**Status:** ✅ APPROVED - Ready to Implement
+
+**How It Works:**
+
+At invoice creation time, the user **chooses** who should be the primary Xero contact:
+- **Choice 1:** Patient as primary contact (company in reference)
+- **Choice 2:** Company as primary contact (patient in reference)
+
+**Benefits:**
+- ✅ **Maximum flexibility** - choose what makes sense per invoice
+- ✅ **Visual preview** - see exactly how the invoice will look before creating
+- ✅ **Both tracked** - patient AND company always linked in Nexus database
+- ✅ **Searchable** - can find invoices by either patient or company in Xero
+- ✅ **One codebase** - handles both scenarios with same logic
+- ✅ **Smart defaults** - suggest company as primary if company exists
+- ✅ **Audit trail** - track which option was chosen for each invoice
+
+**Example Use Cases:**
+```
+Scenario A: Patient John Smith, Bill to ABC Physio Clinic
+└─ User selects "Company" → Company shows first, patient in reference
+
+Scenario B: Patient Mary Jones, self-pay (no company)
+└─ System defaults to "Patient" → Patient shows first, no reference needed
+
+Scenario C: Patient Tom Brown, NDIS Plan Manager (XYZ Services)
+└─ User selects "Company" → Plan manager shows first, patient in reference
+```
+
+**Implementation Preview:**
+
+```
+┌────────────────────────────────────────────────────────┐
+│ CREATE INVOICE - Appointment #12345                   │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│ Patient: John Smith                                    │
+│          123 Main St, Sydney NSW 2000                  │
+│          john@email.com                                │
+│                                                        │
+│ Company: ABC Physio Clinic ▼                           │
+│          456 Business St, Sydney NSW 2000              │
+│          accounts@abcphysio.com.au                     │
+│                                                        │
+├────────────────────────────────────────────────────────┤
+│ 📋 XERO CONTACT (who shows first on invoice):         │
+│                                                        │
+│    ○  Patient (John Smith)                             │
+│       └─ Company details in reference field            │
+│                                                        │
+│    ●  Company (ABC Physio Clinic)                      │
+│       └─ Patient details in reference field            │
+│                                                        │
+├────────────────────────────────────────────────────────┤
+│ 📄 INVOICE PREVIEW:                                    │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ TO: ABC Physio Clinic          ← Selected          │ │
+│ │     456 Business St                                │ │
+│ │     Sydney NSW 2000                                │ │
+│ │     ABN: 12 345 678 901                            │ │
+│ │                                                    │ │
+│ │ Reference: Service for: John Smith                 │ │
+│ │            DOB: 25 Jun 1949                        │ │
+│ │            MRN: NCC-001234                         │ │
+│ │                                                    │ │
+│ │ Line Items:                                        │ │
+│ │ - Initial Assessment (Patient: John Smith) $150.00 │ │
+│ │ - Orthotic Fitting                         $300.00 │ │
+│ │                                                    │ │
+│ │ Total: $495.00 (inc. GST)                          │ │
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│ [ Create Draft Invoice ]  [ Send to Xero ]            │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📋 Historical Options Evaluated (For Reference)
+
+Before choosing the flexible solution, we evaluated these approaches:
+
+### **Option A: Patient as Primary Contact, Company in Reference** (Simple but inflexible)
 
 **How It Works:**
 1. **Xero Contact** = Patient (e.g., "Smith, John")
@@ -480,24 +565,25 @@ invoice = Invoice(
 
 ---
 
-## 🛠️ Implementation Plan
+## 🛠️ Implementation Plan (Flexible Contact Selection)
 
 ### **Phase 1: Database Schema** (Backend)
+
 ```python
 # backend/appointments/models.py
 class Appointment(models.Model):
     # ... existing fields ...
     
-    # NEW FIELDS:
-    billing_entity = models.CharField(
+    # NEW FIELDS FOR FLEXIBLE CONTACT SELECTION:
+    
+    invoice_contact_type = models.CharField(
         max_length=20,
         choices=[
-            ('patient', 'Patient (Direct)'),
-            ('company', 'Company/Organization'),
-            ('ndis', 'NDIS Plan Manager'),
+            ('patient', 'Patient as Primary Contact'),
+            ('company', 'Company as Primary Contact'),
         ],
         default='patient',
-        help_text="Who is responsible for payment?"
+        help_text="Who should be the primary Xero contact on the invoice?"
     )
     
     billing_company = models.ForeignKey(
@@ -506,66 +592,368 @@ class Appointment(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name='billed_appointments',
-        help_text="Company to bill (if billing_entity is 'company')"
+        help_text="Company involved in billing (shown in reference or as contact)"
     )
     
     billing_notes = models.TextField(
         blank=True,
-        help_text="Special billing instructions"
+        help_text="PO number, special billing instructions, etc."
     )
+```
+
+```python
+# backend/xero_integration/models.py - Update XeroContactLink
+class XeroContactLink(models.Model):
+    """Link between Nexus entity (Patient OR Company) and Xero contact"""
+    
+    # UPDATED: Can link to EITHER patient OR company
+    patient = models.ForeignKey(
+        'patients.Patient',
+        on_delete=models.CASCADE,
+        related_name='xero_contacts',
+        null=True,
+        blank=True,
+        help_text="Patient linked to Xero contact"
+    )
+    
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.CASCADE,
+        related_name='xero_contacts',
+        null=True,
+        blank=True,
+        help_text="Company linked to Xero contact"
+    )
+    
+    connection = models.ForeignKey(XeroConnection, on_delete=models.CASCADE)
+    xero_contact_id = models.CharField(max_length=100)
+    last_synced_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(patient__isnull=True, company__isnull=True),
+                name='contact_link_has_patient_or_company'
+            )
+        ]
 ```
 
 ### **Phase 2: Xero Service Update** (Backend)
+
 ```python
 # backend/xero_integration/services.py
+
 def create_invoice(self, appointment, line_items):
-    # Sync patient to Xero
-    patient_contact = self.sync_contact(appointment.patient)
+    """
+    Create invoice with flexible contact selection
+    """
+    api_client = self.get_api_client()
+    connection = XeroConnection.objects.filter(is_active=True).first()
+    accounting_api = AccountingApi(api_client)
     
-    # Build invoice reference based on billing entity
-    if appointment.billing_entity == 'company' and appointment.billing_company:
-        reference = f"Bill to: {appointment.billing_company.name}"
-        # Optionally add company details to line item descriptions
+    # Determine primary contact based on user selection
+    if appointment.invoice_contact_type == 'company' and appointment.billing_company:
+        # ═══════════════════════════════════════════════════════
+        # COMPANY AS PRIMARY CONTACT
+        # ═══════════════════════════════════════════════════════
+        primary_contact = self.sync_company_contact(appointment.billing_company)
+        
+        # Patient details go in reference
+        reference = f"Service for: {appointment.patient.full_name}"
+        reference += f"\nMRN: {appointment.patient.mrn}"
+        if appointment.patient.dob:
+            reference += f"\nDOB: {appointment.patient.dob.strftime('%d/%m/%Y')}"
+        
+        # Add patient name to line item descriptions
+        enhanced_line_items = []
         for item in line_items:
-            item['description'] = f"{item['description']} (Bill to: {appointment.billing_company.name})"
+            item['description'] = f"{item['description']} (Patient: {appointment.patient.full_name})"
+            enhanced_line_items.append(item)
+        line_items = enhanced_line_items
+        
     else:
-        reference = f"Appointment {appointment.id}"
+        # ═══════════════════════════════════════════════════════
+        # PATIENT AS PRIMARY CONTACT (default)
+        # ═══════════════════════════════════════════════════════
+        primary_contact = self.sync_contact(appointment.patient)
+        
+        # Company details go in reference (if applicable)
+        if appointment.billing_company:
+            reference = f"Bill to: {appointment.billing_company.name}"
+            if appointment.billing_company.abn:
+                reference += f"\nABN: {appointment.billing_company.abn}"
+        else:
+            reference = f"Appointment {appointment.id}"
     
-    # Create invoice (patient is always the Xero contact)
+    # Add billing notes to reference
+    if appointment.billing_notes:
+        reference += f"\n{appointment.billing_notes}"
+    
+    # Build Xero line items
+    xero_line_items = []
+    for item in line_items:
+        xero_line_items.append(LineItem(
+            description=item['description'],
+            quantity=item.get('quantity', 1),
+            unit_amount=item['unit_amount'],
+            account_code=item.get('account_code', '200'),
+            tax_type=item.get('tax_type', 'OUTPUT2')
+        ))
+    
+    # Create invoice
     invoice = Invoice(
-        contact=XeroContact(contact_id=patient_contact.xero_contact_id),
-        reference=reference,
+        type='ACCREC',
+        contact=Contact(contact_id=primary_contact.xero_contact_id),
         line_items=xero_line_items,
+        date=appointment.start_time.date() if appointment.start_time else timezone.now().date(),
+        reference=reference,
         status='DRAFT',
-        ...
+        currency_code='AUD'
     )
     
-    return invoice
+    # Send to Xero
+    invoices = Invoices(invoices=[invoice])
+    response = accounting_api.create_invoices(
+        xero_tenant_id=connection.tenant_id,
+        invoices=invoices
+    )
+    
+    created_invoice = response.invoices[0]
+    
+    # Create link record
+    invoice_link = XeroInvoiceLink.objects.create(
+        appointment=appointment,
+        xero_invoice_id=created_invoice.invoice_id,
+        xero_invoice_number=created_invoice.invoice_number,
+        status=created_invoice.status,
+        total=created_invoice.total,
+        subtotal=created_invoice.sub_total,
+        total_tax=created_invoice.total_tax,
+        invoice_date=created_invoice.date,
+        due_date=created_invoice.due_date,
+    )
+    
+    return invoice_link
+
+
+def sync_company_contact(self, company):
+    """
+    Sync company to Xero as a contact (NEW METHOD)
+    """
+    from companies.models import Company
+    
+    # Check if already synced
+    try:
+        return XeroContactLink.objects.get(
+            company=company,
+            connection__is_active=True
+        )
+    except XeroContactLink.DoesNotExist:
+        pass
+    
+    # Create/update in Xero
+    api_client = self.get_api_client()
+    connection = XeroConnection.objects.filter(is_active=True).first()
+    accounting_api = AccountingApi(api_client)
+    
+    # Build Xero contact
+    xero_contact = Contact(
+        name=company.name,
+        tax_number=company.abn if hasattr(company, 'abn') else None,
+        is_customer=True,
+    )
+    
+    # Add phones/emails from contact_json
+    if company.contact_json:
+        from xero_python.accounting import Phone
+        phones = []
+        emails = []
+        
+        for phone_item in company.contact_json.get('phones', []):
+            phone_type = phone_item.get('type', 'DEFAULT').upper()
+            if phone_type not in ['MOBILE', 'FAX']:
+                phone_type = 'DEFAULT'
+            phones.append(Phone(
+                phone_type=phone_type,
+                phone_number=phone_item.get('number', '')
+            ))
+        
+        for email_item in company.contact_json.get('emails', []):
+            emails.append(email_item.get('address', ''))
+        
+        if phones:
+            xero_contact.phones = phones
+        if emails:
+            xero_contact.email_address = emails[0]
+    
+    # Add address from address_json
+    if company.address_json:
+        from xero_python.accounting import Address
+        addr = company.address_json
+        xero_contact.addresses = [Address(
+            address_type='STREET',
+            address_line1=addr.get('street', ''),
+            city=addr.get('suburb', ''),
+            region=addr.get('state', ''),
+            postal_code=addr.get('postcode', ''),
+            country='Australia'
+        )]
+    
+    # Create in Xero
+    contacts = Contacts(contacts=[xero_contact])
+    response = accounting_api.create_contacts(
+        xero_tenant_id=connection.tenant_id,
+        contacts=contacts
+    )
+    
+    created_contact = response.contacts[0]
+    
+    # Create link record
+    contact_link = XeroContactLink.objects.create(
+        company=company,
+        connection=connection,
+        xero_contact_id=created_contact.contact_id,
+        last_synced_at=timezone.now()
+    )
+    
+    return contact_link
 ```
 
-### **Phase 3: Frontend UI** (React)
-```typescript
-// Invoice Creation Dialog
-<Select
-  label="Bill To"
-  value={billingEntity}
-  onChange={setBillingEntity}
-  data={[
-    { value: 'patient', label: 'Patient (Direct)' },
-    { value: 'company', label: 'Company/Organization' },
-    { value: 'ndis', label: 'NDIS Plan Manager' },
-  ]}
-/>
+### **Phase 3: Frontend Invoice Creation UI** (React)
 
-{billingEntity === 'company' && (
-  <Select
-    label="Select Company"
-    value={billingCompany}
-    onChange={setBillingCompany}
-    data={companies.map(c => ({ value: c.id, label: c.name }))}
-    searchable
-  />
-)}
+```typescript
+// frontend/app/components/xero/CreateInvoiceDialog.tsx
+
+export default function CreateInvoiceDialog({ appointment, opened, onClose }) {
+  const [invoiceContactType, setInvoiceContactType] = useState<'patient' | 'company'>('patient');
+  const [billingCompany, setBillingCompany] = useState<string | null>(null);
+  const [billingNotes, setBillingNotes] = useState('');
+  const [companies, setCompanies] = useState<Company[]>([]);
+  
+  // Auto-suggest company as primary if one is selected
+  useEffect(() => {
+    if (billingCompany && invoiceContactType === 'patient') {
+      // Could show a hint: "Tip: Select Company as primary contact for B2B billing"
+    }
+  }, [billingCompany, invoiceContactType]);
+  
+  // Generate preview based on selection
+  const generatePreview = () => {
+    if (invoiceContactType === 'company' && billingCompany) {
+      const company = companies.find(c => c.id === billingCompany);
+      return {
+        primaryName: company?.name || '',
+        primaryAddress: formatAddress(company?.address_json),
+        reference: `Service for: ${appointment.patient.full_name}\nMRN: ${appointment.patient.mrn}`,
+      };
+    } else {
+      return {
+        primaryName: appointment.patient.full_name,
+        primaryAddress: formatAddress(appointment.patient.address_json),
+        reference: billingCompany 
+          ? `Bill to: ${companies.find(c => c.id === billingCompany)?.name}`
+          : `Appointment ${appointment.id}`,
+      };
+    }
+  };
+  
+  const preview = generatePreview();
+  
+  return (
+    <Modal opened={opened} onClose={onClose} size="xl" title="Create Invoice">
+      <Stack gap="md">
+        {/* Patient Info (always shown) */}
+        <Paper p="md" withBorder>
+          <Text size="sm" fw={600} mb="xs">Patient</Text>
+          <Text>{appointment.patient.full_name}</Text>
+          <Text size="sm" c="dimmed">{formatAddress(appointment.patient.address_json)}</Text>
+        </Paper>
+        
+        {/* Company Selection */}
+        <Select
+          label="Company (Optional)"
+          placeholder="Search companies..."
+          value={billingCompany}
+          onChange={setBillingCompany}
+          data={companies.map(c => ({ value: c.id, label: c.name }))}
+          searchable
+          clearable
+        />
+        
+        {/* Contact Type Selection (Radio Buttons) */}
+        <Paper p="md" withBorder>
+          <Text size="sm" fw={600} mb="md">📋 Xero Contact (who shows first on invoice)</Text>
+          
+          <Radio.Group value={invoiceContactType} onChange={(value) => setInvoiceContactType(value as 'patient' | 'company')}>
+            <Stack gap="sm">
+              <Radio
+                value="patient"
+                label={
+                  <div>
+                    <Text fw={500}>Patient ({appointment.patient.full_name})</Text>
+                    <Text size="xs" c="dimmed">Company details in reference field</Text>
+                  </div>
+                }
+              />
+              
+              <Radio
+                value="company"
+                label={
+                  <div>
+                    <Text fw={500}>
+                      Company {billingCompany ? `(${companies.find(c => c.id === billingCompany)?.name})` : ''}
+                    </Text>
+                    <Text size="xs" c="dimmed">Patient details in reference field</Text>
+                  </div>
+                }
+                disabled={!billingCompany}
+              />
+            </Stack>
+          </Radio.Group>
+        </Paper>
+        
+        {/* Live Preview */}
+        <Paper p="md" withBorder style={{ backgroundColor: '#f8f9fa' }}>
+          <Text size="sm" fw={600} mb="md">📄 Invoice Preview</Text>
+          <Paper p="md" withBorder style={{ backgroundColor: 'white' }}>
+            <Text size="lg" fw={700} mb="xs">TO: {preview.primaryName}</Text>
+            <Text size="sm" c="dimmed" mb="md">{preview.primaryAddress}</Text>
+            
+            <Divider my="sm" />
+            
+            <Text size="sm" fw={600}>Reference:</Text>
+            <Text size="sm" style={{ whiteSpace: 'pre-line' }}>{preview.reference}</Text>
+            
+            <Divider my="sm" />
+            
+            <Text size="sm" fw={600}>Line Items:</Text>
+            <Text size="sm">- Initial Assessment: $150.00</Text>
+            <Text size="sm">- Orthotic Fitting: $300.00</Text>
+            
+            <Divider my="sm" />
+            
+            <Text size="md" fw={700} ta="right">Total: $495.00 (inc. GST)</Text>
+          </Paper>
+        </Paper>
+        
+        {/* Billing Notes */}
+        <Textarea
+          label="Billing Notes"
+          placeholder="PO number, email instructions, etc."
+          value={billingNotes}
+          onChange={(e) => setBillingNotes(e.target.value)}
+          minRows={3}
+        />
+        
+        {/* Action Buttons */}
+        <Group justify="flex-end">
+          <Button variant="subtle" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleCreateInvoice}>Create Draft Invoice</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
 ```
 
 ### **Phase 4: Xero Invoices Page** (React)
@@ -601,20 +989,43 @@ def create_invoice(self, appointment, line_items):
 
 ---
 
-## 📝 Next Steps
+## 📝 Next Steps (Updated for Flexible Solution)
 
-1. ✅ **Document current state** (this file)
-2. ⬜ **Decide on approach** (Option A, B, C, or Hybrid - **RECOMMENDED: Hybrid**)
-3. ⬜ **Add billing fields to Appointment model**
-4. ⬜ **Update Xero service to include company in reference**
-5. ⬜ **Add Quotes support to Xero service** ⭐ NEW
-6. ⬜ **Build invoice creation UI**
-7. ⬜ **Build quotes creation UI** ⭐ NEW
-8. ⬜ **Build Xero invoices page**
-9. ⬜ **Build Xero quotes page** ⭐ NEW
-10. ⬜ **Implement quote-to-invoice conversion** ⭐ NEW
-11. ⬜ **Test with real Xero data**
-12. ⬜ **Create user documentation**
+1. ✅ **Document current state** (this file) - COMPLETE
+2. ✅ **Decide on approach** - FLEXIBLE CONTACT SELECTION APPROVED
+3. ⬜ **Phase 1: Add database fields**
+   - Add `invoice_contact_type` to Appointment model
+   - Update `XeroContactLink` to support companies
+   - Create migration
+4. ⬜ **Phase 2: Update Xero service**
+   - Add `sync_company_contact()` method
+   - Update `create_invoice()` with dynamic contact logic
+   - Add company sync logic
+5. ⬜ **Phase 3: Build invoice creation UI**
+   - Radio buttons for contact type selection
+   - Company dropdown
+   - Live invoice preview
+   - Billing notes field
+6. ⬜ **Phase 4: Build quotes system** ⭐ NEW
+   - Add `XeroQuoteLink` model
+   - Add quote methods to service (`create_quote`, `convert_quote_to_invoice`)
+   - Build `/xero/quotes` page
+   - Build quote creation UI
+   - Quote-to-invoice conversion
+7. ⬜ **Phase 5: Build Xero pages**
+   - `/xero/invoices` - Invoice list & management
+   - `/xero/quotes` - Quote list & management
+   - Add to navigation submenu
+8. ⬜ **Phase 6: Test with real Xero**
+   - Test patient as primary contact
+   - Test company as primary contact
+   - Test quote creation & conversion
+   - Verify Xero sync
+9. ⬜ **Phase 7: User documentation**
+   - How to create invoices
+   - How to create quotes
+   - How to choose contact type
+   - When to use patient vs company
 
 ---
 
