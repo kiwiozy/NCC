@@ -20,7 +20,7 @@ from xero_python.api_client import ApiClient
 from xero_python.api_client.configuration import Configuration
 from xero_python.api_client.oauth2 import OAuth2Token
 from xero_python.identity import IdentityApi
-from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes
+from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes, QuoteStatusCodes
 from xero_python.exceptions import AccountingBadRequestException
 
 from .models import (
@@ -1270,7 +1270,7 @@ class XeroService:
                 expiry_date=expiry_date,
                 reference=reference,
                 line_items=xero_line_items,
-                status='DRAFT',
+                status=QuoteStatusCodes.DRAFT,
                 terms=billing_notes if billing_notes else "Quote valid until expiry date. Services subject to availability.",
                 title="Service Quote"
             )
