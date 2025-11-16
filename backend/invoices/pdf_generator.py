@@ -239,7 +239,7 @@ class InvoicePDFGenerator:
             )
             
             header_data.append([logo, business_info, date_info])
-            colWidths = [4*cm, 8.33*cm, 4.67*cm]  # Logo width | Business info | Date info
+            colWidths = [4*cm, 9.03*cm, 3.97*cm]  # Logo | Business info (expanded) | Date info (15% narrower)
         else:
             # No logo, just business info and date info (2 columns)
             business_info = Paragraph(
