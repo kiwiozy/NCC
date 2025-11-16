@@ -164,6 +164,7 @@ export default function Navigation({ children }: NavigationProps) {
   const [mounted, setMounted] = useState(false);
   const browser = useBrowserDetection();
   const [showContactsMenu, setShowContactsMenu] = useState(false);
+  const [showAccountsMenu, setShowAccountsMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showTestingMenu, setShowTestingMenu] = useState(false);
   const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -182,7 +183,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconLayoutDashboard size={iconSize} stroke={1.5} />, label: 'Dashboard', href: '/', unreadBadge: unreadCount > 0 ? unreadCount : undefined },
     { icon: <IconUsers size={iconSize} stroke={1.5} />, label: 'Contacts', href: '/patients', hasSubmenu: true, submenuType: 'contacts' },
     { icon: <IconCalendar size={iconSize} stroke={1.5} />, label: 'Calendar', href: '/calendar' },
-    { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/accounts' },
+    { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/xero', hasSubmenu: true, submenuType: 'accounts' },
     { icon: <IconCheckupList size={iconSize} stroke={1.5} />, label: 'Orders', href: '/orders' },
     { icon: <IconFileText size={iconSize} stroke={1.5} />, label: 'Inventory', href: '/inventory' },
     { icon: <IconFlask size={iconSize} stroke={1.5} />, label: 'Testing', href: '/testing', hasSubmenu: true, submenuType: 'testing' },
@@ -197,6 +198,13 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconHandStop size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/patients?type=contacts' },
     { icon: <IconBuilding size={subIconSize} stroke={1.5} />, label: 'Companies', href: '/companies' },
     { icon: <IconBuildingHospital size={subIconSize} stroke={1.5} />, label: 'Clinics', href: '/patients?type=clinics' },
+  ];
+
+  const accountsSubItems = [
+    { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Dashboard', href: '/xero' },
+    { icon: <IconUsers size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/xero/contacts' },
+    { icon: <IconFileInvoice size={subIconSize} stroke={1.5} />, label: 'Invoices', href: '/xero/invoices' },
+    { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'Connection Settings', href: '/testing?tab=xero' },
   ];
 
   const testingSubItems = [
@@ -221,6 +229,7 @@ export default function Navigation({ children }: NavigationProps) {
   const handleNavClick = (href: string, hasSubmenu?: boolean) => {
     if (!hasSubmenu) {
       setShowContactsMenu(false);
+      setShowAccountsMenu(false);
       setShowSettingsMenu(false);
       setShowTestingMenu(false);
       router.push(href);
@@ -233,15 +242,23 @@ export default function Navigation({ children }: NavigationProps) {
       menuTimeoutRef.current = null;
     }
     if (menuType === 'contacts') {
+      setShowAccountsMenu(false);
       setShowSettingsMenu(false);
       setShowTestingMenu(false);
       setShowContactsMenu(true);
+    } else if (menuType === 'accounts') {
+      setShowContactsMenu(false);
+      setShowSettingsMenu(false);
+      setShowTestingMenu(false);
+      setShowAccountsMenu(true);
     } else if (menuType === 'settings') {
       setShowContactsMenu(false);
+      setShowAccountsMenu(false);
       setShowTestingMenu(false);
       setShowSettingsMenu(true);
     } else if (menuType === 'testing') {
       setShowContactsMenu(false);
+      setShowAccountsMenu(false);
       setShowSettingsMenu(false);
       setShowTestingMenu(true);
     }
@@ -253,6 +270,7 @@ export default function Navigation({ children }: NavigationProps) {
     }
     menuTimeoutRef.current = setTimeout(() => {
       setShowContactsMenu(false);
+      setShowAccountsMenu(false);
       setShowSettingsMenu(false);
       setShowTestingMenu(false);
     }, 200);
@@ -444,6 +462,76 @@ export default function Navigation({ children }: NavigationProps) {
                     }
                     setShowContactsMenu(false);
                     setShowSettingsMenu(false);
+                    router.push(item.href);
+                  }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: rem(6),
+                      padding: `${rem(12)} ${rem(16)}`,
+                      borderRadius: rem(8),
+                      transition: 'background-color 0.2s ease',
+                      cursor: 'pointer',
+                      minWidth: rem(90),
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark 
+                        ? 'rgba(25, 113, 194, 0.1)' 
+                        : 'rgba(25, 113, 194, 0.1)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <div style={{ color: '#1971c2' }}>
+                      {item.icon}
+                    </div>
+                    <Text size="xs" ta="center" c="dimmed">
+                      {item.label}
+                    </Text>
+                  </UnstyledButton>
+                ))}
+              </Group>
+            </Paper>
+          </div>
+        )}
+
+        {/* Accounts Submenu with Buffer Zone */}
+        {showAccountsMenu && (
+          <div
+            onMouseEnter={handleSubmenuEnter}
+            onMouseLeave={handleSubmenuLeave}
+            style={{
+              position: 'absolute',
+              top: '60px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              padding: rem(30),
+              marginTop: '0px',
+            }}
+          >
+            <Paper
+              shadow="lg"
+              p="md"
+              style={{
+                backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
+                borderTop: `3px solid #1971c2`,
+                minWidth: rem(500),
+                paddingTop: rem(16),
+              }}
+            >
+              <Group gap="xs" justify="center">
+                {accountsSubItems.map((item) => (
+                <UnstyledButton
+                  key={item.href}
+                  onClick={() => {
+                    if (menuTimeoutRef.current) {
+                      clearTimeout(menuTimeoutRef.current);
+                    }
+                    setShowAccountsMenu(false);
                     router.push(item.href);
                   }}
                     style={{
