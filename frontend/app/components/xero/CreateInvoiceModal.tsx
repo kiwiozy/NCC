@@ -253,7 +253,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       opened={opened}
       onClose={handleClose}
       title="Create Xero Invoice"
-      size="xl"
+      size="1480px"
       closeOnClickOutside={false}
     >
       <Stack gap="md">

@@ -253,7 +253,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       opened={opened}
       onClose={handleClose}
       title="Create Xero Quote"
-      size="xl"
+      size="1480px"
       closeOnClickOutside={false}
     >
       <Stack gap="md">
