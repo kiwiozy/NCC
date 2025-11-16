@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 from patients.models import Patient
-from appointments.models import Appointment
+from appointments.models import Appointment, AppointmentType
 from companies.models import Company
 from .models import (
     XeroConnection,
@@ -463,7 +463,7 @@ def create_xero_invoice(request):
                     'error': f'Company with id {company_id} not found'
                 }, status=404)
         
-        # Get or create appointment (if specified)
+        # Get or use appointment (optional - not required for standalone invoices)
         appointment = None
         appointment_id = request.data.get('appointment_id')
         if appointment_id:
@@ -480,20 +480,16 @@ def create_xero_invoice(request):
                 return JsonResponse({
                     'error': f'Appointment with id {appointment_id} not found'
                 }, status=404)
-        else:
-            # Create a dummy appointment for invoice tracking
-            from datetime import datetime
-            appointment = Appointment.objects.create(
-                patient=patient,
-                clinic=patient.clinic if hasattr(patient, 'clinic') else None,
-                start_time=datetime.now(),
-                end_time=datetime.now(),
-                appointment_type='Invoice Only',
-                status='completed',
-                invoice_contact_type=contact_type,
-                billing_company=company,
-                billing_notes=request.data.get('billing_notes', '')
-            )
+        
+        # For standalone invoices without appointment, we need patient and optionally company
+        # The Xero service will handle creating the invoice directly
+        if not appointment:
+            # We'll need to modify the approach - create invoice without appointment
+            # This requires updating XeroInvoiceLink model to make appointment optional
+            return JsonResponse({
+                'error': 'Standalone invoices (without appointments) not yet supported. Please link to an appointment.',
+                'detail': 'Coming soon: Direct invoice creation without appointments'
+            }, status=501)  # 501 Not Implemented
         
         # Create invoice via Xero service
         invoice_link = xero_service.create_invoice(
