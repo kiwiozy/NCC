@@ -42,6 +42,9 @@ const TAX_TYPES = [
   { value: 'NONE', label: 'No GST' },
   { value: 'EXEMPTINPUT', label: 'GST Free' },
   { value: 'INPUT2', label: 'GST on Expenses (10%)' },
+  { value: 'BASEXCLUDED', label: 'Tax Exclusive' },
+  { value: 'RRINPUT', label: 'Reduced Rate Input' },
+  { value: 'RROUTPUT', label: 'Reduced Rate Output' },
 ];
 
 const DEFAULT_ACCOUNT_CODES = [
