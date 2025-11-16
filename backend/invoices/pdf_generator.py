@@ -81,7 +81,7 @@ class InvoicePDFGenerator:
         self.styles.add(ParagraphStyle(
             name='InvoiceTitle',
             parent=self.styles['Heading1'],
-            fontSize=32,
+            fontSize=18,  # Reduced from 32pt for more compact look
             textColor=colors.black,
             spaceAfter=20,
             alignment=TA_RIGHT,
