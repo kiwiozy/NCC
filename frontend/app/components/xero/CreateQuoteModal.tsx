@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
@@ -68,6 +68,18 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   
   // Check if contact is pre-selected
   const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
+  
+  // Sync state with props when they change
+  useEffect(() => {
+    if (preSelectedPatientId) {
+      setSelectedPatient(preSelectedPatientId);
+      setContactType('patient');
+    }
+    if (preSelectedCompanyId) {
+      setSelectedCompany(preSelectedCompanyId);
+      setContactType('company');
+    }
+  }, [preSelectedPatientId, preSelectedCompanyId]);
   
   // Quote details
   const [quoteDate, setQuoteDate] = useState<Date>(new Date());
