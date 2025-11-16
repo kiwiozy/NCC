@@ -8,8 +8,9 @@ import { notifications } from '@mantine/notifications';
 interface QuickCreateModalProps {
   opened: boolean;
   onClose: () => void;
-  onCreateInvoice: (patientId?: string, companyId?: string) => void;
-  onCreateQuote: (patientId?: string, companyId?: string) => void;
+  onCreateInvoice?: (patientId?: string, companyId?: string) => void;
+  onCreateQuote?: (patientId?: string, companyId?: string) => void;
+  onSuccess?: () => void;  // Alternative simple callback
 }
 
 interface Patient {
@@ -23,7 +24,7 @@ interface Company {
   name: string;
 }
 
-export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuote }: QuickCreateModalProps) {
+export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuote, onSuccess }: QuickCreateModalProps) {
   const [active, setActive] = useState(0);
   
   // Step 1: Invoice or Quote
@@ -39,6 +40,7 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [searching, setSearching] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (active === 2 && searchQuery.length >= 2) {
@@ -74,7 +76,7 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
     }
   };
 
-  const handleContactSelect = (id: string, type: 'patient' | 'company') => {
+  const handleContactSelect = async (id: string, type: 'patient' | 'company') => {
     // Set the selected ID
     if (type === 'patient') {
       setSelectedPatientId(id);
@@ -82,21 +84,73 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
       setSelectedCompanyId(id);
     }
     
-    // Immediately open appropriate modal
-    if (documentType === 'invoice') {
-      onCreateInvoice(
-        type === 'patient' ? id : undefined,
-        type === 'company' ? id : undefined
-      );
-    } else {
-      onCreateQuote(
-        type === 'patient' ? id : undefined,
-        type === 'company' ? id : undefined
-      );
+    // If we have the modal callbacks (old pattern), use them
+    if (onCreateInvoice || onCreateQuote) {
+      if (documentType === 'invoice' && onCreateInvoice) {
+        onCreateInvoice(
+          type === 'patient' ? id : undefined,
+          type === 'company' ? id : undefined
+        );
+      } else if (documentType === 'quote' && onCreateQuote) {
+        onCreateQuote(
+          type === 'patient' ? id : undefined,
+          type === 'company' ? id : undefined
+        );
+      }
+      handleClose();
+      return;
     }
     
-    // Close wizard
-    handleClose();
+    // Otherwise, create directly via API (new pattern for invoices-quotes page)
+    if (onSuccess) {
+      setCreating(true);
+      try {
+        const endpoint = documentType === 'invoice' 
+          ? 'https://localhost:8000/api/xero-invoice-links/'
+          : 'https://localhost:8000/api/xero-quote-links/';
+        
+        const payload = {
+          ...(type === 'patient' ? { patient: id } : { company: id }),
+          line_items: [
+            {
+              description: '',
+              quantity: 1,
+              unit_price: 0,
+              tax_type: 'NONE'
+            }
+          ]
+        };
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to create ${documentType}`);
+        }
+        
+        notifications.show({
+          title: 'Success',
+          message: `${documentType === 'invoice' ? 'Invoice' : 'Quote'} created successfully`,
+          color: 'green',
+        });
+        
+        onSuccess();
+        handleClose();
+      } catch (error: any) {
+        console.error(`Error creating ${documentType}:`, error);
+        notifications.show({
+          title: 'Error',
+          message: error.message || `Failed to create ${documentType}`,
+          color: 'red',
+        });
+      } finally {
+        setCreating(false);
+      }
+    }
   };
 
   const handleNext = () => {
@@ -322,7 +376,7 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
                 Back
               </Button>
             )}
-            <Button onClick={handleNext}>
+            <Button onClick={handleNext} loading={creating}>
               {active === 2 ? 'Create' : 'Next'}
             </Button>
           </Group>
