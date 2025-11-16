@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem } from '@mantine/core';
-import { IconSearch, IconRefresh, IconCheck, IconX, IconExternalLink, IconFileInvoice, IconPlus, IconClock, IconCurrencyDollar } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconCheck, IconX, IconFileInvoice, IconPlus, IconClock, IconCurrencyDollar, IconEye } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
+import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -54,6 +55,10 @@ export default function XeroInvoicesPage() {
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+  
+  // Invoice detail modal
+  const [detailModalOpened, setDetailModalOpened] = useState(false);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
 
   // Stats
   const [stats, setStats] = useState({
@@ -366,16 +371,16 @@ export default function XeroInvoicesPage() {
                           <Text size="sm" c="orange">{formatCurrency(invoice.amount_due)}</Text>
                         </Table.Td>
                         <Table.Td>
-                          <Tooltip label="View in Xero">
+                          <Tooltip label="View Details">
                             <ActionIcon
                               variant="subtle"
                               color="blue"
-                              component="a"
-                              href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setSelectedInvoiceId(invoice.id);
+                                setDetailModalOpened(true);
+                              }}
                             >
-                              <IconExternalLink size={16} />
+                              <IconEye size={16} />
                             </ActionIcon>
                           </Tooltip>
                         </Table.Td>
@@ -388,6 +393,18 @@ export default function XeroInvoicesPage() {
           </Paper>
         </Stack>
       </Container>
+      
+      {/* Invoice Detail Modal */}
+      {selectedInvoiceId && (
+        <InvoiceDetailModal
+          opened={detailModalOpened}
+          onClose={() => {
+            setDetailModalOpened(false);
+            setSelectedInvoiceId(null);
+          }}
+          invoiceId={selectedInvoiceId}
+        />
+      )}
     </Navigation>
   );
 }
