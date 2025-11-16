@@ -86,7 +86,10 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   const [expiryDate, setExpiryDate] = useState<Date>(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days from now
   const [reference, setReference] = useState('');
   const [terms, setTerms] = useState('');
-  const [sendImmediately, setSendImmediately] = useState(false);
+  
+  // Confirmation dialog
+  const [confirmDialogOpened, setConfirmDialogOpened] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -193,6 +196,13 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       }
     }
 
+    // Show confirmation dialog instead of submitting immediately
+    setConfirmDialogOpened(true);
+  };
+
+  const handleConfirmedSubmit = async (sendImmediately: boolean) => {
+    setConfirmDialogOpened(false);
+    setPendingSubmit(true);
     setLoading(true);
     try {
       console.log('Creating quote with payload:', {
@@ -264,6 +274,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       });
     } finally {
       setLoading(false);
+      setPendingSubmit(false);
     }
   };
 
@@ -487,13 +498,6 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
             onChange={(e) => setTerms(e.target.value)}
             rows={3}
           />
-          
-          <Checkbox
-            label="Send immediately (mark as SENT in Xero)"
-            description="If checked, quote will be SENT to customer. If unchecked, quote will be saved as DRAFT."
-            checked={sendImmediately}
-            onChange={(e) => setSendImmediately(e.currentTarget.checked)}
-          />
         </Paper>
 
         {/* Actions */}
@@ -505,6 +509,49 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
             Create Quote
           </Button>
         </Group>
+      </Stack>
+    </Modal>
+
+    {/* Confirmation Dialog */}
+    <Modal
+      opened={confirmDialogOpened}
+      onClose={() => setConfirmDialogOpened(false)}
+      title="Send Quote or Save as Draft?"
+      size="md"
+      centered
+    >
+      <Stack gap="md">
+        <Text size="sm">
+          Choose how you want to create this quote:
+        </Text>
+        
+        <Paper p="md" withBorder style={{ cursor: 'pointer' }} onClick={() => handleConfirmedSubmit(true)}>
+          <Stack gap="xs">
+            <Group>
+              <Badge color="blue" size="lg">SENT</Badge>
+              <Text fw={600}>Send Immediately</Text>
+            </Group>
+            <Text size="sm" c="dimmed">
+              Quote will be marked as SENT in Xero and sent to the customer.
+            </Text>
+          </Stack>
+        </Paper>
+
+        <Paper p="md" withBorder style={{ cursor: 'pointer' }} onClick={() => handleConfirmedSubmit(false)}>
+          <Stack gap="xs">
+            <Group>
+              <Badge color="gray" size="lg">DRAFT</Badge>
+              <Text fw={600}>Save as Draft</Text>
+            </Group>
+            <Text size="sm" c="dimmed">
+              Quote will be saved as DRAFT for review. You can edit it before sending.
+            </Text>
+          </Stack>
+        </Paper>
+
+        <Button variant="subtle" onClick={() => setConfirmDialogOpened(false)} fullWidth>
+          Cancel
+        </Button>
       </Stack>
     </Modal>
   );
