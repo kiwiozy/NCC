@@ -311,6 +311,22 @@ class InvoicePDFGenerator:
                 ref_info_text += f"<br/>Pedorthic Registration # {practitioner['registration']}"
             ref_info_text += f"<br/>www.pedorthics.org.au"
         
+        # In debug mode, add dummy data to test 11 lines
+        if self.debug:
+            ref_info_text = (
+                "<b>Reference / PO#</b><br/>"
+                "Mr. John Smith<br/>"
+                "NDIS # 430372789<br/>"
+                "<b>Provider Registration #</b> 4050009706<br/>"
+                "<br/>"
+                "<i>Practitioner:</i><br/>"
+                "<b>Craig Laird</b><br/>"
+                "CPed CM au<br/>"
+                "Pedorthic Registration # 3454<br/>"
+                "www.pedorthics.org.au<br/>"
+                "Additional info line 11"
+            )
+        
         ref_info = Paragraph(ref_info_text, self.styles['RightInfo'])
         
         info_table = Table([[patient_address, ref_info]], colWidths=[10*cm, 7*cm])
