@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio, Checkbox } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
@@ -68,6 +68,16 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   
   // Check if contact is pre-selected
   const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
+  
+  // Sync selected patient/company with props when they change
+  useEffect(() => {
+    if (preSelectedPatientId) {
+      setSelectedPatient(preSelectedPatientId);
+    }
+    if (preSelectedCompanyId) {
+      setSelectedCompany(preSelectedCompanyId);
+    }
+  }, [preSelectedPatientId, preSelectedCompanyId]);
   
   // Invoice details
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
