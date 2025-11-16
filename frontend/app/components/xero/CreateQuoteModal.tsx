@@ -194,6 +194,22 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
 
     setLoading(true);
     try {
+      console.log('Creating quote with payload:', {
+        patient_id: contactType === 'patient' ? selectedPatient : undefined,
+        company_id: contactType === 'company' ? selectedCompany : undefined,
+        contact_type: contactType,
+        line_items: lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_amount: item.unit_amount,
+          account_code: item.account_code,
+          tax_type: item.tax_type,
+        })),
+        quote_date: quoteDate.toISOString(),
+        expiry_date: expiryDate.toISOString(),
+        billing_notes: terms,
+      });
+
       const response = await fetch('https://localhost:8000/api/xero/quote/create/', {
         method: 'POST',
         headers: {
@@ -216,12 +232,16 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         }),
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create quote');
+        console.error('Error response:', error);
+        throw new Error(error.error || error.detail || 'Failed to create quote');
       }
 
       const data = await response.json();
+      console.log('Success response:', data);
 
       notifications.show({
         title: 'Success',
