@@ -49,7 +49,7 @@ class XeroService:
     
     def get_api_client(self) -> ApiClient:
         """
-        Create and configure Xero API client
+        Create and configure Xero API client with OAuth2 token
         """
         configuration = Configuration()
         configuration.debug = settings.DEBUG
@@ -57,8 +57,26 @@ class XeroService:
         # Create API client
         api_client = ApiClient(configuration)
         
-        # Set OAuth2 token
-        api_client.set_oauth2_token(self._get_stored_token())
+        # Get stored token
+        token_dict = self._get_stored_token()
+        if token_dict:
+            # Set OAuth2 token with a saver callback
+            # The saver callback is called when the token is refreshed
+            def token_saver(token):
+                """Callback to save refreshed tokens"""
+                try:
+                    connection = XeroConnection.objects.filter(is_active=True).first()
+                    if connection:
+                        connection.access_token = token['access_token']
+                        connection.refresh_token = token['refresh_token']
+                        connection.expires_at = timezone.datetime.fromtimestamp(token['expires_at'], tz=timezone.get_current_timezone())
+                        connection.save()
+                        print(f"✓ Token auto-saved for {connection.tenant_name}")
+                except Exception as e:
+                    print(f"Error saving refreshed token: {e}")
+            
+            # Set token with saver
+            api_client.set_oauth2_token(token_dict, token_saver)
         
         return api_client
     
