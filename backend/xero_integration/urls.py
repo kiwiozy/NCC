@@ -23,6 +23,10 @@ urlpatterns = [
     path('oauth/disconnect/', views.xero_disconnect, name='disconnect'),
     path('oauth/refresh/', views.xero_refresh_token, name='refresh'),
     
+    # Tenant management (Added Nov 2025)
+    path('tenants/available/', views.xero_available_tenants, name='available-tenants'),
+    path('tenants/switch/', views.xero_switch_tenant, name='switch-tenant'),
+    
     # Invoice/Quote creation endpoints (Added Nov 2025)
     path('create-invoice/', views.create_xero_invoice, name='create-invoice'),
     path('create-quote/', views.create_xero_quote, name='create-quote'),

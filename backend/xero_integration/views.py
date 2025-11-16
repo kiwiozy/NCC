@@ -140,6 +140,60 @@ def xero_refresh_token(request):
         }, status=500)
 
 
+@api_view(['GET'])
+def xero_available_tenants(request):
+    """
+    Get list of all available Xero organisations
+    Added Nov 2025: Support switching between multiple Xero orgs (e.g., Demo Company)
+    """
+    try:
+        tenants = xero_service.get_available_tenants()
+        
+        return JsonResponse({
+            'tenants': tenants,
+            'count': len(tenants)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': 'Failed to fetch available tenants',
+            'detail': str(e)
+        }, status=500)
+
+
+@api_view(['POST'])
+def xero_switch_tenant(request):
+    """
+    Switch to a different Xero organisation
+    Added Nov 2025: Support switching to Demo Company for testing
+    
+    Request body:
+    {
+        "tenant_id": "76906313-afb7-4861-ad17-bca617af599c"
+    }
+    """
+    try:
+        tenant_id = request.data.get('tenant_id')
+        if not tenant_id:
+            return JsonResponse({
+                'error': 'tenant_id is required'
+            }, status=400)
+        
+        connection = xero_service.switch_tenant(tenant_id)
+        serializer = XeroConnectionSerializer(connection)
+        
+        return JsonResponse({
+            'message': f'Switched to {connection.tenant_name}',
+            'connection': serializer.data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': 'Failed to switch tenant',
+            'detail': str(e)
+        }, status=500)
+
+
 class XeroConnectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for viewing Xero connection status

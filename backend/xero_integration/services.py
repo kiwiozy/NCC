@@ -194,7 +194,8 @@ class XeroService:
             if not tenants:
                 raise ValueError("No Xero tenants/organisations found")
             
-            # Use first tenant
+            # Use first tenant (default behavior)
+            # Note: Multiple tenants are supported - use switch_tenant() method to change
             tenant = tenants[0]
             
             # Calculate token expiry
@@ -296,6 +297,140 @@ class XeroService:
             print(f"✗ Failed to refresh Xero token: {error_msg}")
             XeroSyncLog.objects.create(
                 operation_type='token_refresh',
+                status='failed',
+                error_message=error_msg,
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
+    def get_available_tenants(self) -> List[Dict[str, Any]]:
+        """
+        Get list of all Xero organisations the user has access to
+        Returns list of tenants with their details
+        
+        Added Nov 2025: Allow switching between multiple Xero organisations
+        """
+        try:
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            if not connection:
+                raise ValueError("No active Xero connection found. Please connect to Xero first.")
+            
+            import requests
+            
+            # Get all tenant connections
+            connections_url = "https://api.xero.com/connections"
+            headers = {
+                "Authorization": f"Bearer {connection.access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.get(connections_url, headers=headers, timeout=30)
+            response.raise_for_status()
+            tenants = response.json()
+            
+            # Format tenant data
+            tenant_list = []
+            for tenant in tenants:
+                tenant_list.append({
+                    'tenant_id': tenant['tenantId'],
+                    'tenant_name': tenant.get('tenantName', 'Unknown'),
+                    'tenant_type': tenant.get('tenantType', 'ORGANISATION'),
+                    'is_current': tenant['tenantId'] == connection.tenant_id,
+                })
+            
+            return tenant_list
+            
+        except Exception as e:
+            print(f"Error fetching available tenants: {e}")
+            raise
+    
+    def switch_tenant(self, tenant_id: str) -> XeroConnection:
+        """
+        Switch active Xero connection to a different tenant/organisation
+        
+        Args:
+            tenant_id: The Xero tenant ID to switch to
+        
+        Returns:
+            Updated XeroConnection object
+        
+        Added Nov 2025: Support for switching between Demo Company and production
+        """
+        start_time = time.time()
+        
+        try:
+            # Get current connection
+            current_connection = XeroConnection.objects.filter(is_active=True).first()
+            if not current_connection:
+                raise ValueError("No active Xero connection found")
+            
+            import requests
+            
+            # Verify tenant is accessible
+            connections_url = "https://api.xero.com/connections"
+            headers = {
+                "Authorization": f"Bearer {current_connection.access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.get(connections_url, headers=headers, timeout=30)
+            response.raise_for_status()
+            tenants = response.json()
+            
+            # Find requested tenant
+            target_tenant = None
+            for tenant in tenants:
+                if tenant['tenantId'] == tenant_id:
+                    target_tenant = tenant
+                    break
+            
+            if not target_tenant:
+                raise ValueError(f"Tenant {tenant_id} not found or not accessible")
+            
+            # Deactivate all existing connections
+            XeroConnection.objects.all().update(is_active=False)
+            
+            # Create or update connection for new tenant
+            connection, created = XeroConnection.objects.update_or_create(
+                tenant_id=target_tenant['tenantId'],
+                defaults={
+                    'tenant_name': target_tenant.get('tenantName', 'Unknown'),
+                    'access_token': current_connection.access_token,
+                    'refresh_token': current_connection.refresh_token,
+                    'id_token': current_connection.id_token,
+                    'token_type': current_connection.token_type,
+                    'expires_at': current_connection.expires_at,
+                    'scopes': current_connection.scopes,
+                    'is_active': True,
+                }
+            )
+            
+            # Set connected_at if newly created
+            if created:
+                connection.connected_at = timezone.now()
+                connection.save()
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='tenant_switch',
+                status='success',
+                response_data={
+                    'from_tenant': current_connection.tenant_name,
+                    'to_tenant': target_tenant.get('tenantName'),
+                    'tenant_id': tenant_id
+                },
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            
+            print(f"✓ Switched Xero tenant to {target_tenant.get('tenantName')}")
+            return connection
+            
+        except Exception as e:
+            # Log error
+            error_msg = str(e)
+            print(f"✗ Failed to switch Xero tenant: {error_msg}")
+            XeroSyncLog.objects.create(
+                operation_type='tenant_switch',
                 status='failed',
                 error_message=error_msg,
                 duration_ms=int((time.time() - start_time) * 1000)
