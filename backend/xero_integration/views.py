@@ -647,13 +647,26 @@ def create_xero_quote(request):
             except Appointment.DoesNotExist:
                 pass  # OK for quotes to not have appointment
         
+        # Parse dates
+        quote_date = None
+        if request.data.get('quote_date'):
+            from datetime import datetime
+            quote_date = datetime.fromisoformat(request.data.get('quote_date').replace('Z', '+00:00')).date()
+        
+        expiry_date_parsed = None
+        if expiry_date:
+            from datetime import datetime
+            expiry_date_parsed = datetime.fromisoformat(expiry_date.replace('Z', '+00:00')).date()
+        
         # Create quote via Xero service
         quote_link = xero_service.create_quote(
             patient=patient,
             company=company,
             line_items=line_items,
-            expiry_date=expiry_date,
-            appointment=appointment
+            expiry_date=expiry_date_parsed,
+            quote_date=quote_date,
+            appointment=appointment,
+            billing_notes=request.data.get('billing_notes', '')
         )
         
         return JsonResponse({

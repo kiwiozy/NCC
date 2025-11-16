@@ -1203,7 +1203,9 @@ class XeroService:
         company,
         line_items: List[Dict[str, Any]],
         expiry_date,
-        appointment=None
+        appointment=None,
+        quote_date=None,
+        billing_notes: str = None
     ) -> XeroQuoteLink:
         """
         Create a quote in Xero
@@ -1215,6 +1217,8 @@ class XeroService:
             line_items: List of service line items
             expiry_date: Quote expiry date (datetime.date)
             appointment: Optional appointment to link to
+            quote_date: Quote date (datetime.date, defaults to today)
+            billing_notes: Terms and conditions for the quote
         
         Returns:
             XeroQuoteLink object
@@ -1256,12 +1260,12 @@ class XeroService:
             from xero_python.accounting import Contact as XeroContact
             quote = Quote(
                 contact=XeroContact(contact_id=primary_contact_link.xero_contact_id),
-                date=timezone.now().date(),
+                date=quote_date if quote_date else timezone.now().date(),
                 expiry_date=expiry_date,
                 reference=reference,
                 line_items=xero_line_items,
                 status='DRAFT',
-                terms="Quote valid until expiry date. Services subject to availability.",
+                terms=billing_notes if billing_notes else "Quote valid until expiry date. Services subject to availability.",
                 title="Service Quote"
             )
             
