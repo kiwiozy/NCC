@@ -24,6 +24,15 @@ from reminders.views import ReminderViewSet
 from notes.views import NoteViewSet
 from companies.views import CompanyViewSet
 from referrers.views import ReferrerViewSet, SpecialtyViewSet, PatientReferrerViewSet, ReferrerCompanyViewSet
+from xero_integration.views import (
+    XeroConnectionViewSet,
+    XeroContactLinkViewSet,
+    XeroInvoiceLinkViewSet,
+    XeroQuoteLinkViewSet,
+    XeroItemMappingViewSet,
+    XeroTrackingCategoryViewSet,
+    XeroSyncLogViewSet,
+)
 from . import auth_views
 
 # Create API router
@@ -40,6 +49,14 @@ router.register(r'referrers', ReferrerViewSet, basename='referrer')
 router.register(r'specialties', SpecialtyViewSet, basename='specialty')
 router.register(r'patient-referrers', PatientReferrerViewSet, basename='patient-referrer')
 router.register(r'referrer-companies', ReferrerCompanyViewSet, basename='referrer-company')
+# Xero Integration API endpoints
+router.register(r'xero-connections', XeroConnectionViewSet, basename='xero-connection')
+router.register(r'xero-contact-links', XeroContactLinkViewSet, basename='xero-contact-link')
+router.register(r'xero-invoice-links', XeroInvoiceLinkViewSet, basename='xero-invoice-link')
+router.register(r'xero-quote-links', XeroQuoteLinkViewSet, basename='xero-quote-link')
+router.register(r'xero-items', XeroItemMappingViewSet, basename='xero-item')
+router.register(r'xero-tracking', XeroTrackingCategoryViewSet, basename='xero-tracking')
+router.register(r'xero-sync-logs', XeroSyncLogViewSet, basename='xero-sync-log')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
