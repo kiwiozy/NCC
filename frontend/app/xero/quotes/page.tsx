@@ -149,20 +149,18 @@ export default function XeroQuotesPage() {
 
   if (loading) {
     return (
-      <div style={{ position: 'fixed', inset: 0, overflow: 'auto' }}>
-        <Navigation />
+      <Navigation>
         <Container size="xl" py="xl">
           <Center h={400}>
             <Loader size="lg" />
           </Center>
         </Container>
-      </div>
+      </Navigation>
     );
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'auto' }}>
-      <Navigation />
+    <Navigation>
       <Container size="xl" py="xl">
         <Stack gap="lg">
           <Group justify="space-between">
@@ -338,6 +336,6 @@ export default function XeroQuotesPage() {
           </Paper>
         </Stack>
       </Container>
-    </div>
+    </Navigation>
   );
 }
