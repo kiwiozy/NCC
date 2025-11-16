@@ -5,6 +5,7 @@ import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, Text
 import { IconSearch, IconRefresh, IconCheck, IconX, IconExternalLink, IconFileDescription, IconPlus, IconClock, IconArrowRight } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
+import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroQuoteLink {
@@ -54,6 +55,11 @@ export default function XeroQuotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
+  // Create quote modal
+  const [createModalOpened, setCreateModalOpened] = useState(false);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
+
   // Stats
   const [stats, setStats] = useState({
     total: 0,
@@ -100,7 +106,28 @@ export default function XeroQuotesPage() {
 
   useEffect(() => {
     fetchQuotes();
+    fetchPatientsAndCompanies();
   }, []);
+
+  const fetchPatientsAndCompanies = async () => {
+    try {
+      // Fetch patients
+      const patientsRes = await fetch('https://localhost:8000/api/patients/');
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData.results || patientsData);
+      }
+
+      // Fetch companies
+      const companiesRes = await fetch('https://localhost:8000/api/companies/');
+      if (companiesRes.ok) {
+        const companiesData = await companiesRes.json();
+        setCompanies(companiesData.results || companiesData);
+      }
+    } catch (error) {
+      console.error('Error fetching patients/companies:', error);
+    }
+  };
 
   // Filter quotes based on search and status
   useEffect(() => {
@@ -194,18 +221,23 @@ export default function XeroQuotesPage() {
               </Button>
               <Button
                 leftSection={<IconPlus size={16} />}
-                onClick={() => {
-                  notifications.show({
-                    title: 'Coming Soon',
-                    message: 'Quote creation will be available soon',
-                    color: 'blue',
-                  });
-                }}
+                onClick={() => setCreateModalOpened(true)}
               >
                 Create Quote
               </Button>
             </Group>
           </Group>
+
+          {/* Create Quote Modal */}
+          <CreateQuoteModal
+            opened={createModalOpened}
+            onClose={() => setCreateModalOpened(false)}
+            onSuccess={() => {
+              fetchQuotes();
+            }}
+            patients={patients}
+            companies={companies}
+          />
 
           {/* Stats */}
           <Group gap="md" grow>
