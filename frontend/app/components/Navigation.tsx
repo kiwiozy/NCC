@@ -205,6 +205,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Dashboard', href: '/xero' },
     { icon: <IconUsers size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/xero/contacts' },
     { icon: <IconFileInvoice size={subIconSize} stroke={1.5} />, label: 'Invoices', href: '/xero/invoices' },
+    { icon: <IconFileText size={subIconSize} stroke={1.5} />, label: 'Quotes', href: '/xero/quotes' },
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'Connection Settings', href: '/xero/settings' },
   ];
 

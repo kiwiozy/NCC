@@ -2,51 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem } from '@mantine/core';
-import { IconSearch, IconRefresh, IconCheck, IconX, IconExternalLink, IconFileDescription, IconPlus, IconClock, IconArrowRight } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconCheck, IconX, IconFileText, IconPlus, IconClock, IconCurrencyDollar, IconEye } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
-import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroQuoteLink {
   id: string;
   appointment: string | null;
   appointment_details: {
-    id: string;
+    appointment_time: string;
     patient_name: string;
-    start_time: string;
   } | null;
+  patient: string | null;
+  patient_name: string | null;
+  company: string | null;
+  company_name: string | null;
   xero_quote_id: string;
   xero_quote_number: string;
   status: string;
   total: string;
   subtotal: string;
   total_tax: string;
-  currency: string;
-  quote_date: string | null;
-  expiry_date: string | null;
-  converted_invoice: string | null;
-  converted_invoice_details: {
-    id: string;
-    xero_invoice_number: string;
-    status: string;
-    total: string;
-  } | null;
-  converted_at: string | null;
-  can_convert: boolean;
-  last_synced_at: string | null;
+  quote_date: string;
+  expiry_date: string;
+  last_synced_at: string;
   created_at: string;
   updated_at: string;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  'DRAFT': 'gray',
-  'SENT': 'blue',
-  'ACCEPTED': 'green',
-  'DECLINED': 'red',
-  'INVOICED': 'cyan',
-  'DELETED': 'red',
-};
 
 export default function XeroQuotesPage() {
   const [quotes, setQuotes] = useState<XeroQuoteLink[]>([]);
@@ -55,189 +38,112 @@ export default function XeroQuotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
-  // Create quote modal
-  const [createModalOpened, setCreateModalOpened] = useState(false);
-  const [patients, setPatients] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
+  useEffect(() => {
+    fetchQuotes();
+  }, []);
 
-  // Stats
-  const [stats, setStats] = useState({
-    total: 0,
-    draft: 0,
-    sent: 0,
-    accepted: 0,
-    invoiced: 0,
-    totalAmount: 0,
-  });
+  useEffect(() => {
+    filterQuotes();
+  }, [quotes, searchQuery, statusFilter]);
 
   const fetchQuotes = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://localhost:8000/api/xero-quote-links/');
+      const response = await fetch('https://localhost:8000/api/xero/quotes/');
       if (!response.ok) throw new Error('Failed to fetch quotes');
       
       const data = await response.json();
-      const quotesList = data.results || data;
-      setQuotes(quotesList);
-      setFilteredQuotes(quotesList);
-
-      // Calculate stats
-      const newStats = {
-        total: quotesList.length,
-        draft: quotesList.filter((q: XeroQuoteLink) => q.status === 'DRAFT').length,
-        sent: quotesList.filter((q: XeroQuoteLink) => q.status === 'SENT').length,
-        accepted: quotesList.filter((q: XeroQuoteLink) => q.status === 'ACCEPTED').length,
-        invoiced: quotesList.filter((q: XeroQuoteLink) => q.status === 'INVOICED').length,
-        totalAmount: quotesList.reduce((sum: number, q: XeroQuoteLink) => sum + parseFloat(q.total || '0'), 0),
-      };
-      setStats(newStats);
+      setQuotes(data.results || data);
     } catch (error) {
-      console.error('Error fetching Xero quotes:', error);
+      console.error('Error fetching quotes:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load Xero quotes',
+        message: 'Failed to fetch quotes',
         color: 'red',
-        icon: <IconX />,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchQuotes();
-    fetchPatientsAndCompanies();
-  }, []);
-
-  const fetchPatientsAndCompanies = async () => {
-    try {
-      // Fetch patients
-      const patientsRes = await fetch('https://localhost:8000/api/patients/');
-      if (patientsRes.ok) {
-        const patientsData = await patientsRes.json();
-        setPatients(patientsData.results || patientsData);
-      }
-
-      // Fetch companies
-      const companiesRes = await fetch('https://localhost:8000/api/companies/');
-      if (companiesRes.ok) {
-        const companiesData = await companiesRes.json();
-        setCompanies(companiesData.results || companiesData);
-      }
-    } catch (error) {
-      console.error('Error fetching patients/companies:', error);
-    }
-  };
-
-  // Filter quotes based on search and status
-  useEffect(() => {
-    let filtered = quotes;
-
-    // Filter by status
-    if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(q => q.status === statusFilter);
-    }
+  const filterQuotes = () => {
+    let filtered = [...quotes];
 
     // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(q =>
-        q.xero_quote_number.toLowerCase().includes(query) ||
-        q.appointment_details?.patient_name.toLowerCase().includes(query)
+    if (searchQuery) {
+      filtered = filtered.filter(quote => 
+        quote.xero_quote_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    setFilteredQuotes(filtered);
-  }, [quotes, searchQuery, statusFilter]);
-
-  const getXeroQuoteUrl = (quoteId: string) => {
-    return `https://go.xero.com/Quote/View.aspx?quoteID=${quoteId}`;
-  };
-
-  const formatCurrency = (amount: string | number) => {
-    return `$${parseFloat(amount.toString()).toFixed(2)}`;
-  };
-
-  const handleConvertToInvoice = async (quoteId: string) => {
-    if (!confirm('Convert this quote to an invoice?')) return;
-
-    try {
-      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) throw new Error('Failed to convert quote');
-
-      notifications.show({
-        title: 'Success',
-        message: 'Quote converted to invoice successfully',
-        color: 'green',
-        icon: <IconCheck />,
-      });
-
-      // Refresh quotes list
-      fetchQuotes();
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to convert quote to invoice',
-        color: 'red',
-        icon: <IconX />,
-      });
+    // Filter by status
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(quote => quote.status === statusFilter);
     }
+
+    setFilteredQuotes(filtered);
   };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; label: string }> = {
+      DRAFT: { color: 'gray', label: 'Draft' },
+      SENT: { color: 'blue', label: 'Sent' },
+      ACCEPTED: { color: 'green', label: 'Accepted' },
+      DECLINED: { color: 'red', label: 'Declined' },
+      INVOICED: { color: 'teal', label: 'Invoiced' },
+      DELETED: { color: 'dark', label: 'Deleted' },
+    };
+
+    const config = statusConfig[status] || { color: 'gray', label: status };
+    return <Badge color={config.color} variant="light">{config.label}</Badge>;
+  };
+
+  const calculateStats = () => {
+    const total = filteredQuotes.reduce((sum, quote) => sum + parseFloat(quote.total || '0'), 0);
+    const draftCount = filteredQuotes.filter(q => q.status === 'DRAFT').length;
+    const sentCount = filteredQuotes.filter(q => q.status === 'SENT').length;
+    const acceptedCount = filteredQuotes.filter(q => q.status === 'ACCEPTED').length;
+
+    return { total, draftCount, sentCount, acceptedCount, totalCount: filteredQuotes.length };
+  };
+
+  const stats = calculateStats();
 
   if (loading) {
     return (
-      <Navigation>
+      <>
+        <Navigation />
         <Container size="xl" py="xl">
           <Center h={400}>
             <Loader size="lg" />
           </Center>
         </Container>
-      </Navigation>
+      </>
     );
   }
 
   return (
-    <Navigation>
+    <>
+      <Navigation />
       <Container size="xl" py="xl">
-        <Stack gap="xl">
-          {/* Header */}
-          <Group justify="space-between" align="flex-start">
+        <Stack gap="lg">
+          <Group justify="space-between">
             <div>
               <Title order={2}>Xero Quotes</Title>
-              <Text c="dimmed" size="sm" mt="xs">
-                Manage quotes (estimates) synced to Xero
-              </Text>
+              <Text size="sm" c="dimmed">Manage quotes synced to Xero</Text>
             </div>
             <Group>
               <Button
+                variant="light"
                 leftSection={<IconRefresh size={16} />}
                 onClick={fetchQuotes}
-                variant="light"
               >
                 Refresh
               </Button>
-              <Button
-                leftSection={<IconPlus size={16} />}
-                onClick={() => setCreateModalOpened(true)}
-              >
-                Create Quote
-              </Button>
             </Group>
           </Group>
-
-          {/* Create Quote Modal */}
-          <CreateQuoteModal
-            opened={createModalOpened}
-            onClose={() => setCreateModalOpened(false)}
-            onSuccess={() => {
-              fetchQuotes();
-            }}
-            patients={patients}
-            companies={companies}
-          />
 
           {/* Stats */}
           <Group gap="md" grow>
@@ -245,52 +151,59 @@ export default function XeroQuotesPage() {
               <Group justify="space-between">
                 <div>
                   <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Quotes</Text>
-                  <Text size="xl" fw={700}>{stats.total}</Text>
+                  <Text size="xl" fw={700}>{stats.totalCount}</Text>
                 </div>
-                <IconFileDescription size={32} style={{ opacity: 0.3 }} />
+                <IconFileText size={32} style={{ color: 'var(--mantine-color-blue-6)' }} />
               </Group>
             </Paper>
+
             <Paper p="md" withBorder>
               <Group justify="space-between">
                 <div>
                   <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Draft</Text>
-                  <Text size="xl" fw={700}>{stats.draft}</Text>
+                  <Text size="xl" fw={700}>{stats.draftCount}</Text>
                 </div>
-                <IconClock size={32} style={{ opacity: 0.3 }} />
+                <IconClock size={32} style={{ color: 'var(--mantine-color-gray-6)' }} />
               </Group>
             </Paper>
+
             <Paper p="md" withBorder>
               <Group justify="space-between">
                 <div>
                   <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Sent</Text>
-                  <Text size="xl" fw={700}>{stats.sent}</Text>
+                  <Text size="xl" fw={700}>{stats.sentCount}</Text>
                 </div>
-                <IconClock size={32} style={{ opacity: 0.3 }} />
+                <IconClock size={32} style={{ color: 'var(--mantine-color-blue-6)' }} />
               </Group>
             </Paper>
+
             <Paper p="md" withBorder>
               <Group justify="space-between">
                 <div>
                   <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Accepted</Text>
-                  <Text size="xl" fw={700}>{stats.accepted}</Text>
+                  <Text size="xl" fw={700}>{stats.acceptedCount}</Text>
                 </div>
-                <IconCheck size={32} style={{ opacity: 0.3, color: 'green' }} />
+                <IconCheck size={32} style={{ color: 'var(--mantine-color-green-6)' }} />
               </Group>
             </Paper>
+          </Group>
+
+          {/* Total Amount */}
+          <Group gap="md" grow>
             <Paper p="md" withBorder>
               <Group justify="space-between">
                 <div>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Invoiced</Text>
-                  <Text size="xl" fw={700}>{stats.invoiced}</Text>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Amount</Text>
+                  <Text size="xl" fw={700} c="blue">${stats.total.toFixed(2)}</Text>
                 </div>
-                <IconArrowRight size={32} style={{ opacity: 0.3 }} />
+                <IconCurrencyDollar size={32} style={{ color: 'var(--mantine-color-blue-6)' }} />
               </Group>
             </Paper>
           </Group>
 
           {/* Filters */}
           <Paper p="md" withBorder>
-            <Group>
+            <Group gap="md">
               <TextInput
                 placeholder="Search quotes..."
                 leftSection={<IconSearch size={16} />}
@@ -316,103 +229,76 @@ export default function XeroQuotesPage() {
           </Paper>
 
           {/* Quotes Table */}
-          <Paper shadow="sm" p="0" withBorder>
+          <Paper p="md" withBorder>
             {filteredQuotes.length === 0 ? (
-              <Center p="xl">
-                <Stack align="center" gap="xs">
-                  <IconFileDescription size={48} style={{ opacity: 0.3 }} />
-                  <Text c="dimmed">
-                    {searchQuery || statusFilter !== 'all' ? 'No quotes match your filters' : 'No quotes created yet'}
-                  </Text>
+              <Center h={200}>
+                <Stack align="center" gap="sm">
+                  <IconFileText size={48} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                  <Text c="dimmed">No quotes found</Text>
                 </Stack>
               </Center>
             ) : (
-              <Table.ScrollContainer minWidth={1000}>
-                <Table striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Quote Number</Table.Th>
-                      <Table.Th>Patient</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th>Quote Date</Table.Th>
-                      <Table.Th>Expiry Date</Table.Th>
-                      <Table.Th>Total</Table.Th>
-                      <Table.Th>Converted Invoice</Table.Th>
-                      <Table.Th style={{ width: '120px' }}>Actions</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {filteredQuotes.map((quote) => (
-                      <Table.Tr key={quote.id}>
-                        <Table.Td>
-                          <Text fw={600}>{quote.xero_quote_number}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm">{quote.appointment_details?.patient_name || '—'}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge color={STATUS_COLORS[quote.status] || 'gray'} variant="light">
-                            {quote.status}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm" c="dimmed">
-                            {quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text size="sm" c="dimmed">
-                            {quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>
-                          <Text fw={500}>{formatCurrency(quote.total)}</Text>
-                        </Table.Td>
-                        <Table.Td>
-                          {quote.converted_invoice_details ? (
-                            <Badge color="cyan" variant="light">
-                              {quote.converted_invoice_details.xero_invoice_number}
-                            </Badge>
-                          ) : (
-                            <Text size="sm" c="dimmed">—</Text>
-                          )}
-                        </Table.Td>
-                        <Table.Td>
-                          <Group gap="xs">
-                            <Tooltip label="View in Xero">
-                              <ActionIcon
-                                variant="subtle"
-                                color="blue"
-                                component="a"
-                                href={getXeroQuoteUrl(quote.xero_quote_id)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <IconExternalLink size={16} />
-                              </ActionIcon>
-                            </Tooltip>
-                            {quote.can_convert && (
-                              <Tooltip label="Convert to Invoice">
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="green"
-                                  onClick={() => handleConvertToInvoice(quote.id)}
-                                >
-                                  <IconArrowRight size={16} />
-                                </ActionIcon>
-                              </Tooltip>
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Quote Number</Table.Th>
+                    <Table.Th>Contact</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th>Quote Date</Table.Th>
+                    <Table.Th>Expiry Date</Table.Th>
+                    <Table.Th>Total</Table.Th>
+                    <Table.Th>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {filteredQuotes.map((quote) => (
+                    <Table.Tr key={quote.id}>
+                      <Table.Td>
+                        <Text fw={600}>{quote.xero_quote_number}</Text>
+                      </Table.Td>
+                      <Table.Td>
+                        {quote.patient_name && (
+                          <div>
+                            <Text size="sm">{quote.patient_name}</Text>
+                            {quote.company_name && (
+                              <Text size="xs" c="dimmed">via {quote.company_name}</Text>
                             )}
-                          </Group>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+                          </div>
+                        )}
+                        {!quote.patient_name && quote.company_name && (
+                          <Text size="sm">{quote.company_name}</Text>
+                        )}
+                        {!quote.patient_name && !quote.company_name && (
+                          <Text size="sm" c="dimmed">—</Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>{getStatusBadge(quote.status)}</Table.Td>
+                      <Table.Td>{quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}</Table.Td>
+                      <Table.Td>{quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}</Table.Td>
+                      <Table.Td>
+                        <Text fw={600}>${parseFloat(quote.total).toFixed(2)}</Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Tooltip label="View in Xero">
+                          <ActionIcon
+                            variant="subtle"
+                            color="blue"
+                            onClick={() => {
+                              window.open(`https://go.xero.com/organisationlogin/default.aspx?shortcode=!${quote.xero_quote_id}`, '_blank');
+                            }}
+                          >
+                            <IconEye size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
             )}
           </Paper>
         </Stack>
       </Container>
-    </Navigation>
+    </>
   );
 }
