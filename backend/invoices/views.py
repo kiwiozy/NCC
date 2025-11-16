@@ -1,11 +1,15 @@
 """
 Invoice PDF Views
 """
+import logging
 from datetime import datetime, timedelta
 from django.http import HttpResponse
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .pdf_generator import generate_invoice_pdf
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -139,9 +143,9 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 patient_info['state'] = addr.get('state', '')
                 patient_info['postcode'] = addr.get('postcode', '')
             
-            # Get NDIS number
-            if patient.ndis_number:
-                patient_info['ndis_number'] = patient.ndis_number
+            # Get NDIS/health number
+            if patient.health_number:
+                patient_info['ndis_number'] = patient.health_number
         
         elif invoice_link.company:
             company = invoice_link.company
@@ -170,6 +174,15 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                     'gst_rate': gst_rate,
                 })
         
+        # If no line items, add a placeholder
+        if not line_items:
+            line_items.append({
+                'description': 'Invoice item',
+                'quantity': 1,
+                'unit_price': float(invoice_link.total or 0),
+                'gst_rate': 0.0,
+            })
+        
         # Prepare invoice data
         invoice_data = {
             'invoice_number': invoice_link.xero_invoice_number,
@@ -194,9 +207,9 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"Error generating PDF: {error_details}")
+        logger.error(f"Error generating PDF: {error_details}")
         return Response({
             'error': str(e),
-            'details': error_details
+            'details': error_details if settings.DEBUG else 'An error occurred'
         }, status=400)
 
