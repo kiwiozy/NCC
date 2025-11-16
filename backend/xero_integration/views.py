@@ -431,7 +431,7 @@ class XeroQuoteLinkViewSet(viewsets.ModelViewSet):
             if not quote_link.can_convert_to_invoice():
                 return Response({
                     'error': 'Quote cannot be converted',
-                    'detail': f'Quote must be SENT or ACCEPTED and not already converted (current status: {quote_link.status})'
+                    'detail': f'Quote must be DRAFT, SENT, or ACCEPTED and not already converted (current status: {quote_link.status})'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             # Convert quote to invoice
@@ -553,7 +553,8 @@ def create_xero_invoice(request):
             tracking_category=None,
             billing_notes=request.data.get('billing_notes', ''),
             invoice_date=invoice_date,
-            due_date=due_date
+            due_date=due_date,
+            send_immediately=request.data.get('send_immediately', False)
         )
         
         return JsonResponse({
@@ -674,7 +675,8 @@ def create_xero_quote(request):
             expiry_date=expiry_date_parsed,
             quote_date=quote_date,
             appointment=appointment,
-            billing_notes=request.data.get('billing_notes', '')
+            billing_notes=request.data.get('billing_notes', ''),
+            send_immediately=request.data.get('send_immediately', False)
         )
         
         return JsonResponse({

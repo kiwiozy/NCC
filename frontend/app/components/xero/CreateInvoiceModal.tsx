@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio } from '@mantine/core';
+import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio, Checkbox } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -74,6 +74,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   const [dueDate, setDueDate] = useState<Date>(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days from now
   const [reference, setReference] = useState('');
   const [billingNotes, setBillingNotes] = useState('');
+  const [sendImmediately, setSendImmediately] = useState(false);
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -190,7 +191,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       const payload = {
         patient_id: contactType === 'patient' ? selectedPatient : null,
         company_id: contactType === 'company' ? selectedCompany : null,
-        invoice_contact_type: contactType,
+        contact_type: contactType,
         line_items: lineItems.map(item => ({
           description: item.description,
           quantity: item.quantity,
@@ -202,6 +203,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
         due_date: dueDate.toISOString().split('T')[0],
         reference: reference || undefined,
         billing_notes: billingNotes || undefined,
+        send_immediately: sendImmediately,
       };
 
       const response = await fetch('https://localhost:8000/api/xero/invoice/create/', {
@@ -339,6 +341,13 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
               value={billingNotes}
               onChange={(e) => setBillingNotes(e.target.value)}
               rows={2}
+            />
+            
+            <Checkbox
+              label="Send immediately (mark as AUTHORISED in Xero)"
+              description="If checked, invoice will be AUTHORISED and ready to send. If unchecked, invoice will be saved as DRAFT."
+              checked={sendImmediately}
+              onChange={(e) => setSendImmediately(e.currentTarget.checked)}
             />
           </Stack>
         </Paper>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio } from '@mantine/core';
+import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, Table, ActionIcon, Text, Badge, Divider, Paper, Radio, Checkbox } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -86,6 +86,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   const [expiryDate, setExpiryDate] = useState<Date>(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days from now
   const [reference, setReference] = useState('');
   const [terms, setTerms] = useState('');
+  const [sendImmediately, setSendImmediately] = useState(false);
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -229,6 +230,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
           quote_date: quoteDate.toISOString(),
           expiry_date: expiryDate.toISOString(),
           billing_notes: terms,
+          send_immediately: sendImmediately,
         }),
       });
 
@@ -484,6 +486,13 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
             value={terms}
             onChange={(e) => setTerms(e.target.value)}
             rows={3}
+          />
+          
+          <Checkbox
+            label="Send immediately (mark as SENT in Xero)"
+            description="If checked, quote will be SENT to customer. If unchecked, quote will be saved as DRAFT."
+            checked={sendImmediately}
+            onChange={(e) => setSendImmediately(e.currentTarget.checked)}
           />
         </Paper>
 

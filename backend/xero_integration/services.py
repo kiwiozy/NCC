@@ -739,16 +739,25 @@ class XeroService:
         tracking_category: Optional[Dict[str, str]] = None,
         billing_notes: str = '',
         invoice_date=None,
-        due_date=None
+        due_date=None,
+        send_immediately: bool = False
     ) -> XeroInvoiceLink:
         """
-        Create a draft invoice in Xero
+        Create an invoice in Xero
         Updated Nov 2025: Supports standalone invoices without appointments
+        Updated Nov 2025: Added send_immediately option to bypass DRAFT
         
         Args:
             appointment: Optional appointment link
             patient: Required if no appointment (direct patient invoice)
             company: Optional company for billing
+            contact_type: 'patient' or 'company' - who is the primary Xero contact
+            line_items: List of invoice line items
+            tracking_category: Optional tracking category
+            billing_notes: Additional notes for reference field
+            invoice_date: Invoice date (defaults to today)
+            due_date: Due date (defaults to 7 days from invoice date)
+            send_immediately: If True, creates as AUTHORISED; if False, creates as DRAFT
             contact_type: 'patient' or 'company' (who is primary contact)
             line_items: List of line item dicts
             tracking_category: Optional tracking category
@@ -862,7 +871,7 @@ class XeroService:
                 date=invoice_date,
                 due_date=due_date,
                 reference=reference,
-                status='DRAFT',
+                status='AUTHORISED' if send_immediately else 'DRAFT',
                 currency_code=CurrencyCode.AUD
             )
             
@@ -1205,11 +1214,13 @@ class XeroService:
         expiry_date,
         appointment=None,
         quote_date=None,
-        billing_notes: str = None
+        billing_notes: str = None,
+        send_immediately: bool = False
     ) -> XeroQuoteLink:
         """
         Create a quote in Xero
         Added Nov 2025: Support for quotes (estimates) before service delivery
+        Updated Nov 2025: Added send_immediately option to bypass DRAFT
         
         Args:
             patient: Patient object (service recipient)
@@ -1218,6 +1229,8 @@ class XeroService:
             expiry_date: Quote expiry date (datetime.date)
             appointment: Optional appointment to link to
             quote_date: Quote date (datetime.date, defaults to today)
+            billing_notes: Optional billing notes/terms
+            send_immediately: If True, creates as SENT; if False, creates as DRAFT
             billing_notes: Terms and conditions for the quote
         
         Returns:
@@ -1270,7 +1283,7 @@ class XeroService:
                 expiry_date=expiry_date,
                 reference=reference,
                 line_items=xero_line_items,
-                status=QuoteStatusCodes.DRAFT,
+                status=QuoteStatusCodes.SENT if send_immediately else QuoteStatusCodes.DRAFT,
                 terms=billing_notes if billing_notes else "Quote valid until expiry date. Services subject to availability.",
                 title="Service Quote"
             )

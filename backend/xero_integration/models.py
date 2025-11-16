@@ -330,7 +330,9 @@ class XeroQuoteLink(models.Model):
     
     def can_convert_to_invoice(self):
         """Check if quote can be converted to invoice"""
-        return self.status in ['SENT', 'ACCEPTED'] and self.converted_invoice is None
+        # Allow DRAFT, SENT, and ACCEPTED quotes to be converted
+        # Only prevent conversion if already converted (INVOICED)
+        return self.status in ['DRAFT', 'SENT', 'ACCEPTED'] and self.converted_invoice is None
 
 
 class XeroItemMapping(models.Model):
