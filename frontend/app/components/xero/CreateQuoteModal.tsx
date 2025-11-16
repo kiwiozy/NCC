@@ -33,13 +33,19 @@ interface CreateQuoteModalProps {
   onSuccess: () => void;
   patients: Patient[];
   companies: Company[];
+  preSelectedPatientId?: string;
+  preSelectedCompanyId?: string;
 }
 
 const TAX_TYPES = [
+  { value: 'EXEMPTOUTPUT', label: 'GST Free' },
   { value: 'OUTPUT2', label: 'GST on Income (10%)' },
-  { value: 'NONE', label: 'No GST' },
-  { value: 'EXEMPTINPUT', label: 'GST Free' },
   { value: 'INPUT2', label: 'GST on Expenses (10%)' },
+  { value: 'EXEMPTINPUT', label: 'GST Free Purchases' },
+  { value: 'BASEXCLUDED', label: 'Tax Exclusive' },
+  { value: 'NONE', label: 'No GST' },
+  { value: 'RRINPUT', label: 'Reduced Rate Input' },
+  { value: 'RROUTPUT', label: 'Reduced Rate Output' },
 ];
 
 const DEFAULT_ACCOUNT_CODES = [
@@ -50,19 +56,24 @@ const DEFAULT_ACCOUNT_CODES = [
   { value: '408', label: '408 - Cleaning' },
 ];
 
-export function CreateQuoteModal({ opened, onClose, onSuccess, patients, companies }: CreateQuoteModalProps) {
+export function CreateQuoteModal({ opened, onClose, onSuccess, patients, companies, preSelectedPatientId, preSelectedCompanyId }: CreateQuoteModalProps) {
   const [loading, setLoading] = useState(false);
   
   // Contact selection
-  const [contactType, setContactType] = useState<'patient' | 'company'>('patient');
-  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [contactType, setContactType] = useState<'patient' | 'company'>(
+    preSelectedCompanyId ? 'company' : 'patient'
+  );
+  const [selectedPatient, setSelectedPatient] = useState<string | null>(preSelectedPatientId || null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(preSelectedCompanyId || null);
+  
+  // Check if contact is pre-selected
+  const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
   
   // Quote details
   const [quoteDate, setQuoteDate] = useState<Date>(new Date());
   const [expiryDate, setExpiryDate] = useState<Date>(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // 30 days from now
   const [reference, setReference] = useState('');
-  const [notes, setNotes] = useState('');
+  const [terms, setTerms] = useState('');
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -72,7 +83,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       quantity: 1,
       unit_amount: 0,
       account_code: '200',
-      tax_type: 'OUTPUT2',
+      tax_type: 'EXEMPTOUTPUT',
     },
   ]);
 
@@ -83,7 +94,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       quantity: 1,
       unit_amount: 0,
       account_code: '200',
-      tax_type: 'OUTPUT2',
+      tax_type: 'EXEMPTOUTPUT',
     };
     setLineItems([...lineItems, newItem]);
   };
@@ -92,8 +103,8 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
     if (lineItems.length === 1) {
       notifications.show({
         title: 'Cannot Remove',
-        message: 'Invoice must have at least one line item',
-        color: 'orange',
+        message: 'At least one line item is required',
+        color: 'red',
       });
       return;
     }
@@ -112,8 +123,9 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
 
   const calculateTax = () => {
     return lineItems.reduce((sum, item) => {
+      const itemTotal = item.quantity * item.unit_amount;
       if (item.tax_type === 'OUTPUT2' || item.tax_type === 'INPUT2') {
-        return sum + (item.quantity * item.unit_amount * 0.10);
+        return sum + (itemTotal * 0.1); // 10% GST
       }
       return sum;
     }, 0);
@@ -127,15 +139,15 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
     return `$${amount.toFixed(2)}`;
   };
 
-  const validateForm = () => {
+  const handleSubmit = async () => {
+    // Validation
     if (contactType === 'patient' && !selectedPatient) {
       notifications.show({
         title: 'Validation Error',
         message: 'Please select a patient',
         color: 'red',
-        icon: <IconX />,
       });
-      return false;
+      return;
     }
 
     if (contactType === 'company' && !selectedCompany) {
@@ -143,81 +155,76 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         title: 'Validation Error',
         message: 'Please select a company',
         color: 'red',
-        icon: <IconX />,
       });
-      return false;
+      return;
     }
 
-    if (lineItems.some(item => !item.description.trim())) {
+    if (!lineItems.length) {
       notifications.show({
         title: 'Validation Error',
-        message: 'All line items must have a description',
+        message: 'At least one line item is required',
         color: 'red',
-        icon: <IconX />,
       });
-      return false;
+      return;
     }
 
-    if (lineItems.some(item => item.unit_amount <= 0)) {
-      notifications.show({
-        title: 'Validation Error',
-        message: 'All line items must have a positive amount',
-        color: 'red',
-        icon: <IconX />,
-      });
-      return false;
+    // Validate line items
+    for (const item of lineItems) {
+      if (!item.description || item.quantity <= 0 || item.unit_amount < 0) {
+        notifications.show({
+          title: 'Validation Error',
+          message: 'All line items must have a description, quantity > 0, and amount ≥ 0',
+          color: 'red',
+        });
+        return;
+      }
     }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const payload = {
-        patient_id: contactType === 'patient' ? selectedPatient : null,
-        company_id: contactType === 'company' ? selectedCompany : null,
-        contact_type: contactType,
-        line_items: lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_amount: item.unit_amount,
-          account_code: item.account_code,
-          tax_type: item.tax_type,
-        })),
-        quote_date: quoteDate.toISOString().split('T')[0],
-        expiry_date: expiryDate.toISOString().split('T')[0],
-        reference: reference || undefined,
-        notes: notes || undefined,
-      };
-
       const response = await fetch('https://localhost:8000/api/xero/quote/create/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patient_id: contactType === 'patient' ? selectedPatient : undefined,
+          company_id: contactType === 'company' ? selectedCompany : selectedPatient, // If patient selected but company type, use patient as company
+          contact_type: contactType,
+          line_items: lineItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_amount: item.unit_amount,
+            account_code: item.account_code,
+            tax_type: item.tax_type,
+          })),
+          quote_date: quoteDate.toISOString(),
+          expiry_date: expiryDate.toISOString(),
+          billing_notes: terms,
+        }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.error || 'Failed to create quote');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create quote');
       }
 
+      const data = await response.json();
+
       notifications.show({
-        title: 'Quote Created',
-        message: 'Quote created successfully in Xero',
+        title: 'Success',
+        message: `Quote ${data.xero_quote_number} created successfully`,
         color: 'green',
         icon: <IconCheck />,
       });
 
       onSuccess();
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating quote:', error);
       notifications.show({
         title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to create quote',
+        message: error.message || 'Failed to create quote',
         color: 'red',
         icon: <IconX />,
       });
@@ -227,24 +234,23 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   };
 
   const handleClose = () => {
-    // Reset form
-    setContactType('patient');
-    setSelectedPatient(null);
-    setSelectedCompany(null);
+    if (!isPreSelected) {
+      setContactType('patient');
+      setSelectedPatient(null);
+      setSelectedCompany(null);
+    }
     setQuoteDate(new Date());
     setExpiryDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
     setReference('');
-    setNotes('');
-    setLineItems([
-      {
-        id: '1',
-        description: '',
-        quantity: 1,
-        unit_amount: 0,
-        account_code: '200',
-        tax_type: 'OUTPUT2',
-      },
-    ]);
+    setTerms('');
+    setLineItems([{
+      id: '1',
+      description: '',
+      quantity: 1,
+      unit_amount: 0,
+      account_code: '200',
+      tax_type: 'EXEMPTOUTPUT',
+    }]);
     onClose();
   };
 
@@ -257,40 +263,45 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       closeOnClickOutside={false}
     >
       <Stack gap="md">
-        {/* Contact Selection */}
-        <Paper p="md" withBorder>
-          <Stack gap="sm">
-            <Text fw={600} size="sm">Primary Contact</Text>
-            <Radio.Group value={contactType} onChange={(value) => setContactType(value as 'patient' | 'company')}>
-              <Group>
-                <Radio value="patient" label="Patient" />
-                <Radio value="company" label="Company" />
-              </Group>
-            </Radio.Group>
+        {/* Primary Contact - only show if not pre-selected */}
+        {!isPreSelected && (
+          <Paper p="md" withBorder>
+            <Stack gap="sm">
+              <Text fw={600} size="sm">Primary Contact</Text>
+              <Radio.Group value={contactType} onChange={(value) => setContactType(value as 'patient' | 'company')}>
+                <Group>
+                  <Radio value="patient" label="Patient" />
+                  <Radio value="company" label="Company" />
+                </Group>
+              </Radio.Group>
 
-            {contactType === 'patient' ? (
-              <Select
-                label="Select Patient"
-                placeholder="Search patients..."
-                data={patients.map(p => ({ value: p.id, label: `${p.full_name} (${p.mrn})` }))}
-                value={selectedPatient}
-                onChange={setSelectedPatient}
-                searchable
-                required
-              />
-            ) : (
-              <Select
-                label="Select Company"
-                placeholder="Search companies..."
-                data={companies.map(c => ({ value: c.id, label: c.abn ? `${c.name} (${c.abn})` : c.name }))}
-                value={selectedCompany}
-                onChange={setSelectedCompany}
-                searchable
-                required
-              />
-            )}
-          </Stack>
-        </Paper>
+              {contactType === 'patient' ? (
+                <Select
+                  label="Select Patient"
+                  placeholder="Search patients..."
+                  data={patients.map(p => ({ 
+                    value: p.id, 
+                    label: p.mrn ? `${p.full_name} (${p.mrn})` : p.full_name 
+                  }))}
+                  value={selectedPatient}
+                  onChange={setSelectedPatient}
+                  searchable
+                  required
+                />
+              ) : (
+                <Select
+                  label="Select Company"
+                  placeholder="Search companies..."
+                  data={companies.map(c => ({ value: c.id, label: c.abn ? `${c.name} (${c.abn})` : c.name }))}
+                  value={selectedCompany}
+                  onChange={setSelectedCompany}
+                  searchable
+                  required
+                />
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         {/* Quote Details */}
         <Paper p="md" withBorder>
@@ -311,17 +322,10 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
               />
             </Group>
             <TextInput
-              label="Reference"
-              placeholder="Optional reference"
+              label="Reference (Optional)"
+              placeholder="Quote reference..."
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-            />
-            <Textarea
-              label="Notes"
-              placeholder="Optional notes for the quote"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
             />
           </Stack>
         </Paper>
@@ -440,9 +444,20 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
           </Stack>
         </Paper>
 
+        {/* Terms & Conditions */}
+        <Paper p="md" withBorder>
+          <Textarea
+            label="Terms & Conditions (Optional)"
+            placeholder="Quote terms and conditions..."
+            value={terms}
+            onChange={(e) => setTerms(e.target.value)}
+            rows={3}
+          />
+        </Paper>
+
         {/* Actions */}
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={handleClose} disabled={loading}>
+          <Button variant="subtle" onClick={handleClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} loading={loading} leftSection={<IconCheck size={16} />}>
@@ -453,4 +468,3 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
     </Modal>
   );
 }
-

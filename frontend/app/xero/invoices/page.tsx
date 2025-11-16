@@ -6,6 +6,7 @@ import { IconSearch, IconRefresh, IconCheck, IconX, IconFileInvoice, IconPlus, I
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
+import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
 import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
 import { QuickCreateModal } from '../../components/xero/QuickCreateModal';
@@ -55,6 +56,7 @@ export default function XeroInvoicesPage() {
   
   // Create invoice modal
   const [createModalOpened, setCreateModalOpened] = useState(false);
+  const [createQuoteOpened, setCreateQuoteOpened] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   
@@ -404,12 +406,10 @@ export default function XeroInvoicesPage() {
           setCreateModalOpened(true);
         }}
         onCreateQuote={(patientId, companyId) => {
-          // TODO: Create quote modal
-          notifications.show({
-            title: 'Coming Soon',
-            message: 'Quote creation will be available soon',
-            color: 'blue',
-          });
+          // Pre-fill create quote modal with selected patient/company
+          setPreSelectedPatientId(patientId);
+          setPreSelectedCompanyId(companyId);
+          setCreateQuoteOpened(true);
         }}
       />
       
@@ -424,6 +424,31 @@ export default function XeroInvoicesPage() {
         onSuccess={() => {
           fetchInvoices();
           setCreateModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
+        patients={patients}
+        companies={companies}
+        preSelectedPatientId={preSelectedPatientId}
+        preSelectedCompanyId={preSelectedCompanyId}
+      />
+      
+      {/* Create Quote Modal */}
+      <CreateQuoteModal
+        opened={createQuoteOpened}
+        onClose={() => {
+          setCreateQuoteOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
+        onSuccess={() => {
+          // TODO: Refresh quotes list when we have a quotes page
+          notifications.show({
+            title: 'Success',
+            message: 'Quote created successfully',
+            color: 'green',
+          });
+          setCreateQuoteOpened(false);
           setPreSelectedPatientId(undefined);
           setPreSelectedCompanyId(undefined);
         }}
