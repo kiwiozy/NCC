@@ -152,7 +152,7 @@ class InvoicePDFGenerator:
             pagesize=A4,
             rightMargin=2*cm,
             leftMargin=2*cm,
-            topMargin=2*cm,
+            topMargin=1*cm,  # Reduced from 2cm to move header closer to top
             bottomMargin=2*cm,
         )
         
