@@ -14,6 +14,10 @@ interface XeroQuoteLink {
     start_time: string;
     patient_name: string;
   } | null;
+  patient: string | null;
+  patient_name: string | null;
+  company: string | null;
+  company_name: string | null;
   xero_quote_id: string;
   xero_quote_number: string;
   status: string;
@@ -69,6 +73,8 @@ export default function XeroQuotesPage() {
     if (searchQuery) {
       filtered = filtered.filter(quote => 
         quote.xero_quote_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         quote.appointment_details?.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -252,10 +258,22 @@ export default function XeroQuotesPage() {
                         <Text fw={600}>{quote.xero_quote_number}</Text>
                       </Table.Td>
                       <Table.Td>
-                        {quote.appointment_details?.patient_name ? (
+                        {quote.patient_name && (
+                          <div>
+                            <Text size="sm">{quote.patient_name}</Text>
+                            {quote.company_name && (
+                              <Text size="xs" c="dimmed">via {quote.company_name}</Text>
+                            )}
+                          </div>
+                        )}
+                        {!quote.patient_name && quote.company_name && (
+                          <Text size="sm">{quote.company_name}</Text>
+                        )}
+                        {!quote.patient_name && !quote.company_name && quote.appointment_details?.patient_name && (
                           <Text size="sm">{quote.appointment_details.patient_name}</Text>
-                        ) : (
-                          <Text size="sm" c="dimmed">No contact info</Text>
+                        )}
+                        {!quote.patient_name && !quote.company_name && !quote.appointment_details?.patient_name && (
+                          <Text size="sm" c="dimmed">—</Text>
                         )}
                       </Table.Td>
                       <Table.Td>{getStatusBadge(quote.status)}</Table.Td>

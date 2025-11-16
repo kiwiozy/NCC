@@ -167,22 +167,26 @@ class XeroQuoteLinkSerializer(serializers.ModelSerializer):
     """
     Serializer for quote links
     Added Nov 2025: Support for Xero quotes (estimates)
+    Updated Nov 2025: Added patient/company names for standalone quotes
     """
     appointment_details = serializers.SerializerMethodField()
     converted_invoice_details = serializers.SerializerMethodField()
     can_convert = serializers.BooleanField(source='can_convert_to_invoice', read_only=True)
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True, allow_null=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     
     class Meta:
         model = XeroQuoteLink
         fields = [
             'id', 'appointment', 'appointment_details',
+            'patient', 'patient_name', 'company', 'company_name',
             'xero_quote_id', 'xero_quote_number', 'status',
             'total', 'subtotal', 'total_tax', 'currency',
             'quote_date', 'expiry_date',
             'converted_invoice', 'converted_invoice_details', 'converted_at', 'can_convert',
             'last_synced_at', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'company_name']
     
     def get_appointment_details(self, obj):
         if obj.appointment:

@@ -232,6 +232,7 @@ class XeroQuoteLink(models.Model):
     """
     Link local appointments to Xero Quotes
     Added Nov 2025: Support for quotes (estimates) before service delivery
+    Updated Nov 2025: Added patient/company FKs for standalone quotes
     """
     QUOTE_STATUS_CHOICES = [
         ('DRAFT', 'Draft'),
@@ -252,6 +253,24 @@ class XeroQuoteLink(models.Model):
         null=True,
         blank=True,
         help_text="Appointment this quote is for (if any)"
+    )
+    
+    # Direct patient/company links for standalone quotes
+    patient = models.ForeignKey(
+        'patients.Patient',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='xero_quotes',
+        help_text="Patient this quote is for (service recipient)"
+    )
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='xero_quotes',
+        help_text="Company this quote is billed to (optional)"
     )
     
     # Xero quote details
@@ -299,6 +318,8 @@ class XeroQuoteLink(models.Model):
             models.Index(fields=['xero_quote_id']),
             models.Index(fields=['status']),
             models.Index(fields=['appointment']),
+            models.Index(fields=['patient']),
+            models.Index(fields=['company']),
             models.Index(fields=['-created_at']),
         ]
         verbose_name = "Xero Quote Link"

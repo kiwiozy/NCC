@@ -1287,6 +1287,8 @@ class XeroService:
             # Create link record
             quote_link = XeroQuoteLink.objects.create(
                 appointment=appointment,
+                patient=patient,
+                company=company,
                 xero_quote_id=created_quote.quote_id,
                 xero_quote_number=created_quote.quote_number or '',
                 status=created_quote.status.value if hasattr(created_quote.status, 'value') else str(created_quote.status),
