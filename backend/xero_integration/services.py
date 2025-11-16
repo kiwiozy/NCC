@@ -60,23 +60,37 @@ class XeroService:
         # Get stored token
         token_dict = self._get_stored_token()
         if token_dict:
-            # Set OAuth2 token with a saver callback
-            # The saver callback is called when the token is refreshed
-            def token_saver(token):
+            # Create OAuth2Token object
+            oauth2_token = OAuth2Token(
+                client_id=self.client_id,
+                client_secret=self.client_secret
+            )
+            
+            # Set token data
+            oauth2_token.token = token_dict
+            
+            # Set the token on the API client
+            api_client.set_oauth2_token(oauth2_token)
+            
+            # Set up token refresh callback
+            def token_refresh_callback(token_data):
                 """Callback to save refreshed tokens"""
                 try:
                     connection = XeroConnection.objects.filter(is_active=True).first()
                     if connection:
-                        connection.access_token = token['access_token']
-                        connection.refresh_token = token['refresh_token']
-                        connection.expires_at = timezone.datetime.fromtimestamp(token['expires_at'], tz=timezone.get_current_timezone())
+                        connection.access_token = token_data['access_token']
+                        connection.refresh_token = token_data['refresh_token']
+                        connection.expires_at = timezone.datetime.fromtimestamp(
+                            token_data['expires_at'], 
+                            tz=timezone.get_current_timezone()
+                        )
                         connection.save()
                         print(f"✓ Token auto-saved for {connection.tenant_name}")
                 except Exception as e:
                     print(f"Error saving refreshed token: {e}")
             
-            # Set token with saver
-            api_client.set_oauth2_token(token_dict, token_saver)
+            # Set the callback on the OAuth2Token object
+            oauth2_token.token_saver = token_refresh_callback
         
         return api_client
     
