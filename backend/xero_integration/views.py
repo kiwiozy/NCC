@@ -261,8 +261,9 @@ class XeroContactLinkViewSet(viewsets.ModelViewSet):
 class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing invoice links
+    Updated Nov 2025: Support for standalone invoices without appointments
     """
-    queryset = XeroInvoiceLink.objects.all()
+    queryset = XeroInvoiceLink.objects.select_related('appointment', 'patient', 'company').all()
     serializer_class = XeroInvoiceLinkSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'appointment']
@@ -481,21 +482,17 @@ def create_xero_invoice(request):
                     'error': f'Appointment with id {appointment_id} not found'
                 }, status=404)
         
-        # For standalone invoices without appointment, we need patient and optionally company
-        # The Xero service will handle creating the invoice directly
-        if not appointment:
-            # We'll need to modify the approach - create invoice without appointment
-            # This requires updating XeroInvoiceLink model to make appointment optional
-            return JsonResponse({
-                'error': 'Standalone invoices (without appointments) not yet supported. Please link to an appointment.',
-                'detail': 'Coming soon: Direct invoice creation without appointments'
-            }, status=501)  # 501 Not Implemented
-        
-        # Create invoice via Xero service
+        # Create invoice via Xero service (now supports standalone invoices!)
         invoice_link = xero_service.create_invoice(
             appointment=appointment,
+            patient=patient,
+            company=company,
+            contact_type=contact_type,
             line_items=line_items,
-            tracking_category=None
+            tracking_category=None,
+            billing_notes=request.data.get('billing_notes', ''),
+            invoice_date=request.data.get('invoice_date'),
+            due_date=request.data.get('due_date')
         )
         
         return JsonResponse({

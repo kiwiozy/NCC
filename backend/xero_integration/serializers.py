@@ -61,19 +61,25 @@ class XeroContactLinkSerializer(serializers.ModelSerializer):
 
 
 class XeroInvoiceLinkSerializer(serializers.ModelSerializer):
-    """Serializer for invoice links"""
+    """
+    Serializer for invoice links
+    Updated Nov 2025: Support for standalone invoices without appointments
+    """
     appointment_details = serializers.SerializerMethodField()
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True, allow_null=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     
     class Meta:
         model = XeroInvoiceLink
         fields = [
             'id', 'appointment', 'appointment_details',
+            'patient', 'patient_name', 'company', 'company_name',
             'xero_invoice_id', 'xero_invoice_number', 'xero_invoice_type',
-            'status', 'total', 'amount_due', 'amount_paid', 'currency',
+            'status', 'total', 'subtotal', 'total_tax', 'amount_due', 'amount_paid', 'currency',
             'invoice_date', 'due_date', 'fully_paid_on_date',
             'last_synced_at', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'company_name']
     
     def get_appointment_details(self, obj):
         if obj.appointment:

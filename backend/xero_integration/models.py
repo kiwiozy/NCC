@@ -146,6 +146,7 @@ class XeroContactLink(models.Model):
 class XeroInvoiceLink(models.Model):
     """
     Link local appointments/orders to Xero Invoices
+    Updated Nov 2025: Support for standalone invoices without appointments
     """
     INVOICE_STATUS_CHOICES = [
         ('DRAFT', 'Draft'),
@@ -158,15 +159,34 @@ class XeroInvoiceLink(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    # Link to local entities (nullable - could be appointment, order, or manual invoice)
+    # Link to local entities (all optional - standalone invoices supported)
     appointment = models.ForeignKey(
         'appointments.Appointment',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='xero_invoices'
+        related_name='xero_invoices',
+        help_text="Optional: Link to appointment if invoice is for a service"
     )
-    # order_id could link to future Order model
+    
+    # Direct patient/company links (for standalone invoices)
+    patient = models.ForeignKey(
+        'patients.Patient',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='xero_invoices',
+        help_text="Patient this invoice is for (required if no appointment)"
+    )
+    
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='xero_invoices',
+        help_text="Company this invoice is billed to (optional)"
+    )
     
     # Xero invoice details
     xero_invoice_id = models.CharField(max_length=255, unique=True, help_text="Xero Invoice GUID")
@@ -200,6 +220,8 @@ class XeroInvoiceLink(models.Model):
             models.Index(fields=['xero_invoice_id']),
             models.Index(fields=['status']),
             models.Index(fields=['appointment']),
+            models.Index(fields=['patient']),
+            models.Index(fields=['company']),
         ]
     
     def __str__(self):

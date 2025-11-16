@@ -677,13 +677,30 @@ class XeroService:
     
     def create_invoice(
         self,
-        appointment,
-        line_items: List[Dict[str, Any]],
-        tracking_category: Optional[Dict[str, str]] = None
+        appointment=None,
+        patient=None,
+        company=None,
+        contact_type='patient',
+        line_items: List[Dict[str, Any]] = None,
+        tracking_category: Optional[Dict[str, str]] = None,
+        billing_notes: str = '',
+        invoice_date=None,
+        due_date=None
     ) -> XeroInvoiceLink:
         """
-        Create a draft invoice in Xero for an appointment
-        Updated Nov 2025: Supports flexible contact selection (patient or company)
+        Create a draft invoice in Xero
+        Updated Nov 2025: Supports standalone invoices without appointments
+        
+        Args:
+            appointment: Optional appointment link
+            patient: Required if no appointment (direct patient invoice)
+            company: Optional company for billing
+            contact_type: 'patient' or 'company' (who is primary contact)
+            line_items: List of line item dicts
+            tracking_category: Optional tracking category
+            billing_notes: Notes to appear on invoice
+            invoice_date: Optional invoice date (default: today)
+            due_date: Optional due date (default: 14 days from now)
         
         line_items format:
         [
@@ -705,43 +722,52 @@ class XeroService:
             connection = XeroConnection.objects.filter(is_active=True).first()
             accounting_api = AccountingApi(api_client)
             
+            # Determine patient and company from appointment or direct parameters
+            if appointment:
+                patient = appointment.patient
+                company = appointment.billing_company if hasattr(appointment, 'billing_company') else company
+                contact_type = appointment.invoice_contact_type if hasattr(appointment, 'invoice_contact_type') else contact_type
+                billing_notes = appointment.billing_notes if hasattr(appointment, 'billing_notes') else billing_notes
+            elif not patient:
+                raise ValueError("Either appointment or patient must be provided")
+            
             # ═══════════════════════════════════════════════════════════════════
             # DYNAMIC CONTACT SELECTION (Patient or Company)
             # ═══════════════════════════════════════════════════════════════════
             
-            if appointment.invoice_contact_type == 'company' and appointment.billing_company:
+            if contact_type == 'company' and company:
                 # COMPANY AS PRIMARY CONTACT
-                primary_contact_link = self.sync_company_contact(appointment.billing_company)
+                primary_contact_link = self.sync_company_contact(company)
                 
                 # Patient details go in reference
-                reference = f"Service for: {appointment.patient.full_name}"
-                reference += f"\nMRN: {appointment.patient.mrn}"
-                if appointment.patient.dob:
-                    reference += f"\nDOB: {appointment.patient.dob.strftime('%d/%m/%Y')}"
+                reference = f"Service for: {patient.full_name}"
+                reference += f"\nMRN: {patient.mrn}"
+                if patient.dob:
+                    reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
                 
                 # Add patient name to line item descriptions
                 enhanced_line_items = []
                 for item in line_items:
                     item_copy = item.copy()
-                    item_copy['description'] = f"{item['description']} (Patient: {appointment.patient.full_name})"
+                    item_copy['description'] = f"{item['description']} (Patient: {patient.full_name})"
                     enhanced_line_items.append(item_copy)
                 line_items = enhanced_line_items
                 
             else:
                 # PATIENT AS PRIMARY CONTACT (default)
-                primary_contact_link = self.sync_contact(appointment.patient)
+                primary_contact_link = self.sync_contact(patient)
                 
                 # Company details go in reference (if applicable)
-                if appointment.billing_company:
-                    reference = f"Bill to: {appointment.billing_company.name}"
-                    if hasattr(appointment.billing_company, 'abn') and appointment.billing_company.abn:
-                        reference += f"\nABN: {appointment.billing_company.abn}"
+                if company:
+                    reference = f"Bill to: {company.name}"
+                    if hasattr(company, 'abn') and company.abn:
+                        reference += f"\nABN: {company.abn}"
                 else:
-                    reference = f"Appointment {appointment.id}"
+                    reference = f"Invoice for {patient.full_name}"
             
             # Add billing notes to reference
-            if appointment.billing_notes:
-                reference += f"\n{appointment.billing_notes}"
+            if billing_notes:
+                reference += f"\n{billing_notes}"
             
             # Build line items
             xero_line_items = []
@@ -760,13 +786,21 @@ class XeroService:
                 xero_line_items.append(line_item)
             
             # Build invoice
+            from datetime import timedelta
             from xero_python.accounting import Contact as XeroContact
+            
+            # Determine invoice date and due date
+            if invoice_date is None:
+                invoice_date = timezone.now().date()
+            if due_date is None:
+                due_date = invoice_date + timedelta(days=14)
+            
             invoice = Invoice(
                 type='ACCREC',  # Accounts Receivable
                 contact=XeroContact(contact_id=primary_contact_link.xero_contact_id),
                 line_items=xero_line_items,
-                date=appointment.start_time.date() if appointment.start_time else timezone.now().date(),
-                due_date=None,  # Will use default payment terms
+                date=invoice_date,
+                due_date=due_date,
                 reference=reference,
                 status='DRAFT',
                 currency_code='AUD'
@@ -791,9 +825,11 @@ class XeroService:
             
             xero_invoice = response.invoices[0]
             
-            # Create link
+            # Create link with patient and company
             link = XeroInvoiceLink.objects.create(
                 appointment=appointment,
+                patient=patient,
+                company=company,
                 xero_invoice_id=xero_invoice.invoice_id,
                 xero_invoice_number=xero_invoice.invoice_number or '',
                 status=xero_invoice.status,
@@ -808,25 +844,29 @@ class XeroService:
             )
             
             # Log success
+            entity_type = 'appointment' if appointment else 'patient'
+            entity_id = appointment.id if appointment else patient.id
             XeroSyncLog.objects.create(
                 operation_type='invoice_create',
                 status='success',
-                local_entity_type='appointment',
-                local_entity_id=appointment.id,
+                local_entity_type=entity_type,
+                local_entity_id=entity_id,
                 xero_entity_id=xero_invoice.invoice_id,
                 duration_ms=int((time.time() - start_time) * 1000),
-                request_data={'line_items': line_items, 'contact_type': appointment.invoice_contact_type}
+                request_data={'line_items': line_items, 'contact_type': contact_type}
             )
             
             return link
             
         except AccountingBadRequestException as e:
             # Log validation error
+            entity_type = 'appointment' if appointment else 'patient'
+            entity_id = appointment.id if appointment else (patient.id if patient else None)
             XeroSyncLog.objects.create(
                 operation_type='invoice_create',
                 status='failed',
-                local_entity_type='appointment',
-                local_entity_id=appointment.id,
+                local_entity_type=entity_type,
+                local_entity_id=entity_id,
                 error_message=f"Validation error: {e.reason}",
                 duration_ms=int((time.time() - start_time) * 1000),
                 request_data={'line_items': line_items}
@@ -835,11 +875,13 @@ class XeroService:
             
         except Exception as e:
             # Log general error
+            entity_type = 'appointment' if appointment else 'patient'
+            entity_id = appointment.id if appointment else (patient.id if patient else None)
             XeroSyncLog.objects.create(
                 operation_type='invoice_create',
                 status='failed',
-                local_entity_type='appointment',
-                local_entity_id=appointment.id,
+                local_entity_type=entity_type,
+                local_entity_id=entity_id,
                 error_message=str(e),
                 duration_ms=int((time.time() - start_time) * 1000)
             )
