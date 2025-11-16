@@ -28,8 +28,8 @@ urlpatterns = [
     path('tenants/switch/', views.xero_switch_tenant, name='switch-tenant'),
     
     # Invoice/Quote creation endpoints (Added Nov 2025)
-    path('create-invoice/', views.create_xero_invoice, name='create-invoice'),
-    path('create-quote/', views.create_xero_quote, name='create-quote'),
+    path('invoice/create/', views.create_xero_invoice, name='create-invoice'),
+    path('quote/create/', views.create_xero_quote, name='create-quote'),
     
     # API endpoints
     path('', include(router.urls)),

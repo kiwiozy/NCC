@@ -71,8 +71,10 @@ urlpatterns = [
     path('', auth_views.login_redirect, name='login-redirect'),
     # Allauth URLs (for Google OAuth)
     path('accounts/', include('allauth.urls')),
-    # Project URLs
+    # Xero URLs (OAuth, tenant management, invoice/quote creation)
     path('xero/', include('xero_integration.urls')),
+    # Xero API endpoints for invoice/quote creation (accessible at /api/xero/)
+    path('api/xero/', include('xero_integration.urls')),
     path('api/sms/', include('sms_integration.urls')),
     path('gmail/', include('gmail_integration.urls')),
     path('api/', include('documents.urls')),  # S3 document management
