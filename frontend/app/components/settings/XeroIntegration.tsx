@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs, ScrollArea } from '@mantine/core';
-import { IconAlertCircle, IconCheck, IconRefresh, IconPlugConnected, IconX, IconFileInvoice, IconUsers, IconClipboardList } from '@tabler/icons-react';
+import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs, ScrollArea, Select } from '@mantine/core';
+import { IconAlertCircle, IconCheck, IconRefresh, IconPlugConnected, IconX, IconFileInvoice, IconUsers, IconClipboardList, IconSwitchHorizontal } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { formatDateTimeAU } from '../../utils/dateFormatting';
 
@@ -32,12 +32,22 @@ interface SyncLog {
   error_message?: string;
 }
 
+interface XeroTenant {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_type: string;
+  is_current: boolean;
+}
+
 export default function XeroIntegration() {
   const [status, setStatus] = useState<ConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [availableTenants, setAvailableTenants] = useState<XeroTenant[]>([]);
+  const [tenantsLoading, setTenantsLoading] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   const handleAutoRefreshToken = async () => {
     // Silent auto-refresh - don't show notification unless it fails
@@ -73,6 +83,13 @@ export default function XeroIntegration() {
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  // Fetch available tenants when connected
+  useEffect(() => {
+    if (status?.connected) {
+      fetchAvailableTenants();
+    }
+  }, [status?.connected]);
 
   // Auto-refresh token if expired or about to expire (check every minute)
   useEffect(() => {
@@ -208,6 +225,64 @@ export default function XeroIntegration() {
     }
   };
 
+  const fetchAvailableTenants = async () => {
+    setTenantsLoading(true);
+    try {
+      const response = await fetch('https://localhost:8000/xero/tenants/available/');
+      if (!response.ok) throw new Error('Failed to fetch tenants');
+      
+      const data = await response.json();
+      setAvailableTenants(data.tenants || []);
+    } catch (error) {
+      console.error('Error fetching available tenants:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to fetch available organizations',
+        color: 'red',
+      });
+    } finally {
+      setTenantsLoading(false);
+    }
+  };
+
+  const handleSwitchTenant = async (tenantId: string) => {
+    const tenant = availableTenants.find(t => t.tenant_id === tenantId);
+    if (!tenant) return;
+    
+    if (!confirm(`Switch to ${tenant.tenant_name}?`)) return;
+    
+    setSwitching(true);
+    try {
+      const response = await fetch('https://localhost:8000/xero/tenants/switch/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenantId }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to switch tenant');
+      
+      notifications.show({
+        title: 'Organization Switched',
+        message: `Now connected to ${tenant.tenant_name}`,
+        color: 'green',
+        icon: <IconCheck />,
+      });
+      
+      // Refresh status and tenants
+      await fetchStatus();
+      await fetchAvailableTenants();
+    } catch (error) {
+      notifications.show({
+        title: 'Switch Failed',
+        message: 'Failed to switch organization',
+        color: 'red',
+        icon: <IconX />,
+      });
+    } finally {
+      setSwitching(false);
+    }
+  };
+
   if (loading) {
     return (
       <Center h={400}>
@@ -285,6 +360,39 @@ export default function XeroIntegration() {
               <Text fw={500} size="sm" w={150}>Organisation:</Text>
               <Text size="sm">{status.connection?.tenant_name}</Text>
             </Group>
+
+            {/* Organization Switcher */}
+            {availableTenants.length > 1 && (
+              <Group align="flex-start">
+                <Text fw={500} size="sm" w={150}>Switch Organisation:</Text>
+                <Box style={{ flex: 1 }}>
+                  <Select
+                    placeholder="Select organization"
+                    data={availableTenants.map(tenant => ({
+                      value: tenant.tenant_id,
+                      label: tenant.tenant_name + (tenant.is_current ? ' (Current)' : ''),
+                      disabled: tenant.is_current,
+                    }))}
+                    value={status.connection?.tenant_id}
+                    onChange={(value) => value && handleSwitchTenant(value)}
+                    disabled={switching || tenantsLoading}
+                    leftSection={<IconSwitchHorizontal size={16} />}
+                    renderOption={({ option }) => (
+                      <Group gap="xs">
+                        <Text size="sm">{option.label}</Text>
+                        {option.label.includes('Demo') && (
+                          <Badge size="sm" color="blue" variant="light">Testing</Badge>
+                        )}
+                      </Group>
+                    )}
+                  />
+                  <Text size="xs" c="dimmed" mt="xs">
+                    Switch between your Xero organizations (e.g., production and Demo Company for testing)
+                  </Text>
+                </Box>
+              </Group>
+            )}
+
             <Group>
               <Text fw={500} size="sm" w={150}>Tenant ID:</Text>
               <Code size="sm">{status.connection?.tenant_id}</Code>
