@@ -136,7 +136,7 @@ cd /Users/craig/Documents/nexus-core-clinic/frontend
 # Create production environment file
 cat > .env.production << EOF
 NEXT_PUBLIC_API_URL=https://nexus-production-backend-892000689828.australia-southeast1.run.app
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyAbvJRf7cMD-BhpzmMFZ2HfoqSPhMBd668
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
 EOF
 
 # Build and deploy
