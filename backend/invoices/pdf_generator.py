@@ -9,7 +9,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm, mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, KeepTogether, PageBreak
 from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from django.conf import settings
@@ -188,18 +188,28 @@ class InvoicePDFGenerator:
         totals_elements = self._build_totals_section()
         for elem in totals_elements:
             story.append(self._debug_box(elem, "Totals"))
-        story.append(Spacer(1, 0.5*cm))
+        
+        # Add flexible spacer to push footer to bottom
+        # Calculate approximate height: A4 height (29.7cm) - top margin (0.5cm) - bottom margin (2cm) = 27.2cm usable
+        # We want to fill remaining space to push footer to bottom
+        story.append(Spacer(1, 1*cm, isGlue=True))  # Flexible spacer that grows
+        
+        # Add payment terms and footer - keep them together at bottom
+        footer_content = []
         
         # Add payment terms
         terms_elements = self._build_payment_terms()
         for elem in terms_elements:
-            story.append(self._debug_box(elem, "Payment Terms"))
-        story.append(Spacer(1, 0.3*cm))
+            footer_content.append(self._debug_box(elem, "Payment Terms"))
+        footer_content.append(Spacer(1, 0.3*cm))
         
         # Add footer
         footer_elements = self._build_footer()
         for elem in footer_elements:
-            story.append(self._debug_box(elem, "Footer"))
+            footer_content.append(self._debug_box(elem, "Footer"))
+        
+        # Keep footer elements together at bottom
+        story.append(KeepTogether(footer_content))
         
         # Build PDF
         doc.build(story)
