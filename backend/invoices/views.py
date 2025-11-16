@@ -159,22 +159,36 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 patient_info['state'] = addr.get('state', '')
                 patient_info['postcode'] = addr.get('postcode', '')
         
-        # Parse line items from xero_line_items JSON
+        # Parse line items - fetch from Xero API since they're not stored in DB
         line_items = []
-        if invoice_link.xero_line_items:
-            for item in invoice_link.xero_line_items:
-                gst_rate = 0.0
-                if item.get('tax_type') == 'OUTPUT':
-                    gst_rate = 0.10  # 10% GST
-                
-                line_items.append({
-                    'description': item.get('description', ''),
-                    'quantity': int(item.get('quantity', 1)),
-                    'unit_price': float(item.get('unit_amount', 0)),
-                    'gst_rate': gst_rate,
-                })
         
-        # If no line items, add a placeholder
+        # Try to fetch full invoice details from Xero
+        try:
+            from xero_integration.services import XeroService
+            from xero_integration.models import XeroConnection
+            
+            # Get active Xero connection
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            if connection:
+                xero_service = XeroService(connection)
+                xero_invoice = xero_service.get_invoice(invoice_link.xero_invoice_id)
+                
+                if xero_invoice and xero_invoice.line_items:
+                    for item in xero_invoice.line_items:
+                        gst_rate = 0.0
+                        if item.tax_type == 'OUTPUT':
+                            gst_rate = 0.10  # 10% GST
+                        
+                        line_items.append({
+                            'description': item.description or '',
+                            'quantity': int(item.quantity or 1),
+                            'unit_price': float(item.unit_amount or 0),
+                            'gst_rate': gst_rate,
+                        })
+        except Exception as e:
+            logger.warning(f"Could not fetch line items from Xero: {e}")
+        
+        # If no line items from Xero, add a placeholder
         if not line_items:
             line_items.append({
                 'description': 'Invoice item',
