@@ -28,16 +28,36 @@ class XeroConnectionSerializer(serializers.ModelSerializer):
 
 
 class XeroContactLinkSerializer(serializers.ModelSerializer):
-    """Serializer for contact links"""
+    """
+    Serializer for contact links
+    Updated Nov 2025: Support for patient AND company contacts
+    """
+    entity_type = serializers.SerializerMethodField()
+    entity_name = serializers.SerializerMethodField()
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True, allow_null=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     
     class Meta:
         model = XeroContactLink
         fields = [
-            'id', 'local_type', 'local_id', 'xero_contact_id',
-            'xero_contact_number', 'xero_contact_name', 'is_active',
-            'last_synced_at', 'created_at', 'updated_at'
+            'id', 'patient', 'company', 'patient_name', 'company_name',
+            'entity_type', 'entity_name',
+            'xero_contact_id', 'xero_contact_number', 'xero_contact_name',
+            'is_active', 'last_synced_at', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'company_name', 'entity_type', 'entity_name']
+    
+    def get_entity_type(self, obj):
+        """Get entity type (Patient or Company)"""
+        if obj.patient:
+            return 'Patient'
+        elif obj.company:
+            return 'Company'
+        return 'Unknown'
+    
+    def get_entity_name(self, obj):
+        """Get entity name"""
+        return obj.get_entity_name()
 
 
 class XeroInvoiceLinkSerializer(serializers.ModelSerializer):

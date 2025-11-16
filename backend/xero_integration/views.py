@@ -222,11 +222,12 @@ class XeroConnectionViewSet(viewsets.ReadOnlyModelViewSet):
 class XeroContactLinkViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing contact links
+    Updated Nov 2025: Support for patient AND company contacts
     """
-    queryset = XeroContactLink.objects.all()
+    queryset = XeroContactLink.objects.select_related('patient', 'company', 'connection').all()
     serializer_class = XeroContactLinkSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['local_type', 'local_id', 'is_active']
+    filterset_fields = ['is_active', 'patient', 'company']
     
     @action(detail=False, methods=['post'])
     def sync_patient(self, request):
