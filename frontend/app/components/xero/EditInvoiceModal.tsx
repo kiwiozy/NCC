@@ -196,7 +196,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
       opened={opened}
       onClose={onClose}
       title={<Text fw={600}>Edit Invoice</Text>}
-      size="xl"
+      size="1480px"
     >
       {loading ? (
         <Center p="xl">

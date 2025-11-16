@@ -88,7 +88,7 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit }: Invoi
           )}
         </Group>
       }
-      size="lg"
+      size="1480px"
     >
       {loading ? (
         <Center p="xl">
