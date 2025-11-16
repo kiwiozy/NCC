@@ -308,18 +308,22 @@ class XeroService:
         start_time = time.time()
         
         try:
+            # Get connection
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
             # Check if contact already exists
             existing_link = XeroContactLink.objects.filter(
-                local_type='patient',
-                local_id=patient.id
+                patient=patient,
+                connection=connection
             ).first()
             
             if existing_link and not force_update:
                 return existing_link
             
-            # Get API client and connection
+            # Get API client
             api_client = self.get_api_client()
-            connection = XeroConnection.objects.filter(is_active=True).first()
             accounting_api = AccountingApi(api_client)
             
             # Build contact object
@@ -364,8 +368,8 @@ class XeroService:
             
             # Create or update link
             link, created = XeroContactLink.objects.update_or_create(
-                local_type='patient',
-                local_id=patient.id,
+                patient=patient,
+                connection=connection,
                 defaults={
                     'xero_contact_id': xero_contact.contact_id,
                     'xero_contact_number': xero_contact.contact_number or '',
@@ -399,6 +403,142 @@ class XeroService:
             )
             raise
     
+    def sync_company_contact(self, company, force_update: bool = False) -> XeroContactLink:
+        """
+        Create or update a Xero contact for a company
+        Added Nov 2025: Support for companies as invoice contacts
+        """
+        start_time = time.time()
+        
+        try:
+            # Get connection
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
+            # Check if contact already exists
+            existing_link = XeroContactLink.objects.filter(
+                company=company,
+                connection=connection
+            ).first()
+            
+            if existing_link and not force_update:
+                return existing_link
+            
+            # Get API client
+            api_client = self.get_api_client()
+            accounting_api = AccountingApi(api_client)
+            
+            # Build contact object
+            contact = Contact(
+                name=company.name,
+                tax_number=company.abn if hasattr(company, 'abn') and company.abn else None,
+                is_customer=True,
+                contact_number=str(company.id)[:12],  # Use company ID as reference
+            )
+            
+            # Add phones/emails from contact_json
+            if company.contact_json:
+                from xero_python.accounting import Phone
+                phones = []
+                emails = []
+                
+                # Extract phones
+                for phone_item in company.contact_json.get('phones', []):
+                    phone_type = phone_item.get('type', '').upper()
+                    if phone_type == 'MOBILE':
+                        phone_type = 'MOBILE'
+                    elif phone_type == 'FAX':
+                        phone_type = 'FAX'
+                    else:
+                        phone_type = 'DEFAULT'
+                    
+                    phones.append(Phone(
+                        phone_type=phone_type,
+                        phone_number=phone_item.get('number', '')
+                    ))
+                
+                # Extract emails
+                for email_item in company.contact_json.get('emails', []):
+                    email_addr = email_item.get('address', '').strip()
+                    if email_addr:
+                        emails.append(email_addr)
+                
+                if phones:
+                    contact.phones = phones
+                if emails:
+                    contact.email_address = emails[0]  # Primary email
+            
+            # Add address from address_json
+            if company.address_json:
+                from xero_python.accounting import Address
+                addr = company.address_json
+                contact.addresses = [Address(
+                    address_type='STREET',
+                    address_line1=addr.get('street', ''),
+                    city=addr.get('suburb', ''),
+                    region=addr.get('state', ''),
+                    postal_code=addr.get('postcode', ''),
+                    country='Australia'
+                )]
+            
+            # Create or update contact
+            contacts = Contacts(contacts=[contact])
+            
+            if existing_link:
+                # Update existing contact
+                contact.contact_id = existing_link.xero_contact_id
+                response = accounting_api.update_contact(
+                    xero_tenant_id=connection.tenant_id,
+                    contact_id=existing_link.xero_contact_id,
+                    contacts=contacts
+                )
+            else:
+                # Create new contact
+                response = accounting_api.create_contacts(
+                    xero_tenant_id=connection.tenant_id,
+                    contacts=contacts
+                )
+            
+            xero_contact = response.contacts[0]
+            
+            # Create or update link
+            link, created = XeroContactLink.objects.update_or_create(
+                company=company,
+                connection=connection,
+                defaults={
+                    'xero_contact_id': xero_contact.contact_id,
+                    'xero_contact_number': xero_contact.contact_number or '',
+                    'xero_contact_name': xero_contact.name,
+                    'is_active': True,
+                    'last_synced_at': timezone.now()
+                }
+            )
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='contact_create' if created else 'contact_update',
+                status='success',
+                local_entity_type='company',
+                local_entity_id=company.id,
+                xero_entity_id=xero_contact.contact_id,
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            
+            return link
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='contact_sync',
+                status='failed',
+                local_entity_type='company',
+                local_entity_id=company.id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
     def create_invoice(
         self,
         appointment,
@@ -407,6 +547,7 @@ class XeroService:
     ) -> XeroInvoiceLink:
         """
         Create a draft invoice in Xero for an appointment
+        Updated Nov 2025: Supports flexible contact selection (patient or company)
         
         line_items format:
         [
@@ -428,8 +569,43 @@ class XeroService:
             connection = XeroConnection.objects.filter(is_active=True).first()
             accounting_api = AccountingApi(api_client)
             
-            # Ensure patient has a Xero contact
-            contact_link = self.sync_contact(appointment.patient)
+            # ═══════════════════════════════════════════════════════════════════
+            # DYNAMIC CONTACT SELECTION (Patient or Company)
+            # ═══════════════════════════════════════════════════════════════════
+            
+            if appointment.invoice_contact_type == 'company' and appointment.billing_company:
+                # COMPANY AS PRIMARY CONTACT
+                primary_contact_link = self.sync_company_contact(appointment.billing_company)
+                
+                # Patient details go in reference
+                reference = f"Service for: {appointment.patient.full_name}"
+                reference += f"\nMRN: {appointment.patient.mrn}"
+                if appointment.patient.dob:
+                    reference += f"\nDOB: {appointment.patient.dob.strftime('%d/%m/%Y')}"
+                
+                # Add patient name to line item descriptions
+                enhanced_line_items = []
+                for item in line_items:
+                    item_copy = item.copy()
+                    item_copy['description'] = f"{item['description']} (Patient: {appointment.patient.full_name})"
+                    enhanced_line_items.append(item_copy)
+                line_items = enhanced_line_items
+                
+            else:
+                # PATIENT AS PRIMARY CONTACT (default)
+                primary_contact_link = self.sync_contact(appointment.patient)
+                
+                # Company details go in reference (if applicable)
+                if appointment.billing_company:
+                    reference = f"Bill to: {appointment.billing_company.name}"
+                    if hasattr(appointment.billing_company, 'abn') and appointment.billing_company.abn:
+                        reference += f"\nABN: {appointment.billing_company.abn}"
+                else:
+                    reference = f"Appointment {appointment.id}"
+            
+            # Add billing notes to reference
+            if appointment.billing_notes:
+                reference += f"\n{appointment.billing_notes}"
             
             # Build line items
             xero_line_items = []
@@ -451,11 +627,11 @@ class XeroService:
             from xero_python.accounting import Contact as XeroContact
             invoice = Invoice(
                 type='ACCREC',  # Accounts Receivable
-                contact=XeroContact(contact_id=contact_link.xero_contact_id),
+                contact=XeroContact(contact_id=primary_contact_link.xero_contact_id),
                 line_items=xero_line_items,
                 date=appointment.start_time.date() if appointment.start_time else timezone.now().date(),
                 due_date=None,  # Will use default payment terms
-                reference=f"Appointment {appointment.id}",
+                reference=reference,
                 status='DRAFT',
                 currency_code='AUD'
             )
@@ -486,6 +662,8 @@ class XeroService:
                 xero_invoice_number=xero_invoice.invoice_number or '',
                 status=xero_invoice.status,
                 total=float(xero_invoice.total) if xero_invoice.total else 0,
+                subtotal=float(xero_invoice.sub_total) if xero_invoice.sub_total else 0,
+                total_tax=float(xero_invoice.total_tax) if xero_invoice.total_tax else 0,
                 amount_due=float(xero_invoice.amount_due) if xero_invoice.amount_due else 0,
                 amount_paid=float(xero_invoice.amount_paid) if xero_invoice.amount_paid else 0,
                 invoice_date=xero_invoice.date,
@@ -501,7 +679,7 @@ class XeroService:
                 local_entity_id=appointment.id,
                 xero_entity_id=xero_invoice.invoice_id,
                 duration_ms=int((time.time() - start_time) * 1000),
-                request_data={'line_items': line_items}
+                request_data={'line_items': line_items, 'contact_type': appointment.invoice_contact_type}
             )
             
             return link
