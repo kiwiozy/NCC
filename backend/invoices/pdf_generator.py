@@ -102,10 +102,10 @@ class InvoicePDFGenerator:
         self.styles.add(ParagraphStyle(
             name='RightInfo',
             parent=self.styles['Normal'],
-            fontSize=9,  # Reduced from 10pt for more compact look
+            fontSize=8,  # Much smaller for compact reference section
             textColor=colors.black,
             alignment=TA_RIGHT,
-            leading=12,  # Reduced leading to match smaller font
+            leading=10,  # Tighter line spacing
             fontName='Helvetica-Bold',
         ))
         
