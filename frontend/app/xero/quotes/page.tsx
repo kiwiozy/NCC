@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem } from '@mantine/core';
 import { IconSearch, IconRefresh, IconCheck, IconX, IconFileText, IconPlus, IconClock, IconCurrencyDollar, IconEye } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -33,18 +33,52 @@ interface XeroQuoteLink {
 
 export default function XeroQuotesPage() {
   const [quotes, setQuotes] = useState<XeroQuoteLink[]>([]);
-  const [filteredQuotes, setFilteredQuotes] = useState<XeroQuoteLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
 
+  // Helper function to normalize status (handle legacy "QuoteStatusCodes.DRAFT" format)
+  const normalizeStatus = (status: string): string => {
+    if (status.startsWith('QuoteStatusCodes.')) {
+      return status.replace('QuoteStatusCodes.', '');
+    }
+    return status;
+  };
+
+  // Compute filtered quotes using useMemo for better performance
+  const filteredQuotes = useMemo(() => {
+    console.log('🔍 Filtering quotes...');
+    console.log('📋 Total quotes:', quotes.length);
+    console.log('🔎 Search query:', searchQuery);
+    console.log('🏷️ Status filter:', statusFilter);
+    
+    let filtered = [...quotes];
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(quote => 
+        quote.xero_quote_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        quote.appointment_details?.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      console.log('📋 After search filter:', filtered.length);
+    }
+
+    // Filter by status
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(quote => normalizeStatus(quote.status) === statusFilter);
+      console.log('📋 After status filter:', filtered.length);
+    }
+
+    console.log('✅ Final filtered quotes:', filtered.length);
+    console.log('📊 Filtered quotes data:', filtered);
+    return filtered;
+  }, [quotes, searchQuery, statusFilter]);
+
   useEffect(() => {
     fetchQuotes();
   }, []);
-
-  useEffect(() => {
-    filterQuotes();
-  }, [quotes, searchQuery, statusFilter]);
 
   const fetchQuotes = async () => {
     console.log('📥 Fetching quotes from API...');
@@ -77,44 +111,6 @@ export default function XeroQuotesPage() {
       setLoading(false);
       console.log('🏁 Fetch complete, loading:', false);
     }
-  };
-
-  const normalizeStatus = (status: string): string => {
-    // Handle old quotes that have "QuoteStatusCodes.DRAFT" format
-    if (status && status.includes('QuoteStatusCodes.')) {
-      return status.replace('QuoteStatusCodes.', '');
-    }
-    return status;
-  };
-
-  const filterQuotes = () => {
-    console.log('🔍 Filtering quotes...');
-    console.log('📋 Total quotes:', quotes.length);
-    console.log('🔎 Search query:', searchQuery);
-    console.log('🏷️ Status filter:', statusFilter);
-    
-    let filtered = [...quotes];
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(quote => 
-        quote.xero_quote_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quote.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quote.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        quote.appointment_details?.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      console.log('📋 After search filter:', filtered.length);
-    }
-
-    // Filter by status
-    if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(quote => normalizeStatus(quote.status) === statusFilter);
-      console.log('📋 After status filter:', filtered.length);
-    }
-
-    console.log('✅ Final filtered quotes:', filtered.length);
-    console.log('📊 Filtered quotes data:', filtered);
-    setFilteredQuotes(filtered);
   };
 
   const getStatusBadge = (status: string) => {
