@@ -1,7 +1,7 @@
 'use client';
 
-import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-react';
+import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center, Alert } from '@mantine/core';
+import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconFileInvoice } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
@@ -50,6 +50,7 @@ const normalizeStatus = (status: string): string => {
 export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }: QuoteDetailModalProps) {
   const [quote, setQuote] = useState<QuoteDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     if (opened && quoteId) {
@@ -99,6 +100,49 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
       onDelete();
       onClose();
     }
+  };
+
+  const handleConvertToInvoice = async () => {
+    if (!quote) return;
+    
+    setConverting(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || error.error || 'Failed to convert quote');
+      }
+      
+      const data = await response.json();
+      
+      notifications.show({
+        title: 'Success',
+        message: `Quote converted to invoice ${data.invoice.xero_invoice_number}`,
+        color: 'green',
+      });
+      
+      // Refresh quote details to show updated status
+      await fetchQuoteDetails();
+      
+    } catch (error: any) {
+      console.error('Error converting quote:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to convert quote to invoice',
+        color: 'red',
+      });
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  const canConvertToInvoice = () => {
+    if (!quote) return false;
+    const status = normalizeStatus(quote.status);
+    return (status === 'SENT' || status === 'ACCEPTED') && status !== 'INVOICED';
   };
 
   if (loading || !quote) {
@@ -249,6 +293,16 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
             >
               Refresh
             </Button>
+            {canConvertToInvoice() && (
+              <Button
+                leftSection={<IconFileInvoice size={16} />}
+                color="green"
+                onClick={handleConvertToInvoice}
+                loading={converting}
+              >
+                Convert to Invoice
+              </Button>
+            )}
           </Group>
           <Group>
             {onEdit && (
