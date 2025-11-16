@@ -57,6 +57,26 @@ class XeroService:
         # Create API client
         api_client = ApiClient(configuration)
         
+        # Set up token refresh callback on the API client
+        def token_refresh_callback(token_data):
+            """Callback to save refreshed tokens"""
+            try:
+                connection = XeroConnection.objects.filter(is_active=True).first()
+                if connection:
+                    connection.access_token = token_data['access_token']
+                    connection.refresh_token = token_data['refresh_token']
+                    connection.expires_at = timezone.datetime.fromtimestamp(
+                        token_data['expires_at'], 
+                        tz=timezone.get_current_timezone()
+                    )
+                    connection.save()
+                    print(f"✓ Token auto-saved for {connection.tenant_name}")
+            except Exception as e:
+                print(f"Error saving refreshed token: {e}")
+        
+        # Set the token saver callback on the API client
+        api_client.oauth2_token_saver(token_refresh_callback)
+        
         # Get stored token
         token_dict = self._get_stored_token()
         if token_dict:
@@ -69,28 +89,8 @@ class XeroService:
             # Set token data
             oauth2_token.token = token_dict
             
-            # Set the token on the API client
+            # Set the token on the API client (now that saver is set)
             api_client.set_oauth2_token(oauth2_token)
-            
-            # Set up token refresh callback
-            def token_refresh_callback(token_data):
-                """Callback to save refreshed tokens"""
-                try:
-                    connection = XeroConnection.objects.filter(is_active=True).first()
-                    if connection:
-                        connection.access_token = token_data['access_token']
-                        connection.refresh_token = token_data['refresh_token']
-                        connection.expires_at = timezone.datetime.fromtimestamp(
-                            token_data['expires_at'], 
-                            tz=timezone.get_current_timezone()
-                        )
-                        connection.save()
-                        print(f"✓ Token auto-saved for {connection.tenant_name}")
-                except Exception as e:
-                    print(f"Error saving refreshed token: {e}")
-            
-            # Set the callback on the OAuth2Token object
-            oauth2_token.token_saver = token_refresh_callback
         
         return api_client
     
