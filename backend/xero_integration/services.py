@@ -57,6 +57,24 @@ class XeroService:
         # Create API client
         api_client = ApiClient(configuration)
         
+        # Set up token getter callback on the API client
+        def token_getter_callback():
+            """Callback to retrieve current token"""
+            try:
+                token_dict = self._get_stored_token()
+                if token_dict:
+                    # Create OAuth2Token object
+                    oauth2_token = OAuth2Token(
+                        client_id=self.client_id,
+                        client_secret=self.client_secret
+                    )
+                    oauth2_token.token = token_dict
+                    return oauth2_token
+                return None
+            except Exception as e:
+                print(f"Error retrieving token: {e}")
+                return None
+        
         # Set up token refresh callback on the API client
         def token_refresh_callback(token_data):
             """Callback to save refreshed tokens"""
@@ -74,10 +92,11 @@ class XeroService:
             except Exception as e:
                 print(f"Error saving refreshed token: {e}")
         
-        # Set the token saver callback on the API client
+        # Set both callbacks on the API client
+        api_client.oauth2_token_getter(token_getter_callback)
         api_client.oauth2_token_saver(token_refresh_callback)
         
-        # Get stored token
+        # Get stored token and set it initially
         token_dict = self._get_stored_token()
         if token_dict:
             # Create OAuth2Token object
@@ -89,7 +108,7 @@ class XeroService:
             # Set token data
             oauth2_token.token = token_dict
             
-            # Set the token on the API client (now that saver is set)
+            # Set the token on the API client
             api_client.set_oauth2_token(oauth2_token)
         
         return api_client
