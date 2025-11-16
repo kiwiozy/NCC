@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
@@ -45,6 +45,7 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
 
   useEffect(() => {
     if (opened && invoiceId) {
@@ -79,10 +80,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const handleDelete = async () => {
     if (!invoice) return;
     
-    if (!confirm(`Are you sure you want to delete invoice ${invoice.xero_invoice_number}? This will void the invoice in Xero.`)) {
-      return;
-    }
-    
     setDeleting(true);
     try {
       const response = await fetch(`https://localhost:8000/api/xero/invoices/${invoice.xero_invoice_id}/delete/`, {
@@ -100,6 +97,7 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
         color: 'green',
       });
       
+      setDeleteConfirmOpened(false);
       if (onDelete) {
         onDelete();
       }
@@ -117,21 +115,22 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={
-        <Group gap="xs">
-          <Text fw={600}>Invoice Details</Text>
-          {invoice && (
-            <Badge color={STATUS_COLORS[invoice.status] || 'gray'}>
-              {invoice.status}
-            </Badge>
-          )}
-        </Group>
-      }
-      size="1480px"
-    >
+    <>
+      <Modal
+        opened={opened}
+        onClose={onClose}
+        title={
+          <Group gap="xs">
+            <Text fw={600}>Invoice Details</Text>
+            {invoice && (
+              <Badge color={STATUS_COLORS[invoice.status] || 'gray'}>
+                {invoice.status}
+              </Badge>
+            )}
+          </Group>
+        }
+        size="1480px"
+      >
       {loading ? (
         <Center p="xl">
           <Loader />
@@ -238,8 +237,7 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
                   variant="light"
                   color="red"
                   leftSection={<IconTrash size={16} />}
-                  onClick={handleDelete}
-                  loading={deleting}
+                  onClick={() => setDeleteConfirmOpened(true)}
                 >
                   Delete Invoice
                 </Button>
@@ -264,6 +262,45 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
         <Text c="dimmed">No invoice data available</Text>
       )}
     </Modal>
+    
+    {/* Delete Confirmation Modal */}
+    <Modal
+      opened={deleteConfirmOpened}
+      onClose={() => setDeleteConfirmOpened(false)}
+      title={
+        <Group gap="xs">
+          <IconAlertTriangle size={24} color="red" />
+          <Text fw={600}>Delete Invoice</Text>
+        </Group>
+      }
+      centered
+    >
+      <Stack gap="md">
+        <Text>
+          Are you sure you want to delete invoice <Text component="span" fw={600}>{invoice?.xero_invoice_number}</Text>? 
+          This will void the invoice in Xero.
+        </Text>
+        
+        <Group justify="flex-end" gap="sm">
+          <Button
+            variant="subtle"
+            onClick={() => setDeleteConfirmOpened(false)}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            onClick={handleDelete}
+            loading={deleting}
+            leftSection={<IconTrash size={16} />}
+          >
+            Delete Invoice
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  </>
   );
 }
 
