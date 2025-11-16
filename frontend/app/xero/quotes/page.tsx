@@ -47,15 +47,27 @@ export default function XeroQuotesPage() {
   }, [quotes, searchQuery, statusFilter]);
 
   const fetchQuotes = async () => {
+    console.log('📥 Fetching quotes from API...');
     setLoading(true);
     try {
       const response = await fetch('https://localhost:8000/api/xero/quotes/');
-      if (!response.ok) throw new Error('Failed to fetch quotes');
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('❌ Response not OK:', response.status, response.statusText);
+        throw new Error('Failed to fetch quotes');
+      }
       
       const data = await response.json();
-      setQuotes(data.results || data);
+      console.log('📦 Raw API data:', data);
+      console.log('📋 Quotes array:', data.results || data);
+      console.log('🔢 Number of quotes:', (data.results || data).length);
+      
+      const quotesData = data.results || data;
+      setQuotes(quotesData);
+      console.log('✅ Quotes set in state:', quotesData);
     } catch (error) {
-      console.error('Error fetching quotes:', error);
+      console.error('💥 Error fetching quotes:', error);
       notifications.show({
         title: 'Error',
         message: 'Failed to fetch quotes',
@@ -63,10 +75,16 @@ export default function XeroQuotesPage() {
       });
     } finally {
       setLoading(false);
+      console.log('🏁 Fetch complete, loading:', false);
     }
   };
 
   const filterQuotes = () => {
+    console.log('🔍 Filtering quotes...');
+    console.log('📋 Total quotes:', quotes.length);
+    console.log('🔎 Search query:', searchQuery);
+    console.log('🏷️ Status filter:', statusFilter);
+    
     let filtered = [...quotes];
 
     // Filter by search query
@@ -77,13 +95,17 @@ export default function XeroQuotesPage() {
         quote.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         quote.appointment_details?.patient_name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      console.log('📋 After search filter:', filtered.length);
     }
 
     // Filter by status
     if (statusFilter && statusFilter !== 'all') {
       filtered = filtered.filter(quote => quote.status === statusFilter);
+      console.log('📋 After status filter:', filtered.length);
     }
 
+    console.log('✅ Final filtered quotes:', filtered.length);
+    console.log('📊 Filtered quotes data:', filtered);
     setFilteredQuotes(filtered);
   };
 
@@ -102,15 +124,24 @@ export default function XeroQuotesPage() {
   };
 
   const calculateStats = () => {
+    console.log('📊 Calculating stats...');
+    console.log('📋 Filtered quotes for stats:', filteredQuotes.length);
+    
     const total = filteredQuotes.reduce((sum, quote) => sum + parseFloat(quote.total || '0'), 0);
     const draftCount = filteredQuotes.filter(q => q.status === 'DRAFT').length;
     const sentCount = filteredQuotes.filter(q => q.status === 'SENT').length;
     const acceptedCount = filteredQuotes.filter(q => q.status === 'ACCEPTED').length;
 
-    return { total, draftCount, sentCount, acceptedCount, totalCount: filteredQuotes.length };
+    const stats = { total, draftCount, sentCount, acceptedCount, totalCount: filteredQuotes.length };
+    console.log('📈 Stats:', stats);
+    return stats;
   };
 
   const stats = calculateStats();
+  
+  console.log('🎨 Render - Loading:', loading);
+  console.log('🎨 Render - Quotes:', quotes.length);
+  console.log('🎨 Render - Filtered Quotes:', filteredQuotes.length);
 
   if (loading) {
     return (
