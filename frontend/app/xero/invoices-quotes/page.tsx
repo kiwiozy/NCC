@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
@@ -280,6 +280,46 @@ export default function XeroInvoicesQuotesPage() {
                     <IconEye size={16} />
                   </ActionIcon>
                 </Tooltip>
+                
+                {item.type === 'invoice' && (
+                  <Tooltip label="Download Debug PDF">
+                    <ActionIcon
+                      variant="subtle"
+                      color="orange"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`);
+                          if (!response.ok) throw new Error('Failed to generate PDF');
+                          
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `Invoice_${(item as any).xero_invoice_number}_DEBUG.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                          
+                          notifications.show({
+                            title: 'Success',
+                            message: 'Debug PDF downloaded',
+                            color: 'green',
+                          });
+                        } catch (error) {
+                          notifications.show({
+                            title: 'Error',
+                            message: 'Failed to generate PDF',
+                            color: 'red',
+                          });
+                        }
+                      }}
+                    >
+                      <IconDownload size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+                
                 <Tooltip label={`Delete ${item.type === 'invoice' ? 'Invoice' : 'Quote'}`}>
                   <ActionIcon
                     variant="subtle"
