@@ -1131,6 +1131,59 @@ class XeroService:
             )
             raise
     
+    def delete_invoice(self, invoice_link: XeroInvoiceLink):
+        """
+        Delete (void) a draft invoice in Xero
+        Added Nov 2025: Delete invoice from Nexus
+        
+        Args:
+            invoice_link: XeroInvoiceLink object to delete
+        """
+        start_time = time.time()
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Delete invoice in Xero (voids it)
+            accounting_api.delete_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id
+            )
+            
+            # Delete from local database
+            invoice_link.delete()
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='invoice_delete',
+                status='success',
+                local_entity_type='invoice',
+                xero_entity_id=invoice_link.xero_invoice_id,
+                duration_ms=int((time.time() - start_time) * 1000),
+                response_data={
+                    'invoice_number': invoice_link.xero_invoice_number,
+                }
+            )
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='invoice_delete',
+                status='failed',
+                local_entity_type='invoice',
+                xero_entity_id=invoice_link.xero_invoice_id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
     def create_quote(
         self,
         patient,

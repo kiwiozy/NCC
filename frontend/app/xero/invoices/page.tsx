@@ -411,6 +411,9 @@ export default function XeroInvoicesPage() {
             setDetailModalOpened(false);
             setEditModalOpened(true);
           }}
+          onDelete={() => {
+            fetchInvoices();
+          }}
         />
       )}
       

@@ -748,3 +748,44 @@ def update_xero_invoice(request, xero_invoice_id):
             'traceback': traceback.format_exc()
         }, status=500)
 
+
+@api_view(['DELETE'])
+def delete_xero_invoice(request, xero_invoice_id):
+    """
+    Delete (void) a Xero invoice (DRAFT only)
+    Added Nov 2025: Delete invoice from Nexus
+    
+    Only DRAFT invoices can be deleted. This will void the invoice in Xero.
+    """
+    try:
+        # Get invoice link
+        try:
+            invoice_link = XeroInvoiceLink.objects.get(xero_invoice_id=xero_invoice_id)
+        except XeroInvoiceLink.DoesNotExist:
+            return JsonResponse({
+                'error': f'Invoice with Xero ID {xero_invoice_id} not found'
+            }, status=404)
+        
+        # Validate invoice is deletable (DRAFT only)
+        if invoice_link.status != 'DRAFT':
+            return JsonResponse({
+                'error': f'Cannot delete invoice in {invoice_link.status} status. Only DRAFT invoices can be deleted.',
+                'detail': 'Submitted invoices must be voided in Xero directly'
+            }, status=400)
+        
+        # Delete invoice from Xero
+        xero_service.delete_invoice(invoice_link)
+        
+        return JsonResponse({
+            'message': 'Invoice deleted successfully'
+        })
+        
+    except Exception as e:
+        import traceback
+        return JsonResponse({
+            'error': 'Failed to delete invoice',
+            'detail': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
+
+

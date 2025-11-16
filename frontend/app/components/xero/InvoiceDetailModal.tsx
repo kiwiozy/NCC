@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit } from '@tabler/icons-react';
+import { IconExternalLink, IconRefresh, IconEdit, IconTrash } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
@@ -11,6 +11,7 @@ interface InvoiceDetailModalProps {
   onClose: () => void;
   invoiceId: string;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 interface InvoiceDetail {
@@ -40,9 +41,10 @@ const STATUS_COLORS: Record<string, string> = {
   'DELETED': 'red',
 };
 
-export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit }: InvoiceDetailModalProps) {
+export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelete }: InvoiceDetailModalProps) {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (opened && invoiceId) {
@@ -72,6 +74,46 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit }: Invoi
 
   const getXeroInvoiceUrl = (xeroInvoiceId: string) => {
     return `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoiceId}`;
+  };
+
+  const handleDelete = async () => {
+    if (!invoice) return;
+    
+    if (!confirm(`Are you sure you want to delete invoice ${invoice.xero_invoice_number}? This will void the invoice in Xero.`)) {
+      return;
+    }
+    
+    setDeleting(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero/invoices/${invoice.xero_invoice_id}/delete/`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete invoice');
+      }
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Invoice deleted successfully',
+        color: 'green',
+      });
+      
+      if (onDelete) {
+        onDelete();
+      }
+      onClose();
+    } catch (error: any) {
+      console.error('Error deleting invoice:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to delete invoice',
+        color: 'red',
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -188,6 +230,18 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit }: Invoi
                   onClick={onEdit}
                 >
                   Edit Invoice
+                </Button>
+              )}
+              
+              {invoice.status === 'DRAFT' && (
+                <Button
+                  variant="light"
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={handleDelete}
+                  loading={deleting}
+                >
+                  Delete Invoice
                 </Button>
               )}
             </Group>

@@ -31,6 +31,7 @@ urlpatterns = [
     # Invoice/Quote creation endpoints (Added Nov 2025)
     path('invoice/create/', views.create_xero_invoice, name='create-invoice'),
     path('invoices/<str:xero_invoice_id>/update/', views.update_xero_invoice, name='update-invoice'),
+    path('invoices/<str:xero_invoice_id>/delete/', views.delete_xero_invoice, name='delete-invoice'),
     path('quote/create/', views.create_xero_quote, name='create-quote'),
     
     # API endpoints
