@@ -482,6 +482,24 @@ def create_xero_invoice(request):
                     'error': f'Appointment with id {appointment_id} not found'
                 }, status=404)
         
+        # Parse dates if provided (frontend sends ISO format strings)
+        invoice_date = None
+        due_date = None
+        
+        if request.data.get('invoice_date'):
+            try:
+                from datetime import datetime
+                invoice_date = datetime.fromisoformat(request.data.get('invoice_date').replace('Z', '+00:00')).date()
+            except (ValueError, AttributeError):
+                pass  # Use default if parsing fails
+        
+        if request.data.get('due_date'):
+            try:
+                from datetime import datetime
+                due_date = datetime.fromisoformat(request.data.get('due_date').replace('Z', '+00:00')).date()
+            except (ValueError, AttributeError):
+                pass  # Use default if parsing fails
+        
         # Create invoice via Xero service (now supports standalone invoices!)
         invoice_link = xero_service.create_invoice(
             appointment=appointment,
@@ -491,8 +509,8 @@ def create_xero_invoice(request):
             line_items=line_items,
             tracking_category=None,
             billing_notes=request.data.get('billing_notes', ''),
-            invoice_date=request.data.get('invoice_date'),
-            due_date=request.data.get('due_date')
+            invoice_date=invoice_date,
+            due_date=due_date
         )
         
         return JsonResponse({
