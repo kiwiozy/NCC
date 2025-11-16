@@ -53,10 +53,13 @@ class XeroService:
         """
         configuration = Configuration()
         configuration.debug = settings.DEBUG
-        api_client = ApiClient(
-            configuration,
-            oauth2_token=self._get_stored_token()
-        )
+        
+        # Create API client
+        api_client = ApiClient(configuration)
+        
+        # Set OAuth2 token
+        api_client.set_oauth2_token(self._get_stored_token())
+        
         return api_client
     
     def get_active_connection(self) -> Optional[XeroConnection]:
@@ -89,9 +92,9 @@ class XeroService:
             print(f"Error getting active Xero connection: {e}")
             return None
     
-    def _get_stored_token(self) -> Optional[OAuth2Token]:
+    def _get_stored_token(self) -> Optional[Dict]:
         """
-        Retrieve stored OAuth2 token from database
+        Retrieve stored OAuth2 token from database as a dict
         Auto-refreshes if expired or about to expire
         """
         try:
@@ -99,19 +102,15 @@ class XeroService:
             if not connection:
                 return None
             
-            token = OAuth2Token(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                token={
-                    'access_token': connection.access_token,
-                    'refresh_token': connection.refresh_token,
-                    'id_token': connection.id_token,
-                    'token_type': connection.token_type,
-                    'expires_at': connection.expires_at.timestamp(),
-                    'scope': connection.scopes.split()
-                }
-            )
-            return token
+            # Return token as a dict (for set_oauth2_token)
+            return {
+                'access_token': connection.access_token,
+                'refresh_token': connection.refresh_token,
+                'id_token': connection.id_token,
+                'token_type': connection.token_type,
+                'expires_at': connection.expires_at.timestamp(),
+                'scope': connection.scopes.split()
+            }
         except Exception as e:
             print(f"Error retrieving stored token: {e}")
             return None
