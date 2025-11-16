@@ -8,6 +8,7 @@ import Navigation from '../../components/Navigation';
 import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
 import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
+import { QuickCreateModal } from '../../components/xero/QuickCreateModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -56,6 +57,9 @@ export default function XeroInvoicesPage() {
   const [createModalOpened, setCreateModalOpened] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+  
+  // Quick create modal
+  const [quickCreateOpened, setQuickCreateOpened] = useState(false);
   
   // Invoice detail modal
   const [detailModalOpened, setDetailModalOpened] = useState(false);
@@ -198,7 +202,7 @@ export default function XeroInvoicesPage() {
               </Button>
               <Button
                 leftSection={<IconPlus size={16} />}
-                onClick={() => setCreateModalOpened(true)}
+                onClick={() => setQuickCreateOpened(true)}
               >
                 Create Invoice
               </Button>
@@ -397,6 +401,25 @@ export default function XeroInvoicesPage() {
           </Paper>
         </Stack>
       </Container>
+      
+      {/* Quick Create Modal */}
+      <QuickCreateModal
+        opened={quickCreateOpened}
+        onClose={() => setQuickCreateOpened(false)}
+        onCreateInvoice={(patientId, companyId) => {
+          // Pre-fill create invoice modal with selected patient/company
+          setCreateModalOpened(true);
+          // TODO: Pass patientId/companyId to CreateInvoiceModal
+        }}
+        onCreateQuote={(patientId, companyId) => {
+          // TODO: Create quote modal
+          notifications.show({
+            title: 'Coming Soon',
+            message: 'Quote creation will be available soon',
+            color: 'blue',
+          });
+        }}
+      />
       
       {/* Invoice Detail Modal */}
       {selectedInvoiceId && (
