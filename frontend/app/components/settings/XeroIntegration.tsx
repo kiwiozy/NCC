@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs } from '@mantine/core';
+import { Title, Text, Stack, Paper, List, Badge, Button, Group, Alert, Table, Code, Loader, Center, Box, Tabs, ScrollArea } from '@mantine/core';
 import { IconAlertCircle, IconCheck, IconRefresh, IconPlugConnected, IconX, IconFileInvoice, IconUsers, IconClipboardList } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { formatDateTimeAU } from '../../utils/dateFormatting';
@@ -219,13 +219,14 @@ export default function XeroIntegration() {
   const isConnected = status?.connected && status?.connection;
 
   return (
-    <Stack gap="xl">
-      <div>
-        <Title order={2}>Xero Integration</Title>
-        <Text c="dimmed" size="sm" mt="xs">
-          Automated invoicing and accounting integration
-        </Text>
-      </div>
+    <ScrollArea h="calc(100vh - 120px)" type="scroll">
+      <Stack gap="xl">
+        <div>
+          <Title order={2}>Xero Integration</Title>
+          <Text c="dimmed" size="sm" mt="xs">
+            Automated invoicing and accounting integration
+          </Text>
+        </div>
 
       {/* Connection Status */}
       {isConnected ? (
@@ -469,6 +470,7 @@ export default function XeroIntegration() {
         </Tabs.Panel>
       </Tabs>
     </Stack>
+    </ScrollArea>
   );
 }
 
