@@ -33,6 +33,8 @@ interface CreateInvoiceModalProps {
   onSuccess: () => void;
   patients: Patient[];
   companies: Company[];
+  preSelectedPatientId?: string;
+  preSelectedCompanyId?: string;
 }
 
 const TAX_TYPES = [
@@ -54,13 +56,18 @@ const DEFAULT_ACCOUNT_CODES = [
   { value: '408', label: '408 - Cleaning' },
 ];
 
-export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, companies }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, companies, preSelectedPatientId, preSelectedCompanyId }: CreateInvoiceModalProps) {
   const [loading, setLoading] = useState(false);
   
   // Contact selection
-  const [contactType, setContactType] = useState<'patient' | 'company'>('patient');
-  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [contactType, setContactType] = useState<'patient' | 'company'>(
+    preSelectedCompanyId ? 'company' : 'patient'
+  );
+  const [selectedPatient, setSelectedPatient] = useState<string | null>(preSelectedPatientId || null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(preSelectedCompanyId || null);
+  
+  // Check if contact is pre-selected
+  const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
   
   // Invoice details
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
@@ -262,42 +269,45 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
     >
       <Stack gap="md">
         {/* Contact Selection */}
-        <Paper p="md" withBorder>
-          <Stack gap="sm">
-            <Text fw={600} size="sm">Primary Contact</Text>
-            <Radio.Group value={contactType} onChange={(value) => setContactType(value as 'patient' | 'company')}>
-              <Group>
-                <Radio value="patient" label="Patient" />
-                <Radio value="company" label="Company" />
-              </Group>
-            </Radio.Group>
+        {/* Primary Contact - only show if not pre-selected */}
+        {!isPreSelected && (
+          <Paper p="md" withBorder>
+            <Stack gap="sm">
+              <Text fw={600} size="sm">Primary Contact</Text>
+              <Radio.Group value={contactType} onChange={(value) => setContactType(value as 'patient' | 'company')}>
+                <Group>
+                  <Radio value="patient" label="Patient" />
+                  <Radio value="company" label="Company" />
+                </Group>
+              </Radio.Group>
 
-            {contactType === 'patient' ? (
-              <Select
-                label="Select Patient"
-                placeholder="Search patients..."
-                data={patients.map(p => ({ 
-                  value: p.id, 
-                  label: p.mrn ? `${p.full_name} (${p.mrn})` : p.full_name 
-                }))}
-                value={selectedPatient}
-                onChange={setSelectedPatient}
-                searchable
-                required
-              />
-            ) : (
-              <Select
-                label="Select Company"
-                placeholder="Search companies..."
-                data={companies.map(c => ({ value: c.id, label: c.abn ? `${c.name} (${c.abn})` : c.name }))}
-                value={selectedCompany}
-                onChange={setSelectedCompany}
-                searchable
-                required
-              />
-            )}
-          </Stack>
-        </Paper>
+              {contactType === 'patient' ? (
+                <Select
+                  label="Select Patient"
+                  placeholder="Search patients..."
+                  data={patients.map(p => ({ 
+                    value: p.id, 
+                    label: p.mrn ? `${p.full_name} (${p.mrn})` : p.full_name 
+                  }))}
+                  value={selectedPatient}
+                  onChange={setSelectedPatient}
+                  searchable
+                  required
+                />
+              ) : (
+                <Select
+                  label="Select Company"
+                  placeholder="Search companies..."
+                  data={companies.map(c => ({ value: c.id, label: c.abn ? `${c.name} (${c.abn})` : c.name }))}
+                  value={selectedCompany}
+                  onChange={setSelectedCompany}
+                  searchable
+                  required
+                />
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         {/* Invoice Details */}
         <Paper p="md" withBorder>

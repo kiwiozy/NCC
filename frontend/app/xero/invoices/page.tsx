@@ -60,6 +60,8 @@ export default function XeroInvoicesPage() {
   
   // Quick create modal
   const [quickCreateOpened, setQuickCreateOpened] = useState(false);
+  const [preSelectedPatientId, setPreSelectedPatientId] = useState<string | undefined>(undefined);
+  const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>(undefined);
   
   // Invoice detail modal
   const [detailModalOpened, setDetailModalOpened] = useState(false);
@@ -208,17 +210,6 @@ export default function XeroInvoicesPage() {
               </Button>
             </Group>
           </Group>
-
-          {/* Create Invoice Modal */}
-          <CreateInvoiceModal
-            opened={createModalOpened}
-            onClose={() => setCreateModalOpened(false)}
-            onSuccess={() => {
-              fetchInvoices();
-            }}
-            patients={patients}
-            companies={companies}
-          />
 
           {/* Stats */}
           <Group gap="md" grow>
@@ -408,8 +399,9 @@ export default function XeroInvoicesPage() {
         onClose={() => setQuickCreateOpened(false)}
         onCreateInvoice={(patientId, companyId) => {
           // Pre-fill create invoice modal with selected patient/company
+          setPreSelectedPatientId(patientId);
+          setPreSelectedCompanyId(companyId);
           setCreateModalOpened(true);
-          // TODO: Pass patientId/companyId to CreateInvoiceModal
         }}
         onCreateQuote={(patientId, companyId) => {
           // TODO: Create quote modal
@@ -419,6 +411,26 @@ export default function XeroInvoicesPage() {
             color: 'blue',
           });
         }}
+      />
+      
+      {/* Create Invoice Modal */}
+      <CreateInvoiceModal
+        opened={createModalOpened}
+        onClose={() => {
+          setCreateModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
+        onSuccess={() => {
+          fetchInvoices();
+          setCreateModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
+        patients={patients}
+        companies={companies}
+        preSelectedPatientId={preSelectedPatientId}
+        preSelectedCompanyId={preSelectedCompanyId}
       />
       
       {/* Invoice Detail Modal */}
