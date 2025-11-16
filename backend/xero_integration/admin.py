@@ -3,6 +3,7 @@ from .models import (
     XeroConnection,
     XeroContactLink,
     XeroInvoiceLink,
+    XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
     XeroSyncLog
@@ -33,14 +34,29 @@ class XeroConnectionAdmin(admin.ModelAdmin):
 
 @admin.register(XeroContactLink)
 class XeroContactLinkAdmin(admin.ModelAdmin):
-    list_display = ['local_type', 'local_id', 'xero_contact_name', 'xero_contact_number', 'is_active', 'last_synced_at']
-    list_filter = ['local_type', 'is_active', 'last_synced_at']
+    list_display = ['get_entity_type', 'get_entity_name', 'xero_contact_name', 'xero_contact_number', 'is_active', 'last_synced_at']
+    list_filter = ['is_active', 'last_synced_at']
     search_fields = ['xero_contact_name', 'xero_contact_id', 'xero_contact_number']
     readonly_fields = ['id', 'created_at', 'updated_at']
     
+    def get_entity_type(self, obj):
+        """Display entity type (Patient or Company)"""
+        if obj.patient:
+            return "Patient"
+        elif obj.company:
+            return "Company"
+        return "Unknown"
+    get_entity_type.short_description = 'Entity Type'
+    
+    def get_entity_name(self, obj):
+        """Display entity name"""
+        return obj.get_entity_name()
+    get_entity_name.short_description = 'Entity Name'
+    
     fieldsets = (
-        ('Local Entity', {
-            'fields': ('local_type', 'local_id')
+        ('Link Type', {
+            'fields': ('connection', 'patient', 'company'),
+            'description': 'Must link to EITHER a patient OR a company'
         }),
         ('Xero Contact', {
             'fields': ('xero_contact_id', 'xero_contact_number', 'xero_contact_name')
@@ -70,10 +86,40 @@ class XeroInvoiceLinkAdmin(admin.ModelAdmin):
             'fields': ('xero_invoice_id', 'xero_invoice_number', 'xero_invoice_type', 'status')
         }),
         ('Financial Details', {
-            'fields': ('total', 'amount_due', 'amount_paid', 'currency')
+            'fields': ('total', 'subtotal', 'total_tax', 'amount_due', 'amount_paid', 'currency')
         }),
         ('Dates', {
             'fields': ('invoice_date', 'due_date', 'fully_paid_on_date')
+        }),
+        ('Sync', {
+            'fields': ('last_synced_at', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(XeroQuoteLink)
+class XeroQuoteLinkAdmin(admin.ModelAdmin):
+    list_display = ['xero_quote_number', 'status', 'total', 'appointment', 'quote_date', 'expiry_date', 'can_convert_to_invoice']
+    list_filter = ['status', 'quote_date', 'currency']
+    search_fields = ['xero_quote_id', 'xero_quote_number']
+    readonly_fields = ['id', 'created_at', 'updated_at', 'last_synced_at', 'converted_at']
+    
+    fieldsets = (
+        ('Local Link', {
+            'fields': ('appointment',)
+        }),
+        ('Xero Quote', {
+            'fields': ('xero_quote_id', 'xero_quote_number', 'status')
+        }),
+        ('Financial Details', {
+            'fields': ('total', 'subtotal', 'total_tax', 'currency')
+        }),
+        ('Dates', {
+            'fields': ('quote_date', 'expiry_date')
+        }),
+        ('Conversion', {
+            'fields': ('converted_invoice', 'converted_at')
         }),
         ('Sync', {
             'fields': ('last_synced_at', 'created_at', 'updated_at'),

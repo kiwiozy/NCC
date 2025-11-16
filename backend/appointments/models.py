@@ -145,6 +145,34 @@ class Appointment(models.Model):
         help_text="Additional appointment notes"
     )
     
+    # ═══════════════════════════════════════════════════════════════════
+    # XERO BILLING FIELDS (Added Nov 2025)
+    # ═══════════════════════════════════════════════════════════════════
+    
+    invoice_contact_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('patient', 'Patient as Primary Contact'),
+            ('company', 'Company as Primary Contact'),
+        ],
+        default='patient',
+        help_text="Who should be the primary Xero contact on the invoice?"
+    )
+    
+    billing_company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='billed_appointments',
+        help_text="Company involved in billing (shown in reference or as contact)"
+    )
+    
+    billing_notes = models.TextField(
+        blank=True,
+        help_text="PO number, special billing instructions, etc."
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

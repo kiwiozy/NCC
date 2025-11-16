@@ -55,20 +55,42 @@ class XeroConnection(models.Model):
 
 class XeroContactLink(models.Model):
     """
-    Link local entities (Patient, Clinician, Referrer) to Xero Contacts
+    Link local entities (Patient OR Company) to Xero Contacts
+    Updated Nov 2025: Added support for companies as Xero contacts
     """
-    CONTACT_TYPES = [
-        ('patient', 'Patient'),
-        ('clinician', 'Clinician'),
-        ('referrer', 'Referrer'),
-    ]
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    local_type = models.CharField(max_length=20, choices=CONTACT_TYPES)
-    local_id = models.UUIDField(help_text="FK to local entity (patient/clinician)")
+    
+    # Connection to Xero
+    connection = models.ForeignKey(
+        XeroConnection,
+        on_delete=models.CASCADE,
+        related_name='contact_links',
+        null=True,  # Temporarily nullable for migration
+        blank=True,
+        help_text="Xero connection this link belongs to"
+    )
+    
+    # Link to EITHER Patient OR Company (one must be set)
+    patient = models.ForeignKey(
+        'patients.Patient',
+        on_delete=models.CASCADE,
+        related_name='xero_contacts',
+        null=True,
+        blank=True,
+        help_text="Patient linked to Xero contact"
+    )
+    
+    company = models.ForeignKey(
+        'companies.Company',
+        on_delete=models.CASCADE,
+        related_name='xero_contacts',
+        null=True,
+        blank=True,
+        help_text="Company linked to Xero contact"
+    )
     
     # Xero contact details
-    xero_contact_id = models.CharField(max_length=255, unique=True, help_text="Xero Contact GUID")
+    xero_contact_id = models.CharField(max_length=255, help_text="Xero Contact GUID")
     xero_contact_number = models.CharField(max_length=50, blank=True, help_text="Human-readable contact number")
     xero_contact_name = models.CharField(max_length=255, blank=True)
     
@@ -82,14 +104,43 @@ class XeroContactLink(models.Model):
     
     class Meta:
         db_table = 'xero_contact_links'
-        unique_together = [['local_type', 'local_id']]
         indexes = [
-            models.Index(fields=['local_type', 'local_id']),
+            models.Index(fields=['patient']),
+            models.Index(fields=['company']),
             models.Index(fields=['xero_contact_id']),
+            models.Index(fields=['connection']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(patient__isnull=True, company__isnull=True),
+                name='contact_link_has_patient_or_company'
+            ),
+            models.UniqueConstraint(
+                fields=['connection', 'patient'],
+                condition=models.Q(patient__isnull=False),
+                name='unique_patient_per_connection'
+            ),
+            models.UniqueConstraint(
+                fields=['connection', 'company'],
+                condition=models.Q(company__isnull=False),
+                name='unique_company_per_connection'
+            ),
         ]
     
     def __str__(self):
-        return f"{self.local_type}:{self.local_id} → {self.xero_contact_name}"
+        if self.patient:
+            return f"Patient: {self.patient.full_name} → {self.xero_contact_name}"
+        elif self.company:
+            return f"Company: {self.company.name} → {self.xero_contact_name}"
+        return f"Unknown → {self.xero_contact_name}"
+    
+    def get_entity_name(self):
+        """Get the name of the linked entity"""
+        if self.patient:
+            return self.patient.full_name
+        elif self.company:
+            return self.company.name
+        return "Unknown"
 
 
 class XeroInvoiceLink(models.Model):
@@ -125,6 +176,8 @@ class XeroInvoiceLink(models.Model):
     # Financial details
     status = models.CharField(max_length=20, choices=INVOICE_STATUS_CHOICES, default='DRAFT')
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total before tax")
+    total_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total tax amount")
     amount_due = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default='AUD')
@@ -151,6 +204,90 @@ class XeroInvoiceLink(models.Model):
     
     def __str__(self):
         return f"Invoice {self.xero_invoice_number} - {self.status} (${self.total})"
+
+
+class XeroQuoteLink(models.Model):
+    """
+    Link local appointments to Xero Quotes
+    Added Nov 2025: Support for quotes (estimates) before service delivery
+    """
+    QUOTE_STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('SENT', 'Sent'),
+        ('ACCEPTED', 'Accepted'),
+        ('DECLINED', 'Declined'),
+        ('INVOICED', 'Invoiced'),
+        ('DELETED', 'Deleted'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Local reference (optional - quote may exist before appointment is booked)
+    appointment = models.ForeignKey(
+        'appointments.Appointment',
+        on_delete=models.CASCADE,
+        related_name='xero_quotes',
+        null=True,
+        blank=True,
+        help_text="Appointment this quote is for (if any)"
+    )
+    
+    # Xero quote details
+    xero_quote_id = models.CharField(max_length=255, unique=True, help_text="Xero Quote GUID")
+    xero_quote_number = models.CharField(max_length=50, blank=True, help_text="Human-readable quote number")
+    status = models.CharField(
+        max_length=20,
+        choices=QUOTE_STATUS_CHOICES,
+        default='DRAFT',
+        help_text="Current quote status"
+    )
+    
+    # Financial details
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total including tax")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total before tax")
+    total_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Total tax amount")
+    currency = models.CharField(max_length=3, default='AUD')
+    
+    # Dates
+    quote_date = models.DateField(null=True, blank=True, help_text="Date quote was created")
+    expiry_date = models.DateField(null=True, blank=True, help_text="Quote expiry date")
+    
+    # Invoice link (when converted)
+    converted_invoice = models.ForeignKey(
+        XeroInvoiceLink,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='source_quote',
+        help_text="Invoice created from this quote"
+    )
+    converted_at = models.DateTimeField(null=True, blank=True, help_text="When quote was converted to invoice")
+    
+    # Sync tracking
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'xero_quote_links'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['xero_quote_id']),
+            models.Index(fields=['status']),
+            models.Index(fields=['appointment']),
+            models.Index(fields=['-created_at']),
+        ]
+        verbose_name = "Xero Quote Link"
+        verbose_name_plural = "Xero Quote Links"
+    
+    def __str__(self):
+        return f"Quote {self.xero_quote_number} - {self.status} (${self.total})"
+    
+    def can_convert_to_invoice(self):
+        """Check if quote can be converted to invoice"""
+        return self.status in ['SENT', 'ACCEPTED'] and self.converted_invoice is None
 
 
 class XeroItemMapping(models.Model):
