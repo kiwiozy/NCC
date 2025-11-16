@@ -84,7 +84,10 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   const [dueDate, setDueDate] = useState<Date>(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)); // 14 days from now
   const [reference, setReference] = useState('');
   const [billingNotes, setBillingNotes] = useState('');
-  const [sendImmediately, setSendImmediately] = useState(false);
+  
+  // Confirmation dialog
+  const [confirmDialogOpened, setConfirmDialogOpened] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -196,6 +199,13 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    // Show confirmation dialog instead of submitting immediately
+    setConfirmDialogOpened(true);
+  };
+
+  const handleConfirmedSubmit = async (sendImmediately: boolean) => {
+    setConfirmDialogOpened(false);
+    setPendingSubmit(true);
     setLoading(true);
     try {
       const payload = {
@@ -246,6 +256,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       });
     } finally {
       setLoading(false);
+      setPendingSubmit(false);
     }
   };
 
@@ -351,13 +362,6 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
               value={billingNotes}
               onChange={(e) => setBillingNotes(e.target.value)}
               rows={2}
-            />
-            
-            <Checkbox
-              label="Send immediately (mark as AUTHORISED in Xero)"
-              description="If checked, invoice will be AUTHORISED and ready to send. If unchecked, invoice will be saved as DRAFT."
-              checked={sendImmediately}
-              onChange={(e) => setSendImmediately(e.currentTarget.checked)}
             />
           </Stack>
         </Paper>
@@ -485,6 +489,49 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
             Create Invoice
           </Button>
         </Group>
+      </Stack>
+    </Modal>
+
+    {/* Confirmation Dialog */}
+    <Modal
+      opened={confirmDialogOpened}
+      onClose={() => setConfirmDialogOpened(false)}
+      title="Send Invoice or Save as Draft?"
+      size="md"
+      centered
+    >
+      <Stack gap="md">
+        <Text size="sm">
+          Choose how you want to create this invoice:
+        </Text>
+        
+        <Paper p="md" withBorder style={{ cursor: 'pointer' }} onClick={() => handleConfirmedSubmit(true)}>
+          <Stack gap="xs">
+            <Group>
+              <Badge color="green" size="lg">AUTHORISED</Badge>
+              <Text fw={600}>Send Immediately</Text>
+            </Group>
+            <Text size="sm" c="dimmed">
+              Invoice will be marked as AUTHORISED in Xero and ready to send to the customer.
+            </Text>
+          </Stack>
+        </Paper>
+
+        <Paper p="md" withBorder style={{ cursor: 'pointer' }} onClick={() => handleConfirmedSubmit(false)}>
+          <Stack gap="xs">
+            <Group>
+              <Badge color="gray" size="lg">DRAFT</Badge>
+              <Text fw={600}>Save as Draft</Text>
+            </Group>
+            <Text size="sm" c="dimmed">
+              Invoice will be saved as DRAFT for review. You can edit it before sending.
+            </Text>
+          </Stack>
+        </Paper>
+
+        <Button variant="subtle" onClick={() => setConfirmDialogOpened(false)} fullWidth>
+          Cancel
+        </Button>
       </Stack>
     </Modal>
   );
