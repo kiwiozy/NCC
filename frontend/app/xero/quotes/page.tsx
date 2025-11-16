@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem } from '@mantine/core';
-import { IconSearch, IconRefresh, IconCheck, IconX, IconFileText, IconPlus, IconClock, IconCurrencyDollar, IconEye } from '@tabler/icons-react';
+import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem, Modal } from '@mantine/core';
+import { IconSearch, IconRefresh, IconCheck, IconX, IconFileText, IconPlus, IconClock, IconCurrencyDollar, IconEye, IconTrash } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { QuoteDetailModal } from '../../components/xero/QuoteDetailModal';
@@ -41,6 +41,11 @@ export default function XeroQuotesPage() {
   // Detail modal
   const [detailModalOpened, setDetailModalOpened] = useState(false);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  
+  // Delete confirmation
+  const [deleteModalOpened, setDeleteModalOpened] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<XeroQuoteLink | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Helper function to normalize status (handle legacy "QuoteStatusCodes.DRAFT" format)
   const normalizeStatus = (status: string): string => {
@@ -115,6 +120,49 @@ export default function XeroQuotesPage() {
     } finally {
       setLoading(false);
       console.log('🏁 Fetch complete, loading:', false);
+    }
+  };
+
+  const handleDeleteClick = (quote: XeroQuoteLink) => {
+    setQuoteToDelete(quote);
+    setDeleteModalOpened(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!quoteToDelete) return;
+    
+    setDeleting(true);
+    try {
+      // Note: Xero doesn't support deleting quotes directly via API
+      // We can only update the status to DELETED in our database
+      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteToDelete.id}/`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete quote');
+      }
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Quote deleted successfully',
+        color: 'green',
+      });
+      
+      // Refresh quotes list
+      fetchQuotes();
+      setDeleteModalOpened(false);
+      setQuoteToDelete(null);
+      
+    } catch (error) {
+      console.error('Error deleting quote:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete quote',
+        color: 'red',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -334,6 +382,15 @@ export default function XeroQuotesPage() {
                               <IconEye size={16} />
                             </ActionIcon>
                           </Tooltip>
+                          <Tooltip label="Delete Quote">
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => handleDeleteClick(quote)}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Tooltip>
                         </Group>
                       </Table.Td>
                     </Table.Tr>
@@ -364,6 +421,39 @@ export default function XeroQuotesPage() {
           }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={() => !deleting && setDeleteModalOpened(false)}
+        title="Delete Quote"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to delete quote <Text component="span" fw={600}>{quoteToDelete?.xero_quote_number}</Text>?
+          </Text>
+          <Text size="sm" c="dimmed">
+            Note: This will only delete the quote from Nexus. The quote will still exist in Xero until manually deleted there.
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button 
+              variant="default" 
+              onClick={() => setDeleteModalOpened(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              color="red" 
+              onClick={handleDeleteConfirm}
+              loading={deleting}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Navigation>
   );
 }
