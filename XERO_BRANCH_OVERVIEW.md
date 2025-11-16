@@ -22,7 +22,8 @@ Your Xero integration is **production-ready** with these features:
 - ✅ Comprehensive logging (`XeroSyncLog`)
 - ✅ Robust error handling
 
-#### **Frontend (`frontend/app/components/settings/XeroIntegration.tsx`)**
+#### **Frontend**
+**Settings Page (`frontend/app/components/settings/XeroIntegration.tsx`)**
 - ✅ Connect to Xero (OAuth flow)
 - ✅ Connection status dashboard
 - ✅ Token expiry tracking & auto-refresh
@@ -30,22 +31,75 @@ Your Xero integration is **production-ready** with these features:
 - ✅ Disconnect functionality
 - ✅ Sync logs viewer
 - ✅ Real-time connection health monitoring
+- ✅ Organization switcher (Demo Company / Production)
+
+**Xero Dashboard (`frontend/app/xero/page.tsx`)**
+- ✅ Connection overview
+- ✅ Quick stats (contacts, invoices)
+- ✅ Quick action cards
+- ✅ Navigation to all Xero pages
+
+**Contacts Page (`frontend/app/xero/contacts/page.tsx`)**
+- ✅ List all synced contacts (Patients & Companies)
+- ✅ Search and filter by type
+- ✅ Stats dashboard (Total, Patients, Companies)
+- ✅ External links to Xero
+- ✅ Sync status tracking
+
+**Invoices Page (`frontend/app/xero/invoices/page.tsx`)**
+- ✅ List all invoices with full details
+- ✅ Search and filter by status
+- ✅ Financial stats (Total, Paid, Due)
+- ✅ Status badges (Draft, Submitted, Paid)
+- ✅ External links to Xero
+- ✅ Create invoice button (ready for implementation)
+
+**Quotes Page (`frontend/app/xero/quotes/page.tsx`)**
+- ✅ List all quotes/estimates
+- ✅ Search and filter by status
+- ✅ Stats dashboard
+- ✅ Convert quote to invoice (working!)
+- ✅ External links to Xero
+- ✅ Create quote button (ready for implementation)
 
 #### **Database Models**
-- ✅ `XeroConnection` - Stores OAuth tokens, tenant info
-- ✅ `XeroContactLink` - Links Patients to Xero Contacts
-- ✅ `XeroInvoiceLink` - Links Appointments to Xero Invoices
+- ✅ `XeroConnection` - Stores OAuth tokens, tenant info, multi-tenant support
+- ✅ `XeroContactLink` - Links Patients AND Companies to Xero Contacts
+- ✅ `XeroInvoiceLink` - Links Appointments to Xero Invoices (with subtotal/tax)
+- ✅ `XeroQuoteLink` - Links Appointments to Xero Quotes (with conversion tracking)
 - ✅ `XeroSyncLog` - Tracks all API operations
+- ✅ `XeroItemMapping` - Maps local service codes to Xero items
+- ✅ `XeroTrackingCategory` - Clinic/department tracking
 
 #### **API Endpoints**
+**OAuth & Connection:**
 - `GET /xero/oauth/authorize/` - Start OAuth flow
 - `GET /xero/oauth/callback/` - OAuth callback handler
 - `POST /xero/oauth/refresh/` - Manually refresh token
+- `POST /xero/oauth/disconnect/` - Disconnect from Xero
 - `GET /xero/connections/status/` - Get connection status
-- `POST /xero/sync/contact/{patient_id}/` - Sync single patient
-- `POST /xero/sync/contacts/` - Bulk contact sync
-- `POST /xero/invoice/create/` - Create invoice
-- `GET /xero/logs/` - Get sync logs
+- `GET /api/xero/tenants/available/` - List all accessible organizations
+- `POST /api/xero/tenants/switch/` - Switch active organization
+
+**Contact Management:**
+- `GET /api/xero-contact-links/` - List all contact links
+- `POST /api/xero-contact-links/sync_patient/` - Sync single patient
+- `POST /api/xero-contact-links/sync_company/` - Sync single company (new!)
+
+**Invoice Management:**
+- `GET /api/xero-invoice-links/` - List all invoices
+- `POST /api/xero/invoice/create/` - Create invoice (flexible contact selection)
+- `GET /api/xero-invoice-links/{id}/` - Get invoice details
+- `PATCH /api/xero-invoice-links/{id}/` - Update invoice
+
+**Quote Management:**
+- `GET /api/xero-quote-links/` - List all quotes
+- `POST /api/xero/quote/create/` - Create quote
+- `POST /api/xero-quote-links/{id}/convert_to_invoice/` - Convert to invoice
+- `GET /api/xero-quote-links/{id}/` - Get quote details
+
+**Logging:**
+- `GET /api/xero-sync-logs/` - Get sync logs
 
 ---
 
