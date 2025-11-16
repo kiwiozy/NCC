@@ -5,6 +5,7 @@ import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, Text
 import { IconSearch, IconRefresh, IconCheck, IconX, IconFileText, IconPlus, IconClock, IconCurrencyDollar, IconEye } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
+import { QuoteDetailModal } from '../../components/xero/QuoteDetailModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroQuoteLink {
@@ -36,6 +37,10 @@ export default function XeroQuotesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
+  
+  // Detail modal
+  const [detailModalOpened, setDetailModalOpened] = useState(false);
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
 
   // Helper function to normalize status (handle legacy "QuoteStatusCodes.DRAFT" format)
   const normalizeStatus = (status: string): string => {
@@ -316,17 +321,20 @@ export default function XeroQuotesPage() {
                         <Text fw={600}>${parseFloat(quote.total).toFixed(2)}</Text>
                       </Table.Td>
                       <Table.Td>
-                        <Tooltip label="View in Xero">
-                          <ActionIcon
-                            variant="subtle"
-                            color="blue"
-                            onClick={() => {
-                              window.open(`https://go.xero.com/organisationlogin/default.aspx?shortcode=!${quote.xero_quote_id}`, '_blank');
-                            }}
-                          >
-                            <IconEye size={16} />
-                          </ActionIcon>
-                        </Tooltip>
+                        <Group gap="xs">
+                          <Tooltip label="View Details">
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              onClick={() => {
+                                setSelectedQuoteId(quote.id);
+                                setDetailModalOpened(true);
+                              }}
+                            >
+                              <IconEye size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
                       </Table.Td>
                     </Table.Tr>
                   ))}
@@ -336,6 +344,26 @@ export default function XeroQuotesPage() {
           </Paper>
         </Stack>
       </Container>
+
+      {/* Quote Detail Modal */}
+      {selectedQuoteId && (
+        <QuoteDetailModal
+          opened={detailModalOpened}
+          onClose={() => {
+            setDetailModalOpened(false);
+            setSelectedQuoteId(null);
+          }}
+          quoteId={selectedQuoteId}
+          onEdit={() => {
+            // TODO: Implement edit functionality
+            console.log('Edit quote:', selectedQuoteId);
+          }}
+          onDelete={() => {
+            // TODO: Implement delete functionality
+            console.log('Delete quote:', selectedQuoteId);
+          }}
+        />
+      )}
     </Navigation>
   );
 }
