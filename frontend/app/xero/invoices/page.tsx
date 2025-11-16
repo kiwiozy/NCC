@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Modal, NumberInput, Textarea, rem } from '@mantine/core';
+import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, rem } from '@mantine/core';
 import { IconSearch, IconRefresh, IconCheck, IconX, IconExternalLink, IconFileInvoice, IconPlus, IconClock, IconCurrencyDollar } from '@tabler/icons-react';
-import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
+import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
 import { formatDateTimeAU, formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -49,6 +49,11 @@ export default function XeroInvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>('all');
+  
+  // Create invoice modal
+  const [createModalOpened, setCreateModalOpened] = useState(false);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
 
   // Stats
   const [stats, setStats] = useState({
@@ -98,7 +103,28 @@ export default function XeroInvoicesPage() {
 
   useEffect(() => {
     fetchInvoices();
+    fetchPatientsAndCompanies();
   }, []);
+
+  const fetchPatientsAndCompanies = async () => {
+    try {
+      // Fetch patients
+      const patientsRes = await fetch('https://localhost:8000/api/patients/');
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData.results || patientsData);
+      }
+
+      // Fetch companies
+      const companiesRes = await fetch('https://localhost:8000/api/companies/');
+      if (companiesRes.ok) {
+        const companiesData = await companiesRes.json();
+        setCompanies(companiesData.results || companiesData);
+      }
+    } catch (error) {
+      console.error('Error fetching patients/companies:', error);
+    }
+  };
 
   // Filter invoices based on search and status
   useEffect(() => {
@@ -163,18 +189,23 @@ export default function XeroInvoicesPage() {
               </Button>
               <Button
                 leftSection={<IconPlus size={16} />}
-                onClick={() => {
-                  notifications.show({
-                    title: 'Coming Soon',
-                    message: 'Invoice creation will be available soon',
-                    color: 'blue',
-                  });
-                }}
+                onClick={() => setCreateModalOpened(true)}
               >
                 Create Invoice
               </Button>
             </Group>
           </Group>
+
+          {/* Create Invoice Modal */}
+          <CreateInvoiceModal
+            opened={createModalOpened}
+            onClose={() => setCreateModalOpened(false)}
+            onSuccess={() => {
+              fetchInvoices();
+            }}
+            patients={patients}
+            companies={companies}
+          />
 
           {/* Stats */}
           <Group gap="md" grow>
