@@ -189,10 +189,11 @@ class InvoicePDFGenerator:
         for elem in totals_elements:
             story.append(self._debug_box(elem, "Totals"))
         
-        # Add flexible spacer to push footer to bottom
-        # Calculate approximate height: A4 height (29.7cm) - top margin (0.5cm) - bottom margin (2cm) = 27.2cm usable
-        # We want to fill remaining space to push footer to bottom
-        story.append(Spacer(1, 1*cm, isGlue=True))  # Flexible spacer that grows
+        # Add large spacer to push footer to bottom
+        # A4 height = 29.7cm, with 0.5cm top margin and 2cm bottom margin = 27.2cm usable
+        # We want footer at the bottom, so add a large spacer
+        # This spacer should be large enough to push footer down, but content will override if needed
+        story.append(Spacer(1, 10*cm))  # Large spacer to push footer down
         
         # Add payment terms and footer - keep them together at bottom
         footer_content = []
