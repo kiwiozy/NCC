@@ -109,10 +109,19 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
     
     GET /api/invoices/xero/<invoice_link_id>/pdf/
     GET /api/invoices/xero/<invoice_link_id>/pdf/?debug=true  (for layout debugging)
+    GET /api/invoices/xero/<invoice_link_id>/pdf/?test_items=20  (test with 20 line items)
     """
     try:
         # Check for debug mode
         debug_mode = request.GET.get('debug', 'false').lower() == 'true'
+        
+        # Check for test items mode
+        test_items_count = request.GET.get('test_items', None)
+        if test_items_count:
+            try:
+                test_items_count = int(test_items_count)
+            except ValueError:
+                test_items_count = None
         
         from xero_integration.models import XeroInvoiceLink
         from patients.models import Patient
@@ -200,6 +209,17 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 'unit_price': float(invoice_link.total or 0),
                 'gst_rate': 0.0,
             })
+        
+        # If test_items mode, generate multiple test line items
+        if test_items_count:
+            line_items = []
+            for i in range(1, test_items_count + 1):
+                line_items.append({
+                    'description': f'Test Line Item {i} - Custom orthotic device with adjustments and fitting',
+                    'quantity': 1,
+                    'unit_price': 150.00 + (i * 10),  # Varying prices
+                    'gst_rate': 0.10 if i % 3 == 0 else 0.0,  # Every 3rd item has GST
+                })
         
         # Prepare invoice data
         invoice_data = {
