@@ -751,6 +751,10 @@ class XeroService:
             # Get API client and connection
             api_client = self.get_api_client()
             connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
             accounting_api = AccountingApi(api_client)
             
             # Determine patient and company from appointment or direct parameters
