@@ -15,7 +15,7 @@ export default function AccountsQuotesDialog({ opened, onClose, patientId, patie
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Accounts | Quotes"
+      title="Accounts"
       size="calc(100vw - 80px)"
       centered={false}
       styles={{

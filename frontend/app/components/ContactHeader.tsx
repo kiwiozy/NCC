@@ -527,7 +527,7 @@ export default function ContactHeader({
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); }, count: appointmentsCount },
-    { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => { setAccountsQuotesOpened(true); setMenuOpened(false); } },
+    { icon: <IconReceipt size={20} />, label: 'Accounts', onClick: () => { setAccountsQuotesOpened(true); setMenuOpened(false); } },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
     { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => { onLettersClick?.(); setMenuOpened(false); } },
@@ -892,7 +892,7 @@ export default function ContactHeader({
         </Popover>
       </Group>
 
-      {/* Accounts | Quotes Dialog */}
+      {/* Accounts Dialog */}
       <AccountsQuotesDialog
         opened={accountsQuotesOpened}
         onClose={() => setAccountsQuotesOpened(false)}
