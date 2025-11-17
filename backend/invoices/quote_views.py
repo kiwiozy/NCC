@@ -45,7 +45,7 @@ def generate_xero_quote_pdf(request, quote_link_id):
         # Build patient/contact info
         # IMPORTANT: Company takes precedence for address (determines who quote is billed to)
         if quote_link.company:
-            # Company pays - use company's address
+            # Company pays - use company's address BUT keep patient name for reference
             company = quote_link.company
             patient_info = {
                 'name': company.name,
@@ -63,6 +63,15 @@ def generate_xero_quote_pdf(request, quote_link_id):
                 patient_info['suburb'] = addr.get('suburb', '')
                 patient_info['state'] = addr.get('state', '')
                 patient_info['postcode'] = addr.get('postcode', '')
+            
+            # Store patient reference separately for the Reference/PO# field
+            patient_reference = None
+            if quote_link.patient:
+                patient = quote_link.patient
+                patient_reference = {
+                    'name': f"{patient.first_name} {patient.last_name}",
+                    'ndis_number': patient.health_number if patient.health_number else ''
+                }
                 
         elif quote_link.patient:
             # Patient pays directly - use patient's address
@@ -87,6 +96,9 @@ def generate_xero_quote_pdf(request, quote_link_id):
             # Get NDIS/health number
             if patient.health_number:
                 patient_info['ndis_number'] = patient.health_number
+            
+            # Patient reference is same as patient_info for direct billing
+            patient_reference = None
                 
         else:
             # Fallback to contact from Xero
@@ -98,17 +110,26 @@ def generate_xero_quote_pdf(request, quote_link_id):
                 'postcode': '',
                 'ndis_number': ''
             }
+            patient_reference = None
         
         # Convert Xero line items to PDF format
         line_items = []
         if xero_quote.line_items:
             for item in xero_quote.line_items:
+                # Determine GST rate based on tax_type
+                # EXEMPTOUTPUT = GST Free (0%)
+                # OUTPUT2 = GST on Income (10%)
+                # INPUT2 = GST on Expenses (10%)
+                gst_rate = 0.0
+                if item.tax_type and ('OUTPUT2' in item.tax_type or 'INPUT2' in item.tax_type):
+                    gst_rate = 0.10
+                
                 line_items.append({
                     'description': item.description or 'Quote item',
                     'quantity': float(item.quantity) if item.quantity else 1,
                     'unit_price': float(item.unit_amount) if item.unit_amount else 0,
                     'discount': float(item.discount_rate) if item.discount_rate else 0,
-                    'gst_rate': 0.10 if item.tax_type and 'OUTPUT' in item.tax_type else 0.0,
+                    'gst_rate': gst_rate,
                 })
         
         # Prepare quote data
@@ -117,6 +138,7 @@ def generate_xero_quote_pdf(request, quote_link_id):
             'quote_date': quote_link.quote_date or datetime.now(),
             'expiry_date': quote_link.expiry_date or (datetime.now() + timedelta(days=30)),
             'patient': patient_info,
+            'patient_reference': patient_reference,  # Separate patient reference for company billing
             'practitioner': {
                 'name': 'Craig Laird',
                 'qualification': 'CPed CM au',

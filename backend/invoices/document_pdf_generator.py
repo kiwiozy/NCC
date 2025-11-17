@@ -422,6 +422,7 @@ class DocumentPDFGenerator:
         
         patient = self.document_data['patient']
         practitioner = self.document_data.get('practitioner', {})
+        patient_reference = self.document_data.get('patient_reference')  # Separate reference for company billing
         
         # Patient address - larger font for name
         patient_address = Paragraph(
@@ -431,10 +432,19 @@ class DocumentPDFGenerator:
             self.styles['Normal']
         )
         
-        # Reference info
-        ref_info_text = f"<b>Reference / PO#</b><br/>{patient['name']}"
-        if patient.get('ndis_number'):
-            ref_info_text += f"<br/>NDIS # {patient['ndis_number']}"
+        # Reference info - use patient_reference if provided (for company billing), otherwise use patient
+        if patient_reference:
+            # Company billing: Show patient name in reference even though address is company
+            ref_name = patient_reference['name']
+            ref_ndis = patient_reference.get('ndis_number', '')
+        else:
+            # Direct billing: Use patient info
+            ref_name = patient['name']
+            ref_ndis = patient.get('ndis_number', '')
+        
+        ref_info_text = f"<b>Reference / PO#</b><br/>{ref_name}"
+        if ref_ndis:
+            ref_info_text += f"<br/>NDIS # {ref_ndis}"
         ref_info_text += f"<br/><b>Provider Registration #</b> {self.PROVIDER_REGISTRATION}"
         
         # Add practitioner info to reference section

@@ -145,8 +145,10 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'postcode': '',
         }
         
+        patient_reference = None  # Separate reference for company billing
+        
         if invoice_link.company:
-            # Company pays - use company's address
+            # Company pays - use company's address BUT keep patient name for reference
             company = invoice_link.company
             patient_info['name'] = company.name
             
@@ -157,6 +159,14 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 patient_info['suburb'] = addr.get('suburb', '')
                 patient_info['state'] = addr.get('state', '')
                 patient_info['postcode'] = addr.get('postcode', '')
+            
+            # Store patient reference separately for the Reference/PO# field
+            if invoice_link.patient:
+                patient = invoice_link.patient
+                patient_reference = {
+                    'name': f"{patient.first_name} {patient.last_name}",
+                    'ndis_number': patient.health_number if patient.health_number else ''
+                }
         
         elif invoice_link.patient:
             # Patient pays directly - use patient's address
@@ -168,7 +178,8 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 addr = patient.address_json
                 patient_info['address'] = addr.get('street', '')
                 patient_info['suburb'] = addr.get('suburb', '')
-                patient_info['state'] = addr.get('postcode', '')
+                patient_info['state'] = addr.get('state', '')
+                patient_info['postcode'] = addr.get('postcode', '')
             
             # Get NDIS/health number
             if patient.health_number:
@@ -190,9 +201,13 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 
                 if xero_invoice and xero_invoice.line_items:
                     for item in xero_invoice.line_items:
+                        # Determine GST rate based on tax_type
+                        # EXEMPTOUTPUT = GST Free (0%)
+                        # OUTPUT2 = GST on Income (10%)
+                        # INPUT2 = GST on Expenses (10%)
                         gst_rate = 0.0
-                        if item.tax_type == 'OUTPUT':
-                            gst_rate = 0.10  # 10% GST
+                        if item.tax_type and ('OUTPUT2' in item.tax_type or 'INPUT2' in item.tax_type):
+                            gst_rate = 0.10
                         
                         # Get discount rate (Xero stores it as percentage)
                         discount = float(item.discount_rate or 0)
@@ -235,6 +250,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'invoice_date': invoice_link.invoice_date or datetime.now(),
             'due_date': invoice_link.due_date or (datetime.now() + timedelta(days=7)),
             'patient': patient_info,
+            'patient_reference': patient_reference,  # Separate patient reference for company billing
             'practitioner': {
                 'name': 'Craig Laird',
                 'qualification': 'CPed CM au',
