@@ -1559,16 +1559,20 @@ class XeroService:
             # Create invoice with same details
             logger.info(f"📝 [convert_quote_to_invoice] Creating new invoice from quote...")
             from xero_python.accounting import CurrencyCode
+            invoice_date = timezone.now().date()
+            due_date = invoice_date + timedelta(days=14)  # Default 14 days payment terms
+            
             invoice = Invoice(
                 type='ACCREC',
                 contact=original_quote.contact,  # Same contact
                 line_items=original_quote.line_items,  # Same line items
                 reference=f"Quote #{original_quote.quote_number}",
-                date=timezone.now().date(),
+                date=invoice_date,
+                due_date=due_date,  # Required for AUTHORISED invoices
                 status='AUTHORISED',  # Create as AUTHORISED instead of DRAFT
                 currency_code=CurrencyCode.AUD
             )
-            logger.info(f"✅ [convert_quote_to_invoice] Invoice object created - status: AUTHORISED")
+            logger.info(f"✅ [convert_quote_to_invoice] Invoice object created - status: AUTHORISED, due: {due_date}")
             
             # Create invoice in Xero
             logger.info(f"📤 [convert_quote_to_invoice] Sending new invoice to Xero...")
