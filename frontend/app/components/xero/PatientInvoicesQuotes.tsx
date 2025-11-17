@@ -9,7 +9,7 @@ import { QuoteDetailModal } from './QuoteDetailModal';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { CreateQuoteModal } from './CreateQuoteModal';
 import { EditInvoiceModal } from './EditInvoiceModal';
-import { PatientQuickCreateModal } from './PatientQuickCreateModal';
+import { PatientBillingWizard } from './PatientBillingWizard';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -60,6 +60,7 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
   const [quoteDetailModalOpened, setQuoteDetailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>();
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   
@@ -688,19 +689,21 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
         </Tabs>
       </Paper>
 
-      {/* Patient Quick Create Modal */}
+      {/* Patient Billing Wizard */}
       {patientId && patientName && (
-        <PatientQuickCreateModal
+        <PatientBillingWizard
           opened={quickCreateOpened}
           onClose={() => setQuickCreateOpened(false)}
           patientId={patientId}
           patientName={patientName}
-          onCreateInvoice={(id) => {
+          onCreateInvoice={(pId, cId) => {
             setQuickCreateOpened(false);
+            setPreSelectedCompanyId(cId);
             setCreateInvoiceModalOpened(true);
           }}
-          onCreateQuote={(id) => {
+          onCreateQuote={(pId, cId) => {
             setQuickCreateOpened(false);
+            setPreSelectedCompanyId(cId);
             setCreateQuoteModalOpened(true);
           }}
         />
@@ -709,27 +712,37 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
       {/* Create Invoice Modal */}
       <CreateInvoiceModal
         opened={createInvoiceModalOpened}
-        onClose={() => setCreateInvoiceModalOpened(false)}
+        onClose={() => {
+          setCreateInvoiceModalOpened(false);
+          setPreSelectedCompanyId(undefined);
+        }}
         onSuccess={() => {
           setCreateInvoiceModalOpened(false);
+          setPreSelectedCompanyId(undefined);
           fetchData();
         }}
         patients={patients}
         companies={companies}
         preSelectedPatientId={patientId}
+        preSelectedCompanyId={preSelectedCompanyId}
       />
 
       {/* Create Quote Modal */}
       <CreateQuoteModal
         opened={createQuoteModalOpened}
-        onClose={() => setCreateQuoteModalOpened(false)}
+        onClose={() => {
+          setCreateQuoteModalOpened(false);
+          setPreSelectedCompanyId(undefined);
+        }}
         onSuccess={() => {
           setCreateQuoteModalOpened(false);
+          setPreSelectedCompanyId(undefined);
           fetchData();
         }}
         patients={patients}
         companies={companies}
         preSelectedPatientId={patientId}
+        preSelectedCompanyId={preSelectedCompanyId}
       />
 
       {/* Invoice Detail Modal */}
