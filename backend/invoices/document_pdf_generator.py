@@ -700,7 +700,12 @@ class DocumentPDFGenerator:
         terms_days = self.document_data.get('payment_terms_days', 7)
         due_date = self.document_data['due_date'].strftime('%d/%m/%Y')
         
-        terms_text = f"<b>Please note this is a {terms_days} Day Account. Due on the {due_date}</b>"
+        # Different text for quotes vs invoices
+        if self.document_type == 'quote':
+            terms_text = f"<b>This quote is valid for {terms_days} days until {due_date}</b>"
+        else:
+            terms_text = f"<b>Please note this is a {terms_days} Day Account. Due on the {due_date}</b>"
+        
         terms = Paragraph(terms_text, self.styles['Normal'])
         elements.append(terms)
         
