@@ -655,12 +655,15 @@ class XeroService:
                 for email_item in company.contact_json.get('emails', []):
                     email_addr = email_item.get('address', '').strip()
                     if email_addr:
-                        emails.append(email_addr)
+                        # Split by comma if multiple emails in one field
+                        email_addresses = [e.strip() for e in email_addr.split(',') if e.strip()]
+                        emails.extend(email_addresses)
                 
                 if phones:
                     contact.phones = phones
                 if emails:
-                    contact.email_address = emails[0]  # Primary email
+                    # Use first valid email only (Xero accepts single email)
+                    contact.email_address = emails[0]
             
             # Add address from address_json
             if company.address_json:
