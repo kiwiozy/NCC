@@ -85,7 +85,14 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
       // Set form values
       setInvoiceDate(data.invoice_date ? new Date(data.invoice_date) : null);
       setDueDate(data.due_date ? new Date(data.due_date) : null);
-      setLineItems(data.line_items || [
+      
+      // Ensure all line items have discount property
+      const lineItemsWithDiscount = (data.line_items || []).map((item: any) => ({
+        ...item,
+        discount: item.discount ?? 0, // Ensure discount is always a number
+      }));
+      
+      setLineItems(lineItemsWithDiscount.length > 0 ? lineItemsWithDiscount : [
         {
           id: '1',
           description: '',
@@ -139,14 +146,20 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
   };
 
   const calculateSubtotal = () => {
-    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_amount), 0);
+    return lineItems.reduce((sum, item) => {
+      const itemTotal = item.quantity * item.unit_amount;
+      const discountAmount = itemTotal * (item.discount / 100);
+      return sum + (itemTotal - discountAmount);
+    }, 0);
   };
 
   const calculateTax = () => {
     return lineItems.reduce((sum, item) => {
       const itemTotal = item.quantity * item.unit_amount;
+      const discountAmount = itemTotal * (item.discount / 100);
+      const discountedAmount = itemTotal - discountAmount;
       if (item.tax_type === 'OUTPUT2' || item.tax_type === 'INPUT2') {
-        return sum + (itemTotal * 0.1); // 10% GST
+        return sum + (discountedAmount * 0.1); // 10% GST on discounted amount
       }
       return sum;
     }, 0);
@@ -336,11 +349,12 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
                       <Table.Td>
                         <NumberInput
                           value={item.discount}
-                          onChange={(val) => updateLineItem(index, 'discount', val || 0)}
+                          onChange={(val) => updateLineItem(index, 'discount', val ?? 0)}
                           min={0}
                           max={100}
                           suffix="%"
                           decimalScale={0}
+                          step={1}
                           size="xs"
                         />
                       </Table.Td>

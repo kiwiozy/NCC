@@ -233,7 +233,11 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'invoice_date': invoice_link.invoice_date or datetime.now(),
             'due_date': invoice_link.due_date or (datetime.now() + timedelta(days=7)),
             'patient': patient_info,
-            'practitioner': {},  # TODO: Get from appointment or settings
+            'practitioner': {
+                'name': 'Craig Laird',
+                'qualification': 'CPed CM au',
+                'registration': '3454'
+            },
             'line_items': line_items,
             'payments': [],  # TODO: Get from Xero or database
             'payment_terms_days': 7,

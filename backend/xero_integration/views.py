@@ -300,6 +300,7 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
                             'description': item.description or '',
                             'quantity': float(item.quantity) if item.quantity else 1,
                             'unit_amount': float(item.unit_amount) if item.unit_amount else 0,
+                            'discount': float(item.discount_rate) if item.discount_rate else 0,
                             'account_code': item.account_code or '200',
                             'tax_type': item.tax_type or 'EXEMPTOUTPUT',
                         })

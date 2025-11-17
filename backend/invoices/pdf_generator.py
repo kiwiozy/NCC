@@ -14,6 +14,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from django.conf import settings
 
+# Try to import svglib for SVG support
+try:
+    from svglib.svglib import svg2rlg
+    from reportlab.graphics import renderPDF
+    SVGLIB_AVAILABLE = True
+except ImportError:
+    SVGLIB_AVAILABLE = False
+
 
 class InvoicePDFGenerator:
     """Generate Walk Easy Pedorthics invoice PDFs"""
@@ -102,11 +110,22 @@ class InvoicePDFGenerator:
         self.styles.add(ParagraphStyle(
             name='RightInfo',
             parent=self.styles['Normal'],
-            fontSize=8,  # Much smaller for compact reference section
+            fontSize=11,  # Increased from 8pt to 11pt for better readability
             textColor=colors.black,
             alignment=TA_RIGHT,
-            leading=10,  # Tighter line spacing
-            fontName='Helvetica-Bold',
+            leading=14,  # Increased line spacing to match larger font
+            fontName='Helvetica',  # Removed bold - now regular weight
+        ))
+        
+        # Reference section info (smaller)
+        self.styles.add(ParagraphStyle(
+            name='RefInfo',
+            parent=self.styles['Normal'],
+            fontSize=9,  # Increased from 8pt to 9pt
+            textColor=colors.black,
+            alignment=TA_RIGHT,
+            leading=11,  # Slightly more spacing
+            fontName='Helvetica',
         ))
         
         # Footer style
@@ -191,9 +210,8 @@ class InvoicePDFGenerator:
             story.append(self._debug_box(elem, "Totals"))
         
         # Add spacer at the end to reserve space for footer on last page
-        # Footer needs ~3.5cm (payment terms 1cm + bank details 1cm + blue bar 0.6cm + spacing)
-        # We'll add a conditional spacer that ensures the footer fits on the last page
-        story.append(Spacer(1, 3.5*cm))
+        # Reduced spacer for tighter layout
+        story.append(Spacer(1, 1.5*cm))
         
         # Store total page count (will be set during build)
         total_pages = [0]  # Use list to allow modification in nested function
@@ -210,27 +228,27 @@ class InvoicePDFGenerator:
             if current_page == total_pages[0]:
                 # Position footer at bottom
                 # With 2cm bottom margin, we have space from 2cm to bottom of page
-                # Footer components: payment terms (1cm) + bank details (1cm) + blue bar (0.6cm) + spacing (0.4cm) = 3cm total
+                # Footer components: payment terms + bank details + blue bar with reduced spacing
                 footer_y = 0.8*cm  # Start from 0.8cm from page bottom
                 
                 # Payment terms text
                 terms_days = self.invoice_data.get('payment_terms_days', 7)
                 due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
                 
-                # Draw payment terms box
+                # Draw payment terms box (no border) - reduced spacing
                 canvas_obj.setFont('Helvetica-Bold', 10)
-                canvas_obj.rect(2*cm, footer_y + 2*cm, 17*cm, 1*cm, stroke=1, fill=0)
-                canvas_obj.drawString(2.2*cm, footer_y + 2.65*cm, 
+                # Center the text in the box (box is 17cm wide, centered at 2cm + 8.5cm = 10.5cm from left edge)
+                canvas_obj.drawCentredString(10.5*cm, footer_y + 1.6*cm,  # Reduced from 2.0cm
                     f"Please note this is a {terms_days} Day Account. Due on the {due_date}")
                 
-                # Draw bank details box
-                canvas_obj.setFont('Helvetica', 10)
-                canvas_obj.rect(2*cm, footer_y + 0.8*cm, 17*cm, 1*cm, stroke=1, fill=0)
-                canvas_obj.drawString(2.2*cm, footer_y + 1.25*cm,
+                # Draw bank details box (no border) - reduced spacing
+                canvas_obj.setFont('Helvetica', 8)  # Reduced from 10 to 8
+                # Center the bank details text
+                canvas_obj.drawCentredString(10.5*cm, footer_y + 0.85*cm,  # Reduced from 1.0cm
                     f"EFT | {self.BUSINESS_NAME} | BSB: {self.BSB} ACC: {self.ACCOUNT} | Please use last name as reference")
                 
                 # Draw blue footer bar
-                canvas_obj.setFillColor(colors.HexColor('#3B5998'))
+                canvas_obj.setFillColor(colors.HexColor('#4897d2'))
                 canvas_obj.rect(2*cm, footer_y, 17*cm, 0.6*cm, stroke=0, fill=1)
                 canvas_obj.setFillColor(colors.white)
                 canvas_obj.setFont('Helvetica', 9)
@@ -272,32 +290,49 @@ class InvoicePDFGenerator:
         
         # Try to load logo - use Logo_Nexus.png
         logo_path = os.path.join(settings.BASE_DIR, '../frontend/public/images/Logo_Nexus.png')
+        address_graphic_path = os.path.join(settings.BASE_DIR, '../frontend/public/images/Address.png')
         
         # Invoice date info (right side)
         invoice_date = self.invoice_data['invoice_date'].strftime('%d/%m/%Y')
         due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
         
         date_info = Paragraph(
-            f"<b>Invoice Date</b><br/>{invoice_date}<br/>"
-            f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/>"
+            f"<b>Invoice Date</b><br/>{invoice_date}<br/><br/>"
+            f"<b>Invoice Number</b><br/>{self.invoice_data['invoice_number']}<br/><br/>"
             f"<b>Due Date</b><br/>{due_date}",
             self.styles['RightInfo']
         )
         
-        # Create header table - 3 equal columns
+        # Create header table - 3 columns
         header_data = []
         
         if os.path.exists(logo_path):
             logo = Image(logo_path, width=4*cm, height=4*cm, kind='proportional')
-            business_info = Paragraph(
-                f"<b>{self.BUSINESS_NAME}</b><br/>"
-                f"<i>P:</i> {self.POSTAL_ADDRESS} | <i>A:</i> {self.PHYSICAL_ADDRESS}<br/>"
-                f"<i>Ph:</i> {self.PHONE}",
-                self.styles['HeaderInfo']
-            )
             
-            header_data.append([logo, business_info, date_info])
-            colWidths = [4*cm, 9.03*cm, 3.97*cm]  # Logo | Business info (expanded) | Date info (15% narrower)
+            # Use Address.png graphic for business info (300 DPI print quality)
+            if os.path.exists(address_graphic_path):
+                # Load the Address.png graphic - match logo height (4cm)
+                # Image is 2710x1373 pixels, aspect ratio = 1.974:1
+                # Set height to match logo (4cm), width will auto-scale proportionally
+                address_graphic = Image(address_graphic_path, width=9.03*cm, height=4*cm, kind='bound')
+                header_data.append([logo, address_graphic, date_info])
+            else:
+                # Fallback to text if Address.png not found
+                business_info = Paragraph(
+                    f"<b>{self.BUSINESS_NAME}</b><br/>"
+                    f"<br/>"
+                    f"43 Harrison St, Cardiff, NSW 2285<br/>"
+                    f"<br/>"
+                    f"21 Dowe St, Tamworth, NSW 2285<br/>"
+                    f"<br/>"
+                    f"02 6766 3153<br/>"
+                    f"<br/>"
+                    f"info@walkeasy.com.au",
+                    self.styles['HeaderInfo']
+                )
+                header_data.append([logo, business_info, date_info])
+            
+            colWidths = [4*cm, 9.03*cm, 3.97*cm]  # Logo | Business info (expanded) | Date info
         else:
             # No logo, just business info and date info (2 columns)
             business_info = Paragraph(
@@ -315,7 +350,7 @@ class InvoicePDFGenerator:
         # Build table style - add grid lines in debug mode
         table_style = [
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-            ('ALIGN', (1, 0), (1, 0), 'CENTER' if os.path.exists(logo_path) else 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),  # Right-align column 2 (Address.png)
             ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ]
@@ -334,6 +369,9 @@ class InvoicePDFGenerator:
         
         elements.append(header_table)
         
+        # Add 5mm spacer before Tax Invoice title
+        elements.append(Spacer(1, 0.5*cm))
+        
         # Add "Tax Invoice" title
         title = Paragraph("<b>Tax Invoice</b>", self.styles['InvoiceTitle'])
         elements.append(title)
@@ -347,9 +385,9 @@ class InvoicePDFGenerator:
         patient = self.invoice_data['patient']
         practitioner = self.invoice_data.get('practitioner', {})
         
-        # Patient address
+        # Patient address - larger font for name
         patient_address = Paragraph(
-            f"<b>{patient['name']}</b><br/>"
+            f"<font size='14'><b>{patient['name']}</b></font><br/>"
             f"{patient['address']}<br/>"
             f"{patient['suburb']} {patient['state']} {patient['postcode']}",
             self.styles['Normal']
@@ -361,6 +399,7 @@ class InvoicePDFGenerator:
             ref_info_text += f"<br/>NDIS # {patient['ndis_number']}"
         ref_info_text += f"<br/><b>Provider Registration #</b> {self.PROVIDER_REGISTRATION}"
         
+        # Add practitioner info to reference section
         if practitioner.get('name'):
             ref_info_text += f"<br/><br/><i>Practitioner:</i><br/><b>{practitioner['name']}</b>"
             if practitioner.get('qualification'):
@@ -385,7 +424,7 @@ class InvoicePDFGenerator:
                 "Additional info line 11"
             )
         
-        ref_info = Paragraph(ref_info_text, self.styles['RightInfo'])
+        ref_info = Paragraph(ref_info_text, self.styles['RefInfo'])
         
         info_table = Table([[patient_address, ref_info]], colWidths=[10*cm, 7*cm])
         
@@ -394,6 +433,7 @@ class InvoicePDFGenerator:
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (0, 0), 2.5*cm),  # Add 2.5cm left padding to patient address
         ]
         
         # Add grid lines in debug mode
@@ -447,7 +487,7 @@ class InvoicePDFGenerator:
         line_table = Table(table_data, colWidths=[7*cm, 1.5*cm, 2.5*cm, 1.5*cm, 1.5*cm, 2.5*cm], repeatRows=1)
         line_table.setStyle(TableStyle([
             # Header row styling
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3B5998')),  # Blue header
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),  # Blue header
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -489,7 +529,7 @@ class InvoicePDFGenerator:
         
         payment_table = Table(payment_data, colWidths=[4*cm, 6*cm, 4*cm])
         payment_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3B5998')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -571,6 +611,37 @@ class InvoicePDFGenerator:
         ]))
         
         elements.append(totals_table)
+        
+        return elements
+    
+    def _build_practitioner_info(self):
+        """Build practitioner information section"""
+        elements = []
+        
+        practitioner = self.invoice_data.get('practitioner', {})
+        
+        if practitioner.get('name'):
+            # Create centered practitioner info
+            prac_info_text = f"<i>Practitioner:</i><br/><b>{practitioner['name']}</b>"
+            if practitioner.get('qualification'):
+                prac_info_text += f"<br/>{practitioner['qualification']}"
+            if practitioner.get('registration'):
+                prac_info_text += f"<br/>Pedorthic Registration # {practitioner['registration']}"
+            prac_info_text += f"<br/>www.pedorthics.org.au"
+            
+            # Create a centered style for practitioner info
+            from reportlab.lib.enums import TA_CENTER
+            prac_style = ParagraphStyle(
+                name='PractitionerInfo',
+                parent=self.styles['Normal'],
+                fontSize=9,
+                alignment=TA_CENTER,
+                leading=11,
+            )
+            
+            prac_info = Paragraph(prac_info_text, prac_style)
+            elements.append(Spacer(1, 0.5*cm))
+            elements.append(prac_info)
         
         return elements
     
