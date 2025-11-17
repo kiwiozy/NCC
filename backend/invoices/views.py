@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .pdf_generator import generate_invoice_pdf
+from .document_pdf_generator import generate_invoice_pdf
 
 logger = logging.getLogger(__name__)
 

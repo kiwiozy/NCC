@@ -808,6 +808,12 @@ def create_xero_quote(request):
         line_items = request.data.get('line_items', [])
         expiry_date = request.data.get('expiry_date')
         
+        # Debug logging
+        logger.info(f"🔍 [create_xero_quote] Received request:")
+        logger.info(f"  patient_id: {patient_id}")
+        logger.info(f"  company_id: {company_id}")
+        logger.info(f"  contact_type: {contact_type}")
+        
         # Validate that we have at least one contact (patient or company)
         if not patient_id and not company_id:
             return JsonResponse({

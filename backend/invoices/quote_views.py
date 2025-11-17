@@ -7,24 +7,9 @@ from django.http import HttpResponse
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .quote_pdf_generator import QuotePDFGenerator
+from .document_pdf_generator import generate_quote_pdf
 
 logger = logging.getLogger(__name__)
-
-
-def generate_quote_pdf(quote_data, debug=False):
-    """
-    Generate PDF for a quote
-    
-    Args:
-        quote_data: Quote information dictionary
-        debug: Whether to show debug grid lines
-    
-    Returns:
-        BytesIO buffer containing the PDF
-    """
-    generator = QuotePDFGenerator(quote_data, debug=debug)
-    return generator.generate()
 
 
 @api_view(['GET'])

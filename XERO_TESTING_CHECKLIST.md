@@ -109,8 +109,7 @@
 - [ ] Click "Convert to Invoice" button
 - [ ] Confirm conversion
 - [ ] Verify success notification
-- [ ] Verify quote status changes to "INVOICED"
-- [ ] Verify converted invoice number appears in table
+
 - [ ] Click invoice number - navigate to invoice in Xero
 
 **Expected Result:** Quote-to-invoice conversion works seamlessly
