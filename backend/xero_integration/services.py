@@ -993,6 +993,42 @@ class XeroService:
             logger.error(f"Error fetching invoice {invoice_id} from Xero: {e}")
             return None
     
+    def get_quote(self, quote_id: str):
+        """
+        Fetch quote details from Xero by quote ID
+        
+        Args:
+            quote_id: Xero quote GUID
+        
+        Returns:
+            Xero Quote object with line items
+        """
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.warning("No active Xero connection found")
+                return None
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch quote from Xero
+            response = accounting_api.get_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_id
+            )
+            
+            if response and response.quotes:
+                return response.quotes[0]
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error fetching quote {quote_id} from Xero: {e}")
+            return None
+    
     def sync_invoice_status(self, invoice_link: XeroInvoiceLink) -> XeroInvoiceLink:
         """
         Fetch latest invoice status and payment details from Xero

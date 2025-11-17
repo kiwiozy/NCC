@@ -414,6 +414,84 @@ export default function XeroInvoicesQuotesPage() {
                   </>
                 )}
                 
+                {item.type === 'quote' && (
+                  <>
+                    <Tooltip label="Download PDF">
+                      <ActionIcon
+                        variant="subtle"
+                        color="green"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`);
+                            if (!response.ok) throw new Error('Failed to generate PDF');
+                            
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `Quote_${(item as any).xero_quote_number}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            
+                            notifications.show({
+                              title: 'Success',
+                              message: 'Quote PDF downloaded',
+                              color: 'green',
+                            });
+                          } catch (error) {
+                            notifications.show({
+                              title: 'Error',
+                              message: 'Failed to generate quote PDF',
+                              color: 'red',
+                            });
+                          }
+                        }}
+                      >
+                        <IconDownload size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    
+                    <Tooltip label="Download Debug PDF">
+                      <ActionIcon
+                        variant="subtle"
+                        color="orange"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`);
+                            if (!response.ok) throw new Error('Failed to generate PDF');
+                            
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `Quote_${(item as any).xero_quote_number}_DEBUG.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            
+                            notifications.show({
+                              title: 'Success',
+                              message: 'Debug quote PDF downloaded',
+                              color: 'green',
+                            });
+                          } catch (error) {
+                            notifications.show({
+                              title: 'Error',
+                              message: 'Failed to generate quote PDF',
+                              color: 'red',
+                            });
+                          }
+                        }}
+                      >
+                        <IconDownload size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </>
+                )}
+                
                 <Tooltip label={`Delete ${item.type === 'invoice' ? 'Invoice' : 'Quote'}`}>
                   <ActionIcon
                     variant="subtle"
