@@ -8,6 +8,7 @@ Provides functions for:
 - Invoice creation and updates
 - Payment synchronization
 """
+import logging
 import os
 import time
 from datetime import datetime, timedelta
@@ -22,6 +23,8 @@ from xero_python.api_client.oauth2 import OAuth2Token
 from xero_python.identity import IdentityApi
 from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes, QuoteStatusCodes
 from xero_python.exceptions import AccountingBadRequestException
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     XeroConnection,
