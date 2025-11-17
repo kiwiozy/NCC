@@ -175,3 +175,22 @@ def csrf_token(request):
         'csrfToken': token
     })
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Change to IsAuthenticated in production
+def list_users(request):
+    """
+    List all Django User accounts for linking to clinician profiles
+    """
+    users = User.objects.all().order_by('username')
+    user_list = [
+        {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_active': user.is_active,
+        }
+        for user in users
+    ]
+    return Response(user_list)
+

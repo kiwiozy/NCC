@@ -6,7 +6,7 @@
 
 > ⚠️ **IMPORTANT:** If this database schema documentation is updated, you **MUST** also update the "Database Schema Documentation" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
 
-**Last Updated:** 2025-01-15 (Added django-allauth OAuth tables, Patient Letters, and Badge Count feature)
+**Last Updated:** 2025-11-17 (Added User Profiles feature: professional credentials and signatures for clinicians)
 
 ---
 
@@ -159,20 +159,91 @@
 **Model:** `clinicians.models.Clinic`  
 **Status:** ✅ Exists
 
-**Fields:** (Need to check actual model)
+**Fields:**
 - `id` - UUID (primary key)
-- `name` - CharField - Clinic name
-- (Other fields to be documented)
+- `name` - CharField(200) - Clinic name
+- `abn` - CharField(20) - Australian Business Number (nullable)
+- `phone` - CharField(20) - Main clinic phone (nullable)
+- `email` - EmailField - Main clinic email (nullable)
+- `address_json` - JSONField - Clinic address (nullable)
+- `color` - CharField(7) - Hex color for calendar (#3B82F6 default)
+- `sms_reminder_template` - TextField - SMS template (nullable)
+- `sms_reminders_enabled` - BooleanField - Default: True
+- `filemaker_id` - UUIDField - Original FileMaker ID (nullable, unique)
+- `created_at` - DateTimeField (auto_now_add)
+- `updated_at` - DateTimeField (auto_now)
 
 **Relationships:**
 - **One-to-Many:** `patients` ← Patient.clinic
 - **One-to-Many:** `appointments` ← Appointment.clinic
-- **One-to-Many:** `clinicians` ← Clinician.clinic (if exists)
+- **One-to-Many:** `clinicians` ← Clinician.clinic
 
 **Usage:**
-- Managed through Settings page
+- Managed through Settings → Clinics
 - Used in calendar for scheduling
 - Linked to patients, appointments, and clinicians
+
+---
+
+### ✅ **3b. `clinicians` Table** *(User Profiles)*
+
+**Model:** `clinicians.models.Clinician`  
+**Status:** ✅ Exists (Updated November 2025 with user profile fields)
+
+**Fields:**
+
+#### Primary & Relationships
+- `id` - UUID (primary key)
+- `clinic` - **ForeignKey** → `clinicians.Clinic` (SET_NULL, nullable)
+  - Related name: `clinicians`
+  - Primary clinic location
+- `user` - **OneToOneField** → `auth.User` (SET_NULL, nullable) ✨ **NEW**
+  - Related name: `clinician_profile`
+  - Links clinician to Django user account for Google OAuth login
+
+#### Basic Information
+- `full_name` - CharField(200) - Clinician's full name
+- `credential` - CharField(100) - Professional credentials (e.g., "CPed CM au") (nullable)
+- `email` - EmailField - Clinician's email (nullable)
+- `phone` - CharField(20) - Clinician's phone (nullable)
+- `role` - CharField(50) - Choices: PEDORTHIST, ADMIN, RECEPTION, MANAGER, OTHER (nullable)
+- `active` - BooleanField - Is clinician active? (default: True)
+
+#### Professional Credentials ✨ **NEW** (November 2025)
+- `registration_number` - CharField(100) - Professional registration (e.g., "Pedorthic Registration # 3454") (nullable)
+- `professional_body_url` - URLField(200) - Professional body website (e.g., "www.pedorthics.org.au") (nullable)
+
+#### Signatures ✨ **NEW** (November 2025)
+- `signature_image` - CharField(500) - S3 key for signature image used in letters/PDFs (nullable)
+- `signature_html` - TextField - HTML signature for emails (nullable)
+
+#### Audit
+- `created_at` - DateTimeField (auto_now_add)
+- `updated_at` - DateTimeField (auto_now)
+
+**Methods:**
+- `get_display_name()` - Returns name with credentials (e.g., "Craig Laird, CPed CM au")
+- `get_signature_url()` - Returns presigned S3 URL for signature image
+- `get_full_credentials_display()` - Returns multi-line string with name, credentials, registration, and URL
+
+**Relationships:**
+- **One-to-One:** `user` → Django User (optional link to login account)
+- **Many-to-One:** `clinic` → Clinic (primary location)
+- **One-to-Many:** `appointments` ← Appointment.clinician
+
+**Usage:**
+- **Settings → User Profiles:** Manage user profiles with professional credentials and signatures
+- **Calendar:** Assigned to appointments as resources
+- **Letters:** Signature images automatically added to patient letters
+- **Emails:** HTML signatures appended to outgoing emails
+- **Authentication:** Linked to Google OAuth user accounts
+
+**Display Format:**
+```
+Craig Laird, CPed CM au
+Pedorthic Registration # 3454
+www.pedorthics.org.au
+```
 
 ---
 

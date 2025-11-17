@@ -9,8 +9,9 @@ import Navigation from '../components/Navigation';
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 import ClinicsSettings from '../components/settings/ClinicsSettings';
 import DataManagementSettings from '../components/settings/DataManagementSettings';
+import UserProfiles from '../components/settings/UserProfiles';
 
-type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management';
+type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management' | 'users';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -31,6 +32,8 @@ export default function SettingsPage() {
         return <ClinicsSettings />;
       case 'data-management':
         return <DataManagementSettings />;
+      case 'users':
+        return <UserProfiles />;
       case 'general':
       default:
         return (
