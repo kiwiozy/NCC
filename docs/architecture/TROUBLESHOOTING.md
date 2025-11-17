@@ -2,9 +2,88 @@
 
 **Common issues and solutions for WalkEasy Nexus development**
 
-**Last Updated:** November 9, 2025 - Added FileMaker import issues
+**Last Updated:** November 17, 2025 - Added Navigation component blank screen issue
 
 > ⚠️ **IMPORTANT:** If this troubleshooting guide is updated, you **MUST** also update the "Troubleshooting Reference" section in `.cursor/rules/projectrules.mdc` to keep them synchronized. The project rules file is used by Cursor AI to provide context-aware assistance, so both files must stay in sync.
+
+---
+
+## 🎨 **Frontend / Next.js Issues**
+
+### **Blank Screen with Navigation Component** (Added: Nov 17, 2025)
+
+**Symptoms:**
+- Page shows blank screen despite data loading successfully
+- Console logs show component mounted and data fetched
+- Debug logs show "Rendering: Main content" but nothing displays
+- No React errors in console
+
+**Root Cause:**
+The Navigation component uses Mantine's `AppShell` with specific layout constraints (`overflow: hidden` on `AppShell.Main`). When page components are structured incorrectly within the AppShell, content gets clipped or hidden.
+
+**Common Mistakes:**
+```tsx
+// ❌ WRONG - Navigation as self-closing tag with separate wrapper
+return (
+  <div style={{ minHeight: '100vh' }}>
+    <Navigation />
+    <Container>
+      {/* content hidden! */}
+    </Container>
+  </div>
+);
+
+// ❌ WRONG - Navigation wrapper without React Fragment (causes JSX errors)
+return (
+  <Navigation>
+    <Container>
+      {/* syntax error */}
+    </Container>
+  </Navigation>
+);
+```
+
+**Solution:**
+Use Navigation as a wrapper component with proper structure:
+
+```tsx
+// ✅ CORRECT - Navigation as wrapper (see other working pages)
+return (
+  <Navigation>
+    <Container size="xl" py="xl">
+      <Stack gap="lg">
+        {/* content renders correctly */}
+      </Stack>
+    </Container>
+  </Navigation>
+);
+```
+
+**Alternative Solutions:**
+1. **Use query parameters instead of new pages:**
+   ```
+   /xero/invoices-quotes?patient={patientId}
+   ```
+
+2. **Use modal/drawer components:**
+   - Open from parent page
+   - No navigation conflicts
+   - Self-contained
+
+3. **Use tabs in existing pages:**
+   - Add content as tab in patient detail
+   - Natural user flow
+   - No separate routing
+
+**Testing Approach:**
+1. Create minimal test page first
+2. Verify basic rendering works
+3. Add features incrementally
+4. Test at each step
+
+**Related Files:**
+- `frontend/app/components/Navigation.tsx` - AppShell implementation
+- `PATIENT_ACCOUNTS_PAGE_REVERTED.md` - Detailed case study
 
 ---
 
