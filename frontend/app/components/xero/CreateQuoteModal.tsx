@@ -23,6 +23,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unit_amount: number;
+  discount: number;
   account_code: string;
   tax_type: string;
 }
@@ -98,6 +99,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     },
@@ -109,6 +111,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     };
@@ -134,14 +137,20 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   };
 
   const calculateSubtotal = () => {
-    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_amount), 0);
+    return lineItems.reduce((sum, item) => {
+      const lineTotal = item.quantity * item.unit_amount;
+      const discountAmount = lineTotal * (item.discount / 100);
+      return sum + (lineTotal - discountAmount);
+    }, 0);
   };
 
   const calculateTax = () => {
     return lineItems.reduce((sum, item) => {
-      const itemTotal = item.quantity * item.unit_amount;
+      const lineTotal = item.quantity * item.unit_amount;
+      const discountAmount = lineTotal * (item.discount / 100);
+      const discountedTotal = lineTotal - discountAmount;
       if (item.tax_type === 'OUTPUT2' || item.tax_type === 'INPUT2') {
-        return sum + (itemTotal * 0.1); // 10% GST
+        return sum + (discountedTotal * 0.1); // 10% GST
       }
       return sum;
     }, 0);
@@ -213,6 +222,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
           description: item.description,
           quantity: item.quantity,
           unit_amount: item.unit_amount,
+          discount: item.discount,
           account_code: item.account_code,
           tax_type: item.tax_type,
         })),
@@ -234,6 +244,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
             description: item.description,
             quantity: item.quantity,
             unit_amount: item.unit_amount,
+            discount: item.discount,
             account_code: item.account_code,
             tax_type: item.tax_type,
           })),
@@ -293,6 +304,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     }]);
@@ -305,7 +317,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         opened={opened}
         onClose={handleClose}
         title="Create Xero Quote"
-        size="1480px"
+        size="1600px"
       closeOnClickOutside={false}
     >
       <Stack gap="md">
@@ -392,6 +404,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
                   <Table.Th>Description</Table.Th>
                   <Table.Th style={{ width: '100px' }}>Qty</Table.Th>
                   <Table.Th style={{ width: '120px' }}>Unit Price</Table.Th>
+                  <Table.Th style={{ width: '100px' }}>Discount %</Table.Th>
                   <Table.Th style={{ width: '120px' }}>Account</Table.Th>
                   <Table.Th style={{ width: '120px' }}>Tax</Table.Th>
                   <Table.Th style={{ width: '100px' }}>Subtotal</Table.Th>
@@ -402,12 +415,15 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
                 {lineItems.map((item) => (
                   <Table.Tr key={item.id}>
                     <Table.Td>
-                      <TextInput
+                      <Textarea
                         placeholder="Description"
                         value={item.description}
                         onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                         required
                         size="xs"
+                        autosize
+                        minRows={1}
+                        maxRows={4}
                       />
                     </Table.Td>
                     <Table.Td>
@@ -432,6 +448,17 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
                       />
                     </Table.Td>
                     <Table.Td>
+                      <NumberInput
+                        value={item.discount}
+                        onChange={(val) => updateLineItem(item.id, 'discount', val ?? 0)}
+                        min={0}
+                        max={100}
+                        step={1}
+                        suffix="%"
+                        size="xs"
+                      />
+                    </Table.Td>
+                    <Table.Td>
                       <Select
                         data={DEFAULT_ACCOUNT_CODES}
                         value={item.account_code}
@@ -451,7 +478,7 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" fw={500}>
-                        {formatCurrency(item.quantity * item.unit_amount)}
+                        {formatCurrency(item.quantity * item.unit_amount * (1 - item.discount / 100))}
                       </Text>
                     </Table.Td>
                     <Table.Td>
@@ -478,6 +505,17 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
               <Text size="sm">Subtotal:</Text>
               <Text size="sm" fw={500}>{formatCurrency(calculateSubtotal())}</Text>
             </Group>
+            {lineItems.some(item => item.discount > 0) && (
+              <Group justify="space-between">
+                <Text size="sm" c="red">Total Discount:</Text>
+                <Text size="sm" fw={500} c="red">
+                  -{formatCurrency(lineItems.reduce((sum, item) => {
+                    const lineTotal = item.quantity * item.unit_amount;
+                    return sum + (lineTotal * (item.discount / 100));
+                  }, 0))}
+                </Text>
+              </Group>
+            )}
             <Group justify="space-between">
               <Text size="sm">Tax:</Text>
               <Text size="sm" fw={500}>{formatCurrency(calculateTax())}</Text>
