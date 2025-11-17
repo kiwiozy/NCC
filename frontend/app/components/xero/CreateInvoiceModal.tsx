@@ -71,12 +71,18 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
   
   // Sync selected patient/company with props when they change
+  // IMPORTANT: Company takes precedence for contact type (determines who invoice/quote is sent to)
   useEffect(() => {
     if (preSelectedPatientId) {
       setSelectedPatient(preSelectedPatientId);
+      // Only set contactType to patient if no company is selected
+      if (!preSelectedCompanyId) {
+        setContactType('patient');
+      }
     }
     if (preSelectedCompanyId) {
       setSelectedCompany(preSelectedCompanyId);
+      setContactType('company'); // Company always wins for contact type
     }
   }, [preSelectedPatientId, preSelectedCompanyId]);
   

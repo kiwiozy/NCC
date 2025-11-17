@@ -71,14 +71,18 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
   const isPreSelected = !!(preSelectedPatientId || preSelectedCompanyId);
   
   // Sync state with props when they change
+  // IMPORTANT: Company takes precedence for contact type (determines who invoice/quote is sent to)
   useEffect(() => {
     if (preSelectedPatientId) {
       setSelectedPatient(preSelectedPatientId);
-      setContactType('patient');
+      // Only set contactType to patient if no company is selected
+      if (!preSelectedCompanyId) {
+        setContactType('patient');
+      }
     }
     if (preSelectedCompanyId) {
       setSelectedCompany(preSelectedCompanyId);
-      setContactType('company');
+      setContactType('company'); // Company always wins for contact type
     }
   }, [preSelectedPatientId, preSelectedCompanyId]);
   
@@ -218,6 +222,16 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
       // This ensures the quote is linked to the patient even when billing a company
       const patientId = preSelectedPatientId || (contactType === 'patient' ? selectedPatient : undefined);
       const companyId = contactType === 'company' ? selectedCompany : undefined;
+      
+      console.log('🔍 [CreateQuoteModal] Pre-submit state check:', {
+        preSelectedPatientId,
+        preSelectedCompanyId,
+        contactType,
+        selectedPatient,
+        selectedCompany,
+        computedPatientId: patientId,
+        computedCompanyId: companyId,
+      });
       
       console.log('Creating quote with payload:', {
         patient_id: patientId,
