@@ -225,9 +225,14 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
     setPendingSubmit(true);
     setLoading(true);
     try {
+      // When pre-selected patient (from patient dialog), always include patient_id
+      // This ensures the invoice is linked to the patient even when billing a company
+      const patientId = preSelectedPatientId || (contactType === 'patient' ? selectedPatient : null);
+      const companyId = contactType === 'company' ? selectedCompany : null;
+      
       const payload = {
-        patient_id: contactType === 'patient' ? selectedPatient : null,
-        company_id: contactType === 'company' ? selectedCompany : null,
+        patient_id: patientId,
+        company_id: companyId,
         contact_type: contactType,
         line_items: lineItems.map(item => ({
           description: item.description,

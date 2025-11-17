@@ -214,10 +214,16 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
     setPendingSubmit(true);
     setLoading(true);
     try {
+      // When pre-selected patient (from patient dialog), always include patient_id
+      // This ensures the quote is linked to the patient even when billing a company
+      const patientId = preSelectedPatientId || (contactType === 'patient' ? selectedPatient : undefined);
+      const companyId = contactType === 'company' ? selectedCompany : undefined;
+      
       console.log('Creating quote with payload:', {
-        patient_id: contactType === 'patient' ? selectedPatient : undefined,
-        company_id: contactType === 'company' ? selectedCompany : undefined,
+        patient_id: patientId,
+        company_id: companyId,
         contact_type: contactType,
+        preSelectedPatientId: preSelectedPatientId,
         line_items: lineItems.map(item => ({
           description: item.description,
           quantity: item.quantity,
@@ -237,8 +243,8 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          patient_id: contactType === 'patient' ? selectedPatient : undefined,
-          company_id: contactType === 'company' ? selectedCompany : undefined,
+          patient_id: patientId,
+          company_id: companyId,
           contact_type: contactType,
           line_items: lineItems.map(item => ({
             description: item.description,
