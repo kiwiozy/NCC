@@ -238,22 +238,39 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
                   <Table.Th>Description</Table.Th>
                   <Table.Th style={{ textAlign: 'right' }}>Quantity</Table.Th>
                   <Table.Th style={{ textAlign: 'right' }}>Unit Price</Table.Th>
+                  {quote.line_items.some((item: any) => item.discount_rate > 0) && (
+                    <Table.Th style={{ textAlign: 'right' }}>Discount</Table.Th>
+                  )}
                   <Table.Th style={{ textAlign: 'right' }}>Tax</Table.Th>
                   <Table.Th style={{ textAlign: 'right' }}>Total</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {quote.line_items.map((item: any, index: number) => (
-                  <Table.Tr key={index}>
-                    <Table.Td>{item.description}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>{item.quantity}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>${parseFloat(item.unit_amount || 0).toFixed(2)}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>{item.tax_type || '—'}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>
-                      ${(parseFloat(item.unit_amount || 0) * parseFloat(item.quantity || 0)).toFixed(2)}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
+                {quote.line_items.map((item: any, index: number) => {
+                  const unitAmount = parseFloat(item.unit_amount || 0);
+                  const quantity = parseFloat(item.quantity || 0);
+                  const discountRate = parseFloat(item.discount_rate || 0);
+                  const lineTotal = unitAmount * quantity;
+                  const discountAmount = lineTotal * (discountRate / 100);
+                  const discountedTotal = lineTotal - discountAmount;
+                  
+                  return (
+                    <Table.Tr key={index}>
+                      <Table.Td>{item.description}</Table.Td>
+                      <Table.Td style={{ textAlign: 'right' }}>{quantity}</Table.Td>
+                      <Table.Td style={{ textAlign: 'right' }}>${unitAmount.toFixed(2)}</Table.Td>
+                      {quote.line_items.some((item: any) => item.discount_rate > 0) && (
+                        <Table.Td style={{ textAlign: 'right', color: discountRate > 0 ? 'red' : 'inherit' }}>
+                          {discountRate > 0 ? `${discountRate}%` : '—'}
+                        </Table.Td>
+                      )}
+                      <Table.Td style={{ textAlign: 'right' }}>{item.tax_type || '—'}</Table.Td>
+                      <Table.Td style={{ textAlign: 'right' }}>
+                        ${discountedTotal.toFixed(2)}
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })}
               </Table.Tbody>
             </Table>
 
@@ -264,6 +281,18 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
                 <Text size="sm" c="dimmed">Subtotal:</Text>
                 <Text size="sm" fw={500}>${parseFloat(quote.subtotal).toFixed(2)}</Text>
               </Group>
+              {quote.line_items.some((item: any) => item.discount_rate > 0) && (
+                <Group gap="xl">
+                  <Text size="sm" c="red">Total Discount:</Text>
+                  <Text size="sm" fw={500} c="red">
+                    -${quote.line_items.reduce((sum: number, item: any) => {
+                      const lineTotal = parseFloat(item.unit_amount || 0) * parseFloat(item.quantity || 0);
+                      const discountAmount = lineTotal * (parseFloat(item.discount_rate || 0) / 100);
+                      return sum + discountAmount;
+                    }, 0).toFixed(2)}
+                  </Text>
+                </Group>
+              )}
               <Group gap="xl">
                 <Text size="sm" c="dimmed">Tax:</Text>
                 <Text size="sm" fw={500}>${parseFloat(quote.total_tax).toFixed(2)}</Text>
