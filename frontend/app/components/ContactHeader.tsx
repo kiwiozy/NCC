@@ -81,6 +81,8 @@ export default function ContactHeader({
   const [appointmentsCount, setAppointmentsCount] = useState<number>(0);
   const [lettersCount, setLettersCount] = useState<number>(0);
   const [smsUnreadCount, setSmsUnreadCount] = useState<number>(0);
+  const [invoicesCount, setInvoicesCount] = useState<number>(0);
+  const [activeQuotesCount, setActiveQuotesCount] = useState<number>(0);
   const [filters, setFilters] = useState({
     funding: '',
     clinic: '',
@@ -488,6 +490,90 @@ export default function ContactHeader({
     };
   }, [patientId, menuOpened]);
 
+  // Get invoices and active quotes count for patient
+  useEffect(() => {
+    const getAccountsCounts = async () => {
+      try {
+        // Only make API call if patientId is a valid UUID format
+        if (patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+          // Fetch invoices
+          const invoicesResponse = await fetch(`https://localhost:8000/api/xero-invoice-links/?t=${Date.now()}`, {
+            credentials: 'include',
+          });
+          
+          // Fetch quotes
+          const quotesResponse = await fetch(`https://localhost:8000/api/xero-quote-links/?t=${Date.now()}`, {
+            credentials: 'include',
+          });
+          
+          if (invoicesResponse.ok) {
+            const invoicesData = await invoicesResponse.json();
+            const invoicesList = invoicesData.results || invoicesData;
+            // Filter invoices by patient
+            const patientInvoices = Array.isArray(invoicesList) 
+              ? invoicesList.filter((inv: any) => {
+                  const invPatientId = typeof inv.patient === 'string' ? inv.patient : inv.patient?.id;
+                  return invPatientId === patientId;
+                })
+              : [];
+            setInvoicesCount(patientInvoices.length);
+          } else {
+            setInvoicesCount(0);
+          }
+          
+          if (quotesResponse.ok) {
+            const quotesData = await quotesResponse.json();
+            const quotesList = quotesData.results || quotesData;
+            // Filter quotes by patient AND only count active statuses (DRAFT, SENT, ACCEPTED)
+            const patientActiveQuotes = Array.isArray(quotesList)
+              ? quotesList.filter((quote: any) => {
+                  const quotePatientId = typeof quote.patient === 'string' ? quote.patient : quote.patient?.id;
+                  const normalizedStatus = quote.status?.replace('QuoteStatusCodes.', '') || '';
+                  const isActive = ['DRAFT', 'SENT', 'ACCEPTED'].includes(normalizedStatus);
+                  return quotePatientId === patientId && isActive;
+                })
+              : [];
+            setActiveQuotesCount(patientActiveQuotes.length);
+          } else {
+            setActiveQuotesCount(0);
+          }
+        } else {
+          setInvoicesCount(0);
+          setActiveQuotesCount(0);
+        }
+      } catch (err) {
+        console.error('Error loading accounts counts:', err);
+        setInvoicesCount(0);
+        setActiveQuotesCount(0);
+      }
+    };
+
+    // Only fetch when menu is opened
+    if (menuOpened) {
+      getAccountsCounts();
+    }
+    
+    // Listen for custom event when invoices/quotes are updated
+    const handleAccountsChange = () => {
+      if (menuOpened) {
+        getAccountsCounts();
+      }
+    };
+    
+    window.addEventListener('accountsUpdated', handleAccountsChange);
+    
+    // Refresh count periodically ONLY when menu is open
+    let interval: NodeJS.Timeout | undefined;
+    if (menuOpened) {
+      interval = setInterval(getAccountsCounts, 5000); // Every 5 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+      window.removeEventListener('accountsUpdated', handleAccountsChange);
+    };
+  }, [patientId, menuOpened]);
+
   // Update filters when showArchived prop changes (e.g., when filters are cleared)
   // Only sync when showArchived prop changes from parent, not when local filters change
   useEffect(() => {
@@ -527,7 +613,7 @@ export default function ContactHeader({
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); }, count: appointmentsCount },
-    { icon: <IconReceipt size={20} />, label: 'Accounts', onClick: () => { setAccountsQuotesOpened(true); setMenuOpened(false); } },
+    { icon: <IconReceipt size={20} />, label: 'Accounts', onClick: () => { setAccountsQuotesOpened(true); setMenuOpened(false); }, invoicesCount: invoicesCount, quotesCount: activeQuotesCount },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
     { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => { onLettersClick?.(); setMenuOpened(false); } },
@@ -879,6 +965,49 @@ export default function ContactHeader({
                                 }}
                               >
                                 {imagesCount > 99 ? '99+' : imagesCount}
+                              </Badge>
+                            )}
+                          </Group>
+                        ) : null}
+                        {/* Badges for Accounts: Blue (active quotes) and Red (invoices) */}
+                        {item.label === 'Accounts' && (invoicesCount > 0 || activeQuotesCount > 0) ? (
+                          <Group gap={24} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: 0 }}>
+                            {activeQuotesCount > 0 && (
+                              <Badge
+                                size="xs"
+                                color="blue"
+                                variant="filled"
+                                style={{
+                                  minWidth: rem(18),
+                                  height: rem(18),
+                                  padding: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: rem(10),
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {activeQuotesCount > 99 ? '99+' : activeQuotesCount}
+                              </Badge>
+                            )}
+                            {invoicesCount > 0 && (
+                              <Badge
+                                size="xs"
+                                color="red"
+                                variant="filled"
+                                style={{
+                                  minWidth: rem(18),
+                                  height: rem(18),
+                                  padding: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: rem(10),
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {invoicesCount > 99 ? '99+' : invoicesCount}
                               </Badge>
                             )}
                           </Group>
