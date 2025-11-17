@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Modal, Stack, Group, Text, Button, Radio, Paper, Stepper, TextInput, Badge, Alert } from '@mantine/core';
+import { Modal, Stack, Group, Text, Button, Radio, Paper, Stepper, TextInput, Badge, Alert, useMantineColorScheme } from '@mantine/core';
 import { IconFileInvoice, IconFileText, IconUser, IconBuilding, IconInfoCircle, IconSearch } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -29,6 +29,9 @@ export function PatientBillingWizard({
   onCreateInvoice,
   onCreateQuote
 }: PatientBillingWizardProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   // Wizard state
   const [activeStep, setActiveStep] = useState(0);
   
@@ -177,8 +180,11 @@ export function PatientBillingWizard({
                   withBorder
                   style={{
                     cursor: 'pointer',
-                    backgroundColor: documentType === 'invoice' ? '#e7f5ff' : undefined,
+                    backgroundColor: documentType === 'invoice' 
+                      ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                      : 'transparent',
                     borderColor: documentType === 'invoice' ? '#228be6' : undefined,
+                    transition: 'all 0.2s ease',
                   }}
                   onClick={() => setDocumentType('invoice')}
                 >
@@ -203,8 +209,11 @@ export function PatientBillingWizard({
                   withBorder
                   style={{
                     cursor: 'pointer',
-                    backgroundColor: documentType === 'quote' ? '#e7f5ff' : undefined,
+                    backgroundColor: documentType === 'quote' 
+                      ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                      : 'transparent',
                     borderColor: documentType === 'quote' ? '#228be6' : undefined,
+                    transition: 'all 0.2s ease',
                   }}
                   onClick={() => setDocumentType('quote')}
                 >
@@ -239,8 +248,11 @@ export function PatientBillingWizard({
                   withBorder
                   style={{
                     cursor: 'pointer',
-                    backgroundColor: billingMethod === 'patient' ? '#e7f5ff' : undefined,
+                    backgroundColor: billingMethod === 'patient' 
+                      ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                      : 'transparent',
                     borderColor: billingMethod === 'patient' ? '#228be6' : undefined,
+                    transition: 'all 0.2s ease',
                   }}
                   onClick={() => setBillingMethod('patient')}
                 >
@@ -266,8 +278,11 @@ export function PatientBillingWizard({
                   withBorder
                   style={{
                     cursor: 'pointer',
-                    backgroundColor: billingMethod === 'company' ? '#e7f5ff' : undefined,
+                    backgroundColor: billingMethod === 'company' 
+                      ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                      : 'transparent',
                     borderColor: billingMethod === 'company' ? '#228be6' : undefined,
+                    transition: 'all 0.2s ease',
                   }}
                   onClick={() => setBillingMethod('company')}
                 >
@@ -318,8 +333,11 @@ export function PatientBillingWizard({
                     withBorder
                     style={{
                       cursor: 'pointer',
-                      backgroundColor: selectedCompanyId === company.id ? '#e7f5ff' : undefined,
+                      backgroundColor: selectedCompanyId === company.id 
+                        ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                        : 'transparent',
                       borderColor: selectedCompanyId === company.id ? '#228be6' : undefined,
+                      transition: 'all 0.2s ease',
                     }}
                     onClick={() => setSelectedCompanyId(company.id)}
                   >
@@ -354,8 +372,11 @@ export function PatientBillingWizard({
                       withBorder
                       style={{
                         cursor: 'pointer',
-                        backgroundColor: selectedCompanyId === company.id ? '#e7f5ff' : undefined,
+                        backgroundColor: selectedCompanyId === company.id 
+                          ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
+                          : 'transparent',
                         borderColor: selectedCompanyId === company.id ? '#228be6' : undefined,
+                        transition: 'all 0.2s ease',
                       }}
                       onClick={() => setSelectedCompanyId(company.id)}
                     >
@@ -389,7 +410,7 @@ export function PatientBillingWizard({
           <Stack gap="md">
             <Text size="sm" fw={600}>📋 Summary</Text>
             
-            <Paper p="md" withBorder style={{ backgroundColor: '#f8f9fa' }}>
+            <Paper p="md" withBorder style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa' }}>
               <Stack gap="xs">
                 <Group justify="space-between">
                   <Text size="sm" c="dimmed">Type:</Text>
@@ -424,7 +445,7 @@ export function PatientBillingWizard({
                   </Group>
                 )}
                 
-                <Group justify="space-between" mt="xs" pt="xs" style={{ borderTop: '1px solid #dee2e6' }}>
+                <Group justify="space-between" mt="xs" pt="xs" style={{ borderTop: `1px solid ${isDark ? '#373A40' : '#dee2e6'}` }}>
                   <Text size="sm" c="dimmed">Xero Contact:</Text>
                   <Text size="sm" fw={600}>
                     {billingMethod === 'company' ? getSelectedCompanyName() : patientName}
