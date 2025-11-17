@@ -1700,6 +1700,288 @@ class XeroService:
             raise
 
 
+    def delete_draft_invoice(self, invoice_link: XeroInvoiceLink) -> XeroInvoiceLink:
+        """
+        Delete a DRAFT invoice in Xero (set status to DELETED)
+        Added Nov 2025: Smart delete for draft invoices
+        
+        Args:
+            invoice_link: XeroInvoiceLink object to delete
+        
+        Returns:
+            Updated XeroInvoiceLink object with DELETED status
+        """
+        start_time = time.time()
+        logger.info(f"🗑️ [delete_draft_invoice] Deleting draft invoice {invoice_link.xero_invoice_number}")
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.error(f"❌ [delete_draft_invoice] No active Xero connection found")
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the current invoice from Xero
+            logger.info(f"📥 [delete_draft_invoice] Fetching invoice from Xero: {invoice_link.xero_invoice_id}")
+            response = accounting_api.get_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id
+            )
+            xero_invoice = response.invoices[0]
+            logger.info(f"✅ [delete_draft_invoice] Fetched invoice - current status: {xero_invoice.status}")
+            
+            # Validate invoice status
+            if xero_invoice.status not in ['DRAFT', 'SUBMITTED']:
+                logger.error(f"❌ [delete_draft_invoice] Invalid status: {xero_invoice.status}")
+                raise ValueError(f"Cannot delete invoice in {xero_invoice.status} status. Only DRAFT/SUBMITTED invoices can be deleted.")
+            
+            # Change status to DELETED
+            logger.info(f"🔄 [delete_draft_invoice] Changing status to DELETED...")
+            xero_invoice.status = 'DELETED'
+            
+            # Update invoice in Xero
+            logger.info(f"📤 [delete_draft_invoice] Sending update to Xero...")
+            invoices = Invoices(invoices=[xero_invoice])
+            update_response = accounting_api.update_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id,
+                invoices=invoices
+            )
+            
+            updated_xero_invoice = update_response.invoices[0]
+            logger.info(f"✅ [delete_draft_invoice] Invoice deleted in Xero - new status: {updated_xero_invoice.status}")
+            
+            # Update local database
+            invoice_link.status = updated_xero_invoice.status
+            invoice_link.last_synced_at = timezone.now()
+            invoice_link.save()
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [delete_draft_invoice] Operation completed in {duration_ms}ms")
+            XeroSyncLog.objects.create(
+                operation_type='invoice_delete',
+                status='success',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                duration_ms=duration_ms,
+                response_data={
+                    'invoice_number': updated_xero_invoice.invoice_number,
+                    'status': updated_xero_invoice.status
+                }
+            )
+            
+            return invoice_link
+            
+        except Exception as e:
+            # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [delete_draft_invoice] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='invoice_delete',
+                status='failed',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+
+
+    def void_invoice(self, invoice_link: XeroInvoiceLink) -> XeroInvoiceLink:
+        """
+        Void an AUTHORISED invoice in Xero (set status to VOIDED)
+        Added Nov 2025: Smart delete for authorised invoices
+        
+        Args:
+            invoice_link: XeroInvoiceLink object to void
+        
+        Returns:
+            Updated XeroInvoiceLink object with VOIDED status
+        """
+        start_time = time.time()
+        logger.info(f"🚫 [void_invoice] Voiding invoice {invoice_link.xero_invoice_number}")
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.error(f"❌ [void_invoice] No active Xero connection found")
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the current invoice from Xero
+            logger.info(f"📥 [void_invoice] Fetching invoice from Xero: {invoice_link.xero_invoice_id}")
+            response = accounting_api.get_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id
+            )
+            xero_invoice = response.invoices[0]
+            logger.info(f"✅ [void_invoice] Fetched invoice - current status: {xero_invoice.status}")
+            
+            # Validate invoice status
+            if xero_invoice.status not in ['AUTHORISED', 'SUBMITTED']:
+                logger.error(f"❌ [void_invoice] Invalid status: {xero_invoice.status}")
+                raise ValueError(f"Cannot void invoice in {xero_invoice.status} status. Only AUTHORISED/SUBMITTED invoices can be voided.")
+            
+            # Change status to VOIDED
+            logger.info(f"🔄 [void_invoice] Changing status to VOIDED...")
+            xero_invoice.status = 'VOIDED'
+            
+            # Update invoice in Xero
+            logger.info(f"📤 [void_invoice] Sending update to Xero...")
+            invoices = Invoices(invoices=[xero_invoice])
+            update_response = accounting_api.update_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id,
+                invoices=invoices
+            )
+            
+            updated_xero_invoice = update_response.invoices[0]
+            logger.info(f"✅ [void_invoice] Invoice voided in Xero - new status: {updated_xero_invoice.status}")
+            
+            # Update local database
+            invoice_link.status = updated_xero_invoice.status
+            invoice_link.last_synced_at = timezone.now()
+            invoice_link.save()
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [void_invoice] Operation completed in {duration_ms}ms")
+            XeroSyncLog.objects.create(
+                operation_type='invoice_void',
+                status='success',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                duration_ms=duration_ms,
+                response_data={
+                    'invoice_number': updated_xero_invoice.invoice_number,
+                    'status': updated_xero_invoice.status
+                }
+            )
+            
+            return invoice_link
+            
+        except Exception as e:
+            # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [void_invoice] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='invoice_void',
+                status='failed',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+
+
+    def delete_draft_quote(self, quote_link: XeroQuoteLink) -> XeroQuoteLink:
+        """
+        Delete a DRAFT quote in Xero (set status to DELETED)
+        Added Nov 2025: Smart delete for draft quotes
+        
+        Args:
+            quote_link: XeroQuoteLink object to delete
+        
+        Returns:
+            Updated XeroQuoteLink object with DELETED status
+        """
+        start_time = time.time()
+        logger.info(f"🗑️ [delete_draft_quote] Deleting draft quote {quote_link.xero_quote_number}")
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.error(f"❌ [delete_draft_quote] No active Xero connection found")
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the current quote from Xero
+            logger.info(f"📥 [delete_draft_quote] Fetching quote from Xero: {quote_link.xero_quote_id}")
+            response = accounting_api.get_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id
+            )
+            xero_quote = response.quotes[0]
+            logger.info(f"✅ [delete_draft_quote] Fetched quote - current status: {xero_quote.status}")
+            
+            # Validate quote status
+            if xero_quote.status not in ['DRAFT', 'SENT']:
+                logger.error(f"❌ [delete_draft_quote] Invalid status: {xero_quote.status}")
+                raise ValueError(f"Cannot delete quote in {xero_quote.status} status. Only DRAFT/SENT quotes can be deleted.")
+            
+            # Change status to DELETED
+            logger.info(f"🔄 [delete_draft_quote] Changing status to DELETED...")
+            xero_quote.status = QuoteStatusCodes.DELETED
+            
+            # Update quote in Xero
+            logger.info(f"📤 [delete_draft_quote] Sending update to Xero...")
+            quotes = Quotes(quotes=[xero_quote])
+            update_response = accounting_api.update_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id,
+                quotes=quotes
+            )
+            
+            updated_xero_quote = update_response.quotes[0]
+            logger.info(f"✅ [delete_draft_quote] Quote deleted in Xero - new status: {updated_xero_quote.status}")
+            
+            # Update local database
+            quote_link.status = str(updated_xero_quote.status)
+            quote_link.last_synced_at = timezone.now()
+            quote_link.save()
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [delete_draft_quote] Operation completed in {duration_ms}ms")
+            XeroSyncLog.objects.create(
+                operation_type='quote_delete',
+                status='success',
+                local_entity_type='quote',
+                local_entity_id=str(quote_link.id),
+                xero_entity_id=quote_link.xero_quote_id,
+                duration_ms=duration_ms,
+                response_data={
+                    'quote_number': updated_xero_quote.quote_number,
+                    'status': str(updated_xero_quote.status)
+                }
+            )
+            
+            return quote_link
+            
+        except Exception as e:
+            # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [delete_draft_quote] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='quote_delete',
+                status='failed',
+                local_entity_type='quote',
+                local_entity_id=str(quote_link.id),
+                xero_entity_id=quote_link.xero_quote_id,
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+
+
 # Global service instance
 xero_service = XeroService()
 

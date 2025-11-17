@@ -419,6 +419,47 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
                 'error': 'Failed to authorize invoice',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Smart delete: Delete DRAFT invoices, void AUTHORISED invoices, block PAID invoices"""
+        try:
+            invoice_link = self.get_object()
+            logger.info(f"🗑️ [Delete Invoice] Attempting to delete invoice {invoice_link.xero_invoice_number} (status: {invoice_link.status})")
+            
+            if invoice_link.status == 'DRAFT':
+                # Delete DRAFT invoices in Xero
+                logger.info(f"📤 [Delete Invoice] Deleting DRAFT invoice in Xero...")
+                xero_service.delete_draft_invoice(invoice_link)
+                logger.info(f"✅ [Delete Invoice] Invoice deleted in Xero")
+            
+            elif invoice_link.status == 'AUTHORISED':
+                # Void AUTHORISED invoices in Xero
+                logger.info(f"🚫 [Delete Invoice] Voiding AUTHORISED invoice in Xero...")
+                xero_service.void_invoice(invoice_link)
+                logger.info(f"✅ [Delete Invoice] Invoice voided in Xero")
+            
+            elif invoice_link.status in ['PAID', 'SUBMITTED']:
+                # Block deletion of PAID/SUBMITTED invoices
+                logger.warning(f"⚠️ [Delete Invoice] Cannot delete {invoice_link.status} invoice")
+                return Response({
+                    'error': f'Cannot delete {invoice_link.status} invoices',
+                    'detail': 'Paid invoices cannot be deleted or voided. Please create a Credit Note in Xero to reverse the transaction.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif invoice_link.status in ['VOIDED', 'DELETED']:
+                # Already deleted/voided, just remove from Nexus
+                logger.info(f"ℹ️ [Delete Invoice] Invoice already {invoice_link.status}, removing from Nexus only")
+            
+            # Delete from Nexus database
+            logger.info(f"💾 [Delete Invoice] Removing invoice from Nexus database...")
+            return super().destroy(request, *args, **kwargs)
+            
+        except Exception as e:
+            logger.error(f"❌ [Delete Invoice] Error: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Failed to delete invoice',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class XeroItemMappingViewSet(viewsets.ModelViewSet):
@@ -495,6 +536,52 @@ class XeroQuoteLinkViewSet(viewsets.ModelViewSet):
             logger.error(f"❌ [Convert to Invoice] Error converting quote: {str(e)}", exc_info=True)
             return Response({
                 'error': 'Failed to convert quote',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Smart delete: Delete DRAFT/SENT quotes, block ACCEPTED/INVOICED quotes"""
+        try:
+            quote_link = self.get_object()
+            logger.info(f"🗑️ [Delete Quote] Attempting to delete quote {quote_link.xero_quote_number} (status: {quote_link.status})")
+            
+            # Normalize status (remove QuoteStatusCodes prefix if present)
+            normalized_status = quote_link.status.replace('QuoteStatusCodes.', '')
+            
+            if normalized_status in ['DRAFT', 'SENT']:
+                # Delete DRAFT/SENT quotes in Xero
+                logger.info(f"📤 [Delete Quote] Deleting {normalized_status} quote in Xero...")
+                xero_service.delete_draft_quote(quote_link)
+                logger.info(f"✅ [Delete Quote] Quote deleted in Xero")
+            
+            elif normalized_status == 'ACCEPTED':
+                # Block deletion of ACCEPTED quotes (should be converted first)
+                logger.warning(f"⚠️ [Delete Quote] Cannot delete ACCEPTED quote")
+                return Response({
+                    'error': 'Cannot delete ACCEPTED quotes',
+                    'detail': 'Please convert the quote to an invoice first, or decline it in Xero.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif normalized_status == 'INVOICED':
+                # Block deletion of INVOICED quotes (linked to invoice)
+                logger.warning(f"⚠️ [Delete Quote] Cannot delete INVOICED quote")
+                return Response({
+                    'error': 'Cannot delete INVOICED quotes',
+                    'detail': 'This quote has been converted to an invoice. Delete the invoice instead if needed.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            elif normalized_status in ['DELETED', 'DECLINED']:
+                # Already deleted/declined, just remove from Nexus
+                logger.info(f"ℹ️ [Delete Quote] Quote already {normalized_status}, removing from Nexus only")
+            
+            # Delete from Nexus database
+            logger.info(f"💾 [Delete Quote] Removing quote from Nexus database...")
+            return super().destroy(request, *args, **kwargs)
+            
+        except Exception as e:
+            logger.error(f"❌ [Delete Quote] Error: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Failed to delete quote',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
