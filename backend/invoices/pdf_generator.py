@@ -146,14 +146,15 @@ class InvoicePDFGenerator:
         """Generate the PDF and return as BytesIO"""
         buffer = BytesIO()
         
-        # Create the PDF document with custom page template for fixed footer
+        # Create the PDF document with custom page template
+        # Use smaller bottom margin - we'll handle footer space dynamically per page
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
             rightMargin=2*cm,
             leftMargin=2*cm,
             topMargin=0.5*cm,
-            bottomMargin=4.5*cm,  # Extra space for footer (payment terms + footer bar)
+            bottomMargin=2*cm,  # Default smaller margin for pages without footer
         )
         
         # Build the story (content) - everything EXCEPT footer
@@ -189,43 +190,77 @@ class InvoicePDFGenerator:
         for elem in totals_elements:
             story.append(self._debug_box(elem, "Totals"))
         
+        # Add spacer at the end to reserve space for footer on last page
+        # Footer needs ~3.5cm (payment terms 1cm + bank details 1cm + blue bar 0.6cm + spacing)
+        # We'll add a conditional spacer that ensures the footer fits on the last page
+        story.append(Spacer(1, 3.5*cm))
+        
+        # Store total page count (will be set during build)
+        total_pages = [0]  # Use list to allow modification in nested function
+        
         # Build PDF with custom page template that adds footer
         def add_page_footer(canvas_obj, doc_obj):
-            """Add footer to every page at fixed position"""
+            """Add footer only on last page"""
             canvas_obj.saveState()
             
-            # Position footer at bottom (0.8cm from page bottom - closer to edge)
-            # A4 height = 29.7cm, footer starts at 0.8cm from bottom
-            footer_y = 0.8*cm
+            # Get current page number
+            current_page = canvas_obj.getPageNumber()
             
-            # Payment terms text
-            terms_days = self.invoice_data.get('payment_terms_days', 7)
-            due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
-            
-            # Draw payment terms box
-            canvas_obj.setFont('Helvetica-Bold', 10)
-            canvas_obj.rect(2*cm, footer_y + 2*cm, 17*cm, 1*cm, stroke=1, fill=0)
-            canvas_obj.drawString(2.2*cm, footer_y + 2.65*cm, 
-                f"Please note this is a {terms_days} Day Account. Due on the {due_date}")
-            
-            # Draw bank details box
-            canvas_obj.setFont('Helvetica', 10)
-            canvas_obj.rect(2*cm, footer_y + 0.8*cm, 17*cm, 1*cm, stroke=1, fill=0)
-            canvas_obj.drawString(2.2*cm, footer_y + 1.25*cm,
-                f"EFT | {self.BUSINESS_NAME} | BSB: {self.BSB} ACC: {self.ACCOUNT} | Please use last name as reference")
-            
-            # Draw blue footer bar
-            canvas_obj.setFillColor(colors.HexColor('#3B5998'))
-            canvas_obj.rect(2*cm, footer_y, 17*cm, 0.6*cm, stroke=0, fill=1)
-            canvas_obj.setFillColor(colors.white)
-            canvas_obj.setFont('Helvetica', 9)
-            canvas_obj.drawCentredString(10.5*cm, footer_y + 0.2*cm,
-                f"{self.WEBSITE} | {self.EMAIL} | A.B.N {self.ABN}")
+            # Only draw footer on the last page
+            if current_page == total_pages[0]:
+                # Position footer at bottom
+                # With 2cm bottom margin, we have space from 2cm to bottom of page
+                # Footer components: payment terms (1cm) + bank details (1cm) + blue bar (0.6cm) + spacing (0.4cm) = 3cm total
+                footer_y = 0.8*cm  # Start from 0.8cm from page bottom
+                
+                # Payment terms text
+                terms_days = self.invoice_data.get('payment_terms_days', 7)
+                due_date = self.invoice_data['due_date'].strftime('%d/%m/%Y')
+                
+                # Draw payment terms box
+                canvas_obj.setFont('Helvetica-Bold', 10)
+                canvas_obj.rect(2*cm, footer_y + 2*cm, 17*cm, 1*cm, stroke=1, fill=0)
+                canvas_obj.drawString(2.2*cm, footer_y + 2.65*cm, 
+                    f"Please note this is a {terms_days} Day Account. Due on the {due_date}")
+                
+                # Draw bank details box
+                canvas_obj.setFont('Helvetica', 10)
+                canvas_obj.rect(2*cm, footer_y + 0.8*cm, 17*cm, 1*cm, stroke=1, fill=0)
+                canvas_obj.drawString(2.2*cm, footer_y + 1.25*cm,
+                    f"EFT | {self.BUSINESS_NAME} | BSB: {self.BSB} ACC: {self.ACCOUNT} | Please use last name as reference")
+                
+                # Draw blue footer bar
+                canvas_obj.setFillColor(colors.HexColor('#3B5998'))
+                canvas_obj.rect(2*cm, footer_y, 17*cm, 0.6*cm, stroke=0, fill=1)
+                canvas_obj.setFillColor(colors.white)
+                canvas_obj.setFont('Helvetica', 9)
+                canvas_obj.drawCentredString(10.5*cm, footer_y + 0.2*cm,
+                    f"{self.WEBSITE} | {self.EMAIL} | A.B.N {self.ABN}")
             
             canvas_obj.restoreState()
         
-        # Build PDF with footer callback
-        doc.build(story, onFirstPage=add_page_footer, onLaterPages=add_page_footer)
+        # Custom canvas that tracks total pages
+        class PageCountingCanvas(canvas.Canvas):
+            def __init__(self, *args, **kwargs):
+                canvas.Canvas.__init__(self, *args, **kwargs)
+                self.pages = []
+            
+            def showPage(self):
+                self.pages.append(dict(self.__dict__))
+                self._startPage()
+            
+            def save(self):
+                # Set total page count
+                total_pages[0] = len(self.pages)
+                # Now draw each page with footer callback
+                for page_dict in self.pages:
+                    self.__dict__.update(page_dict)
+                    add_page_footer(self, doc)
+                    canvas.Canvas.showPage(self)
+                canvas.Canvas.save(self)
+        
+        # Build PDF with custom canvas
+        doc.build(story, canvasmaker=PageCountingCanvas)
         
         # Get the PDF data
         buffer.seek(0)
@@ -375,41 +410,55 @@ class InvoicePDFGenerator:
         return elements
     
     def _build_line_items_table(self):
-        """Build the line items table"""
+        """Build the line items table with support for multi-line descriptions and page breaks"""
         elements = []
         
         # Header row
-        table_data = [['Description', 'Qty', 'Unit Price', 'GST', 'Amount']]
+        table_data = [['Description', 'Qty', 'Unit Price', 'Discount', 'GST', 'Amount']]
         
-        # Line items
+        # Line items - wrap descriptions in Paragraphs for proper text wrapping
         for item in self.invoice_data['line_items']:
             qty = item['quantity']
             unit_price = item['unit_price']
             gst_rate = item['gst_rate']
-            amount = qty * unit_price
+            discount = item.get('discount', 0)  # Discount percentage (0-100)
+            
+            # Calculate amount with discount
+            subtotal = qty * unit_price
+            discount_amount = subtotal * (discount / 100)
+            amount = subtotal - discount_amount
+            
+            # Wrap description in Paragraph for proper text wrapping
+            # Clean text (escape XML special characters)
+            description = str(item['description']).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            # Preserve line breaks in description
+            description = description.replace('\n', '<br/>')
+            desc_para = Paragraph(description, self.styles['Normal'])
             
             table_data.append([
-                item['description'],
+                desc_para,
                 str(qty),
                 f"$ {unit_price:,.2f}",
+                f"{discount}%" if discount > 0 else "",
                 f"{gst_rate:.2%}",
                 f"$ {amount:,.2f}",
             ])
         
-        line_table = Table(table_data, colWidths=[9*cm, 2*cm, 2.5*cm, 2*cm, 2.5*cm])
+        line_table = Table(table_data, colWidths=[7*cm, 1.5*cm, 2.5*cm, 1.5*cm, 1.5*cm, 2.5*cm], repeatRows=1)
         line_table.setStyle(TableStyle([
             # Header row styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3B5998')),  # Blue header
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             
             # Data rows
             ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('VALIGN', (0, 1), (-1, -1), 'TOP'),  # Top align for multi-line descriptions
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('TOPPADDING', (0, 1), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
             ('LINEBELOW', (0, 1), (-1, -2), 0.5, colors.grey),
@@ -459,13 +508,32 @@ class InvoicePDFGenerator:
         """Build totals section"""
         elements = []
         
-        # Calculate totals
-        subtotal = sum(item['quantity'] * item['unit_price'] for item in self.invoice_data['line_items'])
-        total_gst = sum(
-            item['quantity'] * item['unit_price'] * item['gst_rate'] 
-            for item in self.invoice_data['line_items']
-        )
-        total = subtotal + total_gst
+        # Calculate totals with discount support
+        subtotal = 0
+        total_discount = 0
+        total_gst = 0
+        
+        for item in self.invoice_data['line_items']:
+            qty = item['quantity']
+            unit_price = item['unit_price']
+            gst_rate = item['gst_rate']
+            discount = item.get('discount', 0)  # Discount percentage (0-100)
+            
+            # Calculate item subtotal
+            item_subtotal = qty * unit_price
+            subtotal += item_subtotal
+            
+            # Calculate discount amount
+            discount_amount = item_subtotal * (discount / 100)
+            total_discount += discount_amount
+            
+            # Calculate GST on discounted amount
+            discounted_amount = item_subtotal - discount_amount
+            item_gst = discounted_amount * gst_rate
+            total_gst += item_gst
+        
+        # Calculate final total
+        total = subtotal - total_discount + total_gst
         
         # Calculate amount paid
         amount_paid = sum(p.get('amount', 0) for p in self.invoice_data.get('payments', []))
@@ -474,20 +542,32 @@ class InvoicePDFGenerator:
         # Build totals table (right-aligned)
         totals_data = [
             ['Subtotal', f"$ {subtotal:,.2f}"],
+        ]
+        
+        # Only show discount line if there are discounts
+        if total_discount > 0:
+            totals_data.append(['Total Discount', f"$ -{total_discount:,.2f}"])
+        
+        totals_data.extend([
             ['TOTAL GST', f"$ {total_gst:,.2f}"],
             ['TOTAL', f"$ {total:,.2f}"],
             ['', ''],  # Spacer
             ['Amount Owing', f"$ {amount_owing:,.2f}"],
-        ]
+        ])
         
         totals_table = Table(totals_data, colWidths=[12*cm, 5*cm])
+        
+        # Find the TOTAL row index dynamically
+        total_row_idx = 2 if total_discount == 0 else 3
+        amount_owing_row_idx = total_row_idx + 2
+        
         totals_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('LINEABOVE', (1, 2), (1, 2), 1, colors.black),  # Line above TOTAL
-            ('LINEABOVE', (1, 4), (1, 4), 1, colors.black),  # Line above Amount Owing
+            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Line above TOTAL
+            ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),  # Line above Amount Owing
         ]))
         
         elements.append(totals_table)

@@ -180,10 +180,10 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             from xero_integration.services import XeroService
             from xero_integration.models import XeroConnection
             
-            # Get active Xero connection
+            # Check if we have an active Xero connection
             connection = XeroConnection.objects.filter(is_active=True).first()
             if connection:
-                xero_service = XeroService(connection)
+                xero_service = XeroService()  # XeroService doesn't take connection in __init__
                 xero_invoice = xero_service.get_invoice(invoice_link.xero_invoice_id)
                 
                 if xero_invoice and xero_invoice.line_items:
@@ -192,10 +192,14 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                         if item.tax_type == 'OUTPUT':
                             gst_rate = 0.10  # 10% GST
                         
+                        # Get discount rate (Xero stores it as percentage)
+                        discount = float(item.discount_rate or 0)
+                        
                         line_items.append({
                             'description': item.description or '',
                             'quantity': int(item.quantity or 1),
                             'unit_price': float(item.unit_amount or 0),
+                            'discount': discount,
                             'gst_rate': gst_rate,
                         })
         except Exception as e:
@@ -207,6 +211,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 'description': 'Invoice item',
                 'quantity': 1,
                 'unit_price': float(invoice_link.total or 0),
+                'discount': 0,
                 'gst_rate': 0.0,
             })
         
@@ -218,6 +223,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                     'description': f'Test Line Item {i} - Custom orthotic device with adjustments and fitting',
                     'quantity': 1,
                     'unit_price': 150.00 + (i * 10),  # Varying prices
+                    'discount': 10 if i % 5 == 0 else 0,  # Every 5th item has 10% discount
                     'gst_rate': 0.10 if i % 3 == 0 else 0.0,  # Every 3rd item has GST
                 })
         

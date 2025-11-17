@@ -39,7 +39,6 @@ import {
 import { RichTextEditor, Link } from '@mantine/tiptap';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
@@ -106,9 +105,8 @@ export default function UserProfiles() {
   // HTML signature editor
   const htmlSignatureEditor = useEditor({
     extensions: [
-      StarterKit,
-      Underline,
-      Link,
+      StarterKit, // Already includes Link, Bold, Italic, Strike, Code, etc.
+      Link, // From @mantine/tiptap
       Superscript,
       SubScript,
       Highlight,
@@ -293,8 +291,13 @@ export default function UserProfiles() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to save user profile');
+        const errorData = await response.json().catch(() => ({}));
+        // Show detailed validation errors if available
+        const errorMessage = errorData.detail 
+          || (errorData.non_field_errors && errorData.non_field_errors.join(', '))
+          || JSON.stringify(errorData)
+          || 'Failed to save user profile';
+        throw new Error(errorMessage);
       }
 
       setSuccess(editingClinician ? 'User profile updated successfully' : 'User profile created successfully');

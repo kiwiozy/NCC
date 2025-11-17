@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
 import { QuoteDetailModal } from '../../components/xero/QuoteDetailModal';
 import { QuickCreateModal } from '../../components/xero/QuickCreateModal';
+import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
+import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
+import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -46,10 +49,17 @@ export default function XeroInvoicesQuotesPage() {
   
   // Modals
   const [quickCreateOpened, setQuickCreateOpened] = useState(false);
+  const [createInvoiceModalOpened, setCreateInvoiceModalOpened] = useState(false);
+  const [createQuoteModalOpened, setCreateQuoteModalOpened] = useState(false);
+  const [editInvoiceModalOpened, setEditInvoiceModalOpened] = useState(false);
   const [invoiceDetailModalOpened, setInvoiceDetailModalOpened] = useState(false);
   const [quoteDetailModalOpened, setQuoteDetailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [preSelectedPatientId, setPreSelectedPatientId] = useState<string | undefined>();
+  const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>();
+  const [patients, setPatients] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   
   // Delete modals
   const [deleteInvoiceModalOpened, setDeleteInvoiceModalOpened] = useState(false);
@@ -59,7 +69,29 @@ export default function XeroInvoicesQuotesPage() {
 
   useEffect(() => {
     fetchData();
+    fetchPatientsAndCompanies();
   }, []);
+
+  const fetchPatientsAndCompanies = async () => {
+    try {
+      const [patientsRes, companiesRes] = await Promise.all([
+        fetch('https://localhost:8000/api/patients/'),
+        fetch('https://localhost:8000/api/companies/')
+      ]);
+      
+      if (patientsRes.ok) {
+        const patientsData = await patientsRes.json();
+        setPatients(patientsData.results || patientsData);
+      }
+      
+      if (companiesRes.ok) {
+        const companiesData = await companiesRes.json();
+        setCompanies(companiesData.results || companiesData);
+      }
+    } catch (error) {
+      console.error('Error fetching patients/companies:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -183,11 +215,19 @@ export default function XeroInvoicesQuotesPage() {
   };
 
   const getContactName = (item: XeroInvoiceLink | XeroQuoteLink) => {
-    if (item.patient) {
-      return `${item.patient.first_name} ${item.patient.last_name}`;
+    // Check for patient_name/company_name first (new serializer format)
+    if ('patient_name' in item && item.patient_name) {
+      return item.patient_name;
     }
-    if (item.company) {
-      return item.company.name;
+    if ('company_name' in item && item.company_name) {
+      return item.company_name;
+    }
+    // Fallback to nested objects (legacy format)
+    if (item.patient && typeof item.patient === 'object') {
+      return `${(item.patient as any).first_name} ${(item.patient as any).last_name}`;
+    }
+    if (item.company && typeof item.company === 'object') {
+      return (item.company as any).name;
     }
     return '—';
   };
@@ -280,6 +320,21 @@ export default function XeroInvoicesQuotesPage() {
                     <IconEye size={16} />
                   </ActionIcon>
                 </Tooltip>
+                
+                {item.type === 'invoice' && item.status === 'DRAFT' && (
+                  <Tooltip label="Edit Invoice">
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => {
+                        setSelectedInvoiceId(item.id);
+                        setEditInvoiceModalOpened(true);
+                      }}
+                    >
+                      <IconPencil size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
                 
                 {item.type === 'invoice' && (
                   <Tooltip label="Download Debug PDF">
@@ -471,10 +526,56 @@ export default function XeroInvoicesQuotesPage() {
       <QuickCreateModal
         opened={quickCreateOpened}
         onClose={() => setQuickCreateOpened(false)}
+        onCreateInvoice={(patientId, companyId) => {
+          setPreSelectedPatientId(patientId);
+          setPreSelectedCompanyId(companyId);
+          setCreateInvoiceModalOpened(true);
+        }}
+        onCreateQuote={(patientId, companyId) => {
+          setPreSelectedPatientId(patientId);
+          setPreSelectedCompanyId(companyId);
+          setCreateQuoteModalOpened(true);
+        }}
+      />
+
+      {/* Create Invoice Modal */}
+      <CreateInvoiceModal
+        opened={createInvoiceModalOpened}
+        onClose={() => {
+          setCreateInvoiceModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
         onSuccess={() => {
-          setQuickCreateOpened(false);
+          setCreateInvoiceModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
           fetchData();
         }}
+        patients={patients}
+        companies={companies}
+        preSelectedPatientId={preSelectedPatientId}
+        preSelectedCompanyId={preSelectedCompanyId}
+      />
+
+      {/* Create Quote Modal */}
+      <CreateQuoteModal
+        opened={createQuoteModalOpened}
+        onClose={() => {
+          setCreateQuoteModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+        }}
+        onSuccess={() => {
+          setCreateQuoteModalOpened(false);
+          setPreSelectedPatientId(undefined);
+          setPreSelectedCompanyId(undefined);
+          fetchData();
+        }}
+        patients={patients}
+        companies={companies}
+        preSelectedPatientId={preSelectedPatientId}
+        preSelectedCompanyId={preSelectedCompanyId}
       />
 
       {/* Invoice Detail Modal */}
@@ -487,10 +588,28 @@ export default function XeroInvoicesQuotesPage() {
           }}
           invoiceId={selectedInvoiceId}
           onEdit={() => {
-            console.log('Edit invoice:', selectedInvoiceId);
+            setInvoiceDetailModalOpened(false);
+            setEditInvoiceModalOpened(true);
           }}
           onDelete={() => {
             console.log('Delete invoice:', selectedInvoiceId);
+          }}
+        />
+      )}
+
+      {/* Edit Invoice Modal */}
+      {selectedInvoiceId && (
+        <EditInvoiceModal
+          opened={editInvoiceModalOpened}
+          onClose={() => {
+            setEditInvoiceModalOpened(false);
+          }}
+          invoiceId={selectedInvoiceId}
+          onSuccess={() => {
+            setEditInvoiceModalOpened(false);
+            setInvoiceDetailModalOpened(false);
+            setSelectedInvoiceId(null);
+            fetchData();
           }}
         />
       )}

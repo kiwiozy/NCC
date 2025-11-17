@@ -10,7 +10,7 @@ interface QuickCreateModalProps {
   onClose: () => void;
   onCreateInvoice?: (patientId?: string, companyId?: string) => void;
   onCreateQuote?: (patientId?: string, companyId?: string) => void;
-  onSuccess?: () => void;  // Alternative simple callback
+  onSuccess?: (createdId?: string) => void;  // Alternative simple callback - now accepts created ID
 }
 
 interface Patient {
@@ -105,20 +105,30 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
     if (onSuccess) {
       setCreating(true);
       try {
+        const today = new Date();
+        const dueDate = new Date(today);
+        dueDate.setDate(dueDate.getDate() + 14); // 14 days from now
+        
         const endpoint = documentType === 'invoice' 
-          ? 'https://localhost:8000/api/xero-invoice-links/'
-          : 'https://localhost:8000/api/xero-quote-links/';
+          ? 'https://localhost:8000/api/xero/invoice/create/'
+          : 'https://localhost:8000/api/xero/quote/create/';
         
         const payload = {
-          ...(type === 'patient' ? { patient: id } : { company: id }),
+          patient_id: type === 'patient' ? id : null,
+          company_id: type === 'company' ? id : null,
+          contact_type: type,
           line_items: [
             {
               description: '',
               quantity: 1,
-              unit_price: 0,
-              tax_type: 'NONE'
+              unit_amount: 0,
+              account_code: '200',
+              tax_type: 'EXEMPTOUTPUT'
             }
-          ]
+          ],
+          invoice_date: today.toISOString().split('T')[0],
+          due_date: dueDate.toISOString().split('T')[0],
+          send_immediately: false
         };
         
         const response = await fetch(endpoint, {
@@ -132,13 +142,16 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
           throw new Error(errorData.error || `Failed to create ${documentType}`);
         }
         
+        const data = await response.json();
+        
         notifications.show({
           title: 'Success',
-          message: `${documentType === 'invoice' ? 'Invoice' : 'Quote'} created successfully`,
+          message: `${documentType === 'invoice' ? 'Invoice' : 'Quote'} created successfully - opening editor`,
           color: 'green',
         });
         
-        onSuccess();
+        // Pass the created ID back to parent to open the edit modal
+        onSuccess(data.invoice_id || data.quote_id);
         handleClose();
       } catch (error: any) {
         console.error(`Error creating ${documentType}:`, error);

@@ -846,7 +846,8 @@ class XeroService:
                     quantity=item.get('quantity', 1),
                     unit_amount=float(item['unit_amount']),
                     account_code=item.get('account_code', '200'),
-                    tax_type=item.get('tax_type', 'OUTPUT2'),
+                    tax_type=item.get('tax_type', 'EXEMPTOUTPUT'),
+                    discount_rate=float(item.get('discount', 0)),
                 )
                 
                 if item.get('item_code'):
@@ -955,6 +956,42 @@ class XeroService:
                 duration_ms=int((time.time() - start_time) * 1000)
             )
             raise
+    
+    def get_invoice(self, invoice_id: str):
+        """
+        Fetch invoice details from Xero by invoice ID
+        
+        Args:
+            invoice_id: Xero invoice GUID
+        
+        Returns:
+            Xero Invoice object with line items
+        """
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.warning("No active Xero connection found")
+                return None
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch invoice from Xero
+            response = accounting_api.get_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_id
+            )
+            
+            if response and response.invoices:
+                return response.invoices[0]
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error fetching invoice {invoice_id} from Xero: {e}")
+            return None
     
     def sync_invoice_status(self, invoice_link: XeroInvoiceLink) -> XeroInvoiceLink:
         """
@@ -1068,7 +1105,8 @@ class XeroService:
                         quantity=item.get('quantity', 1),
                         unit_amount=item.get('unit_amount', 0),
                         account_code=item.get('account_code', '200'),
-                        tax_type=item.get('tax_type', 'EXEMPTINPUT')
+                        tax_type=item.get('tax_type', 'EXEMPTINPUT'),
+                        discount_rate=float(item.get('discount', 0)),
                     )
                     if item.get('item_code'):
                         line_item.item_code = item.get('item_code')
@@ -1271,7 +1309,8 @@ class XeroService:
                     quantity=item.get('quantity', 1),
                     unit_amount=float(item['unit_amount']),
                     account_code=item.get('account_code', '200'),
-                    tax_type=item.get('tax_type', 'OUTPUT2'),
+                    tax_type=item.get('tax_type', 'EXEMPTOUTPUT'),
+                    discount_rate=float(item.get('discount', 0)),
                 )
                 xero_line_items.append(line_item)
             

@@ -23,6 +23,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unit_amount: number;
+  discount: number;  // Discount percentage (0-100)
   account_code: string;
   tax_type: string;
 }
@@ -96,6 +97,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     },
@@ -107,6 +109,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     };
@@ -132,13 +135,21 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
   };
 
   const calculateSubtotal = () => {
-    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_amount), 0);
+    return lineItems.reduce((sum, item) => {
+      const lineTotal = item.quantity * item.unit_amount;
+      const discountAmount = lineTotal * (item.discount / 100);
+      return sum + (lineTotal - discountAmount);
+    }, 0);
   };
 
   const calculateTax = () => {
     return lineItems.reduce((sum, item) => {
+      const lineTotal = item.quantity * item.unit_amount;
+      const discountAmount = lineTotal * (item.discount / 100);
+      const discountedAmount = lineTotal - discountAmount;
+      
       if (item.tax_type === 'OUTPUT2' || item.tax_type === 'INPUT2') {
-        return sum + (item.quantity * item.unit_amount * 0.10);
+        return sum + (discountedAmount * 0.10);
       }
       return sum;
     }, 0);
@@ -150,6 +161,12 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2)}`;
+  };
+
+  const calculateLineSubtotal = (item: LineItem) => {
+    const lineTotal = item.quantity * item.unit_amount;
+    const discountAmount = lineTotal * (item.discount / 100);
+    return lineTotal - discountAmount;
   };
 
   const validateForm = () => {
@@ -183,10 +200,10 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
       return false;
     }
 
-    if (lineItems.some(item => item.unit_amount <= 0)) {
+    if (lineItems.some(item => item.unit_amount < 0)) {
       notifications.show({
         title: 'Validation Error',
-        message: 'All line items must have a positive amount',
+        message: 'Line item amounts cannot be negative',
         color: 'red',
         icon: <IconX />,
       });
@@ -216,6 +233,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
           description: item.description,
           quantity: item.quantity,
           unit_amount: item.unit_amount,
+          discount: item.discount,
           account_code: item.account_code,
           tax_type: item.tax_type,
         })),
@@ -275,6 +293,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
         description: '',
         quantity: 1,
         unit_amount: 0,
+        discount: 0,
         account_code: '200',
         tax_type: 'OUTPUT2',
       },
@@ -381,10 +400,11 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Description</Table.Th>
-                  <Table.Th style={{ width: '100px' }}>Qty</Table.Th>
-                  <Table.Th style={{ width: '120px' }}>Unit Price</Table.Th>
-                  <Table.Th style={{ width: '120px' }}>Account</Table.Th>
-                  <Table.Th style={{ width: '120px' }}>Tax</Table.Th>
+                  <Table.Th style={{ width: '80px' }}>Qty</Table.Th>
+                  <Table.Th style={{ width: '110px' }}>Unit Price</Table.Th>
+                  <Table.Th style={{ width: '90px' }}>Discount</Table.Th>
+                  <Table.Th style={{ width: '110px' }}>Account</Table.Th>
+                  <Table.Th style={{ width: '110px' }}>Tax</Table.Th>
                   <Table.Th style={{ width: '100px' }}>Subtotal</Table.Th>
                   <Table.Th style={{ width: '40px' }}></Table.Th>
                 </Table.Tr>
@@ -393,12 +413,15 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
                 {lineItems.map((item) => (
                   <Table.Tr key={item.id}>
                     <Table.Td>
-                      <TextInput
+                      <Textarea
                         placeholder="Description"
                         value={item.description}
                         onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                         required
                         size="xs"
+                        autosize
+                        minRows={1}
+                        maxRows={4}
                       />
                     </Table.Td>
                     <Table.Td>
@@ -423,6 +446,17 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
                       />
                     </Table.Td>
                     <Table.Td>
+                      <NumberInput
+                        value={item.discount}
+                        onChange={(val) => updateLineItem(item.id, 'discount', val || 0)}
+                        min={0}
+                        max={100}
+                        suffix="%"
+                        decimalScale={0}
+                        size="xs"
+                      />
+                    </Table.Td>
+                    <Table.Td>
                       <Select
                         data={DEFAULT_ACCOUNT_CODES}
                         value={item.account_code}
@@ -442,7 +476,7 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" fw={500}>
-                        {formatCurrency(item.quantity * item.unit_amount)}
+                        {formatCurrency(calculateLineSubtotal(item))}
                       </Text>
                     </Table.Td>
                     <Table.Td>

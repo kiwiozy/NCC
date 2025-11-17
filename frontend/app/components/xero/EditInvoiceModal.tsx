@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Stack, Group, Text, Button, Loader, Center, TextInput, Select, NumberInput, Table, Paper, ActionIcon, Divider } from '@mantine/core';
+import { Modal, Stack, Group, Text, Button, Loader, Center, TextInput, Textarea, Select, NumberInput, Table, Paper, ActionIcon, Divider } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconDeviceFloppy, IconX, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
@@ -18,6 +18,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unit_amount: number;
+  discount: number;  // Discount percentage (0-100)
   account_code: string;
   tax_type: string;
 }
@@ -90,6 +91,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
           description: '',
           quantity: 1,
           unit_amount: 0,
+          discount: 0,
           account_code: '200',
           tax_type: 'EXEMPTOUTPUT',
         },
@@ -119,6 +121,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
       description: '',
       quantity: 1,
       unit_amount: 0,
+      discount: 0,
       account_code: '200',
       tax_type: 'EXEMPTOUTPUT',
     };
@@ -191,6 +194,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
             description: item.description,
             quantity: item.quantity,
             unit_amount: item.unit_amount,
+            discount: item.discount,
             account_code: item.account_code,
             tax_type: item.tax_type,
           })),
@@ -284,10 +288,11 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Description</Table.Th>
-                    <Table.Th style={{ width: '100px' }}>Qty</Table.Th>
-                    <Table.Th style={{ width: '120px' }}>Unit Price</Table.Th>
-                    <Table.Th style={{ width: '120px' }}>Account</Table.Th>
-                    <Table.Th style={{ width: '120px' }}>Tax</Table.Th>
+                    <Table.Th style={{ width: '80px' }}>Qty</Table.Th>
+                    <Table.Th style={{ width: '110px' }}>Unit Price</Table.Th>
+                    <Table.Th style={{ width: '90px' }}>Discount</Table.Th>
+                    <Table.Th style={{ width: '110px' }}>Account</Table.Th>
+                    <Table.Th style={{ width: '110px' }}>Tax</Table.Th>
                     <Table.Th style={{ width: '100px' }}>Subtotal</Table.Th>
                     <Table.Th style={{ width: '40px' }}></Table.Th>
                   </Table.Tr>
@@ -296,12 +301,15 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
                   {lineItems.map((item, index) => (
                     <Table.Tr key={item.id}>
                       <Table.Td>
-                        <TextInput
+                        <Textarea
                           placeholder="Description"
                           value={item.description}
                           onChange={(e) => updateLineItem(index, 'description', e.target.value)}
                           required
                           size="xs"
+                          autosize
+                          minRows={1}
+                          maxRows={4}
                         />
                       </Table.Td>
                       <Table.Td>
@@ -326,6 +334,17 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
                         />
                       </Table.Td>
                       <Table.Td>
+                        <NumberInput
+                          value={item.discount}
+                          onChange={(val) => updateLineItem(index, 'discount', val || 0)}
+                          min={0}
+                          max={100}
+                          suffix="%"
+                          decimalScale={0}
+                          size="xs"
+                        />
+                      </Table.Td>
+                      <Table.Td>
                         <Select
                           data={DEFAULT_ACCOUNT_CODES}
                           value={item.account_code}
@@ -345,7 +364,7 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
                       </Table.Td>
                       <Table.Td>
                         <Text size="sm" fw={500}>
-                          {formatCurrency(item.quantity * item.unit_amount)}
+                          {formatCurrency((item.quantity * item.unit_amount) * (1 - item.discount / 100))}
                         </Text>
                       </Table.Td>
                       <Table.Td>
