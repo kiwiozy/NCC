@@ -573,6 +573,43 @@ class XeroQuoteLinkViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status']
     
     @action(detail=True, methods=['post'])
+    def authorize(self, request, pk=None):
+        """Authorize a draft quote (change status from DRAFT to SENT)"""
+        try:
+            quote_link = self.get_object()
+            logger.info(f"🚀 [Send Quote] Authorizing quote {quote_link.xero_quote_number} (ID: {quote_link.id})")
+            logger.info(f"📊 [Send Quote] Current status: {quote_link.status}")
+            
+            # Validate quote can be authorized
+            normalized_status = quote_link.status.replace('QuoteStatusCodes.', '')
+            if normalized_status != 'DRAFT':
+                logger.warning(f"⚠️ [Send Quote] Cannot authorize - invalid status: {normalized_status}")
+                return Response({
+                    'error': 'Quote cannot be authorized',
+                    'detail': f'Only DRAFT quotes can be authorized (current status: {normalized_status})'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            logger.info(f"📤 [Send Quote] Calling XeroService.authorize_quote()...")
+            # Authorize quote
+            updated_quote = xero_service.authorize_quote(quote_link)
+            logger.info(f"✅ [Send Quote] Quote authorized successfully - new status: {updated_quote.status}")
+            
+            response_data = XeroQuoteLinkSerializer(updated_quote).data
+            logger.info(f"📥 [Send Quote] Returning response: {response_data}")
+            
+            return Response({
+                'message': 'Quote authorized and sent successfully',
+                'quote': response_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ [Send Quote] Error authorizing quote: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Failed to authorize quote',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
     def convert_to_invoice(self, request, pk=None):
         """Convert a quote to an invoice"""
         try:

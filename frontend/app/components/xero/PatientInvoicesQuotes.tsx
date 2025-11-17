@@ -270,6 +270,34 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     }
   };
 
+  const handleAuthorizeQuote = async (quoteId: string) => {
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/authorize/`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to authorize quote');
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: 'Quote authorized and sent to Xero',
+        color: 'green',
+      });
+
+      await fetchData();
+    } catch (error: any) {
+      console.error('Error authorizing quote:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to authorize quote',
+        color: 'red',
+      });
+    }
+  };
+
   const handleConvertQuoteToInvoice = async (quoteId: string) => {
     try {
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
@@ -437,6 +465,18 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
                       variant="subtle"
                       color="teal"
                       onClick={() => handleAuthorizeInvoice(item.id)}
+                    >
+                      <IconSend size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+                
+                {item.type === 'quote' && (item.status === 'DRAFT' || item.status === 'QuoteStatusCodes.DRAFT') && (
+                  <Tooltip label="Send to Xero">
+                    <ActionIcon
+                      variant="subtle"
+                      color="teal"
+                      onClick={() => handleAuthorizeQuote(item.id)}
                     >
                       <IconSend size={16} />
                     </ActionIcon>

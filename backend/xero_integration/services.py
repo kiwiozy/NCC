@@ -1389,6 +1389,110 @@ class XeroService:
             )
             raise
     
+    def authorize_quote(self, quote_link) -> 'XeroQuoteLink':
+        """
+        Authorize a draft quote in Xero (change status from DRAFT to SENT)
+        Added Nov 2025: Allow sending draft quotes to Xero
+        
+        Args:
+            quote_link: XeroQuoteLink object to authorize
+        
+        Returns:
+            Updated XeroQuoteLink object with SENT status
+        """
+        from .models import XeroQuoteLink  # Import here to avoid circular import
+        
+        start_time = time.time()
+        logger.info(f"🔧 [authorize_quote] Starting authorization for quote {quote_link.xero_quote_number}")
+        
+        try:
+            # Get API client and connection
+            logger.info(f"🔌 [authorize_quote] Getting API client and connection...")
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                logger.error(f"❌ [authorize_quote] No active Xero connection found")
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            logger.info(f"✅ [authorize_quote] Connected to tenant: {connection.tenant_id}")
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the current quote from Xero
+            logger.info(f"📥 [authorize_quote] Fetching quote from Xero: {quote_link.xero_quote_id}")
+            response = accounting_api.get_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id
+            )
+            xero_quote = response.quotes[0]
+            logger.info(f"✅ [authorize_quote] Fetched quote - current status in Xero: {xero_quote.status}")
+            
+            # Validate quote status
+            if str(xero_quote.status).replace('QuoteStatusCodes.', '') != 'DRAFT':
+                logger.error(f"❌ [authorize_quote] Invalid status: {xero_quote.status}")
+                raise ValueError(f"Cannot authorize quote in {xero_quote.status} status. Only DRAFT quotes can be authorized.")
+            
+            # Change status to SENT
+            logger.info(f"🔄 [authorize_quote] Changing status from DRAFT to SENT...")
+            from xero_python.accounting import QuoteStatusCodes, Quotes
+            xero_quote.status = QuoteStatusCodes.SENT
+            
+            # Update quote in Xero
+            logger.info(f"📤 [authorize_quote] Sending update to Xero...")
+            quotes = Quotes(quotes=[xero_quote])
+            update_response = accounting_api.update_quote(
+                xero_tenant_id=connection.tenant_id,
+                quote_id=quote_link.xero_quote_id,
+                quotes=quotes
+            )
+            
+            updated_xero_quote = update_response.quotes[0]
+            logger.info(f"✅ [authorize_quote] Quote updated in Xero - new status: {updated_xero_quote.status}")
+            
+            # Update local database
+            logger.info(f"💾 [authorize_quote] Updating local database...")
+            quote_link.status = updated_xero_quote.status.value if hasattr(updated_xero_quote.status, 'value') else str(updated_xero_quote.status).replace('QuoteStatusCodes.', '')
+            quote_link.total = float(updated_xero_quote.total) if updated_xero_quote.total else 0
+            quote_link.subtotal = float(updated_xero_quote.sub_total) if updated_xero_quote.sub_total else 0
+            quote_link.total_tax = float(updated_xero_quote.total_tax) if updated_xero_quote.total_tax else 0
+            quote_link.last_synced_at = timezone.now()
+            quote_link.save()
+            logger.info(f"✅ [authorize_quote] Local database updated")
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [authorize_quote] Operation completed in {duration_ms}ms")
+            XeroSyncLog.objects.create(
+                operation_type='quote_authorize',
+                status='success',
+                local_entity_type='quote',
+                local_entity_id=str(quote_link.id),
+                xero_entity_id=quote_link.xero_quote_id,
+                duration_ms=duration_ms,
+                response_data={
+                    'quote_number': updated_xero_quote.quote_number,
+                    'status': str(updated_xero_quote.status),
+                    'total': float(updated_xero_quote.total) if updated_xero_quote.total else 0
+                }
+            )
+            
+            return quote_link
+            
+        except Exception as e:
+            # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [authorize_quote] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='quote_authorize',
+                status='failed',
+                local_entity_type='quote',
+                local_entity_id=str(quote_link.id),
+                xero_entity_id=quote_link.xero_quote_id,
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+    
     def create_quote(
         self,
         patient,
