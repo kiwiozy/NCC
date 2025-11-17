@@ -187,15 +187,23 @@ export default function XeroInvoicesQuotesPage() {
   };
 
   const handleAuthorizeInvoice = async (invoiceId: string) => {
+    console.log('🚀 [Send to Xero] Starting authorization for invoice:', invoiceId);
     try {
+      console.log('📤 [Send to Xero] Sending POST request to authorize endpoint...');
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/authorize/`, {
         method: 'POST',
       });
 
+      console.log('📥 [Send to Xero] Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ [Send to Xero] Error response:', errorData);
         throw new Error(errorData.detail || 'Failed to authorize invoice');
       }
+
+      const result = await response.json();
+      console.log('✅ [Send to Xero] Success response:', result);
 
       notifications.show({
         title: 'Success',
@@ -203,9 +211,12 @@ export default function XeroInvoicesQuotesPage() {
         color: 'green',
       });
 
+      console.log('🔄 [Send to Xero] Refreshing invoice list...');
       // Refresh the list
-      fetchInvoices();
+      await fetchData();
+      console.log('✅ [Send to Xero] Invoice list refreshed');
     } catch (error: any) {
+      console.error('❌ [Send to Xero] Error:', error);
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to authorize invoice',
@@ -215,17 +226,23 @@ export default function XeroInvoicesQuotesPage() {
   };
 
   const handleConvertQuoteToInvoice = async (quoteId: string) => {
+    console.log('🚀 [Convert to Invoice] Starting conversion for quote:', quoteId);
     try {
+      console.log('📤 [Convert to Invoice] Sending POST request to convert endpoint...');
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
         method: 'POST',
       });
 
+      console.log('📥 [Convert to Invoice] Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ [Convert to Invoice] Error response:', errorData);
         throw new Error(errorData.detail || 'Failed to convert quote');
       }
 
       const result = await response.json();
+      console.log('✅ [Convert to Invoice] Success response:', result);
 
       notifications.show({
         title: 'Success',
@@ -233,10 +250,12 @@ export default function XeroInvoicesQuotesPage() {
         color: 'green',
       });
 
+      console.log('🔄 [Convert to Invoice] Refreshing invoice and quote lists...');
       // Refresh both lists
-      fetchInvoices();
-      fetchQuotes();
+      await fetchData();
+      console.log('✅ [Convert to Invoice] Lists refreshed');
     } catch (error: any) {
+      console.error('❌ [Convert to Invoice] Error:', error);
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to convert quote',

@@ -1292,32 +1292,41 @@ class XeroService:
             Updated XeroInvoiceLink object with AUTHORISED status
         """
         start_time = time.time()
+        logger.info(f"🔧 [authorize_invoice] Starting authorization for invoice {invoice_link.xero_invoice_number}")
         
         try:
             # Get API client and connection
+            logger.info(f"🔌 [authorize_invoice] Getting API client and connection...")
             api_client = self.get_api_client()
             connection = XeroConnection.objects.filter(is_active=True).first()
             
             if not connection:
+                logger.error(f"❌ [authorize_invoice] No active Xero connection found")
                 raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
             
+            logger.info(f"✅ [authorize_invoice] Connected to tenant: {connection.tenant_id}")
             accounting_api = AccountingApi(api_client)
             
             # Fetch the current invoice from Xero
+            logger.info(f"📥 [authorize_invoice] Fetching invoice from Xero: {invoice_link.xero_invoice_id}")
             response = accounting_api.get_invoice(
                 xero_tenant_id=connection.tenant_id,
                 invoice_id=invoice_link.xero_invoice_id
             )
             xero_invoice = response.invoices[0]
+            logger.info(f"✅ [authorize_invoice] Fetched invoice - current status in Xero: {xero_invoice.status}")
             
             # Validate invoice status
             if xero_invoice.status != 'DRAFT':
+                logger.error(f"❌ [authorize_invoice] Invalid status: {xero_invoice.status}")
                 raise ValueError(f"Cannot authorize invoice in {xero_invoice.status} status. Only DRAFT invoices can be authorized.")
             
             # Change status to AUTHORISED
+            logger.info(f"🔄 [authorize_invoice] Changing status from DRAFT to AUTHORISED...")
             xero_invoice.status = 'AUTHORISED'
             
             # Update invoice in Xero
+            logger.info(f"📤 [authorize_invoice] Sending update to Xero...")
             invoices = Invoices(invoices=[xero_invoice])
             update_response = accounting_api.update_invoice(
                 xero_tenant_id=connection.tenant_id,
@@ -1326,8 +1335,10 @@ class XeroService:
             )
             
             updated_xero_invoice = update_response.invoices[0]
+            logger.info(f"✅ [authorize_invoice] Invoice updated in Xero - new status: {updated_xero_invoice.status}")
             
             # Update local database
+            logger.info(f"💾 [authorize_invoice] Updating local database...")
             invoice_link.status = updated_xero_invoice.status
             invoice_link.total = float(updated_xero_invoice.total) if updated_xero_invoice.total else 0
             invoice_link.subtotal = float(updated_xero_invoice.sub_total) if updated_xero_invoice.sub_total else 0
@@ -1336,15 +1347,18 @@ class XeroService:
             invoice_link.amount_paid = float(updated_xero_invoice.amount_paid) if updated_xero_invoice.amount_paid else 0
             invoice_link.last_synced_at = timezone.now()
             invoice_link.save()
+            logger.info(f"✅ [authorize_invoice] Local database updated")
             
             # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [authorize_invoice] Operation completed in {duration_ms}ms")
             XeroSyncLog.objects.create(
                 operation_type='invoice_authorize',
                 status='success',
                 local_entity_type='invoice',
                 local_entity_id=str(invoice_link.id),
                 xero_entity_id=invoice_link.xero_invoice_id,
-                duration_ms=int((time.time() - start_time) * 1000),
+                duration_ms=duration_ms,
                 response_data={
                     'invoice_number': updated_xero_invoice.invoice_number,
                     'status': updated_xero_invoice.status,
@@ -1356,6 +1370,8 @@ class XeroService:
             
         except Exception as e:
             # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [authorize_invoice] Error after {duration_ms}ms: {str(e)}", exc_info=True)
             XeroSyncLog.objects.create(
                 operation_type='invoice_authorize',
                 status='failed',
@@ -1363,7 +1379,7 @@ class XeroService:
                 local_entity_id=str(invoice_link.id),
                 xero_entity_id=invoice_link.xero_invoice_id,
                 error_message=str(e),
-                duration_ms=int((time.time() - start_time) * 1000)
+                duration_ms=duration_ms
             )
             raise
     
@@ -1512,25 +1528,33 @@ class XeroService:
             XeroInvoiceLink object (new invoice)
         """
         start_time = time.time()
+        logger.info(f"🔧 [convert_quote_to_invoice] Starting conversion for quote {quote_link.xero_quote_number}")
         
         try:
             # Validate quote can be converted
+            logger.info(f"🔍 [convert_quote_to_invoice] Validating quote status: {quote_link.status}")
             if not quote_link.can_convert_to_invoice():
+                logger.error(f"❌ [convert_quote_to_invoice] Quote cannot be converted - invalid status: {quote_link.status}")
                 raise ValueError(f"Quote {quote_link.xero_quote_number} cannot be converted (status: {quote_link.status})")
             
             # Get API client and connection
+            logger.info(f"🔌 [convert_quote_to_invoice] Getting API client and connection...")
             api_client = self.get_api_client()
             connection = XeroConnection.objects.filter(is_active=True).first()
+            logger.info(f"✅ [convert_quote_to_invoice] Connected to tenant: {connection.tenant_id}")
             accounting_api = AccountingApi(api_client)
             
             # Fetch the original quote from Xero
+            logger.info(f"📥 [convert_quote_to_invoice] Fetching quote from Xero: {quote_link.xero_quote_id}")
             quote_response = accounting_api.get_quote(
                 xero_tenant_id=connection.tenant_id,
                 quote_id=quote_link.xero_quote_id
             )
             original_quote = quote_response.quotes[0]
+            logger.info(f"✅ [convert_quote_to_invoice] Fetched quote - {len(original_quote.line_items) if original_quote.line_items else 0} line items")
             
             # Create invoice with same details
+            logger.info(f"📝 [convert_quote_to_invoice] Creating new invoice from quote...")
             from xero_python.accounting import CurrencyCode
             invoice = Invoice(
                 type='ACCREC',
@@ -1541,8 +1565,10 @@ class XeroService:
                 status='AUTHORISED',  # Create as AUTHORISED instead of DRAFT
                 currency_code=CurrencyCode.AUD
             )
+            logger.info(f"✅ [convert_quote_to_invoice] Invoice object created - status: AUTHORISED")
             
             # Create invoice in Xero
+            logger.info(f"📤 [convert_quote_to_invoice] Sending new invoice to Xero...")
             invoices = Invoices(invoices=[invoice])
             response = accounting_api.create_invoices(
                 xero_tenant_id=connection.tenant_id,
@@ -1550,8 +1576,10 @@ class XeroService:
             )
             
             created_invoice = response.invoices[0]
+            logger.info(f"✅ [convert_quote_to_invoice] Invoice created in Xero: {created_invoice.invoice_number} (status: {created_invoice.status})")
             
             # Create invoice link
+            logger.info(f"💾 [convert_quote_to_invoice] Creating invoice link in database...")
             invoice_link = XeroInvoiceLink.objects.create(
                 appointment=quote_link.appointment,  # Link to same appointment if any
                 xero_invoice_id=created_invoice.invoice_id,
@@ -1566,22 +1594,29 @@ class XeroService:
                 due_date=created_invoice.due_date,
                 last_synced_at=timezone.now()
             )
+            logger.info(f"✅ [convert_quote_to_invoice] Invoice link created in database")
             
             # Update quote link to mark as converted
+            logger.info(f"💾 [convert_quote_to_invoice] Updating quote status to INVOICED...")
             quote_link.status = 'INVOICED'
             quote_link.converted_invoice = invoice_link
             quote_link.converted_at = timezone.now()
             quote_link.save()
+            logger.info(f"✅ [convert_quote_to_invoice] Quote marked as INVOICED")
             
             # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"⏱️ [convert_quote_to_invoice] Conversion completed in {duration_ms}ms")
             XeroSyncLog.objects.create(
                 operation_type='quote_convert',
                 status='success',
                 xero_entity_id=quote_link.xero_quote_id,
-                duration_ms=int((time.time() - start_time) * 1000),
+                duration_ms=duration_ms,
                 response_data={
                     'quote_id': quote_link.xero_quote_id,
-                    'invoice_id': invoice_link.xero_invoice_id
+                    'invoice_id': invoice_link.xero_invoice_id,
+                    'invoice_number': created_invoice.invoice_number,
+                    'quote_number': original_quote.quote_number
                 }
             )
             
@@ -1589,12 +1624,14 @@ class XeroService:
             
         except Exception as e:
             # Log error
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [convert_quote_to_invoice] Error after {duration_ms}ms: {str(e)}", exc_info=True)
             XeroSyncLog.objects.create(
                 operation_type='quote_convert',
                 status='failed',
                 xero_entity_id=quote_link.xero_quote_id,
                 error_message=str(e),
-                duration_ms=int((time.time() - start_time) * 1000)
+                duration_ms=duration_ms
             )
             raise
     

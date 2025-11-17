@@ -386,23 +386,32 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
         """Authorize a draft invoice (change status from DRAFT to AUTHORISED)"""
         try:
             invoice_link = self.get_object()
+            logger.info(f"🚀 [Send to Xero] Authorizing invoice {invoice_link.xero_invoice_number} (ID: {invoice_link.id})")
+            logger.info(f"📊 [Send to Xero] Current status: {invoice_link.status}")
             
             # Validate invoice can be authorized
             if invoice_link.status != 'DRAFT':
+                logger.warning(f"⚠️ [Send to Xero] Cannot authorize - invalid status: {invoice_link.status}")
                 return Response({
                     'error': 'Invoice cannot be authorized',
                     'detail': f'Only DRAFT invoices can be authorized (current status: {invoice_link.status})'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
+            logger.info(f"📤 [Send to Xero] Calling XeroService.authorize_invoice()...")
             # Authorize invoice
             updated_invoice = xero_service.authorize_invoice(invoice_link)
+            logger.info(f"✅ [Send to Xero] Invoice authorized successfully - new status: {updated_invoice.status}")
+            
+            response_data = XeroInvoiceLinkSerializer(updated_invoice).data
+            logger.info(f"📥 [Send to Xero] Returning response: {response_data}")
             
             return Response({
                 'message': 'Invoice authorized and sent to Xero successfully',
-                'invoice': XeroInvoiceLinkSerializer(updated_invoice).data
+                'invoice': response_data
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
+            logger.error(f"❌ [Send to Xero] Error authorizing invoice: {str(e)}", exc_info=True)
             return Response({
                 'error': 'Failed to authorize invoice',
                 'detail': str(e)
@@ -454,23 +463,33 @@ class XeroQuoteLinkViewSet(viewsets.ModelViewSet):
         """Convert a quote to an invoice"""
         try:
             quote_link = self.get_object()
+            logger.info(f"🚀 [Convert to Invoice] Converting quote {quote_link.xero_quote_number} (ID: {quote_link.id})")
+            logger.info(f"📊 [Convert to Invoice] Current status: {quote_link.status}")
             
             # Validate quote can be converted
             if not quote_link.can_convert_to_invoice():
+                logger.warning(f"⚠️ [Convert to Invoice] Cannot convert - invalid status: {quote_link.status}")
                 return Response({
                     'error': 'Quote cannot be converted',
                     'detail': f'Quote must be DRAFT, SENT, or ACCEPTED and not already converted (current status: {quote_link.status})'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
+            logger.info(f"📤 [Convert to Invoice] Calling XeroService.convert_quote_to_invoice()...")
             # Convert quote to invoice
             invoice_link = xero_service.convert_quote_to_invoice(quote_link)
+            logger.info(f"✅ [Convert to Invoice] Quote converted successfully")
+            logger.info(f"📋 [Convert to Invoice] New invoice: {invoice_link.xero_invoice_number} (status: {invoice_link.status})")
+            
+            response_data = XeroInvoiceLinkSerializer(invoice_link).data
+            logger.info(f"📥 [Convert to Invoice] Returning response: {response_data}")
             
             return Response({
                 'message': 'Quote converted to invoice successfully',
-                'invoice': XeroInvoiceLinkSerializer(invoice_link).data
+                'invoice': response_data
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
+            logger.error(f"❌ [Convert to Invoice] Error converting quote: {str(e)}", exc_info=True)
             return Response({
                 'error': 'Failed to convert quote',
                 'detail': str(e)
