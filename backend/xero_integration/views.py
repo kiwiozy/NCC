@@ -8,12 +8,15 @@ Provides API endpoints for:
 - Invoice management
 - Sync logs
 """
+import logging
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+
+logger = logging.getLogger(__name__)
 
 from patients.models import Patient
 from appointments.models import Appointment, AppointmentType
