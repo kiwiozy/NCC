@@ -136,6 +136,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             }, status=404)
         
         # Get patient or company info
+        # IMPORTANT: Company takes precedence for address (determines who invoice is billed to)
         patient_info = {
             'name': '',
             'address': '',
@@ -144,23 +145,8 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'postcode': '',
         }
         
-        if invoice_link.patient:
-            patient = invoice_link.patient
-            patient_info['name'] = f"{patient.title or ''} {patient.first_name} {patient.last_name}".strip()
-            
-            # Get address from address_json
-            if patient.address_json:
-                addr = patient.address_json
-                patient_info['address'] = addr.get('street', '')
-                patient_info['suburb'] = addr.get('suburb', '')
-                patient_info['state'] = addr.get('state', '')
-                patient_info['postcode'] = addr.get('postcode', '')
-            
-            # Get NDIS/health number
-            if patient.health_number:
-                patient_info['ndis_number'] = patient.health_number
-        
-        elif invoice_link.company:
+        if invoice_link.company:
+            # Company pays - use company's address
             company = invoice_link.company
             patient_info['name'] = company.name
             
@@ -171,6 +157,22 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 patient_info['suburb'] = addr.get('suburb', '')
                 patient_info['state'] = addr.get('state', '')
                 patient_info['postcode'] = addr.get('postcode', '')
+        
+        elif invoice_link.patient:
+            # Patient pays directly - use patient's address
+            patient = invoice_link.patient
+            patient_info['name'] = f"{patient.title or ''} {patient.first_name} {patient.last_name}".strip()
+            
+            # Get address from address_json
+            if patient.address_json:
+                addr = patient.address_json
+                patient_info['address'] = addr.get('street', '')
+                patient_info['suburb'] = addr.get('suburb', '')
+                patient_info['state'] = addr.get('postcode', '')
+            
+            # Get NDIS/health number
+            if patient.health_number:
+                patient_info['ndis_number'] = patient.health_number
         
         # Parse line items - fetch from Xero API since they're not stored in DB
         line_items = []

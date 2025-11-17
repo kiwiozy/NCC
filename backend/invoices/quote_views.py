@@ -58,7 +58,29 @@ def generate_xero_quote_pdf(request, quote_link_id):
             return Response({'error': 'Could not fetch quote from Xero'}, status=500)
         
         # Build patient/contact info
-        if quote_link.patient:
+        # IMPORTANT: Company takes precedence for address (determines who quote is billed to)
+        if quote_link.company:
+            # Company pays - use company's address
+            company = quote_link.company
+            patient_info = {
+                'name': company.name,
+                'address': '',
+                'suburb': '',
+                'state': '',
+                'postcode': '',
+                'ndis_number': ''
+            }
+            
+            # Get address from address_json
+            if company.address_json:
+                addr = company.address_json
+                patient_info['address'] = addr.get('street', '')
+                patient_info['suburb'] = addr.get('suburb', '')
+                patient_info['state'] = addr.get('state', '')
+                patient_info['postcode'] = addr.get('postcode', '')
+                
+        elif quote_link.patient:
+            # Patient pays directly - use patient's address
             patient = quote_link.patient
             patient_info = {
                 'name': f"{patient.first_name} {patient.last_name}",
@@ -81,24 +103,6 @@ def generate_xero_quote_pdf(request, quote_link_id):
             if patient.health_number:
                 patient_info['ndis_number'] = patient.health_number
                 
-        elif quote_link.company:
-            company = quote_link.company
-            patient_info = {
-                'name': company.name,
-                'address': '',
-                'suburb': '',
-                'state': '',
-                'postcode': '',
-                'ndis_number': ''
-            }
-            
-            # Get address from address_json
-            if company.address_json:
-                addr = company.address_json
-                patient_info['address'] = addr.get('street', '')
-                patient_info['suburb'] = addr.get('suburb', '')
-                patient_info['state'] = addr.get('state', '')
-                patient_info['postcode'] = addr.get('postcode', '')
         else:
             # Fallback to contact from Xero
             patient_info = {
