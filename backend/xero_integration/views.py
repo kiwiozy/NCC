@@ -426,6 +426,15 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
             invoice_link = self.get_object()
             logger.info(f"🗑️ [Delete Invoice] Attempting to delete invoice {invoice_link.xero_invoice_number} (status: {invoice_link.status})")
             
+            # Check if this invoice was converted from a quote
+            linked_quote = None
+            try:
+                linked_quote = XeroQuoteLink.objects.filter(converted_invoice=invoice_link).first()
+                if linked_quote:
+                    logger.info(f"🔗 [Delete Invoice] Found linked quote: {linked_quote.xero_quote_number}")
+            except Exception as e:
+                logger.warning(f"⚠️ [Delete Invoice] Error checking for linked quote: {str(e)}")
+            
             if invoice_link.status == 'DRAFT':
                 # Delete DRAFT invoices in Xero
                 logger.info(f"📤 [Delete Invoice] Deleting DRAFT invoice in Xero...")
@@ -450,9 +459,70 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
                 # Already deleted/voided, just remove from Nexus
                 logger.info(f"ℹ️ [Delete Invoice] Invoice already {invoice_link.status}, removing from Nexus only")
             
+            # Reset the linked quote if one exists
+            quote_message = ""
+            if linked_quote:
+                try:
+                    logger.info(f"🔄 [Delete Invoice] Resetting linked quote {linked_quote.xero_quote_number}...")
+                    
+                    # Determine the status to reset to (DRAFT or SENT)
+                    original_status = 'DRAFT'  # Default to DRAFT
+                    
+                    # Reset quote in database
+                    linked_quote.status = original_status
+                    linked_quote.converted_invoice = None
+                    linked_quote.converted_at = None
+                    linked_quote.save()
+                    logger.info(f"💾 [Delete Invoice] Quote reset to {original_status} in Nexus")
+                    
+                    # Update quote status in Xero
+                    try:
+                        api_client = xero_service.get_api_client()
+                        connection = XeroConnection.objects.filter(is_active=True).first()
+                        if connection:
+                            from xero_python.accounting import AccountingApi
+                            accounting_api = AccountingApi(api_client)
+                            
+                            # Fetch quote from Xero
+                            quote_response = accounting_api.get_quote(
+                                xero_tenant_id=connection.tenant_id,
+                                quote_id=linked_quote.xero_quote_id
+                            )
+                            xero_quote = quote_response.quotes[0]
+                            
+                            # Update status to DRAFT
+                            xero_quote.status = QuoteStatusCodes.DRAFT
+                            quotes = Quotes(quotes=[xero_quote])
+                            accounting_api.update_quote(
+                                xero_tenant_id=connection.tenant_id,
+                                quote_id=linked_quote.xero_quote_id,
+                                quotes=quotes
+                            )
+                            logger.info(f"✅ [Delete Invoice] Quote reset to DRAFT in Xero")
+                    except Exception as e:
+                        logger.warning(f"⚠️ [Delete Invoice] Could not update quote in Xero: {str(e)}")
+                        # Continue anyway - quote is reset in Nexus
+                    
+                    quote_message = f" Quote {linked_quote.xero_quote_number} has been reset to DRAFT and can be converted again."
+                    logger.info(f"✅ [Delete Invoice] Quote {linked_quote.xero_quote_number} reset successfully")
+                    
+                except Exception as e:
+                    logger.error(f"❌ [Delete Invoice] Error resetting quote: {str(e)}", exc_info=True)
+                    # Continue with invoice deletion even if quote reset fails
+            
             # Delete from Nexus database
             logger.info(f"💾 [Delete Invoice] Removing invoice from Nexus database...")
-            return super().destroy(request, *args, **kwargs)
+            response = super().destroy(request, *args, **kwargs)
+            
+            # Override response with custom success message if quote was reset
+            if linked_quote:
+                return Response({
+                    'message': f'Invoice deleted successfully.{quote_message}',
+                    'quote_reset': True,
+                    'quote_number': linked_quote.xero_quote_number
+                }, status=status.HTTP_200_OK)
+            
+            return response
             
         except Exception as e:
             logger.error(f"❌ [Delete Invoice] Error: {str(e)}", exc_info=True)

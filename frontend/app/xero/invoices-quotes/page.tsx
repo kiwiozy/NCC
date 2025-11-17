@@ -127,26 +127,53 @@ export default function XeroInvoicesQuotesPage() {
     
     setDeleting(true);
     try {
+      console.log('🗑️ [Delete Invoice] Starting deletion for invoice:', itemToDelete.id);
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${itemToDelete.id}/`, {
         method: 'DELETE',
       });
       
-      if (!response.ok) throw new Error('Failed to delete invoice');
+      console.log('📥 [Delete Invoice] Response status:', response.status);
       
-      notifications.show({
-        title: 'Success',
-        message: 'Invoice deleted successfully',
-        color: 'green',
-      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ [Delete Invoice] Error response:', errorData);
+        throw new Error(errorData.detail || 'Failed to delete invoice');
+      }
       
+      // Check if response has JSON data (quote reset info)
+      const contentType = response.headers.get('content-type');
+      let result = null;
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+        console.log('✅ [Delete Invoice] Success response:', result);
+      }
+      
+      // Show enhanced success message if quote was reset
+      if (result && result.quote_reset) {
+        notifications.show({
+          title: 'Success',
+          message: result.message || `Invoice deleted. Quote ${result.quote_number} has been reset to DRAFT and can be converted again.`,
+          color: 'green',
+          autoClose: 8000, // Show longer for important message
+        });
+      } else {
+        notifications.show({
+          title: 'Success',
+          message: 'Invoice deleted successfully',
+          color: 'green',
+        });
+      }
+      
+      console.log('🔄 [Delete Invoice] Refreshing invoice list...');
       fetchData();
       setDeleteInvoiceModalOpened(false);
       setItemToDelete(null);
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
+      console.log('✅ [Delete Invoice] Complete');
+    } catch (error: any) {
+      console.error('❌ [Delete Invoice] Error:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to delete invoice',
+        message: error.message || 'Failed to delete invoice',
         color: 'red',
       });
     } finally {
