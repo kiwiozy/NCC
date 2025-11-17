@@ -44,8 +44,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
 import Highlight from '@tiptap/extension-highlight';
-import TextStyle from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 
 interface User {
   id: number;
@@ -117,6 +117,7 @@ export default function UserProfiles() {
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content: formSignatureHtml,
+    immediatelyRender: false, // Fix SSR/hydration issues with Next.js
     onUpdate: ({ editor }) => {
       setFormSignatureHtml(editor.getHTML());
     },
