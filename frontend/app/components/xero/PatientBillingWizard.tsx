@@ -46,16 +46,6 @@ export function PatientBillingWizard({
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
-  
-  // Common companies (cached)
-  const [commonCompanies, setCommonCompanies] = useState<Company[]>([]);
-
-  // Load common companies on mount
-  useEffect(() => {
-    if (opened) {
-      loadCommonCompanies();
-    }
-  }, [opened]);
 
   // Search companies when query changes
   useEffect(() => {
@@ -66,17 +56,6 @@ export function PatientBillingWizard({
       return () => clearTimeout(timer);
     }
   }, [searchQuery, activeStep]);
-
-  const loadCommonCompanies = async () => {
-    try {
-      // Load all companies initially (can be filtered later for funding companies)
-      const response = await fetch('https://localhost:8000/api/companies/?limit=5');
-      const data = await response.json();
-      setCommonCompanies(data.results || data);
-    } catch (error) {
-      console.error('Error loading common companies:', error);
-    }
-  };
 
   const searchCompanies = async () => {
     if (searchQuery.length < 2) return;
@@ -149,7 +128,7 @@ export function PatientBillingWizard({
 
   const getSelectedCompanyName = () => {
     if (!selectedCompanyId) return '';
-    const company = [...companies, ...commonCompanies].find(c => c.id === selectedCompanyId);
+    const company = companies.find(c => c.id === selectedCompanyId);
     return company?.name || '';
   };
 
@@ -319,42 +298,13 @@ export function PatientBillingWizard({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftSection={<IconSearch size={16} />}
+              autoFocus
             />
 
-            {commonCompanies.length > 0 && searchQuery.length < 2 && (
-              <Stack gap="xs">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                  Common Funding Sources
-                </Text>
-                {commonCompanies.map((company) => (
-                  <Paper
-                    key={company.id}
-                    p="sm"
-                    withBorder
-                    style={{
-                      cursor: 'pointer',
-                      backgroundColor: selectedCompanyId === company.id 
-                        ? (isDark ? 'rgba(34, 139, 230, 0.15)' : '#e7f5ff')
-                        : 'transparent',
-                      borderColor: selectedCompanyId === company.id ? '#228be6' : undefined,
-                      transition: 'all 0.2s ease',
-                    }}
-                    onClick={() => setSelectedCompanyId(company.id)}
-                  >
-                    <Group justify="space-between">
-                      <div>
-                        <Text fw={500}>{company.name}</Text>
-                        {company.abn && (
-                          <Text size="xs" c="dimmed">ABN: {company.abn}</Text>
-                        )}
-                      </div>
-                      {selectedCompanyId === company.id && (
-                        <Badge color="blue" variant="light">Selected</Badge>
-                      )}
-                    </Group>
-                  </Paper>
-                ))}
-              </Stack>
+            {searchQuery.length < 2 && (
+              <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+                Type at least 2 characters to search for a company
+              </Alert>
             )}
 
             {searchQuery.length >= 2 && (
@@ -397,10 +347,6 @@ export function PatientBillingWizard({
                   <Text size="sm" c="dimmed">No companies found</Text>
                 )}
               </Stack>
-            )}
-
-            {searchQuery.length < 2 && commonCompanies.length === 0 && (
-              <Text size="sm" c="dimmed">Type at least 2 characters to search</Text>
             )}
           </Stack>
         )}
