@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
+import AccountsQuotesDialog from './dialogs/AccountsQuotesDialog';
 
 interface ContactHeaderProps {
   title: string;
@@ -71,6 +72,7 @@ export default function ContactHeader({
   const isDark = colorScheme === 'dark';
   const [filterOpened, setFilterOpened] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
+  const [accountsQuotesOpened, setAccountsQuotesOpened] = useState(false);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [notesCount, setNotesCount] = useState<number>(0);
   const [documentsCount, setDocumentsCount] = useState<number>(0);
@@ -525,7 +527,7 @@ export default function ContactHeader({
     { icon: <IconFiles size={20} />, label: 'Documents', onClick: () => { onDocumentsClick?.(); setMenuOpened(false); }, count: documentsCount },
     { icon: <IconPhoto size={20} />, label: 'Images', onClick: () => { onImagesClick?.(); setMenuOpened(false); }, count: imagesCount, batchesCount: batchesCount },
     { icon: <IconCalendar size={20} />, label: 'Appointments', onClick: () => { onAppointmentsClick?.(); setMenuOpened(false); }, count: appointmentsCount },
-    { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => { if (patientId) { router.push(`/patients/${patientId}/accounts-quotes`); setMenuOpened(false); } } },
+    { icon: <IconReceipt size={20} />, label: 'Accounts | Quotes', onClick: () => { setAccountsQuotesOpened(true); setMenuOpened(false); } },
     { icon: <IconList size={20} />, label: 'Orders', onClick: () => console.log('Orders') },
     { icon: <IconShoe size={20} />, label: 'Evaluation', onClick: () => console.log('Evaluation') },
     { icon: <IconFileText size={20} />, label: 'Letters', onClick: () => { onLettersClick?.(); setMenuOpened(false); } },
@@ -889,6 +891,14 @@ export default function ContactHeader({
           </Popover.Dropdown>
         </Popover>
       </Group>
+
+      {/* Accounts | Quotes Dialog */}
+      <AccountsQuotesDialog
+        opened={accountsQuotesOpened}
+        onClose={() => setAccountsQuotesOpened(false)}
+        patientId={patientId}
+        patientName={selectedPatientName}
+      />
     </Box>
   );
 }
