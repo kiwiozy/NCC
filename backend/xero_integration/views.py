@@ -380,6 +380,33 @@ class XeroInvoiceLinkViewSet(viewsets.ModelViewSet):
                 'error': 'Failed to sync invoice status',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def authorize(self, request, pk=None):
+        """Authorize a draft invoice (change status from DRAFT to AUTHORISED)"""
+        try:
+            invoice_link = self.get_object()
+            
+            # Validate invoice can be authorized
+            if invoice_link.status != 'DRAFT':
+                return Response({
+                    'error': 'Invoice cannot be authorized',
+                    'detail': f'Only DRAFT invoices can be authorized (current status: {invoice_link.status})'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Authorize invoice
+            updated_invoice = xero_service.authorize_invoice(invoice_link)
+            
+            return Response({
+                'message': 'Invoice authorized and sent to Xero successfully',
+                'invoice': XeroInvoiceLinkSerializer(updated_invoice).data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Failed to authorize invoice',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class XeroItemMappingViewSet(viewsets.ModelViewSet):

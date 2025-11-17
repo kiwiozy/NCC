@@ -1280,6 +1280,93 @@ class XeroService:
             )
             raise
     
+    def authorize_invoice(self, invoice_link: XeroInvoiceLink) -> XeroInvoiceLink:
+        """
+        Authorize a draft invoice in Xero (change status from DRAFT to AUTHORISED)
+        Added Nov 2025: Send draft invoices to Xero
+        
+        Args:
+            invoice_link: XeroInvoiceLink object to authorize
+        
+        Returns:
+            Updated XeroInvoiceLink object with AUTHORISED status
+        """
+        start_time = time.time()
+        
+        try:
+            # Get API client and connection
+            api_client = self.get_api_client()
+            connection = XeroConnection.objects.filter(is_active=True).first()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found. Please connect to Xero first in Settings.")
+            
+            accounting_api = AccountingApi(api_client)
+            
+            # Fetch the current invoice from Xero
+            response = accounting_api.get_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id
+            )
+            xero_invoice = response.invoices[0]
+            
+            # Validate invoice status
+            if xero_invoice.status != 'DRAFT':
+                raise ValueError(f"Cannot authorize invoice in {xero_invoice.status} status. Only DRAFT invoices can be authorized.")
+            
+            # Change status to AUTHORISED
+            xero_invoice.status = 'AUTHORISED'
+            
+            # Update invoice in Xero
+            invoices = Invoices(invoices=[xero_invoice])
+            update_response = accounting_api.update_invoice(
+                xero_tenant_id=connection.tenant_id,
+                invoice_id=invoice_link.xero_invoice_id,
+                invoices=invoices
+            )
+            
+            updated_xero_invoice = update_response.invoices[0]
+            
+            # Update local database
+            invoice_link.status = updated_xero_invoice.status
+            invoice_link.total = float(updated_xero_invoice.total) if updated_xero_invoice.total else 0
+            invoice_link.subtotal = float(updated_xero_invoice.sub_total) if updated_xero_invoice.sub_total else 0
+            invoice_link.total_tax = float(updated_xero_invoice.total_tax) if updated_xero_invoice.total_tax else 0
+            invoice_link.amount_due = float(updated_xero_invoice.amount_due) if updated_xero_invoice.amount_due else 0
+            invoice_link.amount_paid = float(updated_xero_invoice.amount_paid) if updated_xero_invoice.amount_paid else 0
+            invoice_link.last_synced_at = timezone.now()
+            invoice_link.save()
+            
+            # Log success
+            XeroSyncLog.objects.create(
+                operation_type='invoice_authorize',
+                status='success',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                duration_ms=int((time.time() - start_time) * 1000),
+                response_data={
+                    'invoice_number': updated_xero_invoice.invoice_number,
+                    'status': updated_xero_invoice.status,
+                    'total': float(updated_xero_invoice.total) if updated_xero_invoice.total else 0
+                }
+            )
+            
+            return invoice_link
+            
+        except Exception as e:
+            # Log error
+            XeroSyncLog.objects.create(
+                operation_type='invoice_authorize',
+                status='failed',
+                local_entity_type='invoice',
+                local_entity_id=str(invoice_link.id),
+                xero_entity_id=invoice_link.xero_invoice_id,
+                error_message=str(e),
+                duration_ms=int((time.time() - start_time) * 1000)
+            )
+            raise
+    
     def create_quote(
         self,
         patient,
@@ -1451,7 +1538,7 @@ class XeroService:
                 line_items=original_quote.line_items,  # Same line items
                 reference=f"Quote #{original_quote.quote_number}",
                 date=timezone.now().date(),
-                status='DRAFT',
+                status='AUTHORISED',  # Create as AUTHORISED instead of DRAFT
                 currency_code=CurrencyCode.AUD
             )
             

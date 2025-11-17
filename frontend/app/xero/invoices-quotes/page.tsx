@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
@@ -186,6 +186,65 @@ export default function XeroInvoicesQuotesPage() {
     }
   };
 
+  const handleAuthorizeInvoice = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/authorize/`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to authorize invoice');
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: 'Invoice authorized and sent to Xero',
+        color: 'green',
+      });
+
+      // Refresh the list
+      fetchInvoices();
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to authorize invoice',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleConvertQuoteToInvoice = async (quoteId: string) => {
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to convert quote');
+      }
+
+      const result = await response.json();
+
+      notifications.show({
+        title: 'Success',
+        message: 'Quote converted to invoice successfully',
+        color: 'green',
+      });
+
+      // Refresh both lists
+      fetchInvoices();
+      fetchQuotes();
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to convert quote',
+        color: 'red',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string, type: 'invoice' | 'quote') => {
     const normalizeStatus = (s: string) => s.startsWith('QuoteStatusCodes.') ? s.replace('QuoteStatusCodes.', '') : s;
     const normalized = normalizeStatus(status);
@@ -320,6 +379,32 @@ export default function XeroInvoicesQuotesPage() {
                     <IconEye size={16} />
                   </ActionIcon>
                 </Tooltip>
+                
+                {/* Send to Xero button for DRAFT invoices */}
+                {item.type === 'invoice' && item.status === 'DRAFT' && (
+                  <Tooltip label="Send to Xero">
+                    <ActionIcon
+                      variant="subtle"
+                      color="teal"
+                      onClick={() => handleAuthorizeInvoice(item.id)}
+                    >
+                      <IconSend size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+                
+                {/* Convert to Invoice button for quotes */}
+                {item.type === 'quote' && (item.status === 'DRAFT' || item.status === 'SENT' || item.status === 'ACCEPTED' || item.status === 'QuoteStatusCodes.DRAFT' || item.status === 'QuoteStatusCodes.SENT' || item.status === 'QuoteStatusCodes.ACCEPTED') && (
+                  <Tooltip label="Convert to Invoice">
+                    <ActionIcon
+                      variant="subtle"
+                      color="violet"
+                      onClick={() => handleConvertQuoteToInvoice(item.id)}
+                    >
+                      <IconFileArrowRight size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
                 
                 {item.type === 'invoice' && item.status === 'DRAFT' && (
                   <Tooltip label="Edit Invoice">
