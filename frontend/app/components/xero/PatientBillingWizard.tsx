@@ -158,7 +158,7 @@ export function PatientBillingWizard({
       opened={opened}
       onClose={handleClose}
       title={<Text fw={600}>Create {documentType === 'invoice' ? 'Invoice' : 'Quote'} for {patientName}</Text>}
-      size="lg"
+      size="xl"
       centered
     >
       <Stack gap="lg">
