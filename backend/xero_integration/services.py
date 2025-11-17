@@ -1922,10 +1922,11 @@ class XeroService:
             xero_quote = response.quotes[0]
             logger.info(f"✅ [delete_draft_quote] Fetched quote - current status: {xero_quote.status}")
             
-            # Validate quote status
-            if xero_quote.status not in ['DRAFT', 'SENT']:
+            # Validate quote status (normalize to handle both string and enum)
+            status_str = str(xero_quote.status).replace('QuoteStatusCodes.', '')
+            if status_str not in ['DRAFT', 'SENT']:
                 logger.error(f"❌ [delete_draft_quote] Invalid status: {xero_quote.status}")
-                raise ValueError(f"Cannot delete quote in {xero_quote.status} status. Only DRAFT/SENT quotes can be deleted.")
+                raise ValueError(f"Cannot delete quote in {status_str} status. Only DRAFT/SENT quotes can be deleted.")
             
             # Change status to DELETED
             logger.info(f"🔄 [delete_draft_quote] Changing status to DELETED...")
