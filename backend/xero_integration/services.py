@@ -1589,6 +1589,8 @@ class XeroService:
             logger.info(f"💾 [convert_quote_to_invoice] Creating invoice link in database...")
             invoice_link = XeroInvoiceLink.objects.create(
                 appointment=quote_link.appointment,  # Link to same appointment if any
+                patient=quote_link.patient,  # Copy patient from quote
+                company=quote_link.company,  # Copy company from quote
                 xero_invoice_id=created_invoice.invoice_id,
                 xero_invoice_number=created_invoice.invoice_number or '',
                 status=created_invoice.status,
@@ -1601,7 +1603,7 @@ class XeroService:
                 due_date=created_invoice.due_date,
                 last_synced_at=timezone.now()
             )
-            logger.info(f"✅ [convert_quote_to_invoice] Invoice link created in database")
+            logger.info(f"✅ [convert_quote_to_invoice] Invoice link created with patient: {quote_link.patient}, company: {quote_link.company}")
             
             # Update quote link to mark as converted
             logger.info(f"💾 [convert_quote_to_invoice] Updating quote status to INVOICED...")
