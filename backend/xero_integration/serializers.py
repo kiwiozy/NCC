@@ -66,7 +66,7 @@ class XeroInvoiceLinkSerializer(serializers.ModelSerializer):
     Updated Nov 2025: Support for standalone invoices without appointments
     """
     appointment_details = serializers.SerializerMethodField()
-    patient_name = serializers.CharField(source='patient.full_name', read_only=True, allow_null=True)
+    patient_name = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     
     class Meta:
@@ -80,6 +80,11 @@ class XeroInvoiceLinkSerializer(serializers.ModelSerializer):
             'last_synced_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'company_name']
+    
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return obj.patient.get_full_name()
+        return None
     
     def get_appointment_details(self, obj):
         if obj.appointment:
@@ -172,7 +177,7 @@ class XeroQuoteLinkSerializer(serializers.ModelSerializer):
     appointment_details = serializers.SerializerMethodField()
     converted_invoice_details = serializers.SerializerMethodField()
     can_convert = serializers.BooleanField(source='can_convert_to_invoice', read_only=True)
-    patient_name = serializers.CharField(source='patient.full_name', read_only=True, allow_null=True)
+    patient_name = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     
     class Meta:
@@ -187,6 +192,11 @@ class XeroQuoteLinkSerializer(serializers.ModelSerializer):
             'last_synced_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'company_name']
+    
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return obj.patient.get_full_name()
+        return None
     
     def get_appointment_details(self, obj):
         if obj.appointment:
