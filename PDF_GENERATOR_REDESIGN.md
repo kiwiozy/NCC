@@ -193,6 +193,262 @@ combined.setStyle(TableStyle([
 
 ---
 
+## A4 Page Design Specifications
+
+### Page Dimensions
+- **Page Size:** A4 (210mm × 297mm or 8.27" × 11.69")
+- **Usable Width:** 17cm (after 2cm margins on each side)
+- **Usable Height:** ~25cm (after margins and header/footer)
+
+### Current Margins
+```python
+pagesize=A4,
+rightMargin=2*cm,   # 2cm
+leftMargin=2*cm,    # 2cm
+topMargin=2*cm,     # 2cm
+bottomMargin=2*cm   # 2cm (adjusted dynamically for footer)
+```
+
+### Available Space
+- **Total width:** 21cm (A4 width)
+- **Content width:** 17cm (21cm - 2cm - 2cm)
+- **Full-width table:** 17cm
+- **Two-column layout:** 
+  - Left column: ~10.5cm
+  - Right column: ~6.5cm
+  - Total: 17cm ✓
+
+---
+
+## Layout Options Visualized (A4)
+
+### Option A: Side-by-Side Layout (Current Broken Design)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ [HEADER - Logo, Company Info, Invoice Details]         │
+│                                                         │
+│ [PATIENT/COMPANY DETAILS]                              │
+│                                                         │
+│ [LINE ITEMS TABLE - Full Width 17cm]                   │
+│ ┌──────────────────────────────────────────────────┐   │
+│ │ Description | Qty | Price | Discount | GST | $  │   │
+│ │ Item 1      |  1  | $100  |   0%     | 10% |$110│   │
+│ └──────────────────────────────────────────────────┘   │
+│                                                         │
+│ ┌──────────────┐  ┌───────────────────────────────┐   │
+│ │ PAYMENTS     │  │ FINANCIAL SUMMARY             │   │
+│ │ 10.5cm       │  │ 6.5cm                         │   │
+│ ├──────────────┤  │                               │   │
+│ │ Date | Ref   │  │ Subtotal        $ 3,595.00    │   │
+│ │ 18/11| Pay1  │  │ TOTAL GST       $     0.00    │   │
+│ │ 18/11| Dep   │  │ TOTAL           $ 3,595.00    │   │
+│ │ Total: $3.00 │  │ Total Paid      $    -3.00    │   │
+│ └──────────────┘  │ Amount Owing    $ 3,592.00    │   │
+│                   └───────────────────────────────┘   │
+│                                                         │
+│ [FOOTER - Payment Terms, Bank Details]                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Issues:**
+- ❌ Complex wrapper table causing spacing problems
+- ❌ Totals table affected by payment table height
+- ❌ ReportLab side-by-side alignment issues
+
+---
+
+### Option B: Stacked Layout (RECOMMENDED)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ [HEADER - Logo, Company Info, Invoice Details]         │
+│                                                         │
+│ [PATIENT/COMPANY DETAILS]                              │
+│                                                         │
+│ [LINE ITEMS TABLE - Full Width 17cm]                   │
+│ ┌──────────────────────────────────────────────────┐   │
+│ │ Description | Qty | Price | Discount | GST | $  │   │
+│ │ Item 1      |  1  | $100  |   0%     | 10% |$110│   │
+│ └──────────────────────────────────────────────────┘   │
+│                                                         │
+│ [PAYMENT HISTORY - Left-aligned 10.5cm]                │
+│ ┌────────────────────────────────────┐                 │
+│ │ Date     │ Reference      │ Amount │                 │
+│ │ 18/11/25 │ Payment 1      │ $ 2.00 │                 │
+│ │ 18/11/25 │ Deposit        │ $ 1.00 │                 │
+│ │          │ Total Paid:    │ $ 3.00 │                 │
+│ └────────────────────────────────────┘                 │
+│                                                         │
+│ [FINANCIAL SUMMARY - Right-aligned, Full Width 17cm]   │
+│                          ┌───────────────────────────┐ │
+│                          │ Subtotal      $ 3,595.00  │ │
+│                          │ TOTAL GST     $     0.00  │ │
+│                          │ TOTAL         $ 3,595.00  │ │
+│                          │ Total Paid    $    -3.00  │ │
+│                          │ Amount Owing  $ 3,592.00  │ │
+│                          └───────────────────────────┘ │
+│                                                         │
+│ [FOOTER - Payment Terms, Bank Details]                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- ✅ Financial summary IDENTICAL to non-payment invoice
+- ✅ No wrapper table complexity
+- ✅ Clean separation between payment history and totals
+- ✅ Payment table can have different row heights without affecting totals
+- ✅ Guaranteed consistent spacing
+
+---
+
+### Option C: Hybrid Layout (Payment History in Financial Summary)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ [HEADER - Logo, Company Info, Invoice Details]         │
+│                                                         │
+│ [PATIENT/COMPANY DETAILS]                              │
+│                                                         │
+│ [LINE ITEMS TABLE - Full Width 17cm]                   │
+│ ┌──────────────────────────────────────────────────┐   │
+│ │ Description | Qty | Price | Discount | GST | $  │   │
+│ │ Item 1      |  1  | $100  |   0%     | 10% |$110│   │
+│ └──────────────────────────────────────────────────┘   │
+│                                                         │
+│ [FINANCIAL SUMMARY - Right-aligned, Full Width 17cm]   │
+│                          ┌───────────────────────────┐ │
+│                          │ Subtotal      $ 3,595.00  │ │
+│                          │ TOTAL GST     $     0.00  │ │
+│                          │ TOTAL         $ 3,595.00  │ │
+│                          │                           │ │
+│                          │ PAYMENTS RECEIVED:        │ │
+│                          │ 18/11/25 - Payment  $2.00 │ │
+│                          │ 18/11/25 - Deposit  $1.00 │ │
+│                          │ Total Paid    $    -3.00  │ │
+│                          │                           │ │
+│                          │ Amount Owing  $ 3,592.00  │ │
+│                          └───────────────────────────┘ │
+│                                                         │
+│ [FOOTER - Payment Terms, Bank Details]                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- ✅ Everything in one financial summary table
+- ✅ No separate payment table
+- ✅ Payment details integrated inline
+- ✅ Consistent spacing guaranteed
+
+**Drawbacks:**
+- ⚠️ Less detail in payment history (no reference numbers?)
+- ⚠️ Might be cluttered with many payments
+
+---
+
+## Table Width Specifications (A4)
+
+### Full-Width Tables (17cm total):
+```python
+# Financial Summary (used in all documents)
+totals_table = Table(totals_data, colWidths=[12*cm, 5*cm])  # = 17cm
+
+# Line Items Table
+line_table = Table(line_data, colWidths=[
+    7*cm,    # Description
+    1.5*cm,  # Qty
+    2*cm,    # Unit Price
+    1.5*cm,  # Discount
+    1.5*cm,  # GST
+    2.5*cm   # Amount
+])  # = 17cm (adjusted to fit)
+```
+
+### Payment History Table:
+```python
+# Option 1: Compact (for side-by-side)
+payment_table = Table(payment_data, colWidths=[2.5*cm, 5*cm, 3*cm])  # = 10.5cm
+
+# Option 2: Full-width (for stacked)
+payment_table = Table(payment_data, colWidths=[3*cm, 10*cm, 4*cm])  # = 17cm
+```
+
+---
+
+## Fixed-Height Row Implementation
+
+To ensure **consistent spacing**, we'll use fixed row heights:
+
+```python
+# Standard row height for all tables
+ROW_HEIGHT = 0.6*cm
+
+# Financial summary with fixed heights
+totals_data = [
+    ['Subtotal', f"$ {subtotal:,.2f}"],
+    ['TOTAL GST', f"$ {total_gst:,.2f}"],
+    ['TOTAL', f"$ {total:,.2f}"],
+    ['Total Paid', f"$ -{total_paid:,.2f}"],
+    ['Amount Owing', f"$ {amount_owing:,.2f}"],
+]
+
+totals_table = Table(
+    totals_data, 
+    colWidths=[12*cm, 5*cm],
+    rowHeights=[ROW_HEIGHT] * len(totals_data)  # Fixed heights!
+)
+
+# Style with minimal padding (row height controls spacing)
+totals_table.setStyle(TableStyle([
+    ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+    ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+    ('FONTSIZE', (0, 0), (-1, -1), 11),
+    ('TOPPADDING', (0, 0), (-1, -1), 2),      # Minimal
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 2),   # Minimal
+    ('LINEABOVE', (1, 2), (1, 2), 1, colors.black),  # Line above TOTAL
+    ('LINEABOVE', (1, 4), (1, 4), 1, colors.black),  # Line above Amount Owing
+]))
+```
+
+**Key Points:**
+- ✅ Fixed `rowHeights=[ROW_HEIGHT] * len(data)` ensures consistent height
+- ✅ Minimal padding (2) since row height controls spacing
+- ✅ Same approach for ALL tables (payment, totals, line items)
+- ✅ No variation possible - guaranteed consistency
+
+---
+
+## Recommended Approach for A4
+
+### **Option B: Stacked Layout** ✅
+
+**Reasoning:**
+1. **Simplicity:** No complex wrapper tables
+2. **Consistency:** Financial summary identical to non-payment invoices
+3. **Reliability:** Fixed row heights guarantee spacing
+4. **Maintainability:** Easy to debug and modify
+5. **Space Efficient:** Payment table can be compact (10.5cm), totals full-width (17cm)
+
+**Implementation:**
+```python
+def _build_payments_and_totals_section(self):
+    elements = []
+    
+    # 1. Payment history table (left-aligned, compact)
+    payment_table = self._build_payment_history_table()  # 10.5cm wide
+    elements.append(payment_table)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # 2. Financial summary (IDENTICAL to non-payment version)
+    totals_table = self._build_financial_summary_table(include_payments=True)  # 17cm wide
+    elements.append(totals_table)
+    
+    return elements
+```
+
+---
+
 ## Document Types & Requirements
 
 The PDF generator needs to handle **4 different document types**, each with unique characteristics:
