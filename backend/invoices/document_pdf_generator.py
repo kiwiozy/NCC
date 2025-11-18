@@ -668,9 +668,8 @@ class DocumentPDFGenerator:
             ('FONTSIZE', (0, 0), (-1, -1), 11),
             ('TOPPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
-            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
-            ('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black),
-            ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),
+            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Only line above TOTAL
+            # Removed LINEABOVE for Total Paid and Amount Owing to match regular layout spacing
         ]))
         
         # Combine both tables side by side in a wrapper table
