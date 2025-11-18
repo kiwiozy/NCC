@@ -557,60 +557,10 @@ class DocumentPDFGenerator:
         return elements
     
     def _build_payments_and_totals_section(self):
-        """Build payments table and totals side-by-side (like in the PDF)"""
+        """Build payments table and totals - REWRITTEN: stacked vertically for consistent spacing"""
         elements = []
         
-        # Build payments table (left side)
-        payment_data = [['Date', 'Reference', 'Amount']]
-        total_paid = 0
-        
-        for payment in self.document_data['payments']:
-            if hasattr(payment['date'], 'strftime'):
-                payment_date = payment['date'].strftime('%d/%m/%Y')
-            else:
-                payment_date = str(payment['date'])
-            
-            amount = payment.get('amount', 0)
-            total_paid += amount
-            
-            payment_data.append([
-                payment_date,
-                payment.get('reference', '—'),
-                f"$ {amount:,.2f}",
-            ])
-        
-        # Add Total Paid row
-        payment_data.append([
-            '',
-            'Total Paid:',
-            f"$ {total_paid:,.2f}",
-        ])
-        
-        # Payment table styling
-        payment_table = Table(payment_data, colWidths=[2.5*cm, 5*cm, 3*cm])
-        total_paid_row = len(payment_data) - 1
-        
-        payment_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
-            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
-            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
-            ('ALIGN', (0, 1), (0, -1), 'CENTER'),
-            ('ALIGN', (1, 1), (1, -1), 'LEFT'),
-            ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),  # Match totals table padding
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # Match totals table padding
-            ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#f5f5f5')),
-            ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ]))
-        
-        # Build totals table (right side)
+        # Calculate totals first
         subtotal = 0
         total_discount = 0
         total_gst = 0
@@ -630,9 +580,61 @@ class DocumentPDFGenerator:
             total_gst += item_gst
         
         total = subtotal - total_discount + total_gst
-        amount_paid = total_paid  # We already calculated this above
-        amount_owing = total - amount_paid
         
+        # Calculate total paid
+        total_paid = 0
+        payment_data = [['Date', 'Reference', 'Amount']]
+        
+        for payment in self.document_data['payments']:
+            if hasattr(payment['date'], 'strftime'):
+                payment_date = payment['date'].strftime('%d/%m/%Y')
+            else:
+                payment_date = str(payment['date'])
+            
+            amount = payment.get('amount', 0)
+            total_paid += amount
+            
+            payment_data.append([
+                payment_date,
+                payment.get('reference', '—'),
+                f"$ {amount:,.2f}",
+            ])
+        
+        # Add Total Paid row to payment table
+        payment_data.append([
+            '',
+            'Total Paid:',
+            f"$ {total_paid:,.2f}",
+        ])
+        
+        # Create payment table
+        payment_table = Table(payment_data, colWidths=[2.5*cm, 5*cm, 3*cm])
+        total_paid_row = len(payment_data) - 1
+        
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),
+            ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#f5f5f5')),
+            ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        
+        # Calculate amount owing
+        amount_owing = total - total_paid
+        
+        # Build financial summary table - IDENTICAL to _build_totals_section
         totals_data = [
             ['Subtotal', f"$ {subtotal:,.2f}"],
         ]
@@ -643,49 +645,45 @@ class DocumentPDFGenerator:
         totals_data.extend([
             ['TOTAL GST', f"$ {total_gst:,.2f}"],
             ['TOTAL', f"$ {total:,.2f}"],
-            ['Total Paid', f"$ -{amount_paid:,.2f}"],
-            ['Amount Owing', f"$ {amount_owing:,.2f}"],
         ])
         
-        totals_table = Table(totals_data, colWidths=[4*cm, 2.5*cm])
+        # Add Total Paid row
+        totals_data.append(['Total Paid', f"$ -{total_paid:,.2f}"])
         
-        # Debug: Log the actual data structure
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Side-by-side totals_data: {totals_data}")
-        logger.info(f"Number of rows in totals_data: {len(totals_data)}")
-        logger.info(f"total_row_idx: {total_row_idx}, total_paid_row_idx: {total_paid_row_idx}, amount_owing_row_idx: {amount_owing_row_idx}")
+        # Add Amount Owing
+        totals_data.append(['Amount Owing', f"$ {amount_owing:,.2f}"])
         
-        # Find row indices for styling (no spacer rows)
+        # Create totals table - IDENTICAL styling to _build_totals_section
+        totals_table = Table(totals_data, colWidths=[12*cm, 5*cm])
+        
+        # Find row indices - same logic as _build_totals_section
         total_row_idx = 2 if total_discount == 0 else 3
-        total_paid_row_idx = total_row_idx + 1  # No spacer
-        amount_owing_row_idx = total_paid_row_idx + 1  # No spacer
+        total_paid_row_idx = total_row_idx + 1
+        amount_owing_row_idx = total_paid_row_idx + 1
         
-        totals_table.setStyle(TableStyle([
+        # IDENTICAL styling to _build_totals_section
+        style_list = [
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # All normal (no bold)
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
-            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Only line above TOTAL
-            # Removed LINEABOVE for Total Paid and Amount Owing to match regular layout spacing
-        ]))
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
+        ]
         
-        # Combine both tables side by side in a wrapper table
-        combined_table = Table(
-            [[payment_table, totals_table]],
-            colWidths=[10.5*cm, 6.5*cm]
-        )
-        combined_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
+        # Add line above Total Paid
+        style_list.append(('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black))
         
-        elements.append(combined_table)
+        # Add line above Amount Owing
+        style_list.append(('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black))
+        
+        totals_table.setStyle(TableStyle(style_list))
+        
+        # Stack vertically: payment table, small spacer, totals table
+        elements.append(payment_table)
+        elements.append(Spacer(1, 0.3*cm))
+        elements.append(totals_table)
         
         return elements
     
