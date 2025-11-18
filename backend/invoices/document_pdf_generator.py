@@ -615,7 +615,7 @@ class DocumentPDFGenerator:
             
             # Total Paid row styling
             ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#e8f5e9')),
+            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#f5f5f5')),
             ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
             
             # Grid
