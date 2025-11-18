@@ -1043,6 +1043,103 @@ totals_table.setStyle(TableStyle([
 
 ---
 
+### Problem 12: Payment History Table Specifications 💳
+**Status:** IDENTIFIED  
+**Description:** Payment history table needs exact width and alignment specifications  
+**Impact:** Consistency with overall layout  
+
+**Exact Specifications:**
+
+**Table Width:**
+- **Total width: 90mm (9cm)** ✅
+- Table position: Left-aligned on page
+
+**Column Layout (Image 2 shows correct alignment):**
+```
+┌─────────────────────────────────────────────────────────┐
+│ Date       │ Reference              │ Amount            │
+│ (left)     │ (left)                 │ (right-aligned)   │
+├────────────┼────────────────────────┼───────────────────┤
+│ 18/11/2025 │ Payment for ORC1060    │ $ 2.00            │
+│ 18/11/2025 │ Deposit                │ $ 1.00            │
+│            │ Total Paid:            │ $ 3.00            │ ← Bold row
+└─────────────────────────────────────────────────────────┘
+```
+
+**Column Widths (must total 90mm):**
+```python
+# Payment table columns (90mm total)
+COL_PAYMENT_DATE = 25*mm      # Date column
+COL_PAYMENT_REF = 45*mm       # Reference column  
+COL_PAYMENT_AMOUNT = 20*mm    # Amount column
+# Total: 90mm ✓
+
+# Alternative breakdown:
+payment_table = Table(payment_data, colWidths=[2.5*cm, 4.5*cm, 2*cm])  # = 9cm
+```
+
+**Styling Requirements:**
+1. **Header row:** Blue background (#4897d2), white text, bold
+2. **Date column:** Left-aligned, format: DD/MM/YYYY
+3. **Reference column:** Left-aligned, text wraps if needed
+4. **Amount column:** Right-aligned, decimal points align
+5. **Total Paid row:** 
+   - Bold text
+   - Light grey background (#f5f5f5)
+   - Blue line above (1.5pt, color #4897d2)
+
+**Number Alignment in Payment Table:**
+- Same rules as financial summary
+- All decimal points align vertically
+- Format: `$ 2.00` (with proper spacing)
+
+**Code Implementation:**
+```python
+from reportlab.lib.units import cm, mm
+
+# Payment table width (EXACT)
+WIDTH_PAYMENT_TABLE = 90*mm  # 9cm exactly
+
+# Column widths (must total 90mm)
+COL_PAYMENT_DATE = 25*mm      # 2.5cm
+COL_PAYMENT_REF = 45*mm       # 4.5cm  
+COL_PAYMENT_AMOUNT = 20*mm    # 2cm
+# Total: 90mm ✓
+
+# Create payment table
+payment_table = Table(
+    payment_data, 
+    colWidths=[COL_PAYMENT_DATE, COL_PAYMENT_REF, COL_PAYMENT_AMOUNT]
+)
+
+# Styling
+payment_table.setStyle(TableStyle([
+    # Header row
+    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
+    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+    ('FONTSIZE', (0, 0), (-1, 0), 11),
+    
+    # Data rows
+    ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ('ALIGN', (0, 1), (0, -1), 'LEFT'),    # Date: left
+    ('ALIGN', (1, 1), (1, -1), 'LEFT'),    # Reference: left
+    ('ALIGN', (2, 1), (2, -1), 'RIGHT'),   # Amount: right
+    
+    # Total Paid row
+    ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
+    ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#f5f5f5')),
+    ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
+    
+    # Grid
+    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+]))
+```
+
+**Priority:** 🟡 MEDIUM (Layout consistency)
+
+---
+
 ### Problem 1: Spacing Inconsistency ❌ **CRITICAL**
 **Status:** UNRESOLVED  
 **Description:** Financial summary row spacing differs between invoices with payments vs without payments  
