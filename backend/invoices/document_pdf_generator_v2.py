@@ -391,4 +391,474 @@ class UnifiedDocumentGenerator:
         elements.append(self._build_footer())
         
         return elements
+    
+    # ============================================
+    # BUILD METHODS - Each section of the document
+    # ============================================
+    
+    def _build_title(self):
+        """Build document title (Tax Invoice / Quote / Receipt)"""
+        if self.doc_type == 'receipt':
+            title_text = "RECEIPT"
+        elif self.doc_type == 'quote':
+            title_text = "QUOTE"
+        else:
+            title_text = "Tax Invoice"
+        
+        return Paragraph(title_text, self.styles['TaxInvoiceHeading'])
+    
+    def _build_header(self):
+        """
+        Build header section with logo, address graphic, and invoice details.
+        
+        Structure: [Logo | Address Graphic | Invoice Info]
+        Widths: [4cm | 9.03cm | 3.97cm] = 17cm ✓
+        """
+        # Logo
+        logo_path = os.path.join(settings.BASE_DIR, LOGO_PATH)
+        logo = None
+        if os.path.exists(logo_path):
+            logo = Image(logo_path, width=LOGO_WIDTH, height=LOGO_HEIGHT, kind='proportional')
+        else:
+            # Fallback: empty cell
+            logo = Paragraph("", self.styles['Normal'])
+        
+        # Address graphic
+        address_path = os.path.join(settings.BASE_DIR, ADDRESS_GRAPHIC_PATH)
+        address_graphic = None
+        if os.path.exists(address_path):
+            address_graphic = Image(
+                address_path,
+                width=ADDRESS_GRAPHIC_WIDTH,
+                height=ADDRESS_GRAPHIC_HEIGHT,
+                kind='bound'
+            )
+        else:
+            # Fallback: text-based address
+            address_graphic = Paragraph(
+                f"{COMPANY_NAME}<br/>{PHYSICAL_ADDRESS}<br/>{PHONE}<br/>{EMAIL}",
+                self.styles['Normal']
+            )
+        
+        # Invoice/Quote details (right column)
+        doc_label = "Invoice" if self.doc_type != 'quote' else "Quote"
+        
+        date_info_lines = [
+            f"<b>{doc_label} Date</b><br/>{format_date_au(self.invoice_data['date'])}",
+            f"<b>{doc_label} Number</b><br/>{self.invoice_data['number']}",
+        ]
+        
+        if self.doc_type != 'quote' and self.invoice_data.get('due_date'):
+            date_info_lines.append(
+                f"<b>Due Date</b><br/>{format_date_au(self.invoice_data['due_date'])}"
+            )
+        
+        date_info = Paragraph("<br/><br/>".join(date_info_lines), self.styles['Normal'])
+        
+        # Build header table
+        header_data = [[logo, address_graphic, date_info]]
+        header_table = Table(
+            header_data,
+            colWidths=[COL_HEADER_LOGO, COL_HEADER_ADDRESS, COL_HEADER_INFO]
+        )
+        
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),    # Logo left
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),   # Address graphic right
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),   # Invoice info right
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
+        return header_table
+    
+    def _build_patient_section(self):
+        """
+        Build patient/company details section.
+        
+        Structure: [Patient Name/Address | Reference/Practitioner]
+        Widths: [10cm | 7cm] = 17cm ✓
+        """
+        # Left column: Patient/Company name and address
+        patient_name = Paragraph(
+            self.patient_info['name'],
+            self.styles['PatientName']
+        )
+        
+        patient_address_lines = [
+            self.patient_info.get('address', ''),
+            self.patient_info.get('city_state', ''),
+            self.patient_info.get('postcode', ''),
+        ]
+        patient_address_text = '<br/>'.join([line for line in patient_address_lines if line])
+        patient_address = Paragraph(patient_address_text, self.styles['Normal'])
+        
+        # Right column: Reference and practitioner info
+        ref_lines = []
+        if self.patient_info.get('reference'):
+            ref_lines.append(f"<b>Reference / PO#</b><br/>{self.patient_info['reference']}")
+        if self.patient_info.get('provider_registration'):
+            ref_lines.append(f"<b>Provider Registration #</b><br/>{self.patient_info['provider_registration']}")
+        if self.patient_info.get('practitioner'):
+            ref_lines.append(
+                f"<i>Practitioner:</i><br/>{self.patient_info['practitioner']}"
+            )
+        
+        ref_info = Paragraph("<br/><br/>".join(ref_lines), self.styles['Normal']) if ref_lines else Paragraph("", self.styles['Normal'])
+        
+        # Combine into table
+        patient_data = [[
+            Table([[patient_name], [patient_address]], colWidths=[10*cm]),
+            ref_info
+        ]]
+        
+        patient_table = Table(patient_data, colWidths=[COL_PATIENT_LEFT, COL_PATIENT_RIGHT])
+        patient_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+            ('LEFTPADDING', (0, 0), (0, 0), 2.5*cm),  # 2.5cm left padding
+            ('LEFTPADDING', (1, 0), (1, 0), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
+        return patient_table
+    
+    def _build_line_items(self):
+        """
+        Build line items table.
+        
+        Columns: Description | Qty | Unit Price | Discount | GST | Amount
+        Widths: [7cm | 1.5cm | 2.5cm | 1.5cm | 1.5cm | 2.5cm] ≈ 17cm
+        """
+        # Header row
+        line_data = [[
+            'Description', 'Qty', 'Unit Price', 'Discount', 'GST', 'Amount'
+        ]]
+        
+        # Data rows
+        for item in self.line_items:
+            line_data.append([
+                item['description'],
+                format_quantity(item['quantity']),
+                format_currency(item['unit_price']),
+                format_discount(item.get('discount', 0)),
+                format_gst(item.get('gst_rate', 0)),
+                format_currency(item['amount'])
+            ])
+        
+        # Create table with FIXED row heights
+        num_rows = len(line_data)
+        line_table = Table(
+            line_data,
+            colWidths=[COL_DESCRIPTION, COL_QTY, COL_UNIT_PRICE, COL_DISCOUNT, COL_GST, COL_AMOUNT],
+            rowHeights=[ROW_HEIGHT_LINE_ITEMS] * num_rows  # FIXED HEIGHTS!
+        )
+        
+        # Styling
+        line_table.setStyle(TableStyle([
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), COLOR_PRIMARY_BLUE),
+            ('TEXTCOLOR', (0, 0), (-1, 0), COLOR_WHITE),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), FONT_SIZE_NORMAL),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),    # Description left
+            ('ALIGN', (1, 0), (-1, 0), 'CENTER'),  # Other headers centered
+            
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), FONT_SIZE_NORMAL),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),    # Description left
+            ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # Qty center
+            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),  # Prices/amounts right
+            
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, COLOR_GREY_BORDER),
+            
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, 0), PADDING_HEADER),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), PADDING_HEADER),
+            ('TOPPADDING', (0, 1), (-1, -1), PADDING_STANDARD),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), PADDING_STANDARD),
+            ('LEFTPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            ('RIGHTPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            
+            # Valign
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        return line_table
+    
+    def _build_payment_history(self):
+        """
+        Build payment history table (STACKED layout).
+        
+        Columns: Date | Reference | Amount
+        Widths: [2.5cm | 4.5cm | 2cm] = 9cm (90mm)
+        Left-aligned on page.
+        """
+        # Header row
+        payment_data = [['Date', 'Reference', 'Amount']]
+        
+        # Payment rows
+        total_paid = 0
+        for payment in self.payments:
+            payment_data.append([
+                format_date_au(payment['date']),
+                payment.get('reference', ''),
+                format_currency(payment['amount'])
+            ])
+            total_paid += payment['amount']
+        
+        # Total Paid row
+        payment_data.append([
+            '',
+            'Total Paid:',
+            format_currency(total_paid)
+        ])
+        
+        # Create table with FIXED row heights
+        num_rows = len(payment_data)
+        payment_table = Table(
+            payment_data,
+            colWidths=[COL_PAYMENT_DATE, COL_PAYMENT_REF, COL_PAYMENT_AMOUNT],
+            rowHeights=[ROW_HEIGHT_STANDARD] * num_rows  # FIXED HEIGHTS!
+        )
+        
+        # Styling
+        total_paid_row = num_rows - 1
+        payment_table.setStyle(TableStyle([
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), COLOR_PRIMARY_BLUE),
+            ('TEXTCOLOR', (0, 0), (-1, 0), COLOR_WHITE),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), FONT_SIZE_NORMAL),
+            
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, total_paid_row-1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),  # Slightly smaller for payments
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),    # Date left
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),    # Reference left
+            ('ALIGN', (2, 1), (2, -1), 'RIGHT'),   # Amount right
+            
+            # Total Paid row
+            ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), COLOR_GREY_LIGHT),
+            ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, COLOR_PRIMARY_BLUE),
+            
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            ('LEFTPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            ('RIGHTPADDING', (0, 0), (-1, -1), PADDING_STANDARD),
+            
+            # Valign
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        return payment_table
+    
+    def _build_financial_summary(self):
+        """
+        Build financial summary (THE MOST CRITICAL METHOD!).
+        
+        This uses FIXED ROW HEIGHTS to guarantee consistent spacing.
+        No spacer rows, no padding tricks - just clean data + fixed heights.
+        
+        Columns: Label | Amount
+        Widths: [12cm | 5cm] = 17cm
+        
+        Rows (depends on payments):
+        - Without payments: Subtotal, TOTAL GST, TOTAL, Amount Owing
+        - With payments: Subtotal, TOTAL GST, TOTAL, Total Paid, Amount Owing
+        """
+        # Calculate totals
+        subtotal = self.invoice_data.get('subtotal', 0)
+        total_gst = self.invoice_data.get('total_gst', 0)
+        total = self.invoice_data.get('total', 0)
+        
+        # Calculate total paid (from payments)
+        total_paid = sum(p['amount'] for p in self.payments) if self.payments else 0
+        
+        # Calculate amount owing
+        amount_owing = total - total_paid
+        
+        # Build data rows (NO EMPTY SPACER ROWS!)
+        totals_data = []
+        totals_data.append(['Subtotal', format_currency(subtotal)])
+        totals_data.append(['TOTAL GST', format_currency(total_gst)])
+        totals_data.append(['TOTAL', format_currency(total)])
+        
+        # Track row indices for styling
+        total_gst_row = 1
+        total_row = 2
+        total_paid_row = None
+        amount_owing_row = None
+        
+        # Add Total Paid row if payments exist
+        if self.payments:
+            totals_data.append(['Total Paid', format_currency(-total_paid)])  # Negative!
+            total_paid_row = 3
+            amount_owing_row = 4
+        else:
+            amount_owing_row = 3
+        
+        totals_data.append(['Amount Owing', format_currency(amount_owing)])
+        
+        # Create table with FIXED ROW HEIGHTS (CRITICAL!)
+        num_rows = len(totals_data)
+        totals_table = Table(
+            totals_data,
+            colWidths=[COL_TOTALS_LABEL, COL_TOTALS_VALUE],
+            rowHeights=[ROW_HEIGHT_STANDARD] * num_rows  # FIXED HEIGHTS = CONSISTENT SPACING!
+        )
+        
+        # Styling (NO BOLD - removed earlier!)
+        style_commands = [
+            # Alignment
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),   # Labels right
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),   # Values right
+            
+            # Fonts (ALL NORMAL - no bold!)
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),  # 11pt consistently
+            
+            # Minimal padding (row height controls spacing)
+            ('TOPPADDING', (0, 0), (-1, -1), PADDING_MINIMAL),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), PADDING_MINIMAL),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            
+            # Valign
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            
+            # Lines above certain rows (30mm = 3cm)
+            ('LINEABOVE', (1, total_gst_row), (1, total_gst_row), 1, COLOR_BLACK),  # Above TOTAL GST
+            ('LINEABOVE', (1, total_row), (1, total_row), 1, COLOR_BLACK),          # Above TOTAL
+        ]
+        
+        # Line above Total Paid (if exists)
+        if total_paid_row is not None:
+            style_commands.append(
+                ('LINEABOVE', (1, total_paid_row), (1, total_paid_row), 1, COLOR_BLACK)
+            )
+            # Background for Total Paid row
+            style_commands.append(
+                ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), COLOR_GREY_LIGHT)
+            )
+        
+        # Line above Amount Owing
+        style_commands.append(
+            ('LINEABOVE', (1, amount_owing_row), (1, amount_owing_row), 1, COLOR_BLACK)
+        )
+        
+        totals_table.setStyle(TableStyle(style_commands))
+        
+        return totals_table
+    
+    def _build_footer(self):
+        """
+        Build footer section.
+        
+        Structure:
+        - Payment terms (centered, above footer bar)
+        - Bank details (single line, small font)
+        - Blue contact bar (website | email | ABN)
+        """
+        # Payment terms
+        due_date_str = format_date_au(self.invoice_data.get('due_date', ''))
+        payment_terms = Paragraph(
+            f"Please note this is a 7 Day Account. Due on the {due_date_str}",
+            ParagraphStyle(
+                name='PaymentTerms',
+                parent=self.styles['Normal'],
+                fontSize=FONT_SIZE_NORMAL,
+                alignment=TA_CENTER
+            )
+        )
+        
+        # Bank details (centered, smaller font to fit)
+        bank_details = Paragraph(
+            f"EFT | {COMPANY_NAME} | BSB: {BSB} ACC: {ACC} | Please use last name as reference",
+            ParagraphStyle(
+                name='BankDetails',
+                parent=self.styles['Normal'],
+                fontSize=FONT_SIZE_TINY,  # 8pt to fit
+                alignment=TA_CENTER
+            )
+        )
+        
+        # Contact bar (blue background)
+        contact_bar_data = [[Paragraph(
+            f"{WEBSITE} | {EMAIL} | A.B.N {ABN}",
+            ParagraphStyle(
+                name='ContactBar',
+                parent=self.styles['Normal'],
+                fontSize=FONT_SIZE_NORMAL,
+                textColor=COLOR_WHITE,
+                alignment=TA_CENTER
+            )
+        )]]
+        
+        contact_bar = Table(contact_bar_data, colWidths=[USABLE_WIDTH])
+        contact_bar.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), COLOR_PRIMARY_BLUE),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
+        # Combine footer elements
+        footer_data = [
+            [payment_terms],
+            [bank_details],
+            [contact_bar]
+        ]
+        
+        footer_table = Table(footer_data, colWidths=[USABLE_WIDTH])
+        footer_table.setStyle(TableStyle([
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
+        return footer_table
 
+
+# ============================================
+# CONVENIENCE FUNCTION FOR GENERATING PDFs
+# ============================================
+
+def generate_invoice_pdf_v2(invoice_data, patient_info, line_items, payments=None, filename='invoice.pdf', doc_type='invoice'):
+    """
+    Convenience function to generate a PDF document.
+    
+    Args:
+        invoice_data: Dict with invoice/quote details
+        patient_info: Dict with patient/company details
+        line_items: List of line item dicts
+        payments: List of payment dicts (optional)
+        filename: Output PDF filename
+        doc_type: 'invoice' | 'quote' | 'receipt'
+    
+    Returns:
+        str: Path to generated PDF
+    """
+    generator = UnifiedDocumentGenerator(
+        invoice_data=invoice_data,
+        patient_info=patient_info,
+        line_items=line_items,
+        payments=payments,
+        doc_type=doc_type
+    )
+    return generator.generate(filename)
