@@ -262,6 +262,85 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
         </Center>
       ) : invoice ? (
         <Stack gap="xl">
+          {/* Action Buttons at Top */}
+          <Group justify="space-between">
+            <Group>
+              {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
+              {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
+                <Button
+                  size="md"
+                  variant="filled"
+                  color="teal"
+                  leftSection={<IconCurrencyDollar size={18} />}
+                  onClick={() => setPaymentModalOpened(true)}
+                >
+                  Record Payment
+                </Button>
+              )}
+              
+              {onEdit && invoice.status === 'DRAFT' && (
+                <Button
+                  size="md"
+                  variant="light"
+                  color="blue"
+                  leftSection={<IconEdit size={18} />}
+                  onClick={onEdit}
+                >
+                  Edit Invoice
+                </Button>
+              )}
+              
+              {invoice.status === 'DRAFT' && (
+                <Button
+                  size="md"
+                  variant="light"
+                  color="red"
+                  leftSection={<IconTrash size={18} />}
+                  onClick={() => setDeleteConfirmOpened(true)}
+                >
+                  Delete Invoice
+                </Button>
+              )}
+            </Group>
+            
+            <Group>
+              <Button
+                size="md"
+                variant="light"
+                leftSection={<IconDownload size={18} />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPDF}
+              >
+                Download PDF
+              </Button>
+              
+              <Button
+                size="md"
+                variant="light"
+                leftSection={<IconExternalLink size={18} />}
+                component="a"
+                href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Xero
+              </Button>
+              
+              <Button
+                size="md"
+                variant="light"
+                leftSection={<IconRefresh size={18} />}
+                onClick={fetchInvoiceDetails}
+              >
+                Refresh
+              </Button>
+              
+              <Button size="md" onClick={onClose}>
+                Close
+              </Button>
+            </Group>
+          </Group>
+
           {/* Invoice Header - Like a real invoice */}
           <Paper p="xl" withBorder radius="md" style={{ borderTop: '4px solid #228be6' }}>
             <Group justify="space-between" align="flex-start">
@@ -301,15 +380,42 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
             <Paper p="md" withBorder radius="md">
               <Table highlightOnHover>
                 <Table.Thead>
-                  <Table.Tr style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
-                    <Table.Th style={{ width: '50%' }}>Description</Table.Th>
-                    <Table.Th ta="center">Quantity</Table.Th>
-                    <Table.Th ta="right">Unit Price</Table.Th>
-                    <Table.Th ta="right">Tax</Table.Th>
+                  <Table.Tr style={{ 
+                    backgroundColor: 'var(--mantine-color-dark-6)',
+                  }}>
+                    <Table.Th style={{ 
+                      width: '50%',
+                      color: 'var(--mantine-color-gray-3)',
+                      fontWeight: 400,
+                      fontSize: '14px'
+                    }}>Description</Table.Th>
+                    <Table.Th ta="center" style={{ 
+                      color: 'var(--mantine-color-gray-3)',
+                      fontWeight: 400,
+                      fontSize: '14px'
+                    }}>Quantity</Table.Th>
+                    <Table.Th ta="right" style={{ 
+                      color: 'var(--mantine-color-gray-3)',
+                      fontWeight: 400,
+                      fontSize: '14px'
+                    }}>Unit Price</Table.Th>
+                    <Table.Th ta="right" style={{ 
+                      color: 'var(--mantine-color-gray-3)',
+                      fontWeight: 400,
+                      fontSize: '14px'
+                    }}>Tax</Table.Th>
                     {invoice.line_items.some((item: any) => item.discount && item.discount > 0) && (
-                      <Table.Th ta="right">Discount</Table.Th>
+                      <Table.Th ta="right" style={{ 
+                        color: 'var(--mantine-color-gray-3)',
+                        fontWeight: 400,
+                        fontSize: '14px'
+                      }}>Discount</Table.Th>
                     )}
-                    <Table.Th ta="right">Amount</Table.Th>
+                    <Table.Th ta="right" style={{ 
+                      color: 'var(--mantine-color-gray-3)',
+                      fontWeight: 400,
+                      fontSize: '14px'
+                    }}>Amount</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -431,85 +537,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
               </Stack>
             </Paper>
           )}
-
-          {/* Action Buttons */}
-          <Group justify="space-between" mt="md">
-            <Group>
-              {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
-              {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
-                <Button
-                  size="md"
-                  variant="filled"
-                  color="teal"
-                  leftSection={<IconCurrencyDollar size={18} />}
-                  onClick={() => setPaymentModalOpened(true)}
-                >
-                  Record Payment
-                </Button>
-              )}
-              
-              {onEdit && invoice.status === 'DRAFT' && (
-                <Button
-                  size="md"
-                  variant="light"
-                  color="blue"
-                  leftSection={<IconEdit size={18} />}
-                  onClick={onEdit}
-                >
-                  Edit Invoice
-                </Button>
-              )}
-              
-              {invoice.status === 'DRAFT' && (
-                <Button
-                  size="md"
-                  variant="light"
-                  color="red"
-                  leftSection={<IconTrash size={18} />}
-                  onClick={() => setDeleteConfirmOpened(true)}
-                >
-                  Delete Invoice
-                </Button>
-              )}
-            </Group>
-            
-            <Group>
-              <Button
-                size="md"
-                variant="light"
-                leftSection={<IconDownload size={18} />}
-                onClick={handleDownloadPDF}
-                loading={downloadingPDF}
-              >
-                Download PDF
-              </Button>
-              
-              <Button
-                size="md"
-                variant="light"
-                leftSection={<IconExternalLink size={18} />}
-                component="a"
-                href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open in Xero
-              </Button>
-              
-              <Button
-                size="md"
-                variant="light"
-                leftSection={<IconRefresh size={18} />}
-                onClick={fetchInvoiceDetails}
-              >
-                Refresh
-              </Button>
-              
-              <Button size="md" onClick={onClose}>
-                Close
-              </Button>
-            </Group>
-          </Group>
         </Stack>
       ) : (
         <Text c="dimmed">No invoice data available</Text>
