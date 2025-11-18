@@ -196,17 +196,38 @@ combined.setStyle(TableStyle([
 ## A4 Page Design Specifications
 
 ### Page Dimensions
-- **Page Size:** A4 (210mm × 297mm or 8.27" × 11.69")
-- **Usable Width:** 17cm (after 2cm margins on each side)
-- **Usable Height:** ~25cm (after margins and header/footer)
+- **Page Size:** A4 (210mm × 297mm or 21cm × 29.7cm or 8.27" × 11.69")
+- **Usable Width:** 17cm (170mm) after 2cm margins on each side
+- **Usable Height:** ~25cm (250mm) after margins and header/footer
+
+### Unit Standards for Design
+**Primary Unit: Centimeters (cm)** ✅
+- ReportLab uses: `from reportlab.lib.units import cm, mm`
+- All measurements in this document use **cm** for consistency
+- Example: `width = 17*cm` (not 170*mm or 6.7*inch)
+
+**Why cm?**
+- ✅ Natural for A4 (21cm × 29.7cm)
+- ✅ Easy mental math (17cm = page width - 4cm margins)
+- ✅ Readable code: `12*cm` vs `120*mm` vs `4.72*inch`
+- ✅ Industry standard for print design in metric countries
+
+**Conversion Reference:**
+```python
+1 cm = 10 mm
+1 inch = 2.54 cm
+17 cm = 170 mm = 6.69 inches
+```
 
 ### Current Margins
 ```python
+from reportlab.lib.units import cm
+
 pagesize=A4,
-rightMargin=2*cm,   # 2cm
-leftMargin=2*cm,    # 2cm
-topMargin=2*cm,     # 2cm
-bottomMargin=2*cm   # 2cm (adjusted dynamically for footer)
+rightMargin=2*cm,   # 2cm = 20mm
+leftMargin=2*cm,    # 2cm = 20mm
+topMargin=2*cm,     # 2cm = 20mm
+bottomMargin=2*cm   # 2cm = 20mm (adjusted dynamically for footer)
 ```
 
 ### Available Space
@@ -826,6 +847,13 @@ Based on the current working invoice (ORC1062), here are the exact layout specif
 ## Design Constants (Code Implementation)
 
 ```python
+from reportlab.lib.units import cm, mm
+from reportlab.lib import colors
+
+# ============================================
+# UNITS: Use cm (centimeters) for all measurements
+# ============================================
+
 # Colors
 COLOR_PRIMARY_BLUE = '#4897d2'  # Table headers, footer bar
 COLOR_GREY_LIGHT = '#f5f5f5'    # Alternate row backgrounds (if used)
@@ -839,40 +867,59 @@ FONT_SIZE_HEADER = 12
 FONT_SIZE_TITLE = 16
 FONT_SIZE_SMALL = 9
 
-# Spacing
-ROW_HEIGHT = 0.6  # cm - CRITICAL for consistent spacing
-PADDING_MINIMAL = 2  # Minimal padding when row height is fixed
-PADDING_STANDARD = 4
-PADDING_TABLE_HEADER = 8
+# Spacing (in cm)
+ROW_HEIGHT = 0.6*cm  # CRITICAL for consistent spacing!
+PADDING_MINIMAL = 2  # Minimal padding when row height is fixed (points, not cm)
+PADDING_STANDARD = 4  # Standard padding (points)
+PADDING_TABLE_HEADER = 8  # Table header padding (points)
 
-# Margins
-MARGIN_LEFT = 2  # cm
-MARGIN_RIGHT = 2  # cm
-MARGIN_TOP = 2  # cm
-MARGIN_BOTTOM = 2  # cm
+# Margins (in cm)
+MARGIN_LEFT = 2*cm
+MARGIN_RIGHT = 2*cm
+MARGIN_TOP = 2*cm
+MARGIN_BOTTOM = 2*cm
 
-# Table Widths (17cm total usable width)
-WIDTH_FULL = 17  # cm
-WIDTH_PAYMENT_TABLE = 10.5  # cm (for compact payment history)
-WIDTH_TOTALS_TABLE = 17  # cm (full width for financial summary)
+# Table Widths (in cm - 17cm total usable width)
+WIDTH_FULL = 17*cm
+WIDTH_PAYMENT_TABLE = 10.5*cm  # For compact payment history
+WIDTH_TOTALS_TABLE = 17*cm     # Full width for financial summary
 
-# Column widths for line items (must sum to ~17cm)
-COL_DESCRIPTION = 7.0  # cm
-COL_QTY = 1.5  # cm
-COL_UNIT_PRICE = 2.5  # cm
-COL_DISCOUNT = 1.5  # cm
-COL_GST = 1.5  # cm
-COL_AMOUNT = 2.5  # cm
+# Column widths for line items (in cm - must sum to ~17cm)
+COL_DESCRIPTION = 7.0*cm
+COL_QTY = 1.5*cm
+COL_UNIT_PRICE = 2.5*cm
+COL_DISCOUNT = 1.5*cm
+COL_GST = 1.5*cm
+COL_AMOUNT = 2.5*cm
+# Total: 16.5cm (leaves 0.5cm for borders/padding)
 
-# Column widths for financial summary
-COL_TOTALS_LABEL = 12  # cm
-COL_TOTALS_VALUE = 5  # cm
+# Column widths for financial summary (in cm)
+COL_TOTALS_LABEL = 12*cm
+COL_TOTALS_VALUE = 5*cm
+# Total: 17cm ✓
 
-# Column widths for payment history
-COL_PAYMENT_DATE = 2.5  # cm
-COL_PAYMENT_REF = 5.0  # cm
-COL_PAYMENT_AMOUNT = 3.0  # cm
+# Column widths for payment history (in cm)
+COL_PAYMENT_DATE = 2.5*cm
+COL_PAYMENT_REF = 5.0*cm
+COL_PAYMENT_AMOUNT = 3.0*cm
+# Total: 10.5cm ✓
+
+# Spacers (in cm)
+SPACER_SMALL = 0.3*cm   # Between elements
+SPACER_MEDIUM = 0.5*cm  # Between sections
+SPACER_LARGE = 1.0*cm   # Between major sections
 ```
+
+**Note on Units:**
+- **Widths, Heights, Margins, Spacers:** Use `*cm` (e.g., `12*cm`)
+- **Padding:** Use points (integers) without `*cm` (e.g., `4`)
+- **Font Sizes:** Use points (integers) without `*cm` (e.g., `11`)
+
+**Why padding uses points:**
+ReportLab's `TOPPADDING` and `BOTTOMPADDING` expect values in points (1/72 inch), not cm.
+- `2` points = ~0.07cm (minimal)
+- `4` points = ~0.14cm (standard)
+- `8` points = ~0.28cm (spacious)
 
 ---
 
