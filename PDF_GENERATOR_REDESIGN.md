@@ -191,14 +191,259 @@ combined.setStyle(TableStyle([
 
 ---
 
-## Your Decision
+---
 
-What approach would you like to take?
+## Document Types & Requirements
 
-**Option 1:** Try fixed-height rows in existing generator (quick fix)
-**Option 2:** Create new generator with side-by-side done right (recommended)
-**Option 3:** Create new generator with vertical stacking (simpler but less optimal)
-**Option 4:** Something else entirely?
+The PDF generator needs to handle **4 different document types**, each with unique characteristics:
 
-Let me know and I'll implement it! 🚀
+---
+
+### 1. 📄 **Invoice (No Payments)**
+
+**Use Case:** Newly created invoice, no payments received yet
+
+**Financial Summary:**
+```
+Subtotal         $ 3,595.00
+TOTAL GST        $     0.00
+─────────────────────────────
+TOTAL            $ 3,595.00
+
+Amount Owing     $ 3,595.00
+```
+
+**Layout:**
+- Header (logo, contact, invoice details)
+- Patient/Company details
+- Line items table
+- **Financial summary (right-aligned)**
+- Footer (payment terms, bank details)
+
+**Key Features:**
+- No payment section
+- Amount Owing = TOTAL
+- Simple, clean layout
+
+**Current Status:** ✅ **WORKING** - Spacing is perfect
+
+---
+
+### 2. 💰 **Invoice with Payments**
+
+**Use Case:** Invoice with one or more payments applied
+
+**Financial Summary:**
+```
+[Payment History Table]
+Date       | Reference           | Amount
+───────────┼─────────────────────┼────────
+18/11/2025 | Payment for ORC1060 | $ 2.00
+18/11/2025 | Deposit             | $ 1.00
+───────────┴─────────────────────┴────────
+           Total Paid:          | $ 3.00
+
+Subtotal         $ 5.00
+TOTAL GST        $ 0.00
+─────────────────────────────
+TOTAL            $ 5.00
+Total Paid       $ -3.00
+─────────────────────────────
+Amount Owing     $ 2.00
+```
+
+**Layout:**
+- Header (logo, contact, invoice details)
+- Patient/Company details
+- Line items table
+- **Payment history table**
+- **Financial summary (with Total Paid row)**
+- Footer (payment terms, bank details)
+
+**Key Features:**
+- Payment history table shows all payments
+- Total Paid row in payment table (summary)
+- Financial summary includes "Total Paid" deduction
+- Amount Owing = TOTAL - Total Paid
+
+**Current Status:** ❌ **BROKEN** - Spacing inconsistent with non-payment invoice
+
+**Questions:**
+1. **Layout:** Should payment history be **side-by-side** with totals or **stacked above** totals?
+2. **Payment Table:** Should it be full-width or left-aligned?
+3. **Totals Table:** Should it match the width/position of non-payment invoices?
+
+---
+
+### 3. 📋 **Quote**
+
+**Use Case:** Proposal/estimate for services, not yet approved
+
+**Financial Summary:**
+```
+Subtotal         $ 3,595.00
+TOTAL GST        $     0.00
+─────────────────────────────
+TOTAL            $ 3,595.00
+
+Amount Owing     $ 3,595.00
+```
+
+**Layout:**
+- Header (logo, contact, **QUOTE** details - not invoice)
+- Patient/Company details
+- Line items table
+- **Financial summary (right-aligned)**
+- Footer (payment terms optional, quote validity)
+
+**Key Features:**
+- Similar to invoice but labeled "Quote"
+- No payments (quotes don't have payments)
+- Amount Owing = TOTAL (but it's a quote, not owing yet)
+- May have quote-specific footer (validity period, terms)
+
+**Current Status:** ✅ **WORKING** - Uses same code as invoice (no payments)
+
+**Questions:**
+1. **Footer:** Should quotes have different footer text (no bank details, just validity)?
+2. **Terminology:** "Amount Owing" vs "Quote Total" or "Estimated Cost"?
+3. **Status:** Should quote status (DRAFT, SENT, ACCEPTED) appear on PDF?
+
+---
+
+### 4. 🧾 **Receipt (NEW)**
+
+**Use Case:** Proof of payment, issued when payment is received
+
+**Payment Summary:**
+```
+[Payment Details]
+Payment Date:     18/11/2025
+Payment Method:   Credit Card / Bank Transfer / Cash
+Reference:        Payment for ORC1060
+Amount Received:  $ 3.00
+
+[Original Invoice Details]
+Invoice Number:   ORC1060
+Invoice Date:     17/11/2025
+Original Amount:  $ 5.00
+Previously Paid:  $ 0.00
+This Payment:     $ 3.00
+─────────────────────────────
+Balance Owing:    $ 2.00
+```
+
+**Layout:**
+- Header (logo, contact, **RECEIPT** details)
+- Patient/Company details
+- **Payment details section** (date, method, reference, amount)
+- **Original invoice summary** (what this payment is for)
+- **Payment allocation** (if multiple invoices)
+- Footer (thank you message, contact info)
+
+**Key Features:**
+- Focus on the **payment**, not the invoice
+- Shows what invoice(s) this payment applies to
+- Receipt number (separate from invoice number)
+- Payment method (credit card, bank transfer, cash, etc.)
+- Running balance after this payment
+
+**Current Status:** 🆕 **NOT YET IMPLEMENTED**
+
+**Questions:**
+1. **Receipt Number:** Generate separate receipt numbers (REC-0001) or use payment ID?
+2. **Payment Method:** Add payment method field to XeroPayment model?
+3. **Multiple Invoices:** Can one receipt cover multiple invoices (batch payment)?
+4. **Line Items:** Show original invoice line items or just summary?
+5. **Tax/GST:** Show GST breakdown or just total payment amount?
+6. **Historical Payments:** Show all payments on this invoice or just this payment?
+
+---
+
+## Unified Generator Strategy
+
+### Common Elements (All Documents):
+- Header (logo, company details, dates)
+- Patient/Company details
+- Line items table (except Receipt - optional)
+- Footer
+
+### Variable Elements:
+| Element | Invoice | Invoice+Payments | Quote | Receipt |
+|---------|---------|------------------|-------|---------|
+| **Payment History** | ❌ No | ✅ Yes | ❌ No | ✅ Yes (focus) |
+| **Total Paid Row** | ❌ No | ✅ Yes | ❌ No | ✅ Yes |
+| **Line Items** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Optional |
+| **Financial Summary** | ✅ Full | ✅ Full | ✅ Full | ⚠️ Simplified |
+| **Footer Type** | Bank details | Bank details | Validity | Thank you |
+
+---
+
+## Design Decisions Needed
+
+### 1. **Layout for Invoice with Payments**
+**Option A:** Side-by-side (payment history left, totals right)
+- **Pro:** Compact, uses space efficiently
+- **Con:** Complex layout, alignment issues
+
+**Option B:** Stacked (payment history on top, totals below, full-width)
+- **Pro:** Simple, consistent with other documents
+- **Con:** Uses more vertical space
+
+**Your preference?** 🤔
+
+---
+
+### 2. **Receipt Design**
+**Option A:** Receipt as standalone document (no line items)
+```
+RECEIPT #REC-0001
+
+Payment received: $3.00
+For invoice: ORC1060
+Balance remaining: $2.00
+```
+
+**Option B:** Receipt as mini-invoice (includes line items)
+```
+RECEIPT #REC-0001
+
+[Original line items from invoice]
+TOTAL: $5.00
+Payment received: $3.00
+Balance remaining: $2.00
+```
+
+**Your preference?** 🤔
+
+---
+
+### 3. **Quote Footer**
+Should quotes have:
+- **Same footer as invoices** (bank details, payment terms)
+- **Different footer** (quote validity, acceptance terms)
+
+**Your preference?** 🤔
+
+---
+
+### 4. **Terminology Consistency**
+- Invoice: "Amount Owing"
+- Quote: "Amount Owing" or "Quote Total" or "Estimated Cost"?
+- Receipt: "Balance Owing" or "Remaining Balance"?
+
+**Your preference?** 🤔
+
+---
+
+## Next Steps
+
+Once we decide on the above questions, I'll:
+1. **Design the unified generator architecture**
+2. **Implement fixed-height rows for consistent spacing**
+3. **Add Receipt document type**
+4. **Test all 4 document types**
+5. **Replace old generator**
+
+**Let's discuss each document type and make these decisions!** 💬
 
