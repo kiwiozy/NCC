@@ -232,19 +232,18 @@ class DocumentPDFGenerator:
         line_items_elements = self._build_line_items_table()
         for elem in line_items_elements:
             story.append(self._debug_box(elem, "Line Items"))
-        story.append(Spacer(1, 0.5*cm))
+        story.append(Spacer(1, 0.3*cm))  # Reduced from 0.5cm
         
-        # Add payments section if any (invoices only)
+        # Add payments and totals section (side by side if payments exist)
         if self.document_type == 'invoice' and self.document_data.get('payments'):
-            payment_elements = self._build_payments_section()
-            for elem in payment_elements:
-                story.append(self._debug_box(elem, "Payments"))
-            story.append(Spacer(1, 0.3*cm))
-        
-        # Add totals
-        totals_elements = self._build_totals_section()
-        for elem in totals_elements:
-            story.append(self._debug_box(elem, "Totals"))
+            combined_elements = self._build_payments_and_totals_section()
+            for elem in combined_elements:
+                story.append(self._debug_box(elem, "Payments & Totals"))
+        else:
+            # Just totals if no payments
+            totals_elements = self._build_totals_section()
+            for elem in totals_elements:
+                story.append(self._debug_box(elem, "Totals"))
         
         # Add spacer at the end to reserve space for footer on last page
         # Reduced spacer for tighter layout
@@ -554,6 +553,131 @@ class DocumentPDFGenerator:
         ]))
         
         elements.append(line_table)
+        
+        return elements
+    
+    def _build_payments_and_totals_section(self):
+        """Build payments table and totals side-by-side (like in the PDF)"""
+        elements = []
+        
+        # Build payments table (left side)
+        payment_data = [['Date', 'Reference', 'Amount']]
+        total_paid = 0
+        
+        for payment in self.document_data['payments']:
+            if hasattr(payment['date'], 'strftime'):
+                payment_date = payment['date'].strftime('%d/%m/%Y')
+            else:
+                payment_date = str(payment['date'])
+            
+            amount = payment.get('amount', 0)
+            total_paid += amount
+            
+            payment_data.append([
+                payment_date,
+                payment.get('reference', '—'),
+                f"$ {amount:,.2f}",
+            ])
+        
+        # Add Total Paid row
+        payment_data.append([
+            '',
+            'Total Paid:',
+            f"$ {total_paid:,.2f}",
+        ])
+        
+        # Payment table styling
+        payment_table = Table(payment_data, colWidths=[2.5*cm, 5*cm, 3*cm])
+        total_paid_row = len(payment_data) - 1
+        
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),
+            ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),  # Reduced padding
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#f5f5f5')),
+            ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        
+        # Build totals table (right side)
+        subtotal = 0
+        total_discount = 0
+        total_gst = 0
+        
+        for item in self.document_data['line_items']:
+            qty = item['quantity']
+            unit_price = item['unit_price']
+            gst_rate = item['gst_rate']
+            discount = item.get('discount', 0)
+            
+            item_subtotal = qty * unit_price
+            subtotal += item_subtotal
+            discount_amount = item_subtotal * (discount / 100)
+            total_discount += discount_amount
+            discounted_amount = item_subtotal - discount_amount
+            item_gst = discounted_amount * gst_rate
+            total_gst += item_gst
+        
+        total = subtotal - total_discount + total_gst
+        amount_paid = total_paid  # We already calculated this above
+        amount_owing = total - amount_paid
+        
+        totals_data = [
+            ['Subtotal', f"$ {subtotal:,.2f}"],
+        ]
+        
+        if total_discount > 0:
+            totals_data.append(['Total Discount', f"$ -{total_discount:,.2f}"])
+        
+        totals_data.extend([
+            ['TOTAL GST', f"$ {total_gst:,.2f}"],
+            ['TOTAL', f"$ {total:,.2f}"],
+            ['', ''],
+            ['Total Paid', f"$ -{amount_paid:,.2f}"],
+            ['', ''],
+            ['Amount Owing', f"$ {amount_owing:,.2f}"],
+        ])
+        
+        totals_table = Table(totals_data, colWidths=[4*cm, 2.5*cm])
+        
+        # Find row indices for styling
+        total_row_idx = 2 if total_discount == 0 else 3
+        total_paid_row_idx = total_row_idx + 2
+        amount_owing_row_idx = total_paid_row_idx + 2
+        
+        totals_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
+            ('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black),
+            ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),
+        ]))
+        
+        # Combine both tables side by side in a wrapper table
+        combined_table = Table(
+            [[payment_table, totals_table]],
+            colWidths=[10.5*cm, 6.5*cm]
+        )
+        combined_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
+        elements.append(combined_table)
         
         return elements
     
