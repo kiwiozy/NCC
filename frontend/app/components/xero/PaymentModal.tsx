@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Stack, Group, Button, NumberInput, TextInput, Select } from '@mantine/core';
+import { Modal, Stack, Group, Button, NumberInput, TextInput, Select, Text } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
