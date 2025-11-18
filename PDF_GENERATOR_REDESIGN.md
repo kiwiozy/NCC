@@ -616,7 +616,15 @@ Balance Owing:    $ 2.00
 - **Payment details section** (date, method, reference, amount)
 - **Original invoice summary** (what this payment is for)
 - **Payment allocation** (if multiple invoices)
+- **"PAID" watermark stamp overlaid at 13% opacity** ✅
 - Footer (thank you message, contact info)
+
+**Visual Identity:**
+- **"PAID" watermark:** Blue stamp graphic (`Paid.png`)
+- **Opacity:** 13% (subtle, professional)
+- **Position:** Centered over the document content
+- **Size:** ~8-10cm diameter (visible but not overwhelming)
+- **Image:** `backend/invoices/assets/Paid.png`
 
 **Key Features:**
 - Focus on the **payment**, not the invoice
@@ -624,6 +632,7 @@ Balance Owing:    $ 2.00
 - Receipt number (separate from invoice number)
 - Payment method (credit card, bank transfer, cash, etc.)
 - Running balance after this payment
+- **Professional "PAID" watermark stamp for authenticity**
 
 **Current Status:** 🆕 **NOT YET IMPLEMENTED**
 
@@ -1150,22 +1159,81 @@ payment_table.setStyle(TableStyle([
 
 ---
 
-### Problem 2: Receipt Document Missing 🆕
+### Problem 2: Receipt Document Missing 🧾
 **Status:** NOT IMPLEMENTED  
 **Description:** No receipt generation functionality exists  
 **Impact:** Cannot provide payment receipts to patients/companies  
+
+**Visual Identity - "PAID" Watermark:** ✅
+- **Image:** `Paid.png` (blue stamp graphic with "THANK YOU" and "PAID" text)
+- **Opacity:** 13% (subtle, professional)
+- **Position:** Centered over the document content
+- **Size:** ~8-10cm diameter (visible but not overwhelming)
+- **File Location:** `backend/invoices/assets/Paid.png`
+
+**Code Implementation - Watermark:**
+```python
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
+
+def add_paid_watermark(canvas_obj, doc):
+    """Add PAID watermark stamp at 13% opacity"""
+    watermark_path = 'backend/invoices/assets/Paid.png'
+    
+    # Calculate center position
+    page_width = doc.pagesize[0]
+    page_height = doc.pagesize[1]
+    
+    # Watermark size
+    watermark_width = 8*cm
+    watermark_height = 8*cm
+    
+    # Center position
+    x = (page_width - watermark_width) / 2
+    y = (page_height - watermark_height) / 2
+    
+    # Save state, set opacity, draw watermark
+    canvas_obj.saveState()
+    canvas_obj.setFillAlpha(0.13)  # 13% opacity
+    canvas_obj.drawImage(
+        watermark_path, x, y,
+        width=watermark_width,
+        height=watermark_height,
+        mask='auto',
+        preserveAspectRatio=True
+    )
+    canvas_obj.restoreState()
+
+# Use in canvasmaker
+class ReceiptCanvasMaker(canvas.Canvas):
+    def showPage(self):
+        add_paid_watermark(self, self.doc)
+        canvas.Canvas.showPage(self)
+```
+
 **Requirements:**
-- Receipt number generation (separate from invoice numbers)
-- Payment details display (date, method, reference, amount)
-- Original invoice information
-- Running balance calculation
-- Thank you message footer
+- ✅ "PAID" watermark at 13% opacity
+- ❓ Receipt number generation (separate from invoice numbers)
+- ❓ Payment details display (date, method, reference, amount)
+- ❓ Original invoice information
+- ❓ Running balance calculation
+- ❓ Thank you message footer
 
 **Design Decisions Needed:**
-1. Receipt numbering: Separate sequence (REC-0001) or use payment ID?
-2. Payment method: Add field to XeroPayment model?
-3. Layout: Standalone or include line items?
-4. Batch payments: One receipt for multiple invoices?
+1. ✅ **Watermark:** 13% opacity "PAID" stamp - DECIDED
+2. ❓ **Receipt numbering:** Separate sequence (REC-0001) or use payment ID?
+3. ❓ **Payment method:** Add field to XeroPayment model?
+4. ❓ **Layout:** Standalone or include line items?
+5. ❓ **Batch payments:** One receipt for multiple invoices?
+
+**Implementation Steps:**
+1. ✅ Save `Paid.png` to `backend/invoices/assets/`
+2. Create `receipt_pdf_generator.py` based on invoice generator
+3. Add watermark function with 13% opacity
+4. Add receipt number generation logic
+5. Create receipt API endpoint (`/api/receipts/xero/<payment_id>/pdf/`)
+6. Add "Generate Receipt" button to payment UI
+7. Test watermark positioning and opacity
 
 **Priority:** 🟡 MEDIUM
 
