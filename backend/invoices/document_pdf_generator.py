@@ -558,33 +558,67 @@ class DocumentPDFGenerator:
         return elements
     
     def _build_payments_section(self):
-        """Build payments section"""
+        """Build payments section showing payment history"""
         elements = []
         
-        # Payments header
-        payment_header = Paragraph("<b>Payments</b>", self.styles['Heading2'])
+        # Payments table with header
+        payment_data = [['Date', 'Reference', 'Amount']]
         
-        # Payments table
-        payment_data = [['Date', 'Type of Payment', 'Amount']]
+        # Total paid tracker
+        total_paid = 0
         
         for payment in self.document_data['payments']:
-            payment_date = payment['date'].strftime('%d/%m/%Y')
+            # Format date - handle both date and datetime objects
+            if hasattr(payment['date'], 'strftime'):
+                payment_date = payment['date'].strftime('%d/%m/%Y')
+            else:
+                payment_date = str(payment['date'])
+            
+            amount = payment.get('amount', 0)
+            total_paid += amount
+            
             payment_data.append([
                 payment_date,
-                payment['type'],
-                f"$ {payment['amount']:,.2f}" if payment.get('amount') else '?',
+                payment.get('reference', '—'),
+                f"$ {amount:,.2f}",
             ])
         
-        payment_table = Table(payment_data, colWidths=[4*cm, 6*cm, 4*cm])
+        # Add Total Paid row
+        payment_data.append([
+            '',
+            'Total Paid:',
+            f"$ {total_paid:,.2f}",
+        ])
+        
+        payment_table = Table(payment_data, colWidths=[3.5*cm, 8*cm, 4*cm])
+        
+        # Calculate the index of the Total Paid row (last row)
+        total_paid_row = len(payment_data) - 1
+        
         payment_table.setStyle(TableStyle([
+            # Header row styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4897d2')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),  # Date header centered
+            ('ALIGN', (1, 0), (1, 0), 'LEFT'),    # Reference header left
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),   # Amount header right
+            
+            # Data rows styling
             ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # Date column centered
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),    # Reference column left
+            ('ALIGN', (2, 1), (2, -1), 'RIGHT'),   # Amount column right
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            
+            # Total Paid row styling
+            ('FONTNAME', (1, total_paid_row), (2, total_paid_row), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, total_paid_row), (-1, total_paid_row), colors.HexColor('#e8f5e9')),
+            ('LINEABOVE', (0, total_paid_row), (-1, total_paid_row), 1.5, colors.HexColor('#4897d2')),
+            
+            # Grid
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
         
@@ -639,24 +673,50 @@ class DocumentPDFGenerator:
         totals_data.extend([
             ['TOTAL GST', f"$ {total_gst:,.2f}"],
             ['TOTAL', f"$ {total:,.2f}"],
+        ])
+        
+        # Add Total Paid row if there are payments
+        if amount_paid > 0:
+            totals_data.extend([
+                ['', ''],  # Spacer
+                ['Total Paid', f"$ -{amount_paid:,.2f}"],
+            ])
+        
+        totals_data.extend([
             ['', ''],  # Spacer
             ['Amount Owing', f"$ {amount_owing:,.2f}"],
         ])
         
         totals_table = Table(totals_data, colWidths=[12*cm, 5*cm])
         
-        # Find the TOTAL row index dynamically
+        # Find the TOTAL row index dynamically (depends on whether we have discount)
         total_row_idx = 2 if total_discount == 0 else 3
-        amount_owing_row_idx = total_row_idx + 2
         
-        totals_table.setStyle(TableStyle([
+        # Find Total Paid row index (if it exists)
+        total_paid_row_idx = None
+        if amount_paid > 0:
+            total_paid_row_idx = total_row_idx + 2  # TOTAL + spacer + Total Paid
+            amount_owing_row_idx = total_paid_row_idx + 2  # Total Paid + spacer + Amount Owing
+        else:
+            amount_owing_row_idx = total_row_idx + 2  # TOTAL + spacer + Amount Owing
+        
+        # Build style list
+        style_list = [
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 11),
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Line above TOTAL
-            ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),  # Line above Amount Owing
-        ]))
+        ]
+        
+        # Add line above Total Paid if it exists
+        if total_paid_row_idx:
+            style_list.append(('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black))
+        
+        # Add line above Amount Owing
+        style_list.append(('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black))
+        
+        totals_table.setStyle(TableStyle(style_list))
         
         elements.append(totals_table)
         
