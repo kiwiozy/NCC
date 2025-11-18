@@ -1,10 +1,11 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconAlertTriangle, IconDownload } from '@tabler/icons-react';
+import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconAlertTriangle, IconDownload, IconCurrencyDollar } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
+import { PaymentModal } from './PaymentModal';
 
 interface InvoiceDetailModalProps {
   opened: boolean;
@@ -32,6 +33,16 @@ interface InvoiceDetail {
   line_items?: any[];
 }
 
+interface Payment {
+  id: string;
+  xero_payment_id: string;
+  amount: string;
+  payment_date: string;
+  reference: string;
+  account_code: string;
+  status: string;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   'DRAFT': 'gray',
   'SUBMITTED': 'blue',
@@ -47,10 +58,14 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpened, setDeleteConfirmOpened] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [paymentModalOpened, setPaymentModalOpened] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
     if (opened && invoiceId) {
       fetchInvoiceDetails();
+      fetchPayments();
     }
   }, [opened, invoiceId]);
 
@@ -72,6 +87,28 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPayments = async () => {
+    setLoadingPayments(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/xero/payments/?invoice_link=${invoiceId}`);
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      
+      const data = await response.json();
+      setPayments(data.results || data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      // Don't show error notification for payments, just log it
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    // Refresh invoice details and payments
+    fetchInvoiceDetails();
+    fetchPayments();
   };
 
   const getXeroInvoiceUrl = (xeroInvoiceId: string) => {
@@ -297,6 +334,18 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
           {/* Actions */}
           <Group justify="space-between">
             <Group>
+              {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
+              {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
+                <Button
+                  variant="filled"
+                  color="teal"
+                  leftSection={<IconCurrencyDollar size={16} />}
+                  onClick={() => setPaymentModalOpened(true)}
+                >
+                  Record Payment
+                </Button>
+              )}
+              
               <Button
                 variant="light"
                 leftSection={<IconDownload size={16} />}
@@ -363,11 +412,69 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
               </Button>
             </Group>
           </Group>
+
+          {/* Payment History */}
+          {payments.length > 0 && (
+            <Paper p="md" withBorder>
+              <Stack gap="md">
+                <Text fw={600}>Payment History</Text>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Date</Table.Th>
+                      <Table.Th>Amount</Table.Th>
+                      <Table.Th>Reference</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {payments.map((payment) => (
+                      <Table.Tr key={payment.id}>
+                        <Table.Td>{formatDateOnlyAU(payment.payment_date)}</Table.Td>
+                        <Table.Td>
+                          <Text c="green" fw={500}>
+                            ${parseFloat(payment.amount).toFixed(2)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>{payment.reference || '—'}</Table.Td>
+                        <Table.Td>
+                          <Badge color={payment.status === 'AUTHORISED' ? 'green' : 'gray'}>
+                            {payment.status}
+                          </Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                <Group justify="space-between">
+                  <Text size="sm" fw={500}>Total Paid:</Text>
+                  <Text size="lg" fw={700} c="green">
+                    ${payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toFixed(2)}
+                  </Text>
+                </Group>
+              </Stack>
+            </Paper>
+          )}
         </Stack>
       ) : (
         <Text c="dimmed">No invoice data available</Text>
       )}
     </Modal>
+
+    {/* Payment Modal */}
+    {invoice && (
+      <PaymentModal
+        opened={paymentModalOpened}
+        onClose={() => setPaymentModalOpened(false)}
+        invoice={{
+          id: invoice.id,
+          xero_invoice_number: invoice.xero_invoice_number,
+          amount_due: invoice.amount_due,
+          currency: invoice.currency
+        }}
+        onSuccess={handlePaymentSuccess}
+      />
+    )}
     
     {/* Delete Confirmation Modal */}
     <Modal
