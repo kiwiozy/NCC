@@ -232,7 +232,7 @@ class DocumentPDFGenerator:
         line_items_elements = self._build_line_items_table()
         for elem in line_items_elements:
             story.append(self._debug_box(elem, "Line Items"))
-        story.append(Spacer(1, 0.3*cm))  # Reduced from 0.5cm
+        story.append(Spacer(1, 0.1*cm))  # Reduced to 0.1cm for tighter layout
         
         # Add payments and totals section (side by side if payments exist)
         if self.document_type == 'invoice' and self.document_data.get('payments'):
