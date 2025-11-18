@@ -661,8 +661,8 @@ class DocumentPDFGenerator:
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # All normal (no bold)
             ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
+            ('TOPPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (consistent with other totals)
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
             ('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black),
             ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),
@@ -801,30 +801,25 @@ class DocumentPDFGenerator:
             ['TOTAL', f"$ {total:,.2f}"],
         ])
         
-        # Add Total Paid row if there are payments
+        # Add Total Paid row if there are payments (no spacer - padding handles spacing)
         if amount_paid > 0:
-            totals_data.extend([
-                ['', ''],  # Spacer
-                ['Total Paid', f"$ -{amount_paid:,.2f}"],
-            ])
+            totals_data.append(['Total Paid', f"$ -{amount_paid:,.2f}"])
         
-        totals_data.extend([
-            ['', ''],  # Spacer
-            ['Amount Owing', f"$ {amount_owing:,.2f}"],
-        ])
+        # No spacer before Amount Owing - padding handles spacing
+        totals_data.append(['Amount Owing', f"$ {amount_owing:,.2f}"])
         
         totals_table = Table(totals_data, colWidths=[12*cm, 5*cm])
         
         # Find the TOTAL row index dynamically (depends on whether we have discount)
         total_row_idx = 2 if total_discount == 0 else 3
         
-        # Find Total Paid row index (if it exists)
+        # Find Total Paid row index (if it exists) - NO spacer rows now
         total_paid_row_idx = None
         if amount_paid > 0:
-            total_paid_row_idx = total_row_idx + 2  # TOTAL + spacer + Total Paid
-            amount_owing_row_idx = total_paid_row_idx + 2  # Total Paid + spacer + Amount Owing
+            total_paid_row_idx = total_row_idx + 1  # TOTAL + Total Paid (no spacer)
+            amount_owing_row_idx = total_paid_row_idx + 1  # Total Paid + Amount Owing (no spacer)
         else:
-            amount_owing_row_idx = total_row_idx + 2  # TOTAL + spacer + Amount Owing
+            amount_owing_row_idx = total_row_idx + 1  # TOTAL + Amount Owing (no spacer)
         
         # Build style list
         style_list = [
@@ -832,8 +827,8 @@ class DocumentPDFGenerator:
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # All normal (no bold)
             ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
+            ('TOPPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (no spacer rows needed)
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # Reduced padding (no spacer rows needed)
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Line above TOTAL
         ]
         
