@@ -1438,30 +1438,288 @@ Before we can proceed with implementation, we need answers to:
 
 ---
 
-## Potential Missing Items (Review Needed)
+## Complete Implementation Specifications ✅
 
-### 1. Header Section Specifications ⚠️
-**Current Status:** Described in text, but no exact measurements
+### 1. Header Section Specifications
+**Status:** FINALIZED FOR IMPLEMENTATION
 
-**What's Missing:**
-- Logo dimensions (currently "~4cm × 4cm" - confirm exact size)
-- Header table structure (3 columns: logo, company info, invoice details)
-- Column widths for header (how wide is each column?)
-- Icon sizes in company info section
-- Spacing between header elements
-- "Tax Invoice" heading font size and position
-- Line spacing in address/contact section
+**Layout Structure:**
+```
+┌──────────┬─────────────────────┬──────────────┐
+│  LOGO    │  ADDRESS GRAPHIC    │ INVOICE INFO │
+│  4×4cm   │     9.03×4cm        │   ~4cm       │
+└──────────┴─────────────────────┴──────────────┘
+```
 
-**Should we add:**
+**Code Constants:**
 ```python
-# Header specifications
-HEADER_HEIGHT = 6*cm  # Total header section height
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+
+# Header dimensions
 LOGO_WIDTH = 4*cm
 LOGO_HEIGHT = 4*cm
-COL_HEADER_LOGO = 5*cm
-COL_HEADER_COMPANY = 7*cm
-COL_HEADER_INVOICE = 5*cm
+ADDRESS_GRAPHIC_WIDTH = 9.03*cm
+ADDRESS_GRAPHIC_HEIGHT = 4*cm
+
+# Header column widths (must total 17cm)
+COL_HEADER_LOGO = 4*cm
+COL_HEADER_ADDRESS = 9.03*cm
+COL_HEADER_INFO = 3.97*cm
 # Total: 17cm ✓
+
+# Header paths
+LOGO_PATH = '../frontend/public/images/Logo_Nexus.png'
+ADDRESS_PATH = '../frontend/public/images/Address.png'
+
+# Header styling
+FONT_SIZE_INVOICE_DATE = 12
+FONT_SIZE_TAX_INVOICE = 16  # "Tax Invoice" heading
+FONT_INVOICE_DATE = 'Helvetica-Bold'
+FONT_TAX_INVOICE = 'Helvetica-Bold'
+
+# Header table styling
+header_table.setStyle(TableStyle([
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('ALIGN', (0, 0), (0, 0), 'LEFT'),   # Logo left
+    ('ALIGN', (1, 0), (1, 0), 'RIGHT'),  # Address graphic right
+    ('ALIGN', (2, 0), (2, 0), 'RIGHT'),  # Invoice info right
+    ('LEFTPADDING', (0, 0), (-1, -1), 0),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+]))
+```
+
+---
+
+### 2. Patient/Company Details Section
+**Status:** FINALIZED FOR IMPLEMENTATION
+
+**Layout Structure:**
+```
+┌─────────────────────────┬─────────────────────┐
+│  PATIENT/COMPANY NAME   │  REFERENCE / PO#    │
+│  Address Line 1         │  Provider Reg #     │
+│  Address Line 2         │  Practitioner:      │
+│  City State Postcode    │  Name & Details     │
+└─────────────────────────┴─────────────────────┘
+```
+
+**Code Constants:**
+```python
+# Patient/Company section dimensions
+COL_PATIENT_LEFT = 10*cm    # Name and address
+COL_PATIENT_RIGHT = 7*cm    # Reference and practitioner
+# Total: 17cm ✓
+
+# Font sizes
+FONT_SIZE_PATIENT_NAME = 14          # Bold, larger
+FONT_SIZE_PATIENT_ADDRESS = 10       # Normal
+FONT_SIZE_REFERENCE_LABEL = 10       # Normal
+FONT_SIZE_REFERENCE_VALUE = 10       # Normal
+FONT_SIZE_PRACTITIONER_LABEL = 10    # Italic "Practitioner:"
+FONT_SIZE_PRACTITIONER_VALUE = 10    # Normal
+
+# Font styles
+FONT_PATIENT_NAME = 'Helvetica-Bold'
+FONT_PATIENT_ADDRESS = 'Helvetica'
+FONT_REFERENCE = 'Helvetica'
+FONT_PRACTITIONER_LABEL = 'Helvetica-Oblique'  # Italic
+FONT_PRACTITIONER_VALUE = 'Helvetica'
+
+# Patient section table styling
+patient_table.setStyle(TableStyle([
+    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ('ALIGN', (0, 0), (0, 0), 'LEFT'),   # Patient info left
+    ('ALIGN', (1, 0), (1, 0), 'LEFT'),   # Reference info left
+    ('LEFTPADDING', (0, 0), (0, 0), 2.5*cm),  # 2.5cm left padding for patient address
+    ('LEFTPADDING', (1, 0), (1, 0), 0),
+    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+]))
+```
+
+---
+
+### 3. Spacer/Gap Specifications
+**Status:** FINALIZED FOR IMPLEMENTATION
+
+**All Gaps Between Sections:**
+```python
+from reportlab.platypus import Spacer
+
+# Base spacer constants (already defined)
+SPACER_SMALL = 0.3*cm
+SPACER_MEDIUM = 0.5*cm
+SPACER_LARGE = 1.0*cm
+
+# Specific usage throughout document
+GAP_HEADER_TO_PATIENT = SPACER_MEDIUM        # 0.5cm - After header
+GAP_PATIENT_TO_TITLE = SPACER_SMALL          # 0.3cm - Before "Tax Invoice"
+GAP_TITLE_TO_LINEITEMS = SPACER_MEDIUM       # 0.5cm - After title
+GAP_LINEITEMS_TO_PAYMENTS = SPACER_MEDIUM    # 0.5cm - After line items
+GAP_PAYMENTS_TO_TOTALS = SPACER_MEDIUM       # 0.5cm - Between payment & totals
+GAP_TOTALS_TO_FOOTER = 1.5*cm                # 1.5cm - Before footer (as mentioned)
+
+# Usage in buildDocument():
+elements = []
+elements.append(header_table)
+elements.append(Spacer(1, GAP_HEADER_TO_PATIENT))      # 0.5cm
+elements.append(patient_table)
+elements.append(Spacer(1, GAP_PATIENT_TO_TITLE))       # 0.3cm
+elements.append(tax_invoice_heading)
+elements.append(Spacer(1, GAP_TITLE_TO_LINEITEMS))     # 0.5cm
+elements.append(line_items_table)
+elements.append(Spacer(1, GAP_LINEITEMS_TO_PAYMENTS))  # 0.5cm
+if has_payments:
+    elements.append(payment_table)
+    elements.append(Spacer(1, GAP_PAYMENTS_TO_TOTALS)) # 0.5cm
+elements.append(totals_table)
+elements.append(Spacer(1, GAP_TOTALS_TO_FOOTER))       # 1.5cm
+# Footer handled by dynamic bottom margin
+```
+
+---
+
+### 4. Font Weight/Style Complete Specification
+**Status:** FINALIZED FOR IMPLEMENTATION
+
+**Complete Font Style Mapping:**
+```python
+# ============================================
+# FONT STYLES - Complete Specification
+# ============================================
+
+# Header section
+FONT_INVOICE_DATE = 'Helvetica-Bold'
+FONT_INVOICE_NUMBER = 'Helvetica-Bold'
+FONT_DUE_DATE = 'Helvetica-Bold'
+FONT_TAX_INVOICE = 'Helvetica-Bold'  # "Tax Invoice" heading
+
+# Patient/Company section
+FONT_PATIENT_NAME = 'Helvetica-Bold'         # Name is bold
+FONT_PATIENT_ADDRESS = 'Helvetica'           # Address normal
+FONT_REFERENCE_LABEL = 'Helvetica'           # "Reference / PO#" normal
+FONT_REFERENCE_VALUE = 'Helvetica'           # Reference value normal
+FONT_PRACTITIONER_LABEL = 'Helvetica-Oblique'  # "Practitioner:" italic
+FONT_PRACTITIONER_VALUE = 'Helvetica'        # Practitioner name normal
+
+# Line items table
+FONT_LINE_HEADER = 'Helvetica-Bold'          # Blue header row
+FONT_LINE_DATA = 'Helvetica'                 # Data rows normal
+
+# Payment table
+FONT_PAYMENT_HEADER = 'Helvetica-Bold'       # Blue header row
+FONT_PAYMENT_DATA = 'Helvetica'              # Data rows normal
+FONT_PAYMENT_TOTAL = 'Helvetica-Bold'        # "Total Paid:" row
+
+# Financial summary (IMPORTANT: We removed bold earlier!)
+FONT_TOTALS_LABEL = 'Helvetica'              # Labels normal (not bold)
+FONT_TOTALS_VALUE = 'Helvetica'              # Values normal (not bold)
+FONT_TOTALS_TOTAL_ROW = 'Helvetica'          # TOTAL row normal
+FONT_TOTALS_AMOUNT_OWING = 'Helvetica'       # Amount Owing normal
+
+# Footer section
+FONT_PAYMENT_TERMS = 'Helvetica'             # Payment terms normal
+FONT_BANK_DETAILS = 'Helvetica'              # Bank details normal
+FONT_CONTACT_BAR = 'Helvetica'               # Blue bar text normal
+
+# Rule: If you need bold, use 'Helvetica-Bold'
+# Rule: If you need italic, use 'Helvetica-Oblique'
+# Rule: If you need bold+italic, use 'Helvetica-BoldOblique'
+```
+
+---
+
+### 5. Number Formatting Complete Rules
+**Status:** FINALIZED FOR IMPLEMENTATION
+
+**All Number Formatting Functions:**
+```python
+# ============================================
+# NUMBER FORMATTING - Complete Rules
+# ============================================
+
+def format_currency(amount):
+    """
+    Format currency with proper alignment for decimal points.
+    
+    Rules:
+    - Thousand separators: YES (1,000.00)
+    - Zero values: Show as $ 0.00 (not blank, not dash)
+    - Negative values: $ -3.00 (space after $, then minus)
+    - Positive values: $  5.00 (two spaces after $ for alignment)
+    - Always 2 decimal places
+    """
+    if amount == 0:
+        return "$  0.00"  # Two spaces for alignment
+    elif amount < 0:
+        return f"$ -{abs(amount):,.2f}"  # One space, then minus
+    else:
+        return f"$  {amount:,.2f}"  # Two spaces for alignment
+
+def format_quantity(qty):
+    """
+    Format quantity field.
+    
+    Rules:
+    - Whole numbers: Show as integer (1, not 1.0)
+    - Decimals: Show one decimal place (1.5)
+    """
+    if qty == int(qty):
+        return f"{int(qty)}"  # 1
+    else:
+        return f"{qty:.1f}"   # 1.5
+
+def format_discount(pct):
+    """
+    Format discount percentage.
+    
+    Rules:
+    - Zero values: Show as empty string (not 0.00%)
+    - Non-zero: Show with 2 decimals (5.00%, 10.50%)
+    """
+    if pct == 0 or pct is None:
+        return ""  # Blank if no discount
+    else:
+        return f"{pct:.2f}%"  # 5.00%
+
+def format_gst(rate):
+    """
+    Format GST rate.
+    
+    Rules:
+    - Zero values: Show as empty string
+    - Non-zero: Show as percentage without decimals (10%, not 10.0%)
+    - Input is decimal (0.1 = 10%)
+    """
+    if rate == 0 or rate is None:
+        return ""  # Blank if GST-free
+    else:
+        return f"{rate*100:.0f}%"  # 10%
+
+# Example usage in tables:
+line_item_data = [
+    ['Description', 'Qty', 'Unit Price', 'Discount', 'GST', 'Amount'],
+    [
+        'Custom Orthotics',
+        format_quantity(1),         # "1"
+        format_currency(2500.00),   # "$  2,500.00"
+        format_discount(0),         # "" (blank)
+        format_gst(0),              # "" (blank)
+        format_currency(2500.00)    # "$  2,500.00"
+    ],
+]
+
+totals_data = [
+    ['Subtotal', format_currency(5.00)],      # "$  5.00"
+    ['TOTAL GST', format_currency(0.00)],     # "$  0.00"
+    ['TOTAL', format_currency(5.00)],         # "$  5.00"
+    ['Total Paid', format_currency(-3.00)],   # "$ -3.00"
+    ['Amount Owing', format_currency(2.00)],  # "$  2.00"
+]
 ```
 
 ---
