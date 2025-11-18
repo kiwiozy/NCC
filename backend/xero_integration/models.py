@@ -462,3 +462,113 @@ class XeroSyncLog(models.Model):
     
     def __str__(self):
         return f"{self.operation_type} - {self.status} at {self.created_at}"
+
+
+class XeroPayment(models.Model):
+    """Individual payment record synced with Xero"""
+    
+    # Identification
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    connection = models.ForeignKey(
+        XeroConnection,
+        on_delete=models.CASCADE,
+        related_name='payments'
+    )
+    xero_payment_id = models.CharField(max_length=255, unique=True)
+    
+    # Relationships
+    invoice_link = models.ForeignKey(
+        'XeroInvoiceLink',
+        on_delete=models.CASCADE,
+        related_name='payments'
+    )
+    batch_payment = models.ForeignKey(
+        'XeroBatchPayment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments'
+    )
+    
+    # Payment Details
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_date = models.DateField()
+    reference = models.CharField(max_length=255, blank=True)
+    account_code = models.CharField(max_length=50)  # Bank account code in Xero
+    
+    # Status
+    status = models.CharField(
+        max_length=50,
+        default='AUTHORISED',
+        choices=[
+            ('AUTHORISED', 'Authorised'),
+            ('DELETED', 'Deleted'),
+        ]
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'xero_payments'
+        ordering = ['-payment_date', '-created_at']
+        indexes = [
+            models.Index(fields=['connection', 'payment_date']),
+            models.Index(fields=['invoice_link']),
+            models.Index(fields=['batch_payment']),
+            models.Index(fields=['xero_payment_id']),
+        ]
+    
+    def __str__(self):
+        return f"Payment {self.xero_payment_id}: ${self.amount}"
+
+
+class XeroBatchPayment(models.Model):
+    """Batch payment record for remittance advice processing"""
+    
+    # Identification
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    connection = models.ForeignKey(
+        XeroConnection,
+        on_delete=models.CASCADE,
+        related_name='batch_payments'
+    )
+    
+    # Batch Details
+    batch_reference = models.CharField(max_length=255)  # e.g., "REM-2025-11-17"
+    payment_date = models.DateField()
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_count = models.IntegerField()  # Number of invoices paid
+    account_code = models.CharField(max_length=50)  # Bank account code
+    
+    # Optional Remittance Details
+    remittance_file = models.FileField(
+        upload_to='remittance_advice/',
+        null=True,
+        blank=True
+    )
+    notes = models.TextField(blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    
+    class Meta:
+        db_table = 'xero_batch_payments'
+        ordering = ['-payment_date', '-created_at']
+        indexes = [
+            models.Index(fields=['connection', 'payment_date']),
+            models.Index(fields=['batch_reference']),
+        ]
+    
+    def __str__(self):
+        return f"Batch {self.batch_reference}: {self.payment_count} payments, ${self.total_amount}"
+

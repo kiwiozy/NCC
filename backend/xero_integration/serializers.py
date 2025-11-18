@@ -9,7 +9,9 @@ from .models import (
     XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
-    XeroSyncLog
+    XeroSyncLog,
+    XeroPayment,
+    XeroBatchPayment
 )
 
 
@@ -216,5 +218,48 @@ class XeroQuoteLinkSerializer(serializers.ModelSerializer):
                 'total': str(obj.converted_invoice.total),
             }
         return None
+
+
+class XeroPaymentSerializer(serializers.ModelSerializer):
+    """Serializer for Xero payments"""
+    invoice_number = serializers.CharField(source='invoice_link.xero_invoice_number', read_only=True)
+    invoice_id = serializers.UUIDField(source='invoice_link.id', read_only=True)
+    batch_reference = serializers.CharField(source='batch_payment.batch_reference', read_only=True, allow_null=True)
+    connection_name = serializers.CharField(source='connection.tenant_name', read_only=True)
+    
+    class Meta:
+        model = XeroPayment
+        fields = [
+            'id', 'connection', 'connection_name', 'xero_payment_id',
+            'invoice_link', 'invoice_number', 'invoice_id',
+            'batch_payment', 'batch_reference',
+            'amount', 'payment_date', 'reference', 'account_code', 'status',
+            'created_at', 'updated_at', 'synced_at'
+        ]
+        read_only_fields = [
+            'id', 'xero_payment_id', 'invoice_number', 'invoice_id',
+            'batch_reference', 'connection_name', 'created_at', 'updated_at', 'synced_at'
+        ]
+
+
+class XeroBatchPaymentSerializer(serializers.ModelSerializer):
+    """Serializer for Xero batch payments"""
+    connection_name = serializers.CharField(source='connection.tenant_name', read_only=True)
+    payments = XeroPaymentSerializer(many=True, read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = XeroBatchPayment
+        fields = [
+            'id', 'connection', 'connection_name',
+            'batch_reference', 'payment_date', 'total_amount', 'payment_count', 'account_code',
+            'remittance_file', 'notes',
+            'payments', 'created_by', 'created_by_username',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'connection_name', 'payments', 'created_by_username',
+            'created_at', 'updated_at'
+        ]
 
 

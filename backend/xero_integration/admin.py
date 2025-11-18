@@ -6,7 +6,9 @@ from .models import (
     XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
-    XeroSyncLog
+    XeroSyncLog,
+    XeroPayment,
+    XeroBatchPayment
 )
 
 
@@ -206,3 +208,80 @@ class XeroSyncLogAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         # Sync logs are read-only
         return False
+
+
+class XeroPaymentInline(admin.TabularInline):
+    """Inline display of payments in batch payment admin"""
+    model = XeroPayment
+    extra = 0
+    can_delete = False
+    fields = ['xero_payment_id', 'invoice_link', 'amount', 'payment_date', 'status']
+    readonly_fields = ['xero_payment_id', 'invoice_link', 'amount', 'payment_date', 'status']
+
+
+@admin.register(XeroPayment)
+class XeroPaymentAdmin(admin.ModelAdmin):
+    list_display = ['xero_payment_id', 'get_invoice_number', 'amount', 'payment_date', 'status', 'get_batch_reference']
+    list_filter = ['status', 'payment_date', 'connection']
+    search_fields = ['xero_payment_id', 'reference', 'invoice_link__xero_invoice_number']
+    readonly_fields = ['id', 'xero_payment_id', 'created_at', 'updated_at', 'synced_at']
+    date_hierarchy = 'payment_date'
+    
+    def get_invoice_number(self, obj):
+        """Display invoice number"""
+        return obj.invoice_link.xero_invoice_number if obj.invoice_link else '—'
+    get_invoice_number.short_description = 'Invoice Number'
+    
+    def get_batch_reference(self, obj):
+        """Display batch reference if part of batch"""
+        return obj.batch_payment.batch_reference if obj.batch_payment else '—'
+    get_batch_reference.short_description = 'Batch Reference'
+    
+    fieldsets = (
+        ('Xero Payment', {
+            'fields': ('connection', 'xero_payment_id', 'status')
+        }),
+        ('Relationships', {
+            'fields': ('invoice_link', 'batch_payment')
+        }),
+        ('Payment Details', {
+            'fields': ('amount', 'payment_date', 'account_code', 'reference')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'synced_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(XeroBatchPayment)
+class XeroBatchPaymentAdmin(admin.ModelAdmin):
+    list_display = ['batch_reference', 'payment_count', 'total_amount', 'payment_date', 'get_connection']
+    list_filter = ['payment_date', 'connection']
+    search_fields = ['batch_reference', 'notes']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+    date_hierarchy = 'payment_date'
+    inlines = [XeroPaymentInline]
+    
+    def get_connection(self, obj):
+        """Display connection tenant name"""
+        return obj.connection.tenant_name if obj.connection else '—'
+    get_connection.short_description = 'Xero Connection'
+    
+    fieldsets = (
+        ('Batch Details', {
+            'fields': ('connection', 'batch_reference', 'payment_date', 'account_code')
+        }),
+        ('Summary', {
+            'fields': ('payment_count', 'total_amount')
+        }),
+        ('Remittance Details', {
+            'fields': ('remittance_file', 'notes'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
