@@ -649,6 +649,13 @@ class DocumentPDFGenerator:
         
         totals_table = Table(totals_data, colWidths=[4*cm, 2.5*cm])
         
+        # Debug: Log the actual data structure
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Side-by-side totals_data: {totals_data}")
+        logger.info(f"Number of rows in totals_data: {len(totals_data)}")
+        logger.info(f"total_row_idx: {total_row_idx}, total_paid_row_idx: {total_paid_row_idx}, amount_owing_row_idx: {amount_owing_row_idx}")
+        
         # Find row indices for styling (no spacer rows)
         total_row_idx = 2 if total_discount == 0 else 3
         total_paid_row_idx = total_row_idx + 1  # No spacer
