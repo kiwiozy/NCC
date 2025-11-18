@@ -463,7 +463,17 @@ export default function BatchPaymentPage() {
                                 fixedDecimalScale
                                 prefix="$"
                                 disabled={!isSelected}
-                                styles={{ input: { width: 120 } }}
+                                w={140}
+                                size="sm"
+                                styles={(theme) => ({
+                                  input: {
+                                    backgroundColor: isSelected 
+                                      ? (theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white)
+                                      : (theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1]),
+                                    fontWeight: 600,
+                                    fontSize: theme.fontSizes.sm,
+                                  }
+                                })}
                               />
                             </Table.Td>
                           </Table.Tr>
