@@ -1438,6 +1438,309 @@ Before we can proceed with implementation, we need answers to:
 
 ---
 
+## Potential Missing Items (Review Needed)
+
+### 1. Header Section Specifications ⚠️
+**Current Status:** Described in text, but no exact measurements
+
+**What's Missing:**
+- Logo dimensions (currently "~4cm × 4cm" - confirm exact size)
+- Header table structure (3 columns: logo, company info, invoice details)
+- Column widths for header (how wide is each column?)
+- Icon sizes in company info section
+- Spacing between header elements
+- "Tax Invoice" heading font size and position
+- Line spacing in address/contact section
+
+**Should we add:**
+```python
+# Header specifications
+HEADER_HEIGHT = 6*cm  # Total header section height
+LOGO_WIDTH = 4*cm
+LOGO_HEIGHT = 4*cm
+COL_HEADER_LOGO = 5*cm
+COL_HEADER_COMPANY = 7*cm
+COL_HEADER_INVOICE = 5*cm
+# Total: 17cm ✓
+```
+
+---
+
+### 2. Patient/Company Details Section ⚠️
+**Current Status:** Layout described, but no exact measurements
+
+**What's Missing:**
+- Section height or row specifications
+- Font sizes (name bold/larger - what size exactly?)
+- Left column width vs right column width
+- Spacing between name and address
+- Practitioner info formatting (italics for "Practitioner:")
+- Background color (if any)
+
+**Should we add:**
+```python
+# Patient/Company section specifications
+FONT_SIZE_PATIENT_NAME = 14  # Bold, larger
+FONT_SIZE_PATIENT_ADDRESS = 10  # Normal
+FONT_SIZE_REFERENCE = 10  # Normal
+FONT_SIZE_PRACTITIONER = 10  # "Practitioner:" in italics
+COL_PATIENT_LEFT = 10*cm
+COL_PATIENT_RIGHT = 7*cm
+# Total: 17cm ✓
+```
+
+---
+
+### 3. Line Items Table Styling Details ⚠️
+**Current Status:** Column widths defined, but styling incomplete
+
+**What's Missing:**
+- Row height for line items (is it fixed or auto?)
+- Padding for header row vs data rows
+- Font size for data rows (header is mentioned, data isn't)
+- Border thickness specifications
+- Alternate row background colors?
+- Text wrapping behavior for long descriptions
+- Vertical alignment (top, middle, bottom?)
+
+**Should we add:**
+```python
+# Line items table styling
+FONT_SIZE_LINE_HEADER = 11  # Blue header row
+FONT_SIZE_LINE_DATA = 10    # Data rows
+PADDING_LINE_HEADER = 8     # Header padding (points)
+PADDING_LINE_DATA = 4       # Data padding (points)
+BORDER_THICKNESS = 0.5      # Table borders (points)
+ROW_HEIGHT_LINE_ITEMS = 0.7*cm  # Fixed or None for auto?
+```
+
+---
+
+### 4. Footer Section Specifications ⚠️
+**Current Status:** Layout described, but no exact measurements
+
+**What's Missing:**
+- Footer bar height
+- Font sizes for different footer elements
+- Payment terms text alignment and size
+- Bank details text size (needs to fit - mentioned earlier)
+- Contact bar padding/height
+- Spacing between footer elements
+- Footer position (fixed distance from bottom?)
+
+**Should we add:**
+```python
+# Footer specifications
+FOOTER_BAR_HEIGHT = 1*cm     # Blue contact bar height
+FOOTER_MARGIN_TOP = 1.5*cm   # Space before footer
+FONT_SIZE_PAYMENT_TERMS = 10 # "Please note..." text
+FONT_SIZE_BANK_DETAILS = 9   # Smaller to fit
+FONT_SIZE_CONTACT_BAR = 10   # White text in blue bar
+FOOTER_PADDING = 6           # Padding inside footer bar (points)
+```
+
+---
+
+### 5. Spacer/Gap Specifications ⚠️
+**Current Status:** Some spacers defined (SMALL/MEDIUM/LARGE), but not all gaps specified
+
+**What's Missing:**
+- Gap between header and patient section
+- Gap between patient section and line items
+- Gap between line items and payment table
+- Gap between payment table and financial summary
+- Gap between financial summary and footer
+- Gap between "Tax Invoice" title and patient section
+
+**Current Spacers:**
+```python
+SPACER_SMALL = 0.3*cm
+SPACER_MEDIUM = 0.5*cm
+SPACER_LARGE = 1.0*cm
+```
+
+**Should we add specific usage:**
+```python
+# Specific spacer usage
+GAP_HEADER_TO_PATIENT = SPACER_MEDIUM       # 0.5cm
+GAP_PATIENT_TO_TITLE = SPACER_SMALL         # 0.3cm
+GAP_TITLE_TO_LINEITEMS = SPACER_MEDIUM      # 0.5cm
+GAP_LINEITEMS_TO_PAYMENTS = SPACER_MEDIUM   # 0.5cm
+GAP_PAYMENTS_TO_TOTALS = SPACER_MEDIUM      # 0.5cm
+GAP_TOTALS_TO_FOOTER = SPACER_LARGE         # 1.0cm (or 1.5cm as mentioned?)
+```
+
+---
+
+### 6. Multi-page Handling ⚠️
+**Current Status:** Not documented
+
+**What's Missing:**
+- How do page breaks work?
+- Does header repeat on page 2+?
+- Does footer appear on every page?
+- How are long line item tables split?
+- Payment table page break behavior
+- Watermark on all pages or just page 1?
+
+**Should we add:**
+```python
+# Multi-page specifications
+HEADER_ON_CONTINUATION_PAGES = True  # or False?
+FOOTER_ON_ALL_PAGES = True           # or False?
+WATERMARK_ON_ALL_PAGES = True        # For receipts
+MAX_LINE_ITEMS_PER_PAGE = None       # Auto or fixed?
+```
+
+---
+
+### 7. Font Weight/Style Specifications ⚠️
+**Current Status:** Some mentions of bold/italics, but not comprehensive
+
+**What's Missing:**
+- Exactly which fields are bold?
+- Exactly which fields are italic?
+- Are labels bold and values normal (or vice versa)?
+- Financial summary labels vs values
+- Patient name vs address formatting
+- Invoice number formatting
+
+**Should we add:**
+```python
+# Font styles
+# Patient section
+FONT_PATIENT_NAME = 'Helvetica-Bold'        # Bold
+FONT_PATIENT_ADDRESS = 'Helvetica'          # Normal
+FONT_REFERENCE_LABEL = 'Helvetica'          # Normal
+FONT_PRACTITIONER_LABEL = 'Helvetica-Oblique'  # Italic "Practitioner:"
+
+# Financial summary
+FONT_TOTALS_LABEL = 'Helvetica'             # Normal (removed bold earlier)
+FONT_TOTALS_VALUE = 'Helvetica'             # Normal (removed bold earlier)
+FONT_TOTALS_TOTAL_ROW = 'Helvetica-Bold'    # TOTAL row bold?
+FONT_TOTALS_AMOUNT_OWING = 'Helvetica-Bold' # Amount Owing bold?
+```
+
+---
+
+### 8. Color Usage Comprehensive List ⚠️
+**Current Status:** Some colors defined, but not all usages documented
+
+**Current Colors:**
+```python
+COLOR_PRIMARY_BLUE = '#4897d2'
+COLOR_GREY_LIGHT = '#f5f5f5'
+COLOR_GREY_BORDER = '#cccccc'
+COLOR_BLACK = '#000000'
+```
+
+**Missing Usage Details:**
+- What gets the blue background? (just headers and footer bar?)
+- What gets the light grey? (Total Paid row, alternate rows?)
+- Border colors for different tables
+- Text colors (all black or some grey?)
+
+---
+
+### 9. Number Formatting Comprehensive Rules ⚠️
+**Current Status:** Problem 11 documents currency alignment, but not all number rules
+
+**What's Missing:**
+- Thousand separators: `1,000.00` or `1000.00`?
+- Zero values: `$ 0.00` or `$     —` or blank?
+- Quantity formatting: `1` or `1.0`?
+- Discount formatting: `0.00%` or `0%` or blank if zero?
+- GST percentage: Show `10%` in GST column or just checkmark/blank?
+
+**Should we add:**
+```python
+# Number formatting rules
+def format_currency(amount):
+    """Format currency with proper alignment"""
+    if amount == 0:
+        return "$  0.00"  # or "$     —" or ""?
+    elif amount < 0:
+        return f"$ -{abs(amount):,.2f}"
+    else:
+        return f"$  {amount:,.2f}"
+
+def format_quantity(qty):
+    """Format quantity"""
+    return f"{qty:.0f}" if qty == int(qty) else f"{qty:.1f}"
+
+def format_discount(pct):
+    """Format discount percentage"""
+    return f"{pct:.2f}%" if pct > 0 else ""  # or "0.00%"?
+
+def format_gst(rate):
+    """Format GST rate"""
+    return f"{rate*100:.0f}%" if rate > 0 else ""
+```
+
+---
+
+### 10. Border/Line Specifications ⚠️
+**Current Status:** Mentions of lines, but not comprehensive
+
+**What's Missing:**
+- Line thickness (0.5pt, 1pt, 1.5pt - where exactly?)
+- Line colors (all black or some blue?)
+- Which tables have borders vs which don't?
+- Grid vs outer borders only?
+- Top/bottom lines vs full grid?
+
+**Should we add:**
+```python
+# Border/Line specifications
+BORDER_THIN = 0.5      # Table grid lines (points)
+BORDER_MEDIUM = 1      # Section separators (points)
+BORDER_THICK = 1.5     # Emphasis lines (points)
+
+# Line usage
+LINE_COLOR_BLACK = colors.black
+LINE_COLOR_BLUE = colors.HexColor('#4897d2')
+
+# Which tables have what borders?
+LINE_ITEMS_TABLE_BORDERS = 'GRID'  # Full grid
+PAYMENT_TABLE_BORDERS = 'GRID'     # Full grid
+TOTALS_TABLE_BORDERS = 'LINES'     # Just horizontal lines above certain rows
+```
+
+---
+
+## Summary of Gaps
+
+### 🔴 **High Priority Missing Items:**
+1. **Header section** - Exact column widths and measurements
+2. **Spacer usage** - Specific gaps between all sections
+3. **Font styles** - Complete bold/italic specifications
+4. **Number formatting** - Comprehensive rules for all number types
+
+### 🟡 **Medium Priority Missing Items:**
+5. **Patient/Company section** - Exact measurements and fonts
+6. **Line items styling** - Complete styling details
+7. **Footer specifications** - Exact measurements
+8. **Multi-page handling** - How page breaks work
+
+### 🟢 **Low Priority Missing Items:**
+9. **Border specifications** - Complete border rules
+10. **Color usage** - Comprehensive list of what gets what color
+
+---
+
+## Recommendation
+
+**Should we add sections for these missing items to make the document truly complete for implementation?**
+
+Your choice:
+1. ✅ **Add all missing specifications** - Make document 100% complete
+2. ⏸️ **Add only critical items** (Header, Spacers, Fonts, Numbers)
+3. 🚫 **Document is good enough** - We can figure out details during implementation
+
+What would you like to do? 🤔
+
+---
+
 ## Next Actions
 
 **Cannot proceed with implementation until we:**
