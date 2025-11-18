@@ -643,18 +643,16 @@ class DocumentPDFGenerator:
         totals_data.extend([
             ['TOTAL GST', f"$ {total_gst:,.2f}"],
             ['TOTAL', f"$ {total:,.2f}"],
-            ['', ''],
             ['Total Paid', f"$ -{amount_paid:,.2f}"],
-            ['', ''],
             ['Amount Owing', f"$ {amount_owing:,.2f}"],
         ])
         
         totals_table = Table(totals_data, colWidths=[4*cm, 2.5*cm])
         
-        # Find row indices for styling
+        # Find row indices for styling (no spacer rows)
         total_row_idx = 2 if total_discount == 0 else 3
-        total_paid_row_idx = total_row_idx + 2
-        amount_owing_row_idx = total_paid_row_idx + 2
+        total_paid_row_idx = total_row_idx + 1  # No spacer
+        amount_owing_row_idx = total_paid_row_idx + 1  # No spacer
         
         totals_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
