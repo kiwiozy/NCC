@@ -13,6 +13,7 @@ router.register(r'quotes', views.XeroQuoteLinkViewSet, basename='xero-quote')
 router.register(r'items', views.XeroItemMappingViewSet, basename='xero-item')
 router.register(r'tracking', views.XeroTrackingCategoryViewSet, basename='xero-tracking')
 router.register(r'logs', views.XeroSyncLogViewSet, basename='xero-log')
+router.register(r'payments', views.XeroPaymentViewSet, basename='xero-payment')
 
 # Don't set app_name here to avoid namespace conflicts
 # app_name = 'xero_integration'

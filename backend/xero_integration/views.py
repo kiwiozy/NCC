@@ -28,7 +28,9 @@ from .models import (
     XeroQuoteLink,
     XeroItemMapping,
     XeroTrackingCategory,
-    XeroSyncLog
+    XeroSyncLog,
+    XeroPayment,
+    XeroBatchPayment
 )
 from .serializers import (
     XeroConnectionSerializer,
@@ -39,7 +41,9 @@ from .serializers import (
     XeroTrackingCategorySerializer,
     XeroSyncLogSerializer,
     CreateInvoiceSerializer,
-    SyncContactSerializer
+    SyncContactSerializer,
+    XeroPaymentSerializer,
+    XeroBatchPaymentSerializer
 )
 from .services import xero_service
 
@@ -1066,5 +1070,292 @@ def delete_xero_invoice(request, xero_invoice_id):
             'detail': str(e),
             'traceback': traceback.format_exc()
         }, status=500)
+
+
+class XeroPaymentViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing Xero payments"""
+    queryset = XeroPayment.objects.all()
+    serializer_class = XeroPaymentSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['invoice_link', 'batch_payment', 'status']
+    
+    def get_queryset(self):
+        """Filter payments by invoice if provided"""
+        queryset = super().get_queryset()
+        invoice_link_id = self.request.query_params.get('invoice_link', None)
+        if invoice_link_id:
+            queryset = queryset.filter(invoice_link_id=invoice_link_id)
+        return queryset.order_by('-payment_date', '-created_at')
+    
+    @action(detail=False, methods=['post'])
+    def create_single_payment(self, request):
+        """
+        Create a payment for a single invoice.
+        
+        Request body:
+        {
+            "invoice_link_id": "uuid",
+            "amount": "100.00",
+            "payment_date": "2025-11-18",
+            "account_code": "090",
+            "reference": "Optional reference"
+        }
+        """
+        logger.info(f"🔵 [create_single_payment] Request data: {request.data}")
+        
+        try:
+            # Validate required fields
+            invoice_link_id = request.data.get('invoice_link_id')
+            amount = request.data.get('amount')
+            payment_date = request.data.get('payment_date')
+            account_code = request.data.get('account_code')
+            reference = request.data.get('reference', '')
+            
+            if not all([invoice_link_id, amount, payment_date, account_code]):
+                return Response({
+                    'error': 'Missing required fields',
+                    'required': ['invoice_link_id', 'amount', 'payment_date', 'account_code']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get invoice link
+            try:
+                invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
+            except XeroInvoiceLink.DoesNotExist:
+                return Response({
+                    'error': f'Invoice link {invoice_link_id} not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Validate invoice status
+            if invoice_link.status not in ['AUTHORISED', 'SUBMITTED']:
+                return Response({
+                    'error': f'Cannot add payment to invoice in {invoice_link.status} status',
+                    'detail': 'Invoice must be AUTHORISED or SUBMITTED'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate amount
+            from decimal import Decimal
+            amount_decimal = Decimal(str(amount))
+            if amount_decimal <= 0:
+                return Response({
+                    'error': 'Payment amount must be greater than 0'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if amount_decimal > invoice_link.amount_due:
+                return Response({
+                    'error': f'Payment amount ${amount_decimal} exceeds amount due ${invoice_link.amount_due}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Parse payment date
+            from datetime import datetime
+            payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            
+            # Create payment in Xero
+            xero_payment = xero_service.create_payment(
+                invoice_id=invoice_link.xero_invoice_id,
+                amount=amount_decimal,
+                payment_date=payment_date_obj,
+                account_code=account_code,
+                reference=reference
+            )
+            
+            # Create payment record in database
+            payment = XeroPayment.objects.create(
+                connection=xero_service.get_active_connection(),
+                xero_payment_id=xero_payment.payment_id,
+                invoice_link=invoice_link,
+                amount=amount_decimal,
+                payment_date=payment_date_obj,
+                account_code=account_code,
+                reference=reference,
+                status='AUTHORISED'
+            )
+            
+            # Update invoice amounts
+            invoice_link.amount_paid = (invoice_link.amount_paid or Decimal('0')) + amount_decimal
+            invoice_link.amount_due = invoice_link.total - invoice_link.amount_paid
+            
+            # Update status if fully paid
+            if invoice_link.amount_due <= 0:
+                invoice_link.status = 'PAID'
+                invoice_link.fully_paid_on_date = payment_date_obj
+            
+            invoice_link.save()
+            
+            logger.info(f"✅ [create_single_payment] Payment created successfully: {payment.id}")
+            
+            return Response({
+                'success': True,
+                'payment': XeroPaymentSerializer(payment).data,
+                'invoice': XeroInvoiceLinkSerializer(invoice_link).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logger.error(f"❌ [create_single_payment] Error: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Failed to create payment',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def create_batch_payment(self, request):
+        """
+        Create a batch payment for multiple invoices (Remittance Advice).
+        
+        Request body:
+        {
+            "batch_reference": "REM-2025-11-18",
+            "payment_date": "2025-11-18",
+            "account_code": "090",
+            "payments": [
+                {
+                    "invoice_link_id": "uuid1",
+                    "amount": "100.00"
+                },
+                {
+                    "invoice_link_id": "uuid2",
+                    "amount": "250.50"
+                }
+            ]
+        }
+        """
+        logger.info(f"🔵 [create_batch_payment] Request data: {request.data}")
+        
+        try:
+            # Validate required fields
+            batch_reference = request.data.get('batch_reference')
+            payment_date = request.data.get('payment_date')
+            account_code = request.data.get('account_code')
+            payments_data = request.data.get('payments', [])
+            
+            if not all([batch_reference, payment_date, account_code]):
+                return Response({
+                    'error': 'Missing required fields',
+                    'required': ['batch_reference', 'payment_date', 'account_code', 'payments']
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not payments_data or len(payments_data) == 0:
+                return Response({
+                    'error': 'At least one payment is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Parse payment date
+            from datetime import datetime
+            from decimal import Decimal
+            payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            
+            # Get all invoice links and validate
+            invoice_links = []
+            payment_amounts = {}
+            total_amount = Decimal('0')
+            
+            for payment_info in payments_data:
+                invoice_link_id = payment_info.get('invoice_link_id')
+                amount = Decimal(str(payment_info.get('amount')))
+                
+                try:
+                    invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
+                except XeroInvoiceLink.DoesNotExist:
+                    return Response({
+                        'error': f'Invoice link {invoice_link_id} not found'
+                    }, status=status.HTTP_404_NOT_FOUND)
+                
+                # Validate invoice status
+                if invoice_link.status not in ['AUTHORISED', 'SUBMITTED']:
+                    return Response({
+                        'error': f'Cannot add payment to invoice {invoice_link.xero_invoice_number} in {invoice_link.status} status'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Validate amount
+                if amount <= 0:
+                    return Response({
+                        'error': f'Payment amount must be greater than 0 for invoice {invoice_link.xero_invoice_number}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                if amount > invoice_link.amount_due:
+                    return Response({
+                        'error': f'Payment amount ${amount} exceeds amount due ${invoice_link.amount_due} for invoice {invoice_link.xero_invoice_number}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                invoice_links.append(invoice_link)
+                payment_amounts[str(invoice_link.id)] = amount
+                total_amount += amount
+            
+            # Verify all invoices belong to same connection
+            connections = set(il.connection_id for il in invoice_links if hasattr(il, 'connection_id'))
+            # Note: XeroInvoiceLink doesn't have connection_id, they all use the same active connection
+            
+            # Prepare payment data for Xero service
+            xero_payments_data = []
+            for invoice_link in invoice_links:
+                xero_payments_data.append({
+                    'invoice_id': invoice_link.xero_invoice_id,
+                    'amount': payment_amounts[str(invoice_link.id)],
+                    'payment_date': payment_date_obj,
+                    'account_code': account_code
+                })
+            
+            # Create batch payment in Xero
+            xero_payments = xero_service.create_batch_payment(
+                payments_data=xero_payments_data,
+                batch_reference=batch_reference
+            )
+            
+            # Create batch payment record
+            connection = xero_service.get_active_connection()
+            batch_payment = XeroBatchPayment.objects.create(
+                connection=connection,
+                batch_reference=batch_reference,
+                payment_date=payment_date_obj,
+                total_amount=total_amount,
+                payment_count=len(xero_payments),
+                account_code=account_code,
+                created_by=request.user if request.user.is_authenticated else None
+            )
+            
+            # Create individual payment records and update invoices
+            created_payments = []
+            for i, xero_payment in enumerate(xero_payments):
+                invoice_link = invoice_links[i]
+                amount = payment_amounts[str(invoice_link.id)]
+                
+                payment = XeroPayment.objects.create(
+                    connection=connection,
+                    xero_payment_id=xero_payment.payment_id,
+                    invoice_link=invoice_link,
+                    batch_payment=batch_payment,
+                    amount=amount,
+                    payment_date=payment_date_obj,
+                    account_code=account_code,
+                    reference=batch_reference,
+                    status='AUTHORISED'
+                )
+                created_payments.append(payment)
+                
+                # Update invoice amounts
+                invoice_link.amount_paid = (invoice_link.amount_paid or Decimal('0')) + amount
+                invoice_link.amount_due = invoice_link.total - invoice_link.amount_paid
+                
+                # Update status if fully paid
+                if invoice_link.amount_due <= 0:
+                    invoice_link.status = 'PAID'
+                    invoice_link.fully_paid_on_date = payment_date_obj
+                
+                invoice_link.save()
+            
+            logger.info(f"✅ [create_batch_payment] Batch payment created successfully: {batch_payment.id}")
+            
+            return Response({
+                'success': True,
+                'batch_payment': XeroBatchPaymentSerializer(batch_payment).data,
+                'payments': XeroPaymentSerializer(created_payments, many=True).data,
+                'updated_invoices': XeroInvoiceLinkSerializer(invoice_links, many=True).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logger.error(f"❌ [create_batch_payment] Error: {str(e)}", exc_info=True)
+            return Response({
+                'error': 'Failed to create batch payment',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
