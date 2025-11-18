@@ -244,6 +244,28 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                     'gst_rate': 0.10 if i % 3 == 0 else 0.0,  # Every 3rd item has GST
                 })
         
+        # Fetch payments from database
+        payments = []
+        try:
+            from xero_integration.models import XeroPayment
+            
+            # Get all payments for this invoice, ordered by date
+            payment_records = XeroPayment.objects.filter(
+                invoice_link=invoice_link,
+                status='AUTHORISED'  # Only show authorised payments
+            ).order_by('payment_date')
+            
+            for payment in payment_records:
+                payments.append({
+                    'date': payment.payment_date,  # Already a date object
+                    'reference': payment.reference or f'Payment {payment.xero_payment_id[:8]}',
+                    'amount': float(payment.amount),
+                })
+            
+            logger.info(f"Found {len(payments)} payment(s) for invoice {invoice_link.xero_invoice_number}")
+        except Exception as e:
+            logger.warning(f"Could not fetch payments: {e}")
+        
         # Prepare invoice data
         invoice_data = {
             'invoice_number': invoice_link.xero_invoice_number,
@@ -257,7 +279,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 'registration': '3454'
             },
             'line_items': line_items,
-            'payments': [],  # TODO: Get from Xero or database
+            'payments': payments,
             'payment_terms_days': 7,
         }
         
