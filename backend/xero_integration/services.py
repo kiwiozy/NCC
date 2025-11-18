@@ -11,7 +11,8 @@ Provides functions for:
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+from decimal import Decimal
 from typing import Optional, Dict, Any, List
 from urllib.parse import urlencode
 
@@ -21,7 +22,7 @@ from xero_python.api_client import ApiClient
 from xero_python.api_client.configuration import Configuration
 from xero_python.api_client.oauth2 import OAuth2Token
 from xero_python.identity import IdentityApi
-from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes, QuoteStatusCodes
+from xero_python.accounting import AccountingApi, Contact, Invoice, LineItem, Contacts, Invoices, Quote, Quotes, QuoteStatusCodes, Payment, Payments, Account
 from xero_python.exceptions import AccountingBadRequestException
 
 logger = logging.getLogger(__name__)
@@ -2089,6 +2090,297 @@ class XeroService:
                 error_message=str(e),
                 duration_ms=duration_ms
             )
+            raise
+
+
+    # ==================== PAYMENT METHODS ====================
+    
+    def create_payment(
+        self,
+        invoice_id: str,
+        amount: Decimal,
+        payment_date: date,
+        account_code: str,
+        reference: str = None
+    ) -> Payment:
+        """
+        Create a payment for a single invoice in Xero.
+        
+        Args:
+            invoice_id: UUID of the invoice in Xero
+            amount: Payment amount
+            payment_date: Date of payment
+            account_code: Bank account code in Xero
+            reference: Optional payment reference
+            
+        Returns:
+            Payment object from Xero
+        """
+        start_time = time.time()
+        logger.info(f"🔵 [create_payment] Creating payment for invoice {invoice_id}: ${amount}")
+        
+        try:
+            # Get API client and tenant
+            api_client = self.get_api_client()
+            accounting_api = AccountingApi(api_client)
+            connection = self.get_active_connection()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
+            # Prepare payment data
+            payment = Payment(
+                invoice=Invoice(invoice_id=invoice_id),
+                account=Account(code=account_code),
+                date=payment_date,
+                amount=float(amount)
+            )
+            
+            if reference:
+                payment.reference = reference
+            
+            # Create payment in Xero
+            payments = Payments(payments=[payment])
+            api_response = accounting_api.create_payments(
+                xero_tenant_id=connection.tenant_id,
+                payments=payments
+            )
+            
+            created_payment = api_response.payments[0] if api_response.payments else None
+            
+            if not created_payment:
+                raise ValueError("No payment returned from Xero API")
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"✅ [create_payment] Payment created successfully in {duration_ms}ms: {created_payment.payment_id}")
+            
+            XeroSyncLog.objects.create(
+                operation_type='payment_create',
+                status='success',
+                local_entity_type='payment',
+                xero_entity_id=created_payment.payment_id,
+                duration_ms=duration_ms,
+                response_data={
+                    'payment_id': created_payment.payment_id,
+                    'amount': float(amount),
+                    'invoice_id': invoice_id
+                }
+            )
+            
+            return created_payment
+            
+        except AccountingBadRequestException as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [create_payment] Xero API error after {duration_ms}ms: {e}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='payment_create',
+                status='failed',
+                local_entity_type='payment',
+                xero_entity_id=invoice_id,
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [create_payment] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='payment_create',
+                status='failed',
+                local_entity_type='payment',
+                error_message=str(e),
+                duration_ms=duration_ms
+            )
+            raise
+    
+    
+    def create_batch_payment(
+        self,
+        payments_data: List[dict],
+        batch_reference: str
+    ) -> List[Payment]:
+        """
+        Create a batch payment for multiple invoices in Xero.
+        
+        Args:
+            payments_data: List of payment dictionaries containing:
+                - invoice_id: UUID of invoice
+                - amount: Payment amount (Decimal)
+                - payment_date: Date of payment
+                - account_code: Bank account code
+            batch_reference: Common reference for all payments (remittance advice number)
+            
+        Returns:
+            List of created Payment objects from Xero
+        """
+        start_time = time.time()
+        logger.info(f"🔵 [create_batch_payment] Creating batch payment '{batch_reference}' with {len(payments_data)} payments")
+        
+        try:
+            # Get API client and tenant
+            api_client = self.get_api_client()
+            accounting_api = AccountingApi(api_client)
+            connection = self.get_active_connection()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
+            # Prepare all payments
+            payment_objects = []
+            total_amount = Decimal('0')
+            
+            for payment_info in payments_data:
+                payment = Payment(
+                    invoice=Invoice(invoice_id=payment_info['invoice_id']),
+                    account=Account(code=payment_info['account_code']),
+                    date=payment_info['payment_date'],
+                    amount=float(payment_info['amount']),
+                    reference=batch_reference
+                )
+                payment_objects.append(payment)
+                total_amount += payment_info['amount']
+            
+            # Create all payments in a single API call
+            payments = Payments(payments=payment_objects)
+            api_response = accounting_api.create_payments(
+                xero_tenant_id=connection.tenant_id,
+                payments=payments
+            )
+            
+            created_payments = api_response.payments if api_response.payments else []
+            
+            if not created_payments:
+                raise ValueError("No payments returned from Xero API")
+            
+            # Log success
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"✅ [create_batch_payment] Batch payment created successfully in {duration_ms}ms: {len(created_payments)} payments, total ${total_amount}")
+            
+            XeroSyncLog.objects.create(
+                operation_type='payment_batch_create',
+                status='success',
+                local_entity_type='batch_payment',
+                duration_ms=duration_ms,
+                response_data={
+                    'batch_reference': batch_reference,
+                    'payment_count': len(created_payments),
+                    'total_amount': float(total_amount)
+                }
+            )
+            
+            return created_payments
+            
+        except AccountingBadRequestException as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [create_batch_payment] Xero API error after {duration_ms}ms: {e}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='payment_batch_create',
+                status='failed',
+                local_entity_type='batch_payment',
+                error_message=str(e),
+                duration_ms=duration_ms,
+                request_data={'batch_reference': batch_reference, 'payment_count': len(payments_data)}
+            )
+            raise
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [create_batch_payment] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            XeroSyncLog.objects.create(
+                operation_type='payment_batch_create',
+                status='failed',
+                local_entity_type='batch_payment',
+                error_message=str(e),
+                duration_ms=duration_ms,
+                request_data={'batch_reference': batch_reference, 'payment_count': len(payments_data)}
+            )
+            raise
+    
+    
+    def get_payment(self, payment_id: str) -> Optional[Payment]:
+        """
+        Retrieve a specific payment from Xero by ID.
+        
+        Args:
+            payment_id: UUID of the payment in Xero
+            
+        Returns:
+            Payment object from Xero or None if not found
+        """
+        start_time = time.time()
+        logger.info(f"🔵 [get_payment] Fetching payment {payment_id}")
+        
+        try:
+            # Get API client and tenant
+            api_client = self.get_api_client()
+            accounting_api = AccountingApi(api_client)
+            connection = self.get_active_connection()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
+            # Get payment from Xero
+            api_response = accounting_api.get_payment(
+                xero_tenant_id=connection.tenant_id,
+                payment_id=payment_id
+            )
+            
+            payment = api_response.payments[0] if api_response.payments else None
+            
+            duration_ms = int((time.time() - start_time) * 1000)
+            
+            if payment:
+                logger.info(f"✅ [get_payment] Payment fetched successfully in {duration_ms}ms")
+            else:
+                logger.warning(f"⚠️ [get_payment] Payment not found after {duration_ms}ms")
+            
+            return payment
+            
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [get_payment] Error after {duration_ms}ms: {str(e)}", exc_info=True)
+            raise
+    
+    
+    def get_payments_for_invoice(self, invoice_id: str) -> List[Payment]:
+        """
+        Retrieve all payments for a specific invoice from Xero.
+        
+        Args:
+            invoice_id: UUID of the invoice in Xero
+            
+        Returns:
+            List of Payment objects from Xero
+        """
+        start_time = time.time()
+        logger.info(f"🔵 [get_payments_for_invoice] Fetching payments for invoice {invoice_id}")
+        
+        try:
+            # Get API client and tenant
+            api_client = self.get_api_client()
+            accounting_api = AccountingApi(api_client)
+            connection = self.get_active_connection()
+            
+            if not connection:
+                raise ValueError("No active Xero connection found")
+            
+            # Get payments from Xero filtered by invoice ID
+            where_clause = f'Invoice.InvoiceID=guid"{invoice_id}"'
+            api_response = accounting_api.get_payments(
+                xero_tenant_id=connection.tenant_id,
+                where=where_clause
+            )
+            
+            payments = api_response.payments if api_response.payments else []
+            
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"✅ [get_payments_for_invoice] Found {len(payments)} payment(s) in {duration_ms}ms")
+            
+            return payments
+            
+        except Exception as e:
+            duration_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"❌ [get_payments_for_invoice] Error after {duration_ms}ms: {str(e)}", exc_info=True)
             raise
 
 
