@@ -542,6 +542,44 @@ export default function XeroInvoicesQuotesPage() {
                         <IconDownload size={16} />
                       </ActionIcon>
                     </Tooltip>
+                    
+                    <Tooltip label="Download V2 PDF (NEW!)">
+                      <ActionIcon
+                        variant="subtle"
+                        color="violet"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/v2/`);
+                            if (!response.ok) throw new Error('Failed to generate V2 PDF');
+                            
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `Invoice_${(item as any).xero_invoice_number}_V2.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            
+                            notifications.show({
+                              title: 'Success',
+                              message: 'V2 PDF downloaded! 🎉',
+                              color: 'violet',
+                            });
+                          } catch (error) {
+                            console.error('V2 PDF Error:', error);
+                            notifications.show({
+                              title: 'Error',
+                              message: 'Failed to generate V2 PDF. Check console for details.',
+                              color: 'red',
+                            });
+                          }
+                        }}
+                      >
+                        <IconDownload size={16} />
+                      </ActionIcon>
+                    </Tooltip>
                   </>
                 )}
                 
