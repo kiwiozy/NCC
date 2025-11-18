@@ -8,7 +8,6 @@ from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .document_pdf_generator import generate_invoice_pdf
-from .document_pdf_generator_v2 import generate_invoice_pdf_v2
 
 logger = logging.getLogger(__name__)
 
@@ -111,10 +110,14 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
     GET /api/invoices/xero/<invoice_link_id>/pdf/
     GET /api/invoices/xero/<invoice_link_id>/pdf/?debug=true  (for layout debugging)
     GET /api/invoices/xero/<invoice_link_id>/pdf/?test_items=20  (test with 20 line items)
+    GET /api/invoices/xero/<invoice_link_id>/pdf/?receipt=true  (generate receipt with PAID watermark)
     """
     try:
         # Check for debug mode
         debug_mode = request.GET.get('debug', 'false').lower() == 'true'
+        
+        # Check for receipt mode (adds PAID watermark)
+        is_receipt = request.GET.get('receipt', 'false').lower() == 'true'
         
         # Check for test items mode
         test_items_count = request.GET.get('test_items', None)
@@ -284,12 +287,14 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'payment_terms_days': 7,
         }
         
-        # Generate PDF
-        pdf_buffer = generate_invoice_pdf(invoice_data, debug=debug_mode)
+        # Generate PDF (with receipt watermark if requested)
+        pdf_buffer = generate_invoice_pdf(invoice_data, debug=debug_mode, is_receipt=is_receipt)
         
         # Return PDF
         response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice_link.xero_invoice_number}.pdf"'
+        # Change filename based on receipt vs invoice
+        filename = f"Receipt_{invoice_link.xero_invoice_number}.pdf" if is_receipt else f"Invoice_{invoice_link.xero_invoice_number}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         return response
         
@@ -301,181 +306,3 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'error': str(e),
             'details': error_details if settings.DEBUG else 'An error occurred'
         }, status=400)
-
-
-@api_view(['GET'])
-def generate_xero_invoice_pdf_v2(request, invoice_link_id):
-    """
-    Generate PDF for a Xero invoice link using V2 generator
-    
-    GET /api/invoices/xero/<invoice_link_id>/pdf/v2/
-    
-    This is the NEW generator with:
-    - Fixed row heights for consistent spacing
-    - Cleaner architecture
-    - Receipt watermark support
-    """
-    try:
-        from xero_integration.models import XeroInvoiceLink, XeroPayment
-        from patients.models import Patient
-        from companies.models import Company
-        from xero_integration.services import XeroService
-        from xero_integration.models import XeroConnection
-        import tempfile
-        import os
-        
-        # Get invoice link
-        try:
-            invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
-        except XeroInvoiceLink.DoesNotExist:
-            return Response({'error': 'Invoice not found'}, status=404)
-        
-        # Build patient_info dict for v2 generator
-        patient_info = {
-            'name': '',
-            'address': '',
-            'city_state': '',
-            'postcode': '',
-            'reference': '',
-            'provider_registration': '4050009706',
-            'practitioner': 'Craig Laird\nCPed CM au\nPedorthric Registration # 3454\nwww.pedorthics.org.au',
-        }
-        
-        # Get patient or company info
-        if invoice_link.company:
-            # Company billing
-            company = invoice_link.company
-            patient_info['name'] = company.name
-            
-            if company.address_json:
-                addr = company.address_json
-                patient_info['address'] = addr.get('street', '')
-                patient_info['city_state'] = f"{addr.get('suburb', '')} {addr.get('state', '')}"
-                patient_info['postcode'] = addr.get('postcode', '')
-            
-            # Add patient reference if exists
-            if invoice_link.patient:
-                patient = invoice_link.patient
-                patient_name = f"{patient.first_name} {patient.last_name}"
-                ndis = patient.health_number if patient.health_number else ''
-                patient_info['reference'] = f"{patient_name}\nNDIS # {ndis}" if ndis else patient_name
-        
-        elif invoice_link.patient:
-            # Patient billing
-            patient = invoice_link.patient
-            patient_info['name'] = f"{patient.title or ''} {patient.first_name} {patient.last_name}".strip()
-            
-            if patient.address_json:
-                addr = patient.address_json
-                patient_info['address'] = addr.get('street', '')
-                patient_info['city_state'] = f"{addr.get('suburb', '')} {addr.get('state', '')}"
-                patient_info['postcode'] = addr.get('postcode', '')
-            
-            if patient.health_number:
-                patient_info['reference'] = f"NDIS # {patient.health_number}"
-        
-        # Fetch line items from Xero
-        line_items = []
-        try:
-            connection = XeroConnection.objects.filter(is_active=True).first()
-            if connection:
-                xero_service = XeroService()
-                xero_invoice = xero_service.get_invoice(invoice_link.xero_invoice_id)
-                
-                if xero_invoice and xero_invoice.line_items:
-                    for item in xero_invoice.line_items:
-                        gst_rate = 0.0
-                        if item.tax_type and ('OUTPUT2' in item.tax_type or 'INPUT2' in item.tax_type):
-                            gst_rate = 0.10
-                        
-                        discount = float(item.discount_rate or 0)
-                        unit_price = float(item.unit_amount or 0)
-                        quantity = int(item.quantity or 1)
-                        
-                        # Calculate amount
-                        subtotal = unit_price * quantity
-                        discount_amount = subtotal * (discount / 100)
-                        amount = subtotal - discount_amount
-                        
-                        line_items.append({
-                            'description': item.description or '',
-                            'quantity': quantity,
-                            'unit_price': unit_price,
-                            'discount': discount,
-                            'gst_rate': gst_rate,
-                            'amount': amount,
-                        })
-        except Exception as e:
-            logger.warning(f"Could not fetch line items from Xero: {e}")
-        
-        # Fallback line item
-        if not line_items:
-            line_items.append({
-                'description': 'Invoice item',
-                'quantity': 1,
-                'unit_price': float(invoice_link.total or 0),
-                'discount': 0,
-                'gst_rate': 0.0,
-                'amount': float(invoice_link.total or 0),
-            })
-        
-        # Fetch payments
-        payments = []
-        payment_records = XeroPayment.objects.filter(
-            invoice_link=invoice_link,
-            status='AUTHORISED'
-        ).order_by('payment_date')
-        
-        for payment in payment_records:
-            payments.append({
-                'date': payment.payment_date,
-                'reference': payment.reference or f'Payment {payment.xero_payment_id[:8]}',
-                'amount': float(payment.amount),
-            })
-        
-        logger.info(f"V2 Generator: Found {len(payments)} payment(s) for invoice {invoice_link.xero_invoice_number}")
-        
-        # Build invoice_data dict for v2 generator
-        invoice_data = {
-            'number': invoice_link.xero_invoice_number,
-            'date': invoice_link.invoice_date or datetime.now(),
-            'due_date': invoice_link.due_date or (datetime.now() + timedelta(days=7)),
-            'subtotal': float(invoice_link.subtotal or 0),
-            'total_gst': float(invoice_link.total_tax or 0),
-            'total': float(invoice_link.total or 0),
-        }
-        
-        # Generate PDF with V2 generator
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-            pdf_path = generate_invoice_pdf_v2(
-                invoice_data=invoice_data,
-                patient_info=patient_info,
-                line_items=line_items,
-                payments=payments if payments else None,
-                filename=tmp_file.name,
-                doc_type='invoice'
-            )
-            
-            # Read the generated PDF
-            with open(pdf_path, 'rb') as pdf_file:
-                pdf_content = pdf_file.read()
-            
-            # Clean up temp file
-            os.unlink(pdf_path)
-        
-        # Return PDF
-        response = HttpResponse(pdf_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice_link.xero_invoice_number}_V2.pdf"'
-        
-        return response
-        
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        logger.error(f"Error generating V2 PDF: {error_details}")
-        return Response({
-            'error': str(e),
-            'details': error_details if settings.DEBUG else 'An error occurred'
-        }, status=500)
-
-

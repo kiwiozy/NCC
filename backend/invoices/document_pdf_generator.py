@@ -45,7 +45,7 @@ class DocumentPDFGenerator:
     ACCOUNT = "222796921"
     PROVIDER_REGISTRATION = "4050009706"
     
-    def __init__(self, document_data, document_type='invoice', debug=False):
+    def __init__(self, document_data, document_type='invoice', debug=False, is_receipt=False):
         """
         Initialize with document data
         
@@ -53,6 +53,7 @@ class DocumentPDFGenerator:
             document_data: Dictionary with document information
             document_type: 'invoice' or 'quote' (default: 'invoice')
             debug: If True, adds red borders around components for debugging
+            is_receipt: If True, adds PAID watermark to document (for receipts)
         
         document_data = {
             # Document number (invoice_number or quote_number)
@@ -97,6 +98,7 @@ class DocumentPDFGenerator:
         self.document_data = document_data
         self.document_type = document_type.lower()
         self.debug = debug
+        self.is_receipt = is_receipt
         self.width, self.height = A4
         self.styles = getSampleStyleSheet()
         
@@ -110,7 +112,8 @@ class DocumentPDFGenerator:
             self.number_label = 'Quote Number'
             self.end_date_label = 'Expiry Date'
         else:  # invoice
-            self.doc_title = 'Tax Invoice'
+            # If it's a receipt, change the title
+            self.doc_title = 'Tax Invoice/Receipt' if is_receipt else 'Tax Invoice'
             self.number_key = 'invoice_number'
             self.date_key = 'invoice_date'
             self.end_date_key = 'due_date'
@@ -295,23 +298,57 @@ class DocumentPDFGenerator:
         
         # Custom canvas that tracks total pages
         class PageCountingCanvas(canvas.Canvas):
-            def __init__(self, *args, **kwargs):
-                canvas.Canvas.__init__(self, *args, **kwargs)
-                self.pages = []
+            def __init__(canvas_self, *args, **kwargs):
+                canvas.Canvas.__init__(canvas_self, *args, **kwargs)
+                canvas_self.pages = []
+                canvas_self.is_receipt = self.is_receipt  # Store receipt flag
             
-            def showPage(self):
-                self.pages.append(dict(self.__dict__))
-                self._startPage()
+            def showPage(canvas_self):
+                canvas_self.pages.append(dict(canvas_self.__dict__))
+                canvas_self._startPage()
             
-            def save(self):
+            def save(canvas_self):
                 # Set total page count
-                total_pages[0] = len(self.pages)
-                # Now draw each page with footer callback
-                for page_dict in self.pages:
-                    self.__dict__.update(page_dict)
-                    add_page_footer(self, doc)
-                    canvas.Canvas.showPage(self)
-                canvas.Canvas.save(self)
+                total_pages[0] = len(canvas_self.pages)
+                # Now draw each page with footer callback (and watermark if receipt)
+                for page_dict in canvas_self.pages:
+                    canvas_self.__dict__.update(page_dict)
+                    add_page_footer(canvas_self, doc)
+                    # Add PAID watermark if this is a receipt
+                    if canvas_self.is_receipt:
+                        canvas_self._add_paid_watermark()
+                    canvas.Canvas.showPage(canvas_self)
+                canvas.Canvas.save(canvas_self)
+            
+            def _add_paid_watermark(canvas_self):
+                """Add PAID watermark to page (for receipts)"""
+                watermark_path = os.path.join(settings.BASE_DIR, 'invoices/assets/Paid.png')
+                if os.path.exists(watermark_path):
+                    # Save state
+                    canvas_self.saveState()
+                    
+                    # Draw watermark in center with 30% opacity
+                    # Center of A4 page: 595/2 = 297.5, 842/2 = 421
+                    watermark_width = 200
+                    watermark_height = 200
+                    x = (595 - watermark_width) / 2
+                    y = (842 - watermark_height) / 2
+                    
+                    # Set opacity (30% = 0.3)
+                    canvas_self.setFillAlpha(0.3)
+                    
+                    # Draw the watermark
+                    canvas_self.drawImage(
+                        watermark_path,
+                        x, y,
+                        width=watermark_width,
+                        height=watermark_height,
+                        preserveAspectRatio=True,
+                        mask='auto'
+                    )
+                    
+                    # Restore state
+                    canvas_self.restoreState()
         
         # Build PDF with custom canvas
         doc.build(story, canvasmaker=PageCountingCanvas)
@@ -924,18 +961,19 @@ class DocumentPDFGenerator:
         return elements
 
 
-def generate_invoice_pdf(invoice_data, debug=False):
+def generate_invoice_pdf(invoice_data, debug=False, is_receipt=False):
     """
     Convenience function to generate invoice PDF
     
     Args:
         invoice_data: Dictionary with invoice data (see DocumentPDFGenerator.__init__)
         debug: Boolean, if True shows red borders around all components for layout debugging
+        is_receipt: Boolean, if True adds PAID watermark to document (for receipts)
     
     Returns:
         BytesIO: PDF file buffer
     """
-    generator = DocumentPDFGenerator(invoice_data, document_type='invoice', debug=debug)
+    generator = DocumentPDFGenerator(invoice_data, document_type='invoice', debug=debug, is_receipt=is_receipt)
     return generator.generate()
 
 
