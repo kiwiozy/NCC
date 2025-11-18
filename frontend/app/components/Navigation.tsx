@@ -31,6 +31,7 @@ import {
   IconLogout,
   IconFileInvoice,
   IconUser,
+  IconCashBanknote,
 } from '@tabler/icons-react';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
@@ -206,6 +207,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconBrandXing size={subIconSize} stroke={1.5} />, label: 'Xero Dashboard', href: '/xero' },
     { icon: <IconUsers size={subIconSize} stroke={1.5} />, label: 'Contacts', href: '/xero/contacts' },
     { icon: <IconFileInvoice size={subIconSize} stroke={1.5} />, label: 'Invoices & Quotes', href: '/xero/invoices-quotes' },
+    { icon: <IconCashBanknote size={subIconSize} stroke={1.5} />, label: 'Batch Payments', href: '/xero/payments/batch' },
     { icon: <IconSettings size={subIconSize} stroke={1.5} />, label: 'Connection Settings', href: '/xero/settings' },
   ];
 
