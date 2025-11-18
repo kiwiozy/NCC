@@ -680,10 +680,20 @@ class DocumentPDFGenerator:
         
         totals_table.setStyle(TableStyle(style_list))
         
-        # Stack vertically: payment table, small spacer, totals table
+        # Stack vertically: payment table, small spacer, totals table (right-aligned)
         elements.append(payment_table)
         elements.append(Spacer(1, 0.3*cm))
-        elements.append(totals_table)
+        
+        # Right-align the totals table by wrapping it in a single-cell table
+        totals_wrapper = Table([[totals_table]], colWidths=[17*cm])
+        totals_wrapper.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'RIGHT'),
+            ('LEFTPADDING', (0, 0), (0, 0), 0),
+            ('RIGHTPADDING', (0, 0), (0, 0), 0),
+            ('TOPPADDING', (0, 0), (0, 0), 0),
+            ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+        ]))
+        elements.append(totals_wrapper)
         
         return elements
     
