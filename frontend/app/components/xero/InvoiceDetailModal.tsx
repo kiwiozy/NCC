@@ -528,8 +528,12 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
                     ))}
                   </Table.Tbody>
                 </Table>
-                <Group justify="space-between" p="xs" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: 4 }}>
-                  <Text fw={600}>Total Paid:</Text>
+                <Group justify="space-between" p="md" style={{ 
+                  backgroundColor: 'var(--mantine-color-dark-6)', 
+                  borderRadius: 4,
+                  marginTop: 8
+                }}>
+                  <Text fw={600} c="dimmed">Total Paid:</Text>
                   <Text fw={700} size="lg" c="green">
                     ${payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toFixed(2)}
                   </Text>
