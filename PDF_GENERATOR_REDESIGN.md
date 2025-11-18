@@ -703,3 +703,212 @@ Once we decide on the above questions, I'll:
 
 **Let's discuss each document type and make these decisions!** 💬
 
+---
+
+## Current Invoice Layout (Reference Image)
+
+Based on the current working invoice (ORC1062), here are the exact layout specifications:
+
+### Header Section
+```
+┌─────────────────────────────────────────────────────────┐
+│ [LOGO]              Walk Easy Pedorthics Australia      │
+│ (left-aligned)      Pty LTD                             │
+│                                                          │
+│                     43 Harrison St, Cardiff, NSW 2285   │ [Invoice Date]
+│                     21 Dowe St, Tamworth, NSW 2285      │ [Invoice Number]
+│                     02 6766 3153                         │ [Due Date]
+│                     info@walkeasy.com.au                │
+│                                                          │
+│                     Tax Invoice                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Layout Details:**
+- Logo: Left-aligned, ~4cm × 4cm
+- Company details: Center column with icons
+- Invoice details: Right-aligned column
+- "Tax Invoice" heading: Centered, below company details
+
+### Patient/Company Details Section
+```
+┌─────────────────────────────────────────────────────────┐
+│ [LEFT COLUMN]                          [RIGHT COLUMN]   │
+│ HealthShare Accounts Payable          Reference / PO#   │
+│ Enable NSW Via email                  [Reference text]  │
+│ Level 5, 1 Reserve Road                                 │
+│ St Leonards NSW 2065                  Provider Reg #    │
+│                                        [Number]          │
+│                                                          │
+│                                        Practitioner:     │
+│                                        [Name]            │
+│                                        [Qualification]   │
+│                                        Registration #    │
+│                                        [Website]         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Layout Details:**
+- Patient/Company name: Left, bold, larger font
+- Address: Left, below name
+- Reference info: Right-aligned
+- Practitioner info: Right-aligned, italicized "Practitioner:"
+
+### Line Items Table
+```
+┌─────────────────────────────────────────────────────────┐
+│ [BLUE HEADER BAR - Color: #4897d2]                     │
+│ Description | Qty | Unit Price | Discount | GST | Amount│
+├─────────────────────────────────────────────────────────┤
+│ Custom      |  1  | $ 2,500.00 |   0.00%  |     |$2,500 │
+│ CMO         |  1  | $ 1,095.00 |   0.00%  |     |$1,095 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Column Widths (approximate for 17cm total):**
+- Description: ~7cm (flexible, can wrap)
+- Qty: ~1.5cm
+- Unit Price: ~2.5cm
+- Discount: ~1.5cm
+- GST: ~1.5cm (shows %, empty if 0%)
+- Amount: ~2.5cm (right-aligned)
+
+**Styling:**
+- Header: Blue background (#4897d2), white text, bold
+- Data rows: Black text, normal weight
+- Row separators: Light grey lines
+- Last row: Thicker bottom border
+
+### Financial Summary (Right-aligned)
+```
+                                    Subtotal        $ 3,595.00
+                                    TOTAL GST       $     0.00
+                                    ─────────────────────────
+                                    TOTAL           $ 3,595.00
+
+                                    Amount Owing    $ 3,595.00
+```
+
+**Layout Details:**
+- Right-aligned on page
+- Column widths: [12cm, 5cm] = 17cm total
+- Labels: Right-aligned in left column
+- Values: Right-aligned in right column
+- Line above TOTAL: Full width of values column
+- Line above Amount Owing: Full width of values column
+- Font: Helvetica, 11pt
+- Spacing: Tight rows (current working version)
+
+**Key Measurements:**
+- Position: Starts ~1-2cm from right margin
+- Label column: Right-aligned text
+- Value column: Right-aligned currency
+
+### Footer Section
+```
+┌─────────────────────────────────────────────────────────┐
+│ Please note this is a 7 Day Account. Due on the [DATE] │
+│                                                         │
+│ EFT | Walk Easy... | BSB: 013287 ACC: 222796921 |...  │
+│ [BLUE BAR - Color: #4897d2]                            │
+│ www.walkeasy.com.au | info@... | A.B.N 63 612 528 971  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Layout Details:**
+- Payment terms: Centered, above footer bar
+- Bank details: Single line, pipe-separated
+- Contact bar: Blue background (#4897d2), white text
+- Website, email, ABN: Centered in blue bar
+
+---
+
+## Design Constants (Code Implementation)
+
+```python
+# Colors
+COLOR_PRIMARY_BLUE = '#4897d2'  # Table headers, footer bar
+COLOR_GREY_LIGHT = '#f5f5f5'    # Alternate row backgrounds (if used)
+COLOR_GREY_BORDER = '#cccccc'   # Table borders
+COLOR_BLACK = '#000000'          # Text
+
+# Fonts
+FONT_FAMILY = 'Helvetica'
+FONT_SIZE_NORMAL = 11
+FONT_SIZE_HEADER = 12
+FONT_SIZE_TITLE = 16
+FONT_SIZE_SMALL = 9
+
+# Spacing
+ROW_HEIGHT = 0.6  # cm - CRITICAL for consistent spacing
+PADDING_MINIMAL = 2  # Minimal padding when row height is fixed
+PADDING_STANDARD = 4
+PADDING_TABLE_HEADER = 8
+
+# Margins
+MARGIN_LEFT = 2  # cm
+MARGIN_RIGHT = 2  # cm
+MARGIN_TOP = 2  # cm
+MARGIN_BOTTOM = 2  # cm
+
+# Table Widths (17cm total usable width)
+WIDTH_FULL = 17  # cm
+WIDTH_PAYMENT_TABLE = 10.5  # cm (for compact payment history)
+WIDTH_TOTALS_TABLE = 17  # cm (full width for financial summary)
+
+# Column widths for line items (must sum to ~17cm)
+COL_DESCRIPTION = 7.0  # cm
+COL_QTY = 1.5  # cm
+COL_UNIT_PRICE = 2.5  # cm
+COL_DISCOUNT = 1.5  # cm
+COL_GST = 1.5  # cm
+COL_AMOUNT = 2.5  # cm
+
+# Column widths for financial summary
+COL_TOTALS_LABEL = 12  # cm
+COL_TOTALS_VALUE = 5  # cm
+
+# Column widths for payment history
+COL_PAYMENT_DATE = 2.5  # cm
+COL_PAYMENT_REF = 5.0  # cm
+COL_PAYMENT_AMOUNT = 3.0  # cm
+```
+
+---
+
+## Implementation Priority
+
+### Phase 1: Fix Existing Invoice with Payments ✅
+1. Implement fixed-height rows (`rowHeights=[ROW_HEIGHT] * len(data)`)
+2. Use Option B: Stacked layout (payment table on top, totals below)
+3. Ensure financial summary uses IDENTICAL code to non-payment invoices
+4. Test and verify spacing consistency
+
+### Phase 2: Receipt Document 🆕
+1. Create receipt template
+2. Add payment method field to database model
+3. Generate receipt number sequence
+4. Test receipt generation
+
+### Phase 3: Quote Enhancements ⚡
+1. Review footer text (validity vs bank details)
+2. Adjust terminology if needed ("Quote Total" vs "Amount Owing")
+3. Optional: Add quote status to PDF
+
+### Phase 4: Documentation & Testing 📋
+1. Update all documentation
+2. Test all 4 document types
+3. Verify consistency across all layouts
+4. Performance testing with multiple line items/payments
+
+---
+
+## Critical Success Factors
+
+1. ✅ **Fixed Row Heights** - This is the KEY to consistent spacing
+2. ✅ **Identical Code Paths** - Financial summary must use same code
+3. ✅ **No Wrapper Complexity** - Keep layouts simple and independent
+4. ✅ **Explicit Styling** - No style inheritance or bleeding
+5. ✅ **Comprehensive Testing** - All document types, all scenarios
+
+
