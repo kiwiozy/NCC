@@ -232,7 +232,8 @@ class DocumentPDFGenerator:
         line_items_elements = self._build_line_items_table()
         for elem in line_items_elements:
             story.append(self._debug_box(elem, "Line Items"))
-        # No spacer - flow directly into totals for consistent tight layout
+        # Negative spacer to pull sections closer together
+        story.append(Spacer(1, -0.2*cm))
         
         # Add payments and totals section (side by side if payments exist)
         if self.document_type == 'invoice' and self.document_data.get('payments'):
