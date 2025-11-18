@@ -245,142 +245,215 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
         onClose={onClose}
         title={
           <Group gap="xs">
-            <Text fw={600}>Invoice Details</Text>
+            <Text fw={700} size="xl">INVOICE</Text>
             {invoice && (
-              <Badge color={STATUS_COLORS[invoice.status] || 'gray'}>
+              <Badge size="lg" color={STATUS_COLORS[invoice.status] || 'gray'}>
                 {invoice.status}
               </Badge>
             )}
           </Group>
         }
-        size="1480px"
+        size="1200px"
+        padding="xl"
       >
       {loading ? (
         <Center p="xl">
           <Loader />
         </Center>
       ) : invoice ? (
-        <Stack gap="md">
-          {/* Invoice Header */}
-          <Paper p="md" withBorder>
-            <Stack gap="xs">
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Invoice Number</Text>
-                <Text fw={600} size="lg">{invoice.xero_invoice_number}</Text>
-              </Group>
-              
-              <Divider />
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Invoice Date</Text>
-                <Text>{invoice.invoice_date ? formatDateOnlyAU(invoice.invoice_date) : '—'}</Text>
-              </Group>
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Due Date</Text>
-                <Text>{invoice.due_date ? formatDateOnlyAU(invoice.due_date) : '—'}</Text>
-              </Group>
-              
-              {invoice.patient_name && (
-                <Group justify="space-between">
-                  <Text size="sm" c="dimmed">Patient</Text>
-                  <Text>{invoice.patient_name}</Text>
+        <Stack gap="xl">
+          {/* Invoice Header - Like a real invoice */}
+          <Paper p="xl" withBorder radius="md" style={{ borderTop: '4px solid #228be6' }}>
+            <Group justify="space-between" align="flex-start">
+              {/* Left: Bill To */}
+              <Stack gap="xs" style={{ flex: 1 }}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Bill To</Text>
+                {invoice.patient_name && (
+                  <Text fw={600} size="lg">{invoice.patient_name}</Text>
+                )}
+                {invoice.company_name && (
+                  <Text fw={500} size="sm" c="dimmed">{invoice.company_name}</Text>
+                )}
+              </Stack>
+
+              {/* Right: Invoice Details */}
+              <Stack gap="xs" style={{ flex: 1 }} align="flex-end">
+                <Group gap="xs" justify="flex-end">
+                  <Text size="sm" c="dimmed">Invoice #</Text>
+                  <Text fw={700} size="xl">{invoice.xero_invoice_number}</Text>
                 </Group>
-              )}
-              
-              {invoice.company_name && (
-                <Group justify="space-between">
-                  <Text size="sm" c="dimmed">Company</Text>
-                  <Text>{invoice.company_name}</Text>
+                <Group gap="xs" justify="flex-end">
+                  <Text size="sm" c="dimmed">Invoice Date:</Text>
+                  <Text fw={500}>{invoice.invoice_date ? formatDateOnlyAU(invoice.invoice_date) : '—'}</Text>
                 </Group>
-              )}
-            </Stack>
+                <Group gap="xs" justify="flex-end">
+                  <Text size="sm" c="dimmed">Due Date:</Text>
+                  <Text fw={500} c={new Date(invoice.due_date || '') < new Date() ? 'red' : undefined}>
+                    {invoice.due_date ? formatDateOnlyAU(invoice.due_date) : '—'}
+                  </Text>
+                </Group>
+              </Stack>
+            </Group>
           </Paper>
 
-          {/* Financial Summary */}
-          <Paper p="md" withBorder>
-            <Stack gap="xs">
-              <Text fw={600} mb="xs">Financial Summary</Text>
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Subtotal</Text>
-                <Text>${parseFloat(invoice.subtotal || '0').toFixed(2)}</Text>
-              </Group>
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Tax</Text>
-                <Text>${parseFloat(invoice.total_tax || '0').toFixed(2)}</Text>
-              </Group>
-              
-              <Divider />
-              
-              <Group justify="space-between">
-                <Text fw={600}>Total</Text>
-                <Text fw={600} size="lg">${parseFloat(invoice.total || '0').toFixed(2)} {invoice.currency}</Text>
-              </Group>
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Amount Paid</Text>
-                <Text c="green">${parseFloat(invoice.amount_paid || '0').toFixed(2)}</Text>
-              </Group>
-              
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Amount Due</Text>
-                <Text c="orange" fw={600}>${parseFloat(invoice.amount_due || '0').toFixed(2)}</Text>
-              </Group>
-            </Stack>
-          </Paper>
+          {/* Line Items Table */}
+          {invoice.line_items && invoice.line_items.length > 0 && (
+            <Paper p="md" withBorder radius="md">
+              <Table highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
+                    <Table.Th style={{ width: '50%' }}>Description</Table.Th>
+                    <Table.Th ta="center">Quantity</Table.Th>
+                    <Table.Th ta="right">Unit Price</Table.Th>
+                    <Table.Th ta="right">Tax</Table.Th>
+                    {invoice.line_items.some((item: any) => item.discount && item.discount > 0) && (
+                      <Table.Th ta="right">Discount</Table.Th>
+                    )}
+                    <Table.Th ta="right">Amount</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {invoice.line_items.map((item: any, index: number) => {
+                    const lineTotal = item.quantity * item.unit_amount;
+                    const discount = item.discount ? (lineTotal * item.discount / 100) : 0;
+                    const afterDiscount = lineTotal - discount;
+                    
+                    return (
+                      <Table.Tr key={index}>
+                        <Table.Td>
+                          <div>
+                            <Text fw={500}>{item.description}</Text>
+                            {item.item_code && (
+                              <Text size="xs" c="dimmed">Code: {item.item_code}</Text>
+                            )}
+                          </div>
+                        </Table.Td>
+                        <Table.Td ta="center">{item.quantity}</Table.Td>
+                        <Table.Td ta="right">${parseFloat(item.unit_amount).toFixed(2)}</Table.Td>
+                        <Table.Td ta="right">
+                          <Text size="sm" c="dimmed">{item.tax_type || '—'}</Text>
+                        </Table.Td>
+                        {invoice.line_items.some((i: any) => i.discount && i.discount > 0) && (
+                          <Table.Td ta="right">
+                            {item.discount > 0 ? (
+                              <Text c="red">{item.discount}%</Text>
+                            ) : '—'}
+                          </Table.Td>
+                        )}
+                        <Table.Td ta="right">
+                          <Text fw={600}>${afterDiscount.toFixed(2)}</Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
+            </Paper>
+          )}
 
-          {/* Actions */}
-          <Group justify="space-between">
+          {/* Financial Summary - Right Aligned Like Invoice */}
+          <Group justify="flex-end">
+            <Paper p="lg" withBorder radius="md" style={{ minWidth: 350 }}>
+              <Stack gap="md">
+                <Group justify="space-between">
+                  <Text c="dimmed">Subtotal</Text>
+                  <Text fw={500}>${parseFloat(invoice.subtotal || '0').toFixed(2)}</Text>
+                </Group>
+                
+                <Group justify="space-between">
+                  <Text c="dimmed">Tax</Text>
+                  <Text fw={500}>${parseFloat(invoice.total_tax || '0').toFixed(2)}</Text>
+                </Group>
+                
+                <Divider />
+                
+                <Group justify="space-between">
+                  <Text fw={700} size="lg">TOTAL</Text>
+                  <Text fw={700} size="xl">${parseFloat(invoice.total || '0').toFixed(2)} {invoice.currency}</Text>
+                </Group>
+                
+                <Divider />
+                
+                <Group justify="space-between">
+                  <Text c="dimmed">Amount Paid</Text>
+                  <Text c="green" fw={600}>${parseFloat(invoice.amount_paid || '0').toFixed(2)}</Text>
+                </Group>
+                
+                <Group justify="space-between">
+                  <Text fw={700} size="lg" c="orange">Amount Due</Text>
+                  <Text fw={700} size="xl" c="orange">${parseFloat(invoice.amount_due || '0').toFixed(2)}</Text>
+                </Group>
+              </Stack>
+            </Paper>
+          </Group>
+
+          {/* Payment History */}
+          {payments.length > 0 && (
+            <Paper p="md" withBorder radius="md">
+              <Stack gap="md">
+                <Text fw={700} size="lg">Payment History</Text>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Date</Table.Th>
+                      <Table.Th ta="right">Amount</Table.Th>
+                      <Table.Th>Reference</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {payments.map((payment) => (
+                      <Table.Tr key={payment.id}>
+                        <Table.Td>{formatDateOnlyAU(payment.payment_date)}</Table.Td>
+                        <Table.Td ta="right">
+                          <Text c="green" fw={600}>
+                            ${parseFloat(payment.amount).toFixed(2)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{payment.reference || '—'}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={payment.status === 'AUTHORISED' ? 'green' : 'gray'} size="sm">
+                            {payment.status}
+                          </Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                <Group justify="space-between" p="xs" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: 4 }}>
+                  <Text fw={600}>Total Paid:</Text>
+                  <Text fw={700} size="lg" c="green">
+                    ${payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toFixed(2)}
+                  </Text>
+                </Group>
+              </Stack>
+            </Paper>
+          )}
+
+          {/* Action Buttons */}
+          <Group justify="space-between" mt="md">
             <Group>
               {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
               {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
                 <Button
+                  size="md"
                   variant="filled"
                   color="teal"
-                  leftSection={<IconCurrencyDollar size={16} />}
+                  leftSection={<IconCurrencyDollar size={18} />}
                   onClick={() => setPaymentModalOpened(true)}
                 >
                   Record Payment
                 </Button>
               )}
               
-              <Button
-                variant="light"
-                leftSection={<IconDownload size={16} />}
-                onClick={handleDownloadPDF}
-                loading={downloadingPDF}
-              >
-                Download PDF
-              </Button>
-              
-              <Button
-                variant="light"
-                color="orange"
-                leftSection={<IconDownload size={16} />}
-                onClick={handleDownloadDebugPDF}
-                loading={downloadingPDF}
-              >
-                Debug Layout
-              </Button>
-              
-              <Button
-                variant="light"
-                leftSection={<IconExternalLink size={16} />}
-                component="a"
-                href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open in Xero
-              </Button>
-              
               {onEdit && invoice.status === 'DRAFT' && (
                 <Button
+                  size="md"
                   variant="light"
                   color="blue"
-                  leftSection={<IconEdit size={16} />}
+                  leftSection={<IconEdit size={18} />}
                   onClick={onEdit}
                 >
                   Edit Invoice
@@ -389,9 +462,10 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
               
               {invoice.status === 'DRAFT' && (
                 <Button
+                  size="md"
                   variant="light"
                   color="red"
-                  leftSection={<IconTrash size={16} />}
+                  leftSection={<IconTrash size={18} />}
                   onClick={() => setDeleteConfirmOpened(true)}
                 >
                   Delete Invoice
@@ -401,60 +475,41 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
             
             <Group>
               <Button
+                size="md"
                 variant="light"
-                leftSection={<IconRefresh size={16} />}
+                leftSection={<IconDownload size={18} />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPDF}
+              >
+                Download PDF
+              </Button>
+              
+              <Button
+                size="md"
+                variant="light"
+                leftSection={<IconExternalLink size={18} />}
+                component="a"
+                href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Xero
+              </Button>
+              
+              <Button
+                size="md"
+                variant="light"
+                leftSection={<IconRefresh size={18} />}
                 onClick={fetchInvoiceDetails}
               >
                 Refresh
               </Button>
-              <Button onClick={onClose}>
+              
+              <Button size="md" onClick={onClose}>
                 Close
               </Button>
             </Group>
           </Group>
-
-          {/* Payment History */}
-          {payments.length > 0 && (
-            <Paper p="md" withBorder>
-              <Stack gap="md">
-                <Text fw={600}>Payment History</Text>
-                <Table>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Date</Table.Th>
-                      <Table.Th>Amount</Table.Th>
-                      <Table.Th>Reference</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {payments.map((payment) => (
-                      <Table.Tr key={payment.id}>
-                        <Table.Td>{formatDateOnlyAU(payment.payment_date)}</Table.Td>
-                        <Table.Td>
-                          <Text c="green" fw={500}>
-                            ${parseFloat(payment.amount).toFixed(2)}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>{payment.reference || '—'}</Table.Td>
-                        <Table.Td>
-                          <Badge color={payment.status === 'AUTHORISED' ? 'green' : 'gray'}>
-                            {payment.status}
-                          </Badge>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-                <Group justify="space-between">
-                  <Text size="sm" fw={500}>Total Paid:</Text>
-                  <Text size="lg" fw={700} c="green">
-                    ${payments.reduce((sum, p) => sum + parseFloat(p.amount), 0).toFixed(2)}
-                  </Text>
-                </Group>
-              </Stack>
-            </Paper>
-          )}
         </Stack>
       ) : (
         <Text c="dimmed">No invoice data available</Text>
