@@ -911,4 +911,275 @@ COL_PAYMENT_AMOUNT = 3.0  # cm
 4. ✅ **Explicit Styling** - No style inheritance or bleeding
 5. ✅ **Comprehensive Testing** - All document types, all scenarios
 
+---
+
+## Outstanding Problems to Solve
+
+### Problem 1: Spacing Inconsistency ❌ **CRITICAL**
+**Status:** UNRESOLVED  
+**Description:** Financial summary row spacing differs between invoices with payments vs without payments  
+**Impact:** Invoices look unprofessional and inconsistent  
+**Root Cause:** Unknown - tried 7+ different fixes without success  
+**Proposed Solution:** Implement fixed row heights (`rowHeights` parameter)  
+**Priority:** 🔴 HIGHEST
+
+---
+
+### Problem 2: Receipt Document Missing 🆕
+**Status:** NOT IMPLEMENTED  
+**Description:** No receipt generation functionality exists  
+**Impact:** Cannot provide payment receipts to patients/companies  
+**Requirements:**
+- Receipt number generation (separate from invoice numbers)
+- Payment details display (date, method, reference, amount)
+- Original invoice information
+- Running balance calculation
+- Thank you message footer
+
+**Design Decisions Needed:**
+1. Receipt numbering: Separate sequence (REC-0001) or use payment ID?
+2. Payment method: Add field to XeroPayment model?
+3. Layout: Standalone or include line items?
+4. Batch payments: One receipt for multiple invoices?
+
+**Priority:** 🟡 MEDIUM
+
+---
+
+### Problem 3: Quote Terminology & Footer 📋
+**Status:** WORKING BUT NEEDS REVIEW  
+**Description:** Quotes currently use invoice terminology and footer  
+**Impact:** Minor - quotes work but might need refinement  
+**Questions:**
+1. Should quotes say "Quote Total" instead of "Amount Owing"?
+2. Should footer show bank details or just validity period?
+3. Should quote status (DRAFT/SENT/ACCEPTED) appear on PDF?
+4. Should footer be different for quotes vs invoices?
+
+**Priority:** 🟢 LOW
+
+---
+
+### Problem 4: Payment Method Tracking 💳
+**Status:** MISSING FROM DATABASE  
+**Description:** No field to store payment method (Credit Card, Bank Transfer, Cash, etc.)  
+**Impact:** Cannot show payment method on receipts or payment history  
+**Solution Required:**
+- Add `payment_method` field to `XeroPayment` model
+- Add payment method to payment recording UI
+- Display payment method in payment history and receipts
+
+**Priority:** 🟡 MEDIUM (Required for receipts)
+
+---
+
+### Problem 5: Receipt Numbering System 🔢
+**Status:** NOT DESIGNED  
+**Description:** Need to decide on receipt numbering approach  
+**Options:**
+1. **Separate sequence:** REC-0001, REC-0002, etc.
+   - Pro: Clear, professional
+   - Con: Need to track separate counter
+   
+2. **Use payment ID:** Receipt #1234 (Xero payment ID)
+   - Pro: Simple, no extra tracking
+   - Con: Numbers don't start at 1, might have gaps
+
+3. **Invoice-based:** ORC1060-R1, ORC1060-R2 (receipt 1, receipt 2 for invoice)
+   - Pro: Links to invoice clearly
+   - Con: Complex if payment covers multiple invoices
+
+**Decision Needed:** Which approach?  
+**Priority:** 🟡 MEDIUM (Required for receipts)
+
+---
+
+### Problem 6: Batch Payment Receipts 📊
+**Status:** NOT DESIGNED  
+**Description:** How to handle receipts for batch payments (one payment covering multiple invoices)?  
+**Scenarios:**
+1. Patient pays $500 covering 3 invoices
+2. Need to show breakdown of payment allocation
+3. Each invoice needs to show payment received
+
+**Questions:**
+1. One receipt showing all invoices?
+2. Multiple receipts (one per invoice)?
+3. How to display payment allocation?
+
+**Priority:** 🟢 LOW (Edge case, can implement later)
+
+---
+
+### Problem 7: PDF Generation Performance ⚡
+**Status:** NOT TESTED AT SCALE  
+**Description:** Unknown performance with large datasets  
+**Concerns:**
+- Invoices with 50+ line items
+- Invoices with 20+ payments
+- Multi-page invoices
+- Concurrent PDF generation
+
+**Testing Needed:**
+- Performance benchmarks
+- Memory usage
+- Page break handling
+- Footer placement on multi-page documents
+
+**Priority:** 🟢 LOW (Optimize after working)
+
+---
+
+### Problem 8: Error Handling & Validation 🛡️
+**Status:** NEEDS REVIEW  
+**Description:** Need robust error handling for PDF generation  
+**Scenarios:**
+- Missing patient/company data
+- Invalid line item data
+- Missing payment information
+- Xero API failures
+- File system errors
+
+**Required:**
+- Graceful error messages
+- Logging for debugging
+- Fallback options
+- User-friendly error display
+
+**Priority:** 🟡 MEDIUM
+
+---
+
+### Problem 9: Email Integration 📧
+**Status:** UNKNOWN  
+**Description:** How do PDFs get sent to patients/companies?  
+**Questions:**
+1. Is there email integration?
+2. Can invoices/quotes/receipts be emailed directly?
+3. Are PDFs attached or linked?
+4. Who triggers the email (manual or automatic)?
+
+**Requirements if needed:**
+- Email templates for each document type
+- Attachment handling
+- Email logging
+- Send confirmation
+
+**Priority:** 🟢 LOW (Not part of PDF generator, but related)
+
+---
+
+### Problem 10: Document Versioning 📝
+**Status:** NOT DESIGNED  
+**Description:** What happens if invoice/quote is regenerated?  
+**Questions:**
+1. Do we keep old PDF versions?
+2. Can patients see history of invoices?
+3. What if line items change after sending?
+4. How to handle corrections/amendments?
+
+**Concerns:**
+- Audit trail requirements
+- Legal compliance
+- Patient confusion if details change
+
+**Priority:** 🟢 LOW (Business logic, not PDF generation)
+
+---
+
+## Decision Log
+
+Document all decisions made during implementation:
+
+### Decision 1: Layout for Invoice with Payments
+**Date:** [PENDING]  
+**Decision:** [Option B: Stacked Layout - RECOMMENDED]  
+**Rationale:** Simple, consistent, no wrapper complexity  
+**Status:** ⏳ AWAITING APPROVAL
+
+### Decision 2: Fixed Row Heights
+**Date:** [PENDING]  
+**Decision:** Use `rowHeights=[0.6*cm] * len(data)` for all tables  
+**Rationale:** Guarantees consistent spacing  
+**Status:** ⏳ AWAITING IMPLEMENTATION
+
+### Decision 3: Receipt Design
+**Date:** [PENDING]  
+**Decision:** [PENDING]  
+**Options:** Standalone vs Mini-invoice  
+**Status:** ⏳ AWAITING DECISION
+
+### Decision 4: Receipt Numbering
+**Date:** [PENDING]  
+**Decision:** [PENDING]  
+**Options:** Separate sequence, Payment ID, or Invoice-based  
+**Status:** ⏳ AWAITING DECISION
+
+### Decision 5: Payment Method Storage
+**Date:** [PENDING]  
+**Decision:** Add `payment_method` CharField to XeroPayment model  
+**Options:** Dropdown (Credit Card/Bank Transfer/Cash/Other)  
+**Status:** ⏳ AWAITING APPROVAL
+
+---
+
+## Questions for User
+
+Before we can proceed with implementation, we need answers to:
+
+### Critical Questions (Block Implementation):
+1. ❓ **Invoice with Payments Layout:** Confirm Option B (Stacked) is acceptable?
+2. ❓ **Receipt Design:** Standalone (just payment info) or include line items?
+3. ❓ **Receipt Numbering:** Which approach do you prefer?
+4. ❓ **Payment Method:** Should we add this to database? What options?
+
+### Important Questions (Can Defer):
+5. ❓ **Quote Footer:** Keep same as invoice or make different?
+6. ❓ **Quote Terminology:** "Amount Owing" or "Quote Total"?
+7. ❓ **Batch Payments:** How should receipts work for batch payments?
+
+### Nice to Have Questions (Future):
+8. ❓ **Email Integration:** Is this planned/needed?
+9. ❓ **Document Versioning:** Keep history of PDF versions?
+10. ❓ **Multi-page Support:** Any special requirements for long invoices?
+
+---
+
+## Next Actions
+
+**Cannot proceed with implementation until we:**
+1. ✋ Answer Critical Questions 1-4
+2. ✋ Confirm layout approach
+3. ✋ Design receipt structure
+4. ✋ Define receipt numbering
+
+**Once decisions are made, we can:**
+1. ✅ Implement fixed row heights (Phase 1)
+2. ✅ Fix invoice with payments spacing
+3. ✅ Test and verify consistency
+4. ✅ Implement receipt generation (Phase 2)
+5. ✅ Test all 4 document types
+
+---
+
+## Summary of Blockers
+
+**🔴 BLOCKING IMPLEMENTATION:**
+- Spacing inconsistency (technical problem - needs fixed row heights)
+- Receipt design decisions (business decision needed)
+- Receipt numbering approach (business decision needed)
+
+**🟡 BLOCKING RECEIPT FEATURE:**
+- Payment method field (database change needed)
+- Receipt layout approval (design decision needed)
+
+**🟢 NON-BLOCKING:**
+- Quote terminology (minor refinement)
+- Batch payments (edge case)
+- Email integration (separate feature)
+
+---
+
+**What problems should we tackle first?** Let's prioritize and solve them systematically! 💪
+
 
