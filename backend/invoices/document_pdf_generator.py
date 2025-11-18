@@ -659,7 +659,8 @@ class DocumentPDFGenerator:
         totals_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica'),  # Labels normal
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),  # Values bold
             ('FONTSIZE', (0, 0), (-1, -1), 11),
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
             ('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black),
@@ -828,7 +829,8 @@ class DocumentPDFGenerator:
         style_list = [
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica'),  # Labels normal
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),  # Values bold
             ('FONTSIZE', (0, 0), (-1, -1), 11),
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Line above TOTAL
         ]
