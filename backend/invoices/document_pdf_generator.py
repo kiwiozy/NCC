@@ -661,6 +661,8 @@ class DocumentPDFGenerator:
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # All normal (no bold)
             ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),
             ('LINEABOVE', (1, total_paid_row_idx), (1, total_paid_row_idx), 1, colors.black),
             ('LINEABOVE', (1, amount_owing_row_idx), (1, amount_owing_row_idx), 1, colors.black),
@@ -830,6 +832,8 @@ class DocumentPDFGenerator:
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),  # All normal (no bold)
             ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced padding
             ('LINEABOVE', (1, total_row_idx), (1, total_row_idx), 1, colors.black),  # Line above TOTAL
         ]
         
