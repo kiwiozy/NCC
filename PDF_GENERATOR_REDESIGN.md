@@ -962,6 +962,87 @@ ReportLab's `TOPPADDING` and `BOTTOMPADDING` expect values in points (1/72 inch)
 
 ## Outstanding Problems to Solve
 
+### Problem 11: Number Alignment & Typography in Financial Summary 🔢
+**Status:** IDENTIFIED  
+**Description:** Decimal points don't align vertically, and font sizes/line lengths are inconsistent  
+**Impact:** Unprofessional appearance, hard to read financial information  
+
+**Specific Issues:**
+
+1. **Number Alignment:**
+   - Decimal points don't align vertically in amount column
+   - Negative sign in "$ -3.00" breaks alignment
+   - All numbers should align on the decimal point
+
+2. **Font Size Inconsistency:**
+   - **Image 2 (Incorrect):** 8pt font ❌ - Too small
+   - **Image 3 (Correct):** 11pt font ✅ - Should be standard
+
+3. **Line Length:**
+   - **Image 4:** Lines should be **30mm (3cm) long** ✅
+   - Lines above TOTAL GST, TOTAL, Total Paid, Amount Owing
+
+**Correct Specification:**
+```
+Financial Summary Table:
+- Font size: 11pt (not 8pt!)
+- Font family: Helvetica
+- Number alignment: Right-aligned with decimal points aligned
+- Line length: 30mm (3cm) above values
+- Line position: Above TOTAL GST, TOTAL, Total Paid, Amount Owing
+
+Example (correct):
+Subtotal          $  5.00   ← 11pt, right-aligned
+TOTAL GST         $  0.00   ← 11pt, decimal aligns
+                  ─────────  ← 30mm line
+TOTAL             $  5.00   ← 11pt, decimal aligns
+                  ─────────  ← 30mm line
+Total Paid        $ -3.00   ← 11pt, decimal aligns (negative doesn't break alignment)
+                  ─────────  ← 30mm line
+Amount Owing      $  2.00   ← 11pt, decimal aligns
+```
+
+**Solution Required:**
+1. Use fixed-width formatting for numbers
+2. Ensure font size is 11pt consistently
+3. Set line length to exactly 3cm (30mm)
+4. Use proper right-alignment with decimal point alignment
+5. Format negative numbers consistently: `$ -3.00` with proper spacing
+
+**Code Implementation:**
+```python
+from reportlab.lib.units import cm, mm
+
+# Font size
+FONT_SIZE_TOTALS = 11  # Must be 11pt, not 8pt!
+
+# Line length
+LINE_LENGTH_TOTALS = 30*mm  # 3cm exactly
+
+# Number formatting
+def format_currency(amount):
+    """Format currency with proper alignment"""
+    if amount < 0:
+        return f"$ -{abs(amount):,.2f}"  # $ -3.00
+    else:
+        return f"$  {amount:,.2f}"       # $  5.00 (extra space for alignment)
+
+# Table styling
+totals_table.setStyle(TableStyle([
+    ('FONTSIZE', (0, 0), (-1, -1), 11),  # 11pt font!
+    ('ALIGN', (1, 0), (1, -1), 'RIGHT'),  # Right-align numbers
+    # Lines exactly 30mm (3cm) long
+    ('LINEABOVE', (1, total_gst_row), (1, total_gst_row), 1, colors.black),  # 3cm line
+    ('LINEABOVE', (1, total_row), (1, total_row), 1, colors.black),          # 3cm line
+    ('LINEABOVE', (1, total_paid_row), (1, total_paid_row), 1, colors.black), # 3cm line
+    ('LINEABOVE', (1, amount_owing_row), (1, amount_owing_row), 1, colors.black), # 3cm line
+]))
+```
+
+**Priority:** 🟡 MEDIUM (Visual quality and professional appearance)
+
+---
+
 ### Problem 1: Spacing Inconsistency ❌ **CRITICAL**
 **Status:** UNRESOLVED  
 **Description:** Financial summary row spacing differs between invoices with payments vs without payments  
