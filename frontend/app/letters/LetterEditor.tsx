@@ -4,9 +4,9 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Extension } from '@tiptap/core';
-import TextStyle from '@tiptap/extension-text-style';
-import FontFamily from '@tiptap/extension-font-family';
-import Color from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { FontFamily } from '@tiptap/extension-font-family';
+import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
@@ -55,9 +55,8 @@ function LetterPage({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Exclude underline and link from StarterKit to use our custom configurations
-        underline: false,
-        link: false, // Exclude link since StarterKit v3.0+ includes it by default
+        // Exclude history to prevent duplicate extension warning
+        history: false,
       }),
       TextStyle, // Must come before FontFamily and FontSize
       FontFamily.configure({
