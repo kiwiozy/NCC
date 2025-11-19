@@ -42,6 +42,8 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [useGenerator, setUseGenerator] = useState(true);  // NEW: Toggle for generator
+  const [showReconnectModal, setShowReconnectModal] = useState(false);
+  const [reconnectEmail, setReconnectEmail] = useState('');
   
   const [emailForm, setEmailForm] = useState({
     to: '',
@@ -223,6 +225,13 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.error || errorJson.detail || errorMessage;
+          
+          // Check if it's a token error
+          if (errorMessage.includes('No refresh token') || errorMessage.includes('reconnect')) {
+            setReconnectEmail(emailForm.fromEmail);
+            setShowReconnectModal(true);
+            return; // Don't show the error notification
+          }
         } catch (e) {
           errorMessage = errorText.substring(0, 200);
         }
@@ -245,8 +254,42 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
     }
   };
 
+  const handleReconnectGmail = () => {
+    // Navigate to Gmail settings
+    window.location.href = '/settings?tab=email-templates';
+  };
+
   return (
-    <Modal
+    <>
+      {/* Reconnect Gmail Modal */}
+      <Modal
+        opened={showReconnectModal}
+        onClose={() => setShowReconnectModal(false)}
+        title="Gmail Connection Required"
+        size="md"
+      >
+        <Stack gap="md">
+          <Alert color="yellow" icon={<IconInfoCircle size={16} />}>
+            The Gmail connection for <strong>{reconnectEmail}</strong> needs to be reconnected.
+          </Alert>
+          
+          <Text size="sm">
+            The OAuth token has expired or is invalid. Please reconnect this Gmail account to continue sending emails.
+          </Text>
+          
+          <Group justify="flex-end" mt="md">
+            <Button variant="subtle" onClick={() => setShowReconnectModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReconnectGmail}>
+              Go to Gmail Settings
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Main Email Modal */}
+      <Modal
       opened={opened}
       onClose={onClose}
       title={`Email ${type.charAt(0).toUpperCase() + type.slice(1)}`}
@@ -387,6 +430,7 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         </Stack>
       )}
     </Modal>
+    </>
   );
 }
 
