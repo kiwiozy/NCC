@@ -313,11 +313,15 @@ export default function UserProfiles() {
       
       const method = editingClinician ? 'PUT' : 'POST';
 
+      // Get CSRF token for POST/PUT requests
+      const csrfToken = await getCsrfToken();
+
       const response = await fetch(url, {
         method,
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify(payload),
       });
