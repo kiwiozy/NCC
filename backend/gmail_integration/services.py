@@ -414,8 +414,9 @@ class GmailService:
         try:
             import requests
             
-            # Append email signature to HTML body
-            body_html_with_signature = self._append_signature_to_body(body_html)
+            # Note: Email signature is now handled by EmailGenerator
+            # No need to append signature here as it's already in body_html
+            body_html_with_signature = body_html
             
             # Create MIME message structure
             # For emails with attachments, use 'mixed' and nest 'alternative' inside
