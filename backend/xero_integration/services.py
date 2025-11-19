@@ -747,12 +747,14 @@ class XeroService:
         billing_notes: str = '',
         invoice_date=None,
         due_date=None,
-        send_immediately: bool = False
+        send_immediately: bool = False,
+        clinician=None
     ) -> XeroInvoiceLink:
         """
         Create an invoice in Xero
         Updated Nov 2025: Supports standalone invoices without appointments
         Updated Nov 2025: Added send_immediately option to bypass DRAFT
+        Updated Nov 2025: Added clinician parameter for signature attribution
         
         Args:
             appointment: Optional appointment link
@@ -765,6 +767,7 @@ class XeroService:
             invoice_date: Invoice date (defaults to today)
             due_date: Due date (defaults to 7 days from invoice date)
             send_immediately: If True, creates as AUTHORISED; if False, creates as DRAFT
+            clinician: Clinician who created/sent this invoice (for email signature)
             contact_type: 'patient' or 'company' (who is primary contact)
             line_items: List of line item dicts
             tracking_category: Optional tracking category
@@ -902,11 +905,12 @@ class XeroService:
             
             xero_invoice = response.invoices[0]
             
-            # Create link with patient and company
+            # Create link with patient, company, and clinician
             link = XeroInvoiceLink.objects.create(
                 appointment=appointment,
                 patient=patient,
                 company=company,
+                clinician=clinician,
                 xero_invoice_id=xero_invoice.invoice_id,
                 xero_invoice_number=xero_invoice.invoice_number or '',
                 status=xero_invoice.status,
