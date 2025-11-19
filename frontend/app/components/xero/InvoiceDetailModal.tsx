@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 import { PaymentModal } from './PaymentModal';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface InvoiceDetailModalProps {
   opened: boolean;
@@ -120,8 +121,13 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
     
     setDeleting(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero/invoices/${invoice.xero_invoice_id}/delete/`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       if (!response.ok) {

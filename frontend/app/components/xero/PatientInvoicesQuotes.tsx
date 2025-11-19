@@ -11,6 +11,7 @@ import { CreateQuoteModal } from './CreateQuoteModal';
 import { EditInvoiceModal } from './EditInvoiceModal';
 import { PatientBillingWizard } from './PatientBillingWizard';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface XeroInvoiceLink {
   id: string;
@@ -165,8 +166,13 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     
     setDeleting(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${itemToDelete.id}/`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       if (!response.ok) {
@@ -215,8 +221,13 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     
     setDeleting(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${itemToDelete.id}/`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       if (!response.ok) throw new Error('Failed to delete quote');
@@ -244,8 +255,13 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
 
   const handleAuthorizeInvoice = async (invoiceId: string) => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/authorize/`, {
         method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       if (!response.ok) {
@@ -272,8 +288,13 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
 
   const handleAuthorizeQuote = async (quoteId: string) => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/authorize/`, {
         method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       if (!response.ok) {
@@ -300,8 +321,13 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
 
   const handleConvertQuoteToInvoice = async (quoteId: string) => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
         method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       if (!response.ok) {

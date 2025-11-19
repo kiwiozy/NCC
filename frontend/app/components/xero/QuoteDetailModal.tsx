@@ -5,6 +5,7 @@ import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconFileInvoice } f
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface QuoteDetailModalProps {
   opened: boolean;
@@ -107,8 +108,13 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
     
     setConverting(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
         method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       if (!response.ok) {
