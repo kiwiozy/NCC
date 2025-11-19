@@ -152,35 +152,12 @@ export default function UserProfiles() {
   const [uploadingSignature, setUploadingSignature] = useState(false);
   const resetButtonRef = useRef<() => void>(null);
 
-  // HTML signature editor
-  const htmlSignatureEditor = useEditor({
-    extensions: [
-      StarterKit, // Already includes Link, Bold, Italic, Strike, Code, etc.
-      Link, // From @mantine/tiptap
-      Superscript,
-      SubScript,
-      Highlight,
-      TextStyle,
-      Color,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    ],
-    content: formSignatureHtml,
-    immediatelyRender: false, // Fix SSR/hydration issues with Next.js
-    onUpdate: ({ editor }) => {
-      setFormSignatureHtml(editor.getHTML());
-    },
-  });
+  // NO RICH TEXT EDITOR - using raw HTML textarea only
 
   useEffect(() => {
     fetchClinicians();
     fetchUsers();
   }, []);
-
-  useEffect(() => {
-    if (htmlSignatureEditor && formSignatureHtml !== htmlSignatureEditor.getHTML()) {
-      htmlSignatureEditor.commands.setContent(formSignatureHtml);
-    }
-  }, [formSignatureHtml, htmlSignatureEditor]);
 
   const fetchClinicians = async () => {
     setLoading(true);
@@ -258,9 +235,6 @@ export default function UserProfiles() {
     setFormSignatureHtml('');
     setSignatureImagePreview(null);
     setFormSignatureImage(null);
-    if (htmlSignatureEditor) {
-      htmlSignatureEditor.commands.setContent('');
-    }
   };
 
   const handleSignatureImageSelect = (file: File | null) => {
@@ -893,9 +867,6 @@ export default function UserProfiles() {
                             const rawHtml = e.target?.result as string;
                             const cleanedHtml = cleanHtmlSignature(rawHtml);
                             setFormSignatureHtml(cleanedHtml);
-                            if (htmlSignatureEditor) {
-                              htmlSignatureEditor.commands.setContent(cleanedHtml);
-                            }
                           };
                           reader.readAsText(file);
                         }
@@ -988,62 +959,6 @@ export default function UserProfiles() {
                     </details>
                   </Box>
                 </>
-              )}
-
-              {/* Rich Text Editor - Optional */}
-              {htmlSignatureEditor && (
-                <Box>
-                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                    Or Use Visual Editor
-                  </Text>
-                  <RichTextEditor editor={htmlSignatureEditor}>
-                    <RichTextEditor.Toolbar sticky stickyOffset={60}>
-                      <RichTextEditor.ControlsGroup>
-                        <RichTextEditor.Bold />
-                        <RichTextEditor.Italic />
-                        <RichTextEditor.Underline />
-                        <RichTextEditor.Strikethrough />
-                        <RichTextEditor.ClearFormatting />
-                        <RichTextEditor.Highlight />
-                        <RichTextEditor.Code />
-                      </RichTextEditor.ControlsGroup>
-
-                      <RichTextEditor.ControlsGroup>
-                        <RichTextEditor.H1 />
-                        <RichTextEditor.H2 />
-                        <RichTextEditor.H3 />
-                        <RichTextEditor.H4 />
-                      </RichTextEditor.ControlsGroup>
-
-                      <RichTextEditor.ControlsGroup>
-                        <RichTextEditor.Blockquote />
-                        <RichTextEditor.Hr />
-                        <RichTextEditor.BulletList />
-                        <RichTextEditor.OrderedList />
-                        <RichTextEditor.Subscript />
-                        <RichTextEditor.Superscript />
-                      </RichTextEditor.ControlsGroup>
-
-                      <RichTextEditor.ControlsGroup>
-                        <RichTextEditor.Link />
-                        <RichTextEditor.Unlink />
-                      </RichTextEditor.ControlsGroup>
-
-                      <RichTextEditor.ControlsGroup>
-                        <RichTextEditor.AlignLeft />
-                        <RichTextEditor.AlignCenter />
-                        <RichTextEditor.AlignJustify />
-                        <RichTextEditor.AlignRight />
-                      </RichTextEditor.ControlsGroup>
-                    </RichTextEditor.Toolbar>
-
-                    <RichTextEditor.Content style={{ minHeight: rem(250), fontSize: 14 }} />
-                  </RichTextEditor>
-                  
-                  <Text size="xs" c="dimmed" mt="xs">
-                    Tip: Changes here sync with the HTML code above.
-                  </Text>
-                </Box>
               )}
             </Stack>
           </Tabs.Panel>
