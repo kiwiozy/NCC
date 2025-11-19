@@ -839,49 +839,58 @@ export default function UserProfiles() {
                 </Text>
               </Box>
 
-              <RichTextEditor editor={htmlSignatureEditor}>
-                <RichTextEditor.Toolbar sticky stickyOffset={60}>
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Bold />
-                    <RichTextEditor.Italic />
-                    <RichTextEditor.Underline />
-                    <RichTextEditor.Strikethrough />
-                    <RichTextEditor.ClearFormatting />
-                    <RichTextEditor.Highlight />
-                    <RichTextEditor.Code />
-                  </RichTextEditor.ControlsGroup>
+              {htmlSignatureEditor ? (
+                <Box>
+                  <RichTextEditor editor={htmlSignatureEditor}>
+                    <RichTextEditor.Toolbar sticky stickyOffset={60}>
+                      <RichTextEditor.ControlsGroup>
+                        <RichTextEditor.Bold />
+                        <RichTextEditor.Italic />
+                        <RichTextEditor.Underline />
+                        <RichTextEditor.Strikethrough />
+                        <RichTextEditor.ClearFormatting />
+                        <RichTextEditor.Highlight />
+                        <RichTextEditor.Code />
+                      </RichTextEditor.ControlsGroup>
 
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.H1 />
-                    <RichTextEditor.H2 />
-                    <RichTextEditor.H3 />
-                    <RichTextEditor.H4 />
-                  </RichTextEditor.ControlsGroup>
+                      <RichTextEditor.ControlsGroup>
+                        <RichTextEditor.H1 />
+                        <RichTextEditor.H2 />
+                        <RichTextEditor.H3 />
+                        <RichTextEditor.H4 />
+                      </RichTextEditor.ControlsGroup>
 
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Blockquote />
-                    <RichTextEditor.Hr />
-                    <RichTextEditor.BulletList />
-                    <RichTextEditor.OrderedList />
-                    <RichTextEditor.Subscript />
-                    <RichTextEditor.Superscript />
-                  </RichTextEditor.ControlsGroup>
+                      <RichTextEditor.ControlsGroup>
+                        <RichTextEditor.Blockquote />
+                        <RichTextEditor.Hr />
+                        <RichTextEditor.BulletList />
+                        <RichTextEditor.OrderedList />
+                        <RichTextEditor.Subscript />
+                        <RichTextEditor.Superscript />
+                      </RichTextEditor.ControlsGroup>
 
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Link />
-                    <RichTextEditor.Unlink />
-                  </RichTextEditor.ControlsGroup>
+                      <RichTextEditor.ControlsGroup>
+                        <RichTextEditor.Link />
+                        <RichTextEditor.Unlink />
+                      </RichTextEditor.ControlsGroup>
 
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.AlignLeft />
-                    <RichTextEditor.AlignCenter />
-                    <RichTextEditor.AlignJustify />
-                    <RichTextEditor.AlignRight />
-                  </RichTextEditor.ControlsGroup>
-                </RichTextEditor.Toolbar>
+                      <RichTextEditor.ControlsGroup>
+                        <RichTextEditor.AlignLeft />
+                        <RichTextEditor.AlignCenter />
+                        <RichTextEditor.AlignJustify />
+                        <RichTextEditor.AlignRight />
+                      </RichTextEditor.ControlsGroup>
+                    </RichTextEditor.Toolbar>
 
-                <RichTextEditor.Content style={{ minHeight: rem(250) }} />
-              </RichTextEditor>
+                    <RichTextEditor.Content style={{ minHeight: rem(250), fontSize: 14 }} />
+                  </RichTextEditor>
+                </Box>
+              ) : (
+                <Box style={{ textAlign: 'center', padding: '40px' }}>
+                  <Loader size="md" />
+                  <Text size="sm" c="dimmed" mt="md">Loading editor...</Text>
+                </Box>
+              )}
 
               {formSignatureHtml && (
                 <Box>
