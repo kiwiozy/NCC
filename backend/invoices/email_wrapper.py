@@ -81,8 +81,6 @@ def wrap_email_html(
                 '''
             else:
                 logger.info("→ No signature available")
-            else:
-                logger.warning("No signature available (neither clinician nor company)")
         else:
             logger.info("Email signatures disabled in settings")
     except Exception as e:
