@@ -291,8 +291,11 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
       from: emailForm.fromEmail,
     }));
     
-    // Redirect to Gmail OAuth flow
-    window.location.href = 'https://localhost:8000/gmail/oauth/connect/';
+    // Get current page URL to return to
+    const returnUrl = encodeURIComponent(window.location.href);
+    
+    // Redirect to Gmail OAuth flow with return URL
+    window.location.href = `https://localhost:8000/gmail/oauth/connect/?return_url=${returnUrl}`;
   };
 
   return (

@@ -30,8 +30,15 @@ def gmail_connect(request):
     """
     Start OAuth2 authorization flow
     Redirects user to Google login
+    
+    Optional query params:
+    - return_url: Where to redirect after successful OAuth
     """
     try:
+        # Store return URL in session so we can use it after OAuth callback
+        return_url = request.GET.get('return_url', 'https://localhost:3000/')
+        request.session['gmail_oauth_return_url'] = return_url
+        
         auth_url = gmail_service.get_authorization_url(state='nexus-clinic')
         return redirect(auth_url)
     except Exception as e:
@@ -50,26 +57,37 @@ def gmail_callback(request):
     code = request.GET.get('code')
     error = request.GET.get('error')
     
+    # Get return URL from session (set in gmail_connect)
+    return_url = request.session.get('gmail_oauth_return_url', 'https://localhost:3000/')
+    
     print(f"Gmail Callback - Code: {code[:20] if code else None}...")
     print(f"Gmail Callback - Error: {error}")
+    print(f"Gmail Callback - Return URL: {return_url}")
     
     if error:
         error_desc = request.GET.get('error_description', '')
         print(f"OAuth Error: {error} - {error_desc}")
-        return redirect(f'https://localhost:3000/settings?tab=gmail&status=error&message={error}')
+        # Append error status to return URL
+        separator = '&' if '?' in return_url else '?'
+        return redirect(f'{return_url}{separator}status=error&message={error}')
     
     if not code:
         print("No authorization code provided")
-        return redirect(f'https://localhost:3000/settings?tab=gmail&status=error&message=No+authorization+code')
+        separator = '&' if '?' in return_url else '?'
+        return redirect(f'{return_url}{separator}status=error&message=No+authorization+code')
     
     try:
         print("Attempting to exchange code for token...")
         connection = gmail_service.exchange_code_for_token(code)
         print(f"✓ Connection created: {connection.email_address}")
         
-        # Redirect to frontend with success (using HTTPS)
-        # Add success=true parameter to show notification
-        return redirect(f'https://localhost:3000/?gmail_added={connection.email_address}')
+        # Clear the return URL from session
+        if 'gmail_oauth_return_url' in request.session:
+            del request.session['gmail_oauth_return_url']
+        
+        # Redirect to the stored return URL with success status
+        separator = '&' if '?' in return_url else '?'
+        return redirect(f'{return_url}{separator}status=connected&email={connection.email_address}')
         
     except Exception as e:
         print(f"✗ Error in callback: {str(e)}")
