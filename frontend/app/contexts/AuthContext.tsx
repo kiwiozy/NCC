@@ -9,6 +9,8 @@ interface AuthContextType {
   user: { username: string; email: string } | null;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  isFirstLogin: boolean;
+  setIsFirstLogin: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,10 +19,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<{ username: string; email: string } | null>(null);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   const checkAuth = async () => {
+    // Don't check auth if we're in the middle of logging out
+    if (isLoggingOut) {
+      console.log('🔐 [AuthContext] Skipping checkAuth during logout');
+      return;
+    }
+    
     try {
       const response = await fetch('https://localhost:8000/api/auth/user/', {
         credentials: 'include',
@@ -37,6 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: data.username || data.email || 'User',
             email: data.email || '',
           });
+          
+          // Check if this is first login (only show welcome once)
+          const hasSeenWelcome = localStorage.getItem('has_completed_welcome');
+          if (!hasSeenWelcome && data.email) {
+            setIsFirstLogin(true);
+          }
         } else {
           setIsAuthenticated(false);
           setUser(null);
@@ -59,38 +75,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    console.log('🔐 [AuthContext] Logout initiated');
+    
+    // Set logging out flag to prevent checkAuth from running
+    setIsLoggingOut(true);
+    
     // Clear local state immediately to prevent UI from showing logged-in state
     setIsAuthenticated(false);
     setUser(null);
+    setIsFirstLogin(false);
     
-    try {
-      const response = await fetch('https://localhost:8000/api/auth/logout/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // If backend returns a redirect URL, use it
-        if (data.location) {
-          window.location.href = data.location;
-          return;
-        }
-      } else {
-        console.warn('⚠️ [AuthContext] Logout response not OK:', response.status);
-      }
-    } catch (error) {
-      console.error('❌ [AuthContext] Logout failed:', error);
-    }
+    // Clear any stored flags
+    localStorage.removeItem('has_completed_welcome');
+    localStorage.removeItem('gmail_default_connection');
     
-    // Always redirect to login, even if logout request fails
-    // Use a small delay to ensure session is cleared on backend
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 200);
+    // Call backend logout (but don't wait for it - redirect immediately)
+    fetch('https://localhost:8000/api/auth/logout/', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+      },
+    }).catch((error) => {
+      console.error('❌ [AuthContext] Logout backend call failed (but continuing with redirect):', error);
+    });
+    
+    // Redirect immediately to login page
+    console.log('🔄 [AuthContext] Redirecting to /login immediately');
+    window.location.href = '/login';
   };
 
   useEffect(() => {
@@ -128,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         logout,
         checkAuth,
+        isFirstLogin,
+        setIsFirstLogin,
       }}
     >
       {children}

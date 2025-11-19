@@ -352,10 +352,10 @@ export default function Navigation({ children }: NavigationProps) {
             ))}
           </Group>
 
-          {/* Right Section: User Menu, Dark Mode Toggle and Close */}
+          {/* Right Section: User Menu / Sign In and Dark Mode Toggle */}
           <Group gap="md" style={{ position: 'absolute', right: 'var(--mantine-spacing-lg)' }}>
-            {/* User Menu */}
-            {isAuthenticated && user && (
+            {/* User Menu (when authenticated) */}
+            {isAuthenticated && user ? (
               <Menu shadow="md" width={200}>
                 <Menu.Target>
                   <UnstyledButton
@@ -402,32 +402,34 @@ export default function Navigation({ children }: NavigationProps) {
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+            ) : (
+              /* Sign In Button (when NOT authenticated) */
+              <UnstyledButton
+                onClick={() => router.push('/login')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: rem(8),
+                  padding: `${rem(8)} ${rem(16)}`,
+                  borderRadius: rem(8),
+                  backgroundColor: 'var(--mantine-color-blue-6)',
+                  transition: 'background-color 0.2s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--mantine-color-blue-7)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--mantine-color-blue-6)';
+                }}
+              >
+                <IconUser size={20} stroke={1.5} />
+                <Text size="sm" fw={500} c="white">
+                  Sign In
+                </Text>
+              </UnstyledButton>
             )}
             <DarkModeToggle />
-            <UnstyledButton
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: rem(4),
-                padding: `${rem(12)} ${rem(20)}`,
-                borderRadius: rem(8),
-                transition: 'background-color 0.2s ease',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = mounted && isDark 
-                  ? 'rgba(255, 255, 255, 0.05)' 
-                  : 'rgba(0, 0, 0, 0.02)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <IconPower size={iconSize} stroke={1.5} />
-              <Text size="xs" fw={400}>Close</Text>
-            </UnstyledButton>
           </Group>
         </Group>
 

@@ -1,9 +1,14 @@
 'use client';
 
 import { Container, Title, Text, Paper, SimpleGrid, Group, ThemeIcon, Grid } from '@mantine/core';
-import { IconCalendar, IconUsers, IconCheckupList, IconClock } from '@tabler/icons-react';
+import { IconCalendar, IconUsers, IconCheckupList, IconClock, IconCheck, IconX } from '@tabler/icons-react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { notifications } from '@mantine/notifications';
 import Navigation from './components/Navigation';
 import SMSNotificationWidget from './components/SMSNotificationWidget';
+import WelcomeModal from './components/WelcomeModal';
+import { useAuth } from './contexts/AuthContext';
 
 function StatCard({ title, value, icon, color }: any) {
   return (
@@ -26,8 +31,50 @@ function StatCard({ title, value, icon, color }: any) {
 }
 
 export default function Home() {
+  const { isFirstLogin, setIsFirstLogin, user } = useAuth();
+  const searchParams = useSearchParams();
+  
+  // Check for Gmail callback success/error
+  useEffect(() => {
+    const gmailAdded = searchParams.get('gmail_added');
+    const gmailError = searchParams.get('gmail_error');
+    
+    if (gmailAdded) {
+      notifications.show({
+        title: 'Gmail Account Connected!',
+        message: `${gmailAdded} has been successfully connected. You can now send emails from this account.`,
+        color: 'green',
+        icon: <IconCheck />,
+        autoClose: 6000,
+      });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    }
+    
+    if (gmailError) {
+      notifications.show({
+        title: 'Gmail Connection Failed',
+        message: gmailError.replace(/\+/g, ' '),
+        color: 'red',
+        icon: <IconX />,
+        autoClose: 8000,
+      });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, [searchParams]);
+  
   return (
     <Navigation>
+      {/* Welcome Modal - Only shows once for new users */}
+      <WelcomeModal
+        opened={isFirstLogin}
+        onClose={() => setIsFirstLogin(false)}
+        userEmail={user?.email || ''}
+      />
+      
       <Container size="xl" py="xl">
         <Title order={1} mb="xl">Dashboard</Title>
         

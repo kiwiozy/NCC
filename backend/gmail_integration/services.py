@@ -71,7 +71,7 @@ class GmailService:
             f"response_type=code&"
             f"scope={scope_string}&"
             f"access_type=offline&"  # Get refresh token
-            f"prompt=consent&"  # Force consent to get refresh token
+            f"prompt=select_account&"  # Let user pick account, only prompt consent if needed
             f"state={state or 'nexus-clinic'}"
         )
         

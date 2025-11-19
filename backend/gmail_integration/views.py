@@ -56,27 +56,28 @@ def gmail_callback(request):
     if error:
         error_desc = request.GET.get('error_description', '')
         print(f"OAuth Error: {error} - {error_desc}")
-        return redirect(f'http://localhost:3000/settings?tab=gmail&status=error&message={error}')
+        return redirect(f'https://localhost:3000/settings?tab=gmail&status=error&message={error}')
     
     if not code:
         print("No authorization code provided")
-        return redirect(f'http://localhost:3000/settings?tab=gmail&status=error&message=No+authorization+code')
+        return redirect(f'https://localhost:3000/settings?tab=gmail&status=error&message=No+authorization+code')
     
     try:
         print("Attempting to exchange code for token...")
         connection = gmail_service.exchange_code_for_token(code)
         print(f"✓ Connection created: {connection.email_address}")
         
-        # Redirect to frontend with success
-        return redirect(f'http://localhost:3000/settings?tab=gmail&status=connected&email={connection.email_address}')
+        # Redirect to frontend with success (using HTTPS)
+        # Add success=true parameter to show notification
+        return redirect(f'https://localhost:3000/?gmail_added={connection.email_address}')
         
     except Exception as e:
         print(f"✗ Error in callback: {str(e)}")
         import traceback
         traceback.print_exc()
-        # Redirect to frontend with error
+        # Redirect to frontend with error (using HTTPS)
         error_message = str(e).replace(' ', '+')
-        return redirect(f'http://localhost:3000/settings?tab=gmail&status=error&message={error_message}')
+        return redirect(f'https://localhost:3000/?gmail_error={error_message}')
 
 
 @api_view(['POST'])

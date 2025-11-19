@@ -241,7 +241,7 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
         'AUTH_PARAMS': {
             'access_type': 'offline',  # Get refresh token for Gmail API
-            'prompt': 'consent',  # Force consent to get refresh token
+            'prompt': 'select_account',  # Let user pick account, only prompt consent if needed
         },
         # Note: APP credentials are stored in database (SocialApp model)
         # Remove APP config here to use database SocialApp instead
@@ -250,7 +250,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 # Login/Logout URLs
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'  # Will redirect to frontend via login_redirect view
+LOGIN_REDIRECT_URL = 'https://localhost:3000/'  # Redirect to frontend after successful login
 LOGOUT_REDIRECT_URL = 'https://localhost:3000/login/'
 
 # Xero Integration Settings

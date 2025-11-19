@@ -908,15 +908,48 @@ export default function GmailIntegration() {
               label="Send Using Account"
               description="Select which Gmail account to send from (emails will appear in this account's Sent folder)"
               placeholder="Choose connected account"
-              data={connectedAccounts.map(account => ({
-                value: account.email,
-                label: `${account.display_name || account.email}${account.is_primary ? ' (Primary)' : ''}`,
-              }))}
+              data={[
+                ...connectedAccounts.map(account => ({
+                  value: account.email,
+                  label: `${account.display_name || account.email}${account.is_primary ? ' (Primary)' : ''}`,
+                })),
+                { value: '__add_account__', label: '+ Add Gmail Account' }
+              ]}
               value={connectionEmail}
               onChange={(value) => {
-                setConnectionEmail(value || '');
-                // Save as default
-                if (value) {
+                if (value === '__add_account__') {
+                  // Open Gmail OAuth in popup
+                  const popup = window.open(
+                    'https://localhost:8000/gmail/oauth/connect/',
+                    'Add Gmail Account',
+                    'width=600,height=700,scrollbars=yes,resizable=yes'
+                  );
+                  
+                  if (popup) {
+                    const checkPopup = setInterval(() => {
+                      if (popup.closed) {
+                        clearInterval(checkPopup);
+                        // Refresh accounts list
+                        fetchConnectedAccounts();
+                        notifications.show({
+                          title: 'Account Added',
+                          message: 'Gmail account connected successfully!',
+                          color: 'green',
+                          icon: <IconCheck />,
+                        });
+                      }
+                    }, 1000);
+                  } else {
+                    notifications.show({
+                      title: 'Popup Blocked',
+                      message: 'Please allow popups to add Gmail accounts',
+                      color: 'red',
+                      icon: <IconX />,
+                    });
+                  }
+                } else if (value) {
+                  setConnectionEmail(value);
+                  // Save as default
                   localStorage.setItem('gmail_default_connection', value);
                   setDefaultConnectionEmail(value);
                 }
