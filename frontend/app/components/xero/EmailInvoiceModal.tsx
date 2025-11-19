@@ -15,6 +15,7 @@ import {
   Alert,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { getCsrfToken } from '../../utils/csrf';
 import { IconMail, IconInfoCircle } from '@tabler/icons-react';
 
 interface EmailTemplate {
@@ -192,10 +193,12 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         payload.subject = emailForm.subject;
       }
       
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`${API_URL}/api/invoices/send-email/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include',
         body: JSON.stringify(payload),

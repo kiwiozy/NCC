@@ -13,6 +13,7 @@ import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
 import EmailInvoiceModal from '../../components/xero/EmailInvoiceModal';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface XeroInvoiceLink {
   id: string;
@@ -140,9 +141,13 @@ export default function XeroInvoicesQuotesPage() {
     setDeleting(true);
     try {
       console.log('🗑️ [Delete Invoice] Starting deletion for invoice:', itemToDelete.id);
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${itemToDelete.id}/`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       console.log('📥 [Delete Invoice] Response status:', response.status);
@@ -199,9 +204,13 @@ export default function XeroInvoicesQuotesPage() {
     
     setDeleting(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${itemToDelete.id}/`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
       
       if (!response.ok) throw new Error('Failed to delete quote');
@@ -231,9 +240,13 @@ export default function XeroInvoicesQuotesPage() {
     console.log('🚀 [Send to Xero] Starting authorization for invoice:', invoiceId);
     try {
       console.log('📤 [Send to Xero] Sending POST request to authorize endpoint...');
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/authorize/`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       console.log('📥 [Send to Xero] Response status:', response.status);
@@ -271,9 +284,13 @@ export default function XeroInvoicesQuotesPage() {
     console.log('🚀 [Convert to Invoice] Starting conversion for quote:', quoteId);
     try {
       console.log('📤 [Convert to Invoice] Sending POST request to convert endpoint...');
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       console.log('📥 [Convert to Invoice] Response status:', response.status);
