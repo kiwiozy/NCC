@@ -48,12 +48,18 @@ class ClinicianSerializer(serializers.ModelSerializer):
     def validate_professional_body_url(self, value):
         """
         Automatically prepend https:// to professional body URL if protocol is missing
+        Also validates that it's a valid URL format
         """
         if value and value.strip():
             value = value.strip()
             # If it doesn't start with http:// or https://, add https://
             if not value.startswith(('http://', 'https://')):
                 value = f'https://{value}'
+            
+            # Basic validation: should contain at least one dot
+            if '.' not in value:
+                raise serializers.ValidationError("Enter a valid URL (e.g., www.example.com)")
+        
         return value
     
     def get_display_name(self, obj):

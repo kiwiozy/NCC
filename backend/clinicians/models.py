@@ -173,7 +173,7 @@ class Clinician(models.Model):
         help_text="Professional registration number (e.g., 'Pedorthic Registration # 3454')"
     )
     
-    professional_body_url = models.URLField(
+    professional_body_url = models.CharField(
         max_length=200,
         null=True,
         blank=True,
