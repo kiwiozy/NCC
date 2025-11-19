@@ -845,8 +845,44 @@ export default function UserProfiles() {
                 </Text>
               </Box>
 
-              {htmlSignatureEditor ? (
+              {/* Direct HTML Input - Always Show */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  Paste HTML Code Here
+                </Text>
+                <Textarea
+                  placeholder="Paste your HTML signature code here..."
+                  value={formSignatureHtml}
+                  onChange={(e) => {
+                    setFormSignatureHtml(e.currentTarget.value);
+                    if (htmlSignatureEditor) {
+                      htmlSignatureEditor.commands.setContent(e.currentTarget.value);
+                    }
+                  }}
+                  minRows={12}
+                  styles={{
+                    input: { fontFamily: 'monospace', fontSize: 12 }
+                  }}
+                />
+              </Box>
+
+              {formSignatureHtml && (
                 <Box>
+                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                    Preview
+                  </Text>
+                  <Paper withBorder p="xl" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                    <div dangerouslySetInnerHTML={{ __html: formSignatureHtml }} />
+                  </Paper>
+                </Box>
+              )}
+
+              {/* Rich Text Editor - Optional */}
+              {htmlSignatureEditor && (
+                <Box>
+                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                    Or Use Visual Editor
+                  </Text>
                   <RichTextEditor editor={htmlSignatureEditor}>
                     <RichTextEditor.Toolbar sticky stickyOffset={60}>
                       <RichTextEditor.ControlsGroup>
@@ -892,45 +928,8 @@ export default function UserProfiles() {
                   </RichTextEditor>
                   
                   <Text size="xs" c="dimmed" mt="xs">
-                    Tip: You can paste HTML directly into the editor, or use the HTML source button in your browser's dev tools to paste custom HTML.
+                    Tip: Changes here sync with the HTML code above.
                   </Text>
-                </Box>
-              ) : (
-                <Box style={{ textAlign: 'center', padding: '40px' }}>
-                  <Loader size="md" />
-                  <Text size="sm" c="dimmed" mt="md">Loading editor...</Text>
-                </Box>
-              )}
-
-              {/* Alternative: Direct HTML Input */}
-              <Box>
-                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                  Or Paste HTML Code Directly
-                </Text>
-                <Textarea
-                  placeholder="Paste your HTML signature code here..."
-                  value={formSignatureHtml}
-                  onChange={(e) => {
-                    setFormSignatureHtml(e.currentTarget.value);
-                    if (htmlSignatureEditor) {
-                      htmlSignatureEditor.commands.setContent(e.currentTarget.value);
-                    }
-                  }}
-                  minRows={8}
-                  styles={{
-                    input: { fontFamily: 'monospace', fontSize: 12 }
-                  }}
-                />
-              </Box>
-
-              {formSignatureHtml && (
-                <Box>
-                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                    Preview
-                  </Text>
-                  <Paper withBorder p="xl" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
-                    <div dangerouslySetInnerHTML={{ __html: formSignatureHtml }} />
-                  </Paper>
                 </Box>
               )}
             </Stack>
