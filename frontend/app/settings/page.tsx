@@ -46,7 +46,7 @@ export default function SettingsPage() {
 
   return (
     <Navigation>
-      <Container size="xl" py="xl">
+      <Container size="xl" py="xl" style={{ height: '100%', overflowY: 'auto' }}>
         {renderContent()}
       </Container>
     </Navigation>
