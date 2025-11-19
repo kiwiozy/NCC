@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconMail } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
@@ -11,6 +11,7 @@ import { QuickCreateModal } from '../../components/xero/QuickCreateModal';
 import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
 import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
+import EmailInvoiceModal from '../../components/xero/EmailInvoiceModal';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 
 interface XeroInvoiceLink {
@@ -54,8 +55,11 @@ export default function XeroInvoicesQuotesPage() {
   const [editInvoiceModalOpened, setEditInvoiceModalOpened] = useState(false);
   const [invoiceDetailModalOpened, setInvoiceDetailModalOpened] = useState(false);
   const [quoteDetailModalOpened, setQuoteDetailModalOpened] = useState(false);
+  const [emailModalOpened, setEmailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [selectedEmailItem, setSelectedEmailItem] = useState<any>(null);
+  const [selectedEmailType, setSelectedEmailType] = useState<'invoice' | 'receipt' | 'quote'>('invoice');
   const [preSelectedPatientId, setPreSelectedPatientId] = useState<string | undefined>();
   const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>();
   const [patients, setPatients] = useState<any[]>([]);
@@ -423,6 +427,24 @@ export default function XeroInvoicesQuotesPage() {
                     }}
                   >
                     <IconEye size={16} />
+                  </ActionIcon>
+                </Tooltip>
+                
+                {/* Email button */}
+                <Tooltip label={`Email ${item.type === 'invoice' ? 'Invoice' : 'Quote'}`}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="blue"
+                    onClick={() => {
+                      setSelectedEmailItem(item);
+                      setSelectedEmailType(item.type === 'invoice' ? 
+                        (parseFloat((item as any).amount_due || '0') === 0 ? 'receipt' : 'invoice') : 
+                        'quote'
+                      );
+                      setEmailModalOpened(true);
+                    }}
+                  >
+                    <IconMail size={16} />
                   </ActionIcon>
                 </Tooltip>
                 
@@ -986,6 +1008,17 @@ export default function XeroInvoicesQuotesPage() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* Email Invoice/Quote Modal */}
+      <EmailInvoiceModal
+        opened={emailModalOpened}
+        onClose={() => {
+          setEmailModalOpened(false);
+          setSelectedEmailItem(null);
+        }}
+        invoice={selectedEmailItem}
+        type={selectedEmailType}
+      />
     </Navigation>
   );
 }
