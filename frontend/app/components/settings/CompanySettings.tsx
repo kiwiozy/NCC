@@ -55,7 +55,7 @@ export default function CompanySettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://localhost:8000/api/email-settings/', {
+      const response = await fetch('https://localhost:8000/api/invoices/email-global-settings/', {
         credentials: 'include',
       });
 
@@ -80,8 +80,8 @@ export default function CompanySettings() {
       setSuccess(null);
 
       const csrfToken = await getCsrfToken();
-      const response = await fetch('https://localhost:8000/api/email-settings/', {
-        method: 'PUT',
+      const response = await fetch('https://localhost:8000/api/invoices/email-global-settings/', {
+        method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -249,14 +249,14 @@ export default function CompanySettings() {
             </Text>
 
             <Alert color="blue" mb="md" icon={<IconAlertCircle size={16} />}>
-              <Text size="xs">
+              <div style={{ fontSize: 11 }}>
                 <strong>Tips:</strong>
                 <ul style={{ marginTop: 4, marginBottom: 0, paddingLeft: 20 }}>
                   <li>Use inline styles (not external CSS)</li>
                   <li>Keep images small and use absolute URLs</li>
                   <li>Test in multiple email clients</li>
                 </ul>
-              </Text>
+              </div>
             </Alert>
 
             <Group gap="sm" mb="sm">
