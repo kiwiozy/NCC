@@ -54,6 +54,18 @@ def wrap_email_html(
         
         settings = EmailGlobalSettings.get_settings()
         
+        # DEBUG: Write to file
+        with open('/Users/craig/Documents/nexus-core-clinic/backend/signature_debug.txt', 'a') as f:
+            f.write("="*80 + "\n")
+            f.write(f"wrap_email_html signature logic\n")
+            f.write(f"  - use_email_signatures: {settings.use_email_signatures}\n")
+            f.write(f"  - clinician provided: {clinician is not None}\n")
+            if clinician:
+                f.write(f"  - clinician name: {clinician.full_name}\n")
+                f.write(f"  - clinician has signature: {bool(clinician.signature_html)}\n")
+            f.write(f"  - company signature set: {bool(settings.company_signature_html)}\n")
+            f.write(f"  - company_signature_email: {settings.company_signature_email}\n")
+        
         logger.info(f"Email Signature Settings:")
         logger.info(f"  - use_email_signatures: {settings.use_email_signatures}")
         logger.info(f"  - clinician provided: {clinician is not None}")
@@ -65,6 +77,8 @@ def wrap_email_html(
             if clinician and clinician.signature_html:
                 # Use clinician's personal signature
                 logger.info("Using clinician's personal signature")
+                with open('/Users/craig/Documents/nexus-core-clinic/backend/signature_debug.txt', 'a') as f:
+                    f.write("  → Using clinician's personal signature\n")
                 signature_html = f'''
                 <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
                     {clinician.signature_html}
@@ -73,11 +87,18 @@ def wrap_email_html(
             elif settings.company_signature_html:
                 # No clinician provided, use company signature
                 logger.info("Using company signature")
+                with open('/Users/craig/Documents/nexus-core-clinic/backend/signature_debug.txt', 'a') as f:
+                    f.write("  → Using company signature\n")
+                    f.write(f"  → Company signature length: {len(settings.company_signature_html)}\n")
                 signature_html = f'''
                 <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
                     {settings.company_signature_html}
                 </div>
                 '''
+            else:
+                logger.info("No signature available")
+                with open('/Users/craig/Documents/nexus-core-clinic/backend/signature_debug.txt', 'a') as f:
+                    f.write("  → No signature available\n")
             else:
                 logger.warning("No signature available (neither clinician nor company)")
         else:
