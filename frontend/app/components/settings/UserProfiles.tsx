@@ -136,7 +136,9 @@ export default function UserProfiles() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://localhost:8000/api/clinicians/');
+      const response = await fetch('https://localhost:8000/api/clinicians/', {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to load user profiles');
       }
@@ -155,7 +157,9 @@ export default function UserProfiles() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/auth/users/');
+      const response = await fetch('https://localhost:8000/api/auth/users/', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         setUsers(data);

@@ -80,7 +80,9 @@ export default function ClinicsSettings() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://localhost:8000/api/clinics/');
+      const response = await fetch('https://localhost:8000/api/clinics/', {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to load clinics');
       }
