@@ -147,6 +147,7 @@ class XeroInvoiceLink(models.Model):
     """
     Link local appointments/orders to Xero Invoices
     Updated Nov 2025: Support for standalone invoices without appointments
+    Updated Nov 2025: Added clinician FK for invoice signature/attribution
     """
     INVOICE_STATUS_CHOICES = [
         ('DRAFT', 'Draft'),
@@ -188,6 +189,16 @@ class XeroInvoiceLink(models.Model):
         help_text="Company this invoice is billed to (optional)"
     )
     
+    # Clinician who created/sent this invoice (for signature attribution)
+    clinician = models.ForeignKey(
+        'clinicians.Clinician',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_invoices',
+        help_text="Clinician who created or sent this invoice (for email signature)"
+    )
+    
     # Xero invoice details
     xero_invoice_id = models.CharField(max_length=255, unique=True, help_text="Xero Invoice GUID")
     xero_invoice_number = models.CharField(max_length=50, blank=True, help_text="Human-readable invoice number")
@@ -222,6 +233,7 @@ class XeroInvoiceLink(models.Model):
             models.Index(fields=['appointment']),
             models.Index(fields=['patient']),
             models.Index(fields=['company']),
+            models.Index(fields=['clinician']),
         ]
     
     def __str__(self):
