@@ -72,6 +72,34 @@ interface Clinician {
   full_credentials_display: string;
 }
 
+// Helper to get CSRF token
+const getCsrfToken = async (): Promise<string> => {
+  // Try to get from cookie first
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+  
+  if (cookieValue) {
+    return cookieValue;
+  }
+  
+  // Fallback: fetch from backend
+  try {
+    const response = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+      credentials: 'include',
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.csrfToken || '';
+    }
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+  }
+  
+  return '';
+};
+
 export default function UserProfiles() {
   const [clinicians, setClinicians] = useState<Clinician[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -347,8 +375,12 @@ export default function UserProfiles() {
 
     try {
       setLoading(true);
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/clinicians/${itemToDelete}/`, {
         method: 'DELETE',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
         credentials: 'include',
       });
 
