@@ -295,12 +295,29 @@ export default function UserProfiles() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        // Show detailed validation errors if available
-        const errorMessage = errorData.detail 
-          || (errorData.non_field_errors && errorData.non_field_errors.join(', '))
-          || JSON.stringify(errorData)
-          || 'Failed to save user profile';
+        let errorMessage = 'Failed to save user profile';
+        try {
+          const errorData = await response.json();
+          
+          // Handle specific HTTP status codes
+          if (response.status === 403) {
+            errorMessage = errorData.detail || 'Permission denied. You may not have permission to perform this action.';
+          } else if (response.status === 401) {
+            errorMessage = 'Authentication required. Please log in again.';
+          } else {
+            // Show detailed validation errors if available
+            errorMessage = errorData.detail 
+              || (errorData.non_field_errors && errorData.non_field_errors.join(', '))
+              || JSON.stringify(errorData);
+          }
+        } catch {
+          // JSON parsing failed, use generic message
+          if (response.status === 403) {
+            errorMessage = 'Permission denied. Only administrators can create or modify user profiles.';
+          } else if (response.status === 401) {
+            errorMessage = 'Authentication required. Please log in again.';
+          }
+        }
         throw new Error(errorMessage);
       }
 
@@ -336,7 +353,22 @@ export default function UserProfiles() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete user profile');
+        // Try to get detailed error message from backend
+        let errorMessage = 'Failed to delete user profile';
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch {
+          // If JSON parsing fails, use status text
+          if (response.status === 403) {
+            errorMessage = 'Permission denied. Only administrators can delete user profiles.';
+          } else if (response.status === 401) {
+            errorMessage = 'Authentication required. Please log in again.';
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       setSuccess('User profile deleted successfully');
@@ -345,7 +377,7 @@ export default function UserProfiles() {
       await fetchClinicians();
     } catch (err: any) {
       console.error('Error deleting user profile:', err);
-      setError('Failed to delete user profile: ' + err.message);
+      setError(err.message || 'Failed to delete user profile');
     } finally {
       setLoading(false);
     }
