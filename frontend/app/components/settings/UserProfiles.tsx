@@ -847,9 +847,70 @@ export default function UserProfiles() {
 
               {/* Direct HTML Input - Always Show */}
               <Box>
-                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                  Paste HTML Code Here
-                </Text>
+                <Group justify="space-between" mb="md">
+                  <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                    Paste HTML Code Here
+                  </Text>
+                  <Group gap="xs">
+                    {formSignatureHtml && (
+                      <Button 
+                        size="xs" 
+                        variant="subtle" 
+                        color="red"
+                        onClick={() => setFormSignatureHtml('')}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                    <FileButton
+                      accept=".html,.htm"
+                      onChange={(file) => {
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            let html = e.target?.result as string;
+                            
+                            // Extract body content if full HTML document
+                            if (html.includes('<body')) {
+                              const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                              if (bodyMatch) {
+                                html = bodyMatch[1].trim();
+                              }
+                            }
+                            
+                            // Remove DOCTYPE, html, head tags if present
+                            html = html.replace(/<!DOCTYPE[^>]*>/gi, '');
+                            html = html.replace(/<\/?html[^>]*>/gi, '');
+                            html = html.replace(/<head>[\s\S]*?<\/head>/gi, '');
+                            
+                            setFormSignatureHtml(html);
+                            if (htmlSignatureEditor) {
+                              htmlSignatureEditor.commands.setContent(html);
+                            }
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                    >
+                      {(props) => (
+                        <Button {...props} size="xs" variant="light">
+                          📁 Load from File
+                        </Button>
+                      )}
+                    </FileButton>
+                  </Group>
+                </Group>
+                
+                <Alert color="blue" mb="md" title="How to paste HTML:" styles={{ title: { fontSize: 12 }, body: { fontSize: 11 } }}>
+                  <ol style={{ margin: 0, paddingLeft: 20 }}>
+                    <li>Open your .html file in a <strong>text editor</strong> (Notepad, TextEdit, VS Code)</li>
+                    <li>Select ALL the HTML code (Cmd+A / Ctrl+A)</li>
+                    <li>Copy it (Cmd+C / Ctrl+C)</li>
+                    <li>Paste it in the box below (Cmd+V / Ctrl+V)</li>
+                  </ol>
+                  <Text size="xs" mt="xs" c="dimmed">Or use the "📁 Load from File" button above</Text>
+                </Alert>
+
                 <Textarea
                   placeholder="Paste your complete HTML signature code here (including tables, images, etc.)..."
                   value={formSignatureHtml}
@@ -874,14 +935,11 @@ export default function UserProfiles() {
                       htmlSignatureEditor.commands.setContent(html);
                     }
                   }}
-                  minRows={12}
+                  minRows={15}
                   styles={{
-                    input: { fontFamily: 'monospace', fontSize: 12 }
+                    input: { fontFamily: 'monospace', fontSize: 11 }
                   }}
                 />
-                <Text size="xs" c="dimmed" mt="xs">
-                  💡 Tip: You can paste a complete HTML document - we'll automatically extract just the signature content.
-                </Text>
               </Box>
 
               {formSignatureHtml && (
