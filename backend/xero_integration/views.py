@@ -702,6 +702,7 @@ def create_xero_invoice(request):
     """
     Create a Xero invoice with flexible contact selection
     Updated Nov 2025: Supports patient OR company as primary contact
+    Updated Nov 2025: Added clinician support for email signatures
     
     Request body:
     {
@@ -712,7 +713,8 @@ def create_xero_invoice(request):
         "billing_notes": "...",
         "invoice_date": "YYYY-MM-DD",
         "due_date": "YYYY-MM-DD",
-        "appointment_id": "uuid" (optional)
+        "appointment_id": "uuid" (optional),
+        "clinician_id": "uuid" (optional - for email signature)
     }
     """
     try:
@@ -755,6 +757,24 @@ def create_xero_invoice(request):
                     'error': f'Company with id {company_id} not found'
                 }, status=404)
         
+        # Get clinician (if specified)
+        clinician = None
+        clinician_id = request.data.get('clinician_id')
+        if clinician_id:
+            try:
+                from clinicians.models import Clinician
+                clinician = Clinician.objects.get(id=clinician_id)
+            except Clinician.DoesNotExist:
+                logger.warning(f'Clinician with id {clinician_id} not found, continuing without signature')
+        
+        # If no clinician specified, try to get from logged-in user
+        if not clinician and request.user.is_authenticated:
+            try:
+                from clinicians.models import Clinician
+                clinician = Clinician.objects.filter(user=request.user, active=True).first()
+            except Exception as e:
+                logger.warning(f'Could not get clinician from user: {e}')
+        
         # Get or use appointment (optional - not required for standalone invoices)
         appointment = None
         appointment_id = request.data.get('appointment_id')
@@ -791,7 +811,7 @@ def create_xero_invoice(request):
             except (ValueError, AttributeError):
                 pass  # Use default if parsing fails
         
-        # Create invoice via Xero service (now supports standalone invoices!)
+        # Create invoice via Xero service (now supports standalone invoices and clinician!)
         invoice_link = xero_service.create_invoice(
             appointment=appointment,
             patient=patient,
@@ -802,7 +822,8 @@ def create_xero_invoice(request):
             billing_notes=request.data.get('billing_notes', ''),
             invoice_date=invoice_date,
             due_date=due_date,
-            send_immediately=request.data.get('send_immediately', False)
+            send_immediately=request.data.get('send_immediately', False),
+            clinician=clinician
         )
         
         return JsonResponse({
