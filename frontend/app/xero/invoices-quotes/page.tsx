@@ -79,8 +79,12 @@ export default function XeroInvoicesQuotesPage() {
   const fetchPatientsAndCompanies = async () => {
     try {
       const [patientsRes, companiesRes] = await Promise.all([
-        fetch('https://localhost:8000/api/patients/'),
-        fetch('https://localhost:8000/api/companies/')
+        fetch('https://localhost:8000/api/patients/', {
+          credentials: 'include',
+        }),
+        fetch('https://localhost:8000/api/companies/', {
+          credentials: 'include',
+        })
       ]);
       
       if (patientsRes.ok) {
@@ -101,8 +105,12 @@ export default function XeroInvoicesQuotesPage() {
     setLoading(true);
     try {
       const [invoicesRes, quotesRes] = await Promise.all([
-        fetch('https://localhost:8000/api/xero-invoice-links/'),
-        fetch('https://localhost:8000/api/xero-quote-links/')
+        fetch('https://localhost:8000/api/xero-invoice-links/', {
+          credentials: 'include',
+        }),
+        fetch('https://localhost:8000/api/xero-quote-links/', {
+          credentials: 'include',
+        })
       ]);
       
       if (!invoicesRes.ok || !quotesRes.ok) throw new Error('Failed to fetch data');
@@ -134,6 +142,7 @@ export default function XeroInvoicesQuotesPage() {
       console.log('🗑️ [Delete Invoice] Starting deletion for invoice:', itemToDelete.id);
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${itemToDelete.id}/`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       console.log('📥 [Delete Invoice] Response status:', response.status);
@@ -192,6 +201,7 @@ export default function XeroInvoicesQuotesPage() {
     try {
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${itemToDelete.id}/`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       
       if (!response.ok) throw new Error('Failed to delete quote');
@@ -223,6 +233,7 @@ export default function XeroInvoicesQuotesPage() {
       console.log('📤 [Send to Xero] Sending POST request to authorize endpoint...');
       const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/authorize/`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       console.log('📥 [Send to Xero] Response status:', response.status);
@@ -262,6 +273,7 @@ export default function XeroInvoicesQuotesPage() {
       console.log('📤 [Convert to Invoice] Sending POST request to convert endpoint...');
       const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/convert_to_invoice/`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       console.log('📥 [Convert to Invoice] Response status:', response.status);
@@ -497,7 +509,9 @@ export default function XeroInvoicesQuotesPage() {
                         color="green"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();
@@ -534,7 +548,9 @@ export default function XeroInvoicesQuotesPage() {
                         color="orange"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();
@@ -573,7 +589,9 @@ export default function XeroInvoicesQuotesPage() {
                           color="violet"
                           onClick={async () => {
                             try {
-                              const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`);
+                              const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`, {
+                                credentials: 'include',
+                              });
                               if (!response.ok) throw new Error('Failed to generate receipt');
                               
                               const blob = await response.blob();
@@ -616,7 +634,9 @@ export default function XeroInvoicesQuotesPage() {
                         color="green"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();
@@ -653,7 +673,9 @@ export default function XeroInvoicesQuotesPage() {
                         color="orange"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();
