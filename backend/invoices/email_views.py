@@ -262,7 +262,9 @@ class SendInvoiceEmailView(APIView):
                     if hasattr(invoice, 'clinician') and invoice.clinician:
                         clinician = invoice.clinician
             else:
+                # Sending from company email - DON'T use any clinician signature
                 logger.info(f"Using company signature (from_email matches company email)")
+                clinician = None  # Explicitly set to None
         else:
             # No from_email provided, use invoice clinician as fallback
             if hasattr(invoice, 'clinician') and invoice.clinician:
