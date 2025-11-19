@@ -45,6 +45,17 @@ class ClinicianSerializer(serializers.ModelSerializer):
             'username', 'user_email'
         ]
     
+    def validate_professional_body_url(self, value):
+        """
+        Automatically prepend https:// to professional body URL if protocol is missing
+        """
+        if value and value.strip():
+            value = value.strip()
+            # If it doesn't start with http:// or https://, add https://
+            if not value.startswith(('http://', 'https://')):
+                value = f'https://{value}'
+        return value
+    
     def get_display_name(self, obj):
         """Get clinician display name with credentials"""
         return obj.get_display_name()
