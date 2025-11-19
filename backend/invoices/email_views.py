@@ -187,6 +187,7 @@ class SendInvoiceEmailView(APIView):
                 body_html=body_with_signature,
                 body_text=None,  # Gmail will auto-generate
                 from_address=from_email,
+                connection_email=from_email,  # ✅ Use the correct Gmail connection!
                 cc_emails=cc_list if cc_list else None,
                 bcc_emails=bcc_list if bcc_list else None,
                 attachments=attachments if attachments else None
@@ -220,6 +221,14 @@ class SendInvoiceEmailView(APIView):
         Returns:
             Tuple of (email_html, subject)
         """
+        # DEBUG: Write to file since logging isn't working
+        with open('/Users/craig/Documents/nexus-core-clinic/backend/email_debug.txt', 'a') as f:
+            f.write("="*80 + "\n")
+            f.write(f"_generate_email_with_generator called\n")
+            f.write(f"  from_email: {from_email}\n")
+            f.write(f"  document_type: {document_type}\n")
+            f.write("="*80 + "\n")
+        
         # Build email data from invoice/quote
         if document_type == 'quote':
             email_data = self._build_quote_data(invoice)
@@ -229,12 +238,24 @@ class SendInvoiceEmailView(APIView):
         # SIMPLE: If from_email is info@walkeasy.com.au → company signature (no clinician)
         #         Otherwise → find clinician for that email
         clinician = None
+        
+        # DEBUG
+        with open('/Users/craig/Documents/nexus-core-clinic/backend/email_debug.txt', 'a') as f:
+            f.write(f"Checking from_email: {from_email}\n")
+            f.write(f"Is info?: {from_email and from_email.lower() == 'info@walkeasy.com.au'}\n")
+        
         if from_email and from_email.lower() != 'info@walkeasy.com.au':
             # Not company email - find clinician
             from clinicians.models import Clinician
             clinician = Clinician.objects.filter(user__email__iexact=from_email, active=True).first()
             if not clinician:
                 clinician = Clinician.objects.filter(email__iexact=from_email, active=True).first()
+            
+            with open('/Users/craig/Documents/nexus-core-clinic/backend/email_debug.txt', 'a') as f:
+                f.write(f"Found clinician: {clinician}\n")
+        else:
+            with open('/Users/craig/Documents/nexus-core-clinic/backend/email_debug.txt', 'a') as f:
+                f.write(f"Using company signature (clinician=None)\n")
         
         # Create generator with clinician for signature (or None for company signature)
         generator = EmailGenerator(
