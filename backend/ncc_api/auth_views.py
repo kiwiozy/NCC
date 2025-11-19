@@ -2,7 +2,7 @@
 Authentication views for checking user status
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model, logout as django_logout
 from django.contrib.auth.decorators import login_required
@@ -177,12 +177,20 @@ def csrf_token(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])  # Change to IsAuthenticated in production
+@permission_classes([IsAuthenticated])  # ✅ SECURITY: Only authenticated users can list users
 def list_users(request):
     """
     List all Django User accounts for linking to clinician profiles
+    SECURITY: Requires authentication. Only staff can see all users, 
+    regular users can only see their own account.
     """
-    users = User.objects.all().order_by('username')
+    # Staff users can see all users
+    if request.user.is_staff:
+        users = User.objects.all().order_by('username')
+    else:
+        # Non-staff users can only see their own account
+        users = User.objects.filter(id=request.user.id)
+    
     user_list = [
         {
             'id': user.id,

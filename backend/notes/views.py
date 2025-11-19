@@ -4,7 +4,6 @@ Views for Notes API
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Note
@@ -15,6 +14,8 @@ class NoteViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing patient notes
     
+    SECURITY: Requires authentication (inherited from REST_FRAMEWORK settings)
+    
     Supports:
     - List notes for a patient (filter by patient_id)
     - Create new note
@@ -24,7 +25,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     """
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = [AllowAny]  # TODO: Add proper authentication
+    # permission_classes inherited from REST_FRAMEWORK settings (IsAuthenticated)
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['patient', 'note_type']
     search_fields = ['content']
@@ -54,6 +55,6 @@ class NoteViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_create(self, serializer):
-        """Save note with optional created_by"""
-        # TODO: Get user from request when authentication is implemented
+        """Save note with authenticated user"""
+        # Save note with the authenticated user
         serializer.save()

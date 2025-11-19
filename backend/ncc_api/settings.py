@@ -194,8 +194,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',  # Fallback
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',  # Change to IsAuthenticated in production
-        # Note: SMS patient endpoints explicitly use IsAuthenticated for security
+        'rest_framework.permissions.IsAuthenticated',  # ✅ SECURITY: Require authentication for all API endpoints
     ],
 }
 
