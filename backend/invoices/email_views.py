@@ -222,10 +222,16 @@ class SendInvoiceEmailView(APIView):
         else:
             email_data = self._build_invoice_data(invoice, document_type)
         
-        # Create generator
+        # Get clinician from invoice (if available)
+        clinician = None
+        if hasattr(invoice, 'clinician') and invoice.clinician:
+            clinician = invoice.clinician
+        
+        # Create generator with clinician for signature
         generator = EmailGenerator(
             email_type=document_type,
-            header_color=header_color
+            header_color=header_color,
+            clinician=clinician
         )
         
         # Generate email HTML

@@ -6,7 +6,13 @@ It uses the template's header_color to create beautiful gradient headers.
 """
 
 
-def wrap_email_html(body_html: str, header_color: str = '#5b95cf', email_type: str = 'Email', title: str = None) -> str:
+def wrap_email_html(
+    body_html: str, 
+    header_color: str = '#5b95cf', 
+    email_type: str = 'Email', 
+    title: str = None,
+    clinician=None
+) -> str:
     """
     Wrap plain HTML email content in a professional email structure
     
@@ -15,9 +21,10 @@ def wrap_email_html(body_html: str, header_color: str = '#5b95cf', email_type: s
         header_color: Hex color for header gradient (from EmailTemplate.header_color)
         email_type: Type of email for header (e.g., 'Invoice', 'Receipt', 'Quote')
         title: Optional specific title (e.g., invoice number)
+        clinician: Optional Clinician object to append email signature
     
     Returns:
-        Complete HTML email with professional styling
+        Complete HTML email with professional styling (and clinician signature if provided)
     """
     # Calculate lighter color for gradient (add 20% to RGB values)
     lighter_color = lighten_color(header_color, 0.1)
@@ -37,6 +44,15 @@ def wrap_email_html(body_html: str, header_color: str = '#5b95cf', email_type: s
     
     email_type_lower = email_type.lower()
     icon = next((v for k, v in icons.items() if k in email_type_lower), '📧')
+    
+    # Append clinician signature if provided
+    signature_html = ''
+    if clinician and clinician.signature_html:
+        signature_html = f'''
+        <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+            {clinician.signature_html}
+        </div>
+        '''
     
     # Build complete HTML structure
     html = f"""<!DOCTYPE html>
@@ -153,6 +169,7 @@ def wrap_email_html(body_html: str, header_color: str = '#5b95cf', email_type: s
         <!-- Content -->
         <div class="content">
             {body_html}
+            {signature_html}
         </div>
     </div>
 </body>

@@ -64,7 +64,8 @@ class EmailGenerator:
         self,
         email_type: str,
         header_color: Optional[str] = None,
-        clinic_settings: Optional[Any] = None
+        clinic_settings: Optional[Any] = None,
+        clinician: Optional[Any] = None
     ):
         """
         Initialize email generator
@@ -73,6 +74,7 @@ class EmailGenerator:
             email_type: Type of email (invoice, receipt, quote, at_report, letter)
             header_color: Optional custom header color (hex)
             clinic_settings: Optional EmailGlobalSettings object
+            clinician: Optional Clinician object (for email signature)
         
         Raises:
             ValueError: If email_type is invalid
@@ -86,6 +88,7 @@ class EmailGenerator:
         self.email_type = email_type
         self.header_color = header_color or self.DEFAULT_COLORS[email_type]
         self.clinic_settings = clinic_settings
+        self.clinician = clinician
         
         # Load clinic settings if not provided
         if not self.clinic_settings:
@@ -160,7 +163,8 @@ class EmailGenerator:
                     body_html=content_html,
                     header_color=self.header_color,
                     email_type=email_title,
-                    title=subtitle
+                    title=subtitle,
+                    clinician=self.clinician  # Pass clinician for signature
                 )
             else:
                 complete_html = content_html
