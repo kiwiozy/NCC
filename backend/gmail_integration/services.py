@@ -405,7 +405,8 @@ class GmailService:
         if connection_email:
             connection = self.get_connection_by_email(connection_email)
             if not connection:
-                raise ValueError(f"No active connection found for {connection_email}")
+                # Use the same error message format as token expiry so frontend shows reconnect modal
+                raise ValueError(f"No refresh token available. Please reconnect your Gmail account ({connection_email}).")
         elif not connection:
             connection = self.get_active_connection()
             if not connection:
