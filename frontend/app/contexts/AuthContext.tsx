@@ -132,6 +132,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [pathname]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && pathname !== '/login') {
+      console.log('🔐 [AuthContext] Not authenticated, redirecting to /login');
+      // Use window.location for immediate redirect (faster than router.push)
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated, isLoading, pathname]);
+
+  // BLOCK rendering if not authenticated (except on login page)
+  if (isLoading) {
+    return (
+      <AuthContext.Provider
+        value={{
+          isAuthenticated,
+          isLoading,
+          user,
+          logout,
+          checkAuth,
+          isFirstLogin,
+          setIsFirstLogin,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#1A1B1E' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔐</div>
+            <div style={{ color: '#C1C2C5' }}>Checking authentication...</div>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
+  // If not authenticated and not on login page, show nothing (will redirect)
+  if (!isAuthenticated && pathname !== '/login') {
+    return (
+      <AuthContext.Provider
+        value={{
+          isAuthenticated,
+          isLoading,
+          user,
+          logout,
+          checkAuth,
+          isFirstLogin,
+          setIsFirstLogin,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#1A1B1E' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔐</div>
+            <div style={{ color: '#C1C2C5' }}>Redirecting to login...</div>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
   return (
     <AuthContext.Provider
       value={{
