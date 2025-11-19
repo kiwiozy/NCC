@@ -885,29 +885,51 @@ export default function UserProfiles() {
               </Box>
 
               {formSignatureHtml && (
-                <Box>
-                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
-                    Preview
-                  </Text>
-                  <Paper 
-                    withBorder 
-                    p="xl" 
-                    style={{ 
-                      backgroundColor: '#ffffff',
-                      maxHeight: '500px',
-                      overflow: 'auto'
-                    }}
-                  >
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: formSignatureHtml }}
-                      style={{
-                        fontFamily: 'Verdana, sans-serif',
-                        fontSize: '14px',
-                        color: '#355D68'
+                <>
+                  <Box>
+                    <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                      Preview
+                    </Text>
+                    <Paper 
+                      withBorder 
+                      p="md" 
+                      style={{ 
+                        backgroundColor: '#ffffff',
+                        maxHeight: '600px',
+                        overflow: 'auto'
                       }}
-                    />
-                  </Paper>
-                </Box>
+                    >
+                      {/* Render HTML exactly as email clients would */}
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: formSignatureHtml }}
+                      />
+                    </Paper>
+                    <Text size="xs" c="dimmed" mt="xs">
+                      👆 This is how your signature will appear in emails
+                    </Text>
+                  </Box>
+
+                  {/* Debug: Show what will be saved */}
+                  <Box>
+                    <details>
+                      <summary style={{ cursor: 'pointer', fontSize: '12px', color: 'gray' }}>
+                        🔍 Debug: View HTML source that will be saved
+                      </summary>
+                      <Paper withBorder p="sm" mt="xs" style={{ backgroundColor: '#f8f9fa' }}>
+                        <pre style={{ 
+                          fontSize: '11px', 
+                          overflow: 'auto', 
+                          maxHeight: '200px',
+                          margin: 0,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all'
+                        }}>
+                          {formSignatureHtml}
+                        </pre>
+                      </Paper>
+                    </details>
+                  </Box>
+                </>
               )}
 
               {/* Rich Text Editor - Optional */}
