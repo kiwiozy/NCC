@@ -226,50 +226,15 @@ class SendInvoiceEmailView(APIView):
         else:
             email_data = self._build_invoice_data(invoice, document_type)
         
-        # Determine which signature to use based on sender email
+        # SIMPLE: If from_email is info@walkeasy.com.au → company signature (no clinician)
+        #         Otherwise → find clinician for that email
         clinician = None
-        if from_email:
-            # Get email settings to check company email
-            from .models import EmailGlobalSettings
-            settings = EmailGlobalSettings.get_settings()
-            
-            logger.info(f"Determining signature for from_email: {from_email}")
-            logger.info(f"Company signature email: {settings.company_signature_email}")
-            
-            # If sending from company email (info@...), use company signature (no clinician)
-            # If sending from personal email, find the clinician who owns that email
-            if from_email.lower() != settings.company_signature_email.lower():
-                # Try to find clinician by user.email (most reliable)
-                from clinicians.models import Clinician
-                try:
-                    # First try to find by user.email
-                    clinician = Clinician.objects.filter(user__email__iexact=from_email, active=True).first()
-                    
-                    # If not found, try by clinician.email
-                    if not clinician:
-                        clinician = Clinician.objects.filter(email__iexact=from_email, active=True).first()
-                    
-                    # If still not found, try to get from invoice clinician
-                    if not clinician:
-                        if hasattr(invoice, 'clinician') and invoice.clinician:
-                            clinician = invoice.clinician
-                            logger.info(f"Using invoice clinician: {clinician}")
-                    else:
-                        logger.info(f"Found clinician: {clinician} for email {from_email}")
-                except Exception as e:
-                    logger.warning(f"Could not find clinician for email {from_email}: {e}")
-                    # Fallback: try invoice clinician
-                    if hasattr(invoice, 'clinician') and invoice.clinician:
-                        clinician = invoice.clinician
-            else:
-                # Sending from company email - DON'T use any clinician signature
-                logger.info(f"Using company signature (from_email matches company email)")
-                clinician = None  # Explicitly set to None
-        else:
-            # No from_email provided, use invoice clinician as fallback
-            if hasattr(invoice, 'clinician') and invoice.clinician:
-                clinician = invoice.clinician
-                logger.info(f"No from_email, using invoice clinician: {clinician}")
+        if from_email and from_email.lower() != 'info@walkeasy.com.au':
+            # Not company email - find clinician
+            from clinicians.models import Clinician
+            clinician = Clinician.objects.filter(user__email__iexact=from_email, active=True).first()
+            if not clinician:
+                clinician = Clinician.objects.filter(email__iexact=from_email, active=True).first()
         
         # Create generator with clinician for signature (or None for company signature)
         generator = EmailGenerator(
