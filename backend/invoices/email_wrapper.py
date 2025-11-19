@@ -45,14 +45,29 @@ def wrap_email_html(
     email_type_lower = email_type.lower()
     icon = next((v for k, v in icons.items() if k in email_type_lower), '📧')
     
-    # Append clinician signature if provided
+    # Append signature (clinician personal signature or company signature)
     signature_html = ''
     if clinician and clinician.signature_html:
+        # Use clinician's personal signature
         signature_html = f'''
         <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
             {clinician.signature_html}
         </div>
         '''
+    else:
+        # No clinician provided, use company signature
+        try:
+            from .models import EmailGlobalSettings
+            settings = EmailGlobalSettings.get_settings()
+            if settings.company_signature_html:
+                signature_html = f'''
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+                    {settings.company_signature_html}
+                </div>
+                '''
+        except Exception as e:
+            # Silently fail if no company signature available
+            pass
     
     # Build complete HTML structure
     html = f"""<!DOCTYPE html>

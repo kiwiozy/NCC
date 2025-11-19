@@ -97,7 +97,8 @@ class SendInvoiceEmailView(APIView):
                 email_html, email_subject = self._generate_email_with_generator(
                     invoice,
                     document_type,
-                    header_color
+                    header_color,
+                    from_email  # Pass sender email to determine signature
                 )
                 # Use provided subject if given, otherwise use generated
                 if not subject:
@@ -200,7 +201,7 @@ class SendInvoiceEmailView(APIView):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    def _generate_email_with_generator(self, invoice, document_type, header_color=None):
+    def _generate_email_with_generator(self, invoice, document_type, header_color=None, from_email=None):
         """
         Generate email using EmailGenerator
         
@@ -208,6 +209,7 @@ class SendInvoiceEmailView(APIView):
             invoice: XeroInvoiceLink or XeroQuoteLink object
             document_type: 'invoice', 'receipt', or 'quote'
             header_color: Optional custom header color
+            from_email: Email address sending the email (to determine signature)
         
         Returns:
             Tuple of (email_html, subject)
@@ -218,12 +220,35 @@ class SendInvoiceEmailView(APIView):
         else:
             email_data = self._build_invoice_data(invoice, document_type)
         
-        # Get clinician from invoice (if available)
+        # Determine which signature to use based on sender email
         clinician = None
-        if hasattr(invoice, 'clinician') and invoice.clinician:
-            clinician = invoice.clinician
+        if from_email:
+            # Get email settings to check company email
+            from .models import EmailGlobalSettings
+            settings = EmailGlobalSettings.get_settings()
+            
+            # If sending from company email (info@...), use company signature (no clinician)
+            # If sending from personal email, find the clinician who owns that email
+            if from_email.lower() != settings.company_signature_email.lower():
+                # Try to find clinician by email
+                from clinicians.models import Clinician
+                try:
+                    clinician = Clinician.objects.filter(email=from_email, active=True).first()
+                    if not clinician:
+                        # Fallback: try to get from invoice clinician
+                        if hasattr(invoice, 'clinician') and invoice.clinician:
+                            clinician = invoice.clinician
+                except Exception as e:
+                    logger.warning(f"Could not find clinician for email {from_email}: {e}")
+                    # Fallback: try invoice clinician
+                    if hasattr(invoice, 'clinician') and invoice.clinician:
+                        clinician = invoice.clinician
+        else:
+            # No from_email provided, use invoice clinician as fallback
+            if hasattr(invoice, 'clinician') and invoice.clinician:
+                clinician = invoice.clinician
         
-        # Create generator with clinician for signature
+        # Create generator with clinician for signature (or None for company signature)
         generator = EmailGenerator(
             email_type=document_type,
             header_color=header_color,
