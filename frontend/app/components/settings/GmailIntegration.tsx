@@ -163,10 +163,16 @@ export default function GmailIntegration() {
 
   const fetchConnectedAccounts = async () => {
     try {
-      const response = await fetch('https://localhost:8000/gmail/connected-accounts/');
-      if (!response.ok) throw new Error('Failed to fetch connected accounts');
+      const response = await fetch('https://localhost:8000/gmail/connected-accounts/', {
+        credentials: 'include', // ✅ Added to send session cookies
+      });
+      if (!response.ok) {
+        console.error('Failed to fetch connected accounts:', response.status);
+        throw new Error('Failed to fetch connected accounts');
+      }
       
       const data = await response.json();
+      console.log('Connected accounts:', data); // Debug log
       const accounts = data.accounts || [];
       setConnectedAccounts(accounts);
       
