@@ -198,18 +198,17 @@ export default function GmailIntegration() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('https://localhost:8000/gmail/connections/status/');
+      const response = await fetch('https://localhost:8000/gmail/connections/status/', {
+        credentials: 'include', // ✅ Added to send session cookies
+      });
       if (!response.ok) throw new Error('Failed to fetch status');
       
       const data = await response.json();
       setStatus(data);
     } catch (error) {
       console.error('Error fetching Gmail status:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to fetch Gmail connection status',
-        color: 'red',
-      });
+      // Don't show notification for status fetch errors - not critical
+      // User will see connection status from connectedAccounts instead
     } finally {
       setLoading(false);
     }
@@ -217,7 +216,9 @@ export default function GmailIntegration() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('https://localhost:8000/gmail/templates/');
+      const response = await fetch('https://localhost:8000/gmail/templates/', {
+        credentials: 'include', // ✅ Added to send session cookies
+      });
       if (!response.ok) throw new Error('Failed to fetch templates');
       
       const data = await response.json();
@@ -593,8 +594,8 @@ export default function GmailIntegration() {
         </Paper>
       )}
 
-      {/* Old Connection Details - Keep for compatibility */}
-      {isConnected && status.connection && false && (
+      {/* Old Connection Details - Keep for compatibility but disabled */}
+      {false && isConnected && status?.connection && (
         <Paper shadow="sm" p="xl" withBorder>
           <Group justify="space-between" mb="md">
             <Title order={3} size="h4">Connection Details</Title>
@@ -622,34 +623,34 @@ export default function GmailIntegration() {
           <Stack gap="sm">
             <Group>
               <Text fw={500} size="sm" w={150}>Email Address:</Text>
-              <Text size="sm">{status.connection?.email_address}</Text>
-              {status.connection?.is_primary && (
+              <Text size="sm">{status?.connection?.email_address}</Text>
+              {status?.connection?.is_primary && (
                 <Badge color="blue" size="sm">Primary</Badge>
               )}
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Display Name:</Text>
-              <Text size="sm">{status.connection?.display_name}</Text>
+              <Text size="sm">{status?.connection?.display_name}</Text>
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Emails Sent:</Text>
-              <Text size="sm">{status.connection?.emails_sent || 0}</Text>
+              <Text size="sm">{status?.connection?.emails_sent || 0}</Text>
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Connected:</Text>
-              <Text size="sm">{formatDateTimeAU(status.connection?.connected_at)}</Text>
+              <Text size="sm">{status?.connection?.connected_at ? formatDateTimeAU(status.connection.connected_at) : 'N/A'}</Text>
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Token Expires:</Text>
-              <Text size="sm">{formatDateTimeAU(status.connection?.expires_at)}</Text>
-              {status.connection?.is_token_expired && (
+              <Text size="sm">{status?.connection?.expires_at ? formatDateTimeAU(status.connection.expires_at) : 'N/A'}</Text>
+              {status?.connection?.is_token_expired && (
                 <Badge color="red" size="sm">Expired</Badge>
               )}
             </Group>
             <Group>
               <Text fw={500} size="sm" w={150}>Last Used:</Text>
               <Text size="sm">
-                {status.connection?.last_used_at 
+                {status?.connection?.last_used_at 
                   ? formatDateTimeAU(status.connection.last_used_at)
                   : 'Never'}
               </Text>
