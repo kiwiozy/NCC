@@ -197,6 +197,7 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
