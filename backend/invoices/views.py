@@ -306,3 +306,47 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'error': str(e),
             'details': error_details if settings.DEBUG else 'An error occurred'
         }, status=400)
+
+
+@api_view(['GET'])
+def generate_xero_receipt_pdf(request, invoice_link_id):
+    """
+    Generate receipt PDF for a paid invoice with PAID watermark
+    
+    GET /api/invoices/xero/<invoice_link_id>/receipt/pdf/
+    """
+    try:
+        from xero_integration.models import XeroInvoiceLink
+        
+        # Get invoice link
+        try:
+            invoice_link = XeroInvoiceLink.objects.get(id=invoice_link_id)
+        except XeroInvoiceLink.DoesNotExist:
+            return Response({'error': 'Invoice not found'}, status=404)
+        
+        # Check if invoice is paid
+        if invoice_link.status != 'PAID':
+            return Response({
+                'error': 'Receipt can only be generated for PAID invoices',
+                'status': invoice_link.status
+            }, status=400)
+        
+        # Create a mutable copy of request.GET to add receipt=true
+        from django.http import QueryDict
+        new_get = QueryDict('', mutable=True)
+        new_get.update(request.GET)
+        new_get['receipt'] = 'true'
+        request.GET = new_get
+        
+        # Call the regular invoice PDF function with receipt mode
+        return generate_xero_invoice_pdf(request, invoice_link_id)
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error generating receipt PDF: {error_details}")
+        return Response({
+            'error': str(e),
+            'details': error_details if settings.DEBUG else 'An error occurred'
+        }, status=400)
+

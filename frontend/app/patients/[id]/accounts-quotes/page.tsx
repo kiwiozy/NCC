@@ -155,6 +155,12 @@ export default function PatientAccountsQuotesPage() {
       const invoicesData = await invoicesRes.json();
       const quotesData = await quotesRes.json();
 
+      console.log('📊 [Patient Accounts] Fetched invoices:', invoicesData);
+      console.log('📊 [Patient Accounts] Invoice statuses:', (invoicesData.results || invoicesData).map((inv: any) => ({ 
+        number: inv.xero_invoice_number, 
+        status: inv.status 
+      })));
+
       setInvoices(invoicesData.results || invoicesData);
       setQuotes(quotesData.results || quotesData);
     } catch (error) {
@@ -440,6 +446,49 @@ export default function PatientAccountsQuotesPage() {
     }
   };
 
+  const handleDownloadReceipt = async (item: CombinedItem) => {
+    try {
+      // Receipts only available for invoices (not quotes)
+      if (item.type !== 'invoice') {
+        notifications.show({
+          title: 'Info',
+          message: 'Receipts are only available for invoices',
+          color: 'blue',
+        });
+        return;
+      }
+
+      const endpoint = `https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`;
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) throw new Error('Failed to download receipt');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Receipt_${item.number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Receipt downloaded! 🧾',
+        color: 'violet',
+      });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to download receipt',
+        color: 'red',
+      });
+    }
+  };
+
   const handleAuthorizeInvoice = async (invoiceId: string) => {
     console.log('🚀 [Send to Xero] Starting authorization for invoice:', invoiceId);
     try {
@@ -560,7 +609,17 @@ export default function PatientAccountsQuotesPage() {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {filteredItems.map((item) => (
+            {filteredItems.map((item) => {
+              // Debug: Log ALL items to see types, statuses, and amount_due
+              console.log('🔍 [Item Debug]', {
+                number: item.number,
+                type: item.type,
+                status: item.status,
+                amount_due: (item as any).amount_due,
+                showReceipt: item.type === 'invoice' && parseFloat((item as any).amount_due || '0') === 0
+              });
+              
+              return (
               <Table.Tr key={item.id}>
                 <Table.Td>
                   <Badge
@@ -634,6 +693,14 @@ export default function PatientAccountsQuotesPage() {
                         <IconDownload size={16} />
                       </ActionIcon>
                     </Tooltip>
+                    {/* Receipt button - Only show for invoices when fully paid (amount_due = 0) */}
+                    {item.type === 'invoice' && parseFloat((item as any).amount_due || '0') === 0 && (
+                      <Tooltip label="Download Receipt (PAID)">
+                        <ActionIcon variant="subtle" color="violet" onClick={() => handleDownloadReceipt(item)}>
+                          <IconDownload size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
                     <Tooltip label="Delete">
                       <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)}>
                         <IconTrash size={16} />
@@ -642,7 +709,8 @@ export default function PatientAccountsQuotesPage() {
                   </Group>
                 </Table.Td>
               </Table.Tr>
-            ))}
+              );
+            })}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
