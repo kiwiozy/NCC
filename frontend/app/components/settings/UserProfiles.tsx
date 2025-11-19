@@ -258,14 +258,20 @@ export default function UserProfiles() {
     formData.append('file', file);
     formData.append('file_type', 'signature');
 
+    const csrfToken = await getCsrfToken();
+
     const response = await fetch('https://localhost:8000/api/documents/upload/', {
       method: 'POST',
       credentials: 'include',
+      headers: {
+        'X-CSRFToken': csrfToken,
+      },
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload signature image');
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.detail || errorData.error || 'Failed to upload signature image');
     }
 
     const data = await response.json();
