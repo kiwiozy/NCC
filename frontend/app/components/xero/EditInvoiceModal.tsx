@@ -5,6 +5,7 @@ import { DateInput } from '@mantine/dates';
 import { IconDeviceFloppy, IconX, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface EditInvoiceModalProps {
   opened: boolean;
@@ -195,11 +196,14 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
 
     setSaving(true);
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/xero/invoices/${invoice.xero_invoice_id}/update/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
+        credentials: 'include',
         body: JSON.stringify({
           invoice_date: invoiceDate?.toISOString(),
           due_date: dueDate?.toISOString(),

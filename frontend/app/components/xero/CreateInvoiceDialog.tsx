@@ -32,6 +32,7 @@ import {
 } from '@tabler/icons-react';
 import { DateInput } from '@mantine/dates';
 import { formatCurrency, formatDateAU } from '../../utils/formatting';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface Patient {
   id: string;
@@ -288,9 +289,14 @@ export default function CreateInvoiceDialog({
         payload.expiry_date = expiryDate.toISOString().split('T')[0];
       }
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

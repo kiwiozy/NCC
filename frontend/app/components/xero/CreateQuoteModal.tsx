@@ -5,6 +5,7 @@ import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, 
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface Patient {
   id: string;
@@ -251,11 +252,14 @@ export function CreateQuoteModal({ opened, onClose, onSuccess, patients, compani
         billing_notes: terms,
       });
 
-      const response = await fetch('https://localhost:8000/api/xero/quote/create/', {
+      const csrfToken = await getCsrfToken();
+      const response = await fetch('https://localhost:8000/api/xero/quotes/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
+        credentials: 'include',
         body: JSON.stringify({
           patient_id: patientId,
           company_id: companyId,

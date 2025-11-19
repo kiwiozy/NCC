@@ -5,6 +5,7 @@ import { Modal, Stack, Group, Button, Select, TextInput, NumberInput, Textarea, 
 import { DateInput } from '@mantine/dates';
 import { IconPlus, IconTrash, IconX, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface Patient {
   id: string;
@@ -255,9 +256,14 @@ export function CreateInvoiceModal({ opened, onClose, onSuccess, patients, compa
         send_immediately: sendImmediately,
       };
 
-      const response = await fetch('https://localhost:8000/api/xero/invoice/create/', {
+      const csrfToken = await getCsrfToken();
+      const response = await fetch('https://localhost:8000/api/xero/invoices/create/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

@@ -4,6 +4,7 @@ import { Modal, Stack, Group, Text, Button, Radio, TextInput, Paper, Stepper } f
 import { IconFileInvoice, IconFileText, IconUser, IconBuilding, IconCheck } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface QuickCreateModalProps {
   opened: boolean;
@@ -131,9 +132,14 @@ export function QuickCreateModal({ opened, onClose, onCreateInvoice, onCreateQuo
           send_immediately: false
         };
         
+        const csrfToken = await getCsrfToken();
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
         
