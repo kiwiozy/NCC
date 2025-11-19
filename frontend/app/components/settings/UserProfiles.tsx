@@ -851,12 +851,27 @@ export default function UserProfiles() {
                   Paste HTML Code Here
                 </Text>
                 <Textarea
-                  placeholder="Paste your HTML signature code here..."
+                  placeholder="Paste your complete HTML signature code here (including tables, images, etc.)..."
                   value={formSignatureHtml}
                   onChange={(e) => {
-                    setFormSignatureHtml(e.currentTarget.value);
+                    let html = e.currentTarget.value;
+                    
+                    // Extract body content if full HTML document is pasted
+                    if (html.includes('<body')) {
+                      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                      if (bodyMatch) {
+                        html = bodyMatch[1].trim();
+                      }
+                    }
+                    
+                    // Remove DOCTYPE, html, head tags if present
+                    html = html.replace(/<!DOCTYPE[^>]*>/gi, '');
+                    html = html.replace(/<\/?html[^>]*>/gi, '');
+                    html = html.replace(/<head>[\s\S]*?<\/head>/gi, '');
+                    
+                    setFormSignatureHtml(html);
                     if (htmlSignatureEditor) {
-                      htmlSignatureEditor.commands.setContent(e.currentTarget.value);
+                      htmlSignatureEditor.commands.setContent(html);
                     }
                   }}
                   minRows={12}
@@ -864,6 +879,9 @@ export default function UserProfiles() {
                     input: { fontFamily: 'monospace', fontSize: 12 }
                   }}
                 />
+                <Text size="xs" c="dimmed" mt="xs">
+                  💡 Tip: You can paste a complete HTML document - we'll automatically extract just the signature content.
+                </Text>
               </Box>
 
               {formSignatureHtml && (
@@ -871,8 +889,23 @@ export default function UserProfiles() {
                   <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
                     Preview
                   </Text>
-                  <Paper withBorder p="xl" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
-                    <div dangerouslySetInnerHTML={{ __html: formSignatureHtml }} />
+                  <Paper 
+                    withBorder 
+                    p="xl" 
+                    style={{ 
+                      backgroundColor: '#ffffff',
+                      maxHeight: '500px',
+                      overflow: 'auto'
+                    }}
+                  >
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: formSignatureHtml }}
+                      style={{
+                        fontFamily: 'Verdana, sans-serif',
+                        fontSize: '14px',
+                        color: '#355D68'
+                      }}
+                    />
                   </Paper>
                 </Box>
               )}
