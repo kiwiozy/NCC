@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [user, setUser] = useState<{ username: string; email: string } | null>(null);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -30,6 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('🔐 [AuthContext] Skipping checkAuth during logout');
       return;
     }
+    
+    // Only show loading screen if check takes longer than 200ms
+    const loadingTimer = setTimeout(() => {
+      setShowLoadingScreen(true);
+    }, 200);
     
     try {
       const response = await fetch('https://localhost:8000/api/auth/user/', {
@@ -70,7 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(false);
       setUser(null);
     } finally {
+      clearTimeout(loadingTimer);
       setIsLoading(false);
+      setShowLoadingScreen(false);
     }
   };
 
@@ -141,8 +149,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isLoading, pathname]);
 
-  // BLOCK rendering if not authenticated (except on login page)
-  if (isLoading) {
+  // BLOCK rendering if showing loading screen (only after 300ms delay)
+  if (showLoadingScreen) {
     return (
       <AuthContext.Provider
         value={{
@@ -165,28 +173,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // If not authenticated and not on login page, show nothing (will redirect)
-  if (!isAuthenticated && pathname !== '/login') {
-    return (
-      <AuthContext.Provider
-        value={{
-          isAuthenticated,
-          isLoading,
-          user,
-          logout,
-          checkAuth,
-          isFirstLogin,
-          setIsFirstLogin,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#1A1B1E' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔐</div>
-            <div style={{ color: '#C1C2C5' }}>Redirecting to login...</div>
-          </div>
-        </div>
-      </AuthContext.Provider>
-    );
+  // If not authenticated and not on login page, don't render (will redirect)
+  if (!isLoading && !isAuthenticated && pathname !== '/login') {
+    return null;
   }
 
   return (
