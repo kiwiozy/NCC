@@ -948,10 +948,11 @@ export default function UserProfiles() {
                     <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
                       Preview
                     </Text>
-                    <Paper 
-                      withBorder 
-                      p="md" 
+                    <div
                       style={{ 
+                        border: '1px solid #dee2e6',
+                        borderRadius: '4px',
+                        padding: '16px',
                         backgroundColor: '#ffffff',
                         maxHeight: '600px',
                         overflow: 'auto'
@@ -961,7 +962,7 @@ export default function UserProfiles() {
                       <div 
                         dangerouslySetInnerHTML={{ __html: formSignatureHtml }}
                       />
-                    </Paper>
+                    </div>
                     <Text size="xs" c="dimmed" mt="xs">
                       👆 This is how your signature will appear in emails
                     </Text>
