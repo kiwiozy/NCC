@@ -5,6 +5,7 @@ import { DateInput } from '@mantine/dates';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { IconCurrencyDollar } from '@tabler/icons-react';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface PaymentModalProps {
   opened: boolean;
@@ -118,11 +119,14 @@ export function PaymentModal({ opened, onClose, invoice, onSuccess }: PaymentMod
       // Format date as YYYY-MM-DD
       const formattedDate = paymentDate.toISOString().split('T')[0];
 
+      const csrfToken = await getCsrfToken();
       const response = await fetch('https://localhost:8000/api/xero/payments/create_single_payment/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
+        credentials: 'include',
         body: JSON.stringify({
           invoice_link_id: invoice.id,
           amount: paymentAmount.toString(),
