@@ -228,6 +228,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconBuildingHospital size={subIconSize} stroke={1.5} />, label: 'Clinics', href: '/settings?tab=clinics' },
     { icon: <IconUser size={subIconSize} stroke={1.5} />, label: 'User Profiles', href: '/settings?tab=users' },
     { icon: <IconCloud size={subIconSize} stroke={1.5} />, label: 'Data Management', href: '/settings?tab=data-management' },
+    { icon: <IconMail size={subIconSize} stroke={1.5} />, label: 'Email Templates', href: '/settings?tab=email-templates' },
   ];
 
   const handleNavClick = (href: string, hasSubmenu?: boolean) => {
