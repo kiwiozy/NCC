@@ -37,6 +37,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { formatDateTimeAU } from '../../utils/dateFormatting';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface GmailConnection {
   id: string;
@@ -321,9 +322,14 @@ export default function GmailIntegration() {
     if (!confirm(`Are you sure you want to disconnect ${accountName || accountEmail}?`)) return;
     
     try {
+      const csrfToken = await getCsrfToken(); // ✅ Get CSRF token
       const response = await fetch('https://localhost:8000/gmail/oauth/disconnect/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken, // ✅ Add CSRF token
+        },
+        credentials: 'include', // ✅ Added to send session cookies
         body: JSON.stringify({ email: accountEmail }),
       });
       
