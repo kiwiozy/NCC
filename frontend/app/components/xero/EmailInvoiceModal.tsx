@@ -40,6 +40,7 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [useGenerator, setUseGenerator] = useState(true);  // NEW: Toggle for generator
   
   const [emailForm, setEmailForm] = useState({
     to: '',
@@ -150,7 +151,8 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
       return;
     }
 
-    if (!emailForm.subject || !emailForm.body) {
+    // Only validate subject/body in legacy mode
+    if (!useGenerator && (!emailForm.subject || !emailForm.body)) {
       notifications.show({
         title: 'Error',
         message: 'Please select a template or enter subject and body',
@@ -166,24 +168,36 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         to: emailForm.to,
         subject: emailForm.subject,
         document_type: type,
+        use_generator: useGenerator,
       });
+      
+      const payload: any = {
+        invoice_id: invoice.id,
+        to: emailForm.to,
+        cc: emailForm.cc,
+        bcc: emailForm.bcc,
+        attach_pdf: emailForm.attachPdf,
+        from_email: emailForm.fromEmail,
+        document_type: type,
+        use_generator: useGenerator,
+        template_id: selectedTemplate?.id || null,
+      };
+      
+      // Only include subject/body in legacy mode
+      if (!useGenerator) {
+        payload.subject = emailForm.subject;
+        payload.body_html = emailForm.body;
+      } else if (emailForm.subject) {
+        // Allow custom subject even in generator mode
+        payload.subject = emailForm.subject;
+      }
       
       const response = await fetch(`${API_URL}/api/invoices/send-email/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          invoice_id: invoice.id,
-          to: emailForm.to,
-          cc: emailForm.cc,
-          bcc: emailForm.bcc,
-          subject: emailForm.subject,
-          body_html: emailForm.body,
-          attach_pdf: emailForm.attachPdf,
-          from_email: emailForm.fromEmail,
-          document_type: type,
-        }),
+        body: JSON.stringify(payload),
       });
 
       console.log('Email response status:', response.status);
@@ -241,17 +255,34 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
         </Stack>
       ) : (
         <Stack gap="md">
+          {/* Generator Toggle */}
           <Alert icon={<IconInfoCircle size={16} />} color="blue">
-            <Text size="sm">
-              Select a template to auto-fill the email, or write your own message.
-            </Text>
+            <Stack gap="xs">
+              <Switch
+                label="Use Professional Email Generator (Recommended)"
+                description="Generate beautifully formatted emails automatically from invoice/quote data"
+                checked={useGenerator}
+                onChange={(e) => setUseGenerator(e.currentTarget.checked)}
+                styles={{
+                  label: { fontWeight: 600 },
+                  description: { marginTop: 4 },
+                }}
+              />
+              {!useGenerator && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Legacy mode: You can manually edit the email subject and body using templates.
+                </Text>
+              )}
+            </Stack>
           </Alert>
 
+          {/* Template Selection (affects header color in both modes) */}
           <Select
             label="Email Template"
+            description={useGenerator ? "Template sets the header color and branding" : "Template fills in subject and body"}
             placeholder="Choose a template..."
             data={[
-              { value: '', label: '-- No Template --' },
+              { value: '', label: '-- Default --' },
               ...templates.map(t => ({
                 value: t.id.toString(),
                 label: `${t.name}${t.is_default ? ' (Default)' : ''}`,
@@ -297,20 +328,38 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
 
           <TextInput
             label="Subject"
-            placeholder="Email subject"
-            required
+            placeholder={useGenerator ? "Auto-generated (or enter custom subject)" : "Email subject"}
             value={emailForm.subject}
             onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+            description={useGenerator ? "Leave blank to auto-generate" : undefined}
           />
 
-          <Textarea
-            label="Message"
-            placeholder="Email body..."
-            rows={10}
-            required
-            value={emailForm.body}
-            onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
-          />
+          {!useGenerator && (
+            <Textarea
+              label="Message"
+              placeholder="Email body..."
+              rows={10}
+              required
+              value={emailForm.body}
+              onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
+            />
+          )}
+
+          {useGenerator && (
+            <Alert color="green" icon={<IconInfoCircle size={16} />}>
+              <Text size="sm">
+                ✨ Email content will be professionally generated from your {type} data with:
+              </Text>
+              <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+                <li>Professional header with custom color</li>
+                <li>Formatted invoice/quote details</li>
+                <li>Line items table</li>
+                <li>Payment methods (for invoices)</li>
+                <li>Status badges (PAID, OVERDUE, etc.)</li>
+                <li>Responsive design for all devices</li>
+              </ul>
+            </Alert>
+          )}
 
           <Switch
             label="Attach PDF"

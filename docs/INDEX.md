@@ -92,7 +92,9 @@ docs/
 │   ├── XERO.md                  # Xero OAuth & accounting
 │   ├── SMS.md                   # SMS Broadcast messaging
 │   ├── S3.md                    # AWS S3 document storage
-│   └── OPENAI.md                # OpenAI GPT-4o-mini features
+│   ├── OPENAI.md                # OpenAI GPT-4o-mini features
+│   ├── EMAIL_GENERATOR.md       # Professional email generation system ✅ NEW
+│   └── EMAIL_GENERATOR_QUICKSTART.md  # Quick start guide ✅ NEW
 │
 ├── setup/                        # Setup & configuration
 │   ├── CODE_ORGANIZATION_STRATEGY.md
