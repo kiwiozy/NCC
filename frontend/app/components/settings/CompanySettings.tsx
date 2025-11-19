@@ -129,7 +129,8 @@ export default function CompanySettings() {
   }
 
   return (
-    <Stack gap="lg">
+    <div style={{ height: '100%', overflowY: 'auto', paddingBottom: '2rem' }}>
+      <Stack gap="lg">
       <Group justify="space-between" align="center">
         <div>
           <Title order={2}>
@@ -317,6 +318,7 @@ export default function CompanySettings() {
         </Button>
       </Group>
     </Stack>
+    </div>
   );
 }
 
