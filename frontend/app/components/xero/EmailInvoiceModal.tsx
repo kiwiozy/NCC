@@ -55,6 +55,32 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
     fromEmail: 'info@walkeasy.com.au',
   });
 
+  // Check if user just came back from OAuth reconnection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthStatus = urlParams.get('status');
+    
+    if (oauthStatus === 'connected') {
+      // Check if there's a pending email to resume
+      const pendingEmail = sessionStorage.getItem('pending_email_invoice');
+      if (pendingEmail) {
+        try {
+          const data = JSON.parse(pendingEmail);
+          notifications.show({
+            title: 'Gmail Reconnected!',
+            message: 'Your Gmail account is now connected. You can send your email.',
+            color: 'green',
+          });
+          sessionStorage.removeItem('pending_email_invoice');
+          // Clean up URL
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch (e) {
+          console.error('Failed to parse pending email data:', e);
+        }
+      }
+    }
+  }, []);
+
   // Fetch templates for this category
   useEffect(() => {
     if (opened) {
@@ -255,18 +281,29 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
   };
 
   const handleReconnectGmail = () => {
-    // Navigate to Gmail settings
-    window.location.href = '/settings?tab=email-templates';
+    // Store the current invoice data so we can resume after OAuth
+    sessionStorage.setItem('pending_email_invoice', JSON.stringify({
+      invoice_id: invoice.id,
+      type: type,
+      to: emailForm.to,
+      cc: emailForm.cc,
+      bcc: emailForm.bcc,
+      from: emailForm.fromEmail,
+    }));
+    
+    // Redirect to Gmail OAuth flow
+    window.location.href = 'https://localhost:8000/gmail/oauth/connect/';
   };
 
   return (
     <>
-      {/* Reconnect Gmail Modal */}
+      {/* Reconnect Gmail Modal - Higher z-index to appear above email modal */}
       <Modal
         opened={showReconnectModal}
         onClose={() => setShowReconnectModal(false)}
         title="Gmail Connection Required"
         size="md"
+        zIndex={300}
       >
         <Stack gap="md">
           <Alert color="yellow" icon={<IconInfoCircle size={16} />}>
@@ -274,15 +311,22 @@ export default function EmailInvoiceModal({ opened, onClose, invoice, type }: Em
           </Alert>
           
           <Text size="sm">
-            The OAuth token has expired or is invalid. Please reconnect this Gmail account to continue sending emails.
+            The OAuth token has expired or is invalid. Click below to reconnect this Gmail account.
+          </Text>
+          
+          <Text size="xs" c="dimmed">
+            You'll be redirected to Google to authorize access, then brought back here to complete sending your email.
           </Text>
           
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" onClick={() => setShowReconnectModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleReconnectGmail}>
-              Go to Gmail Settings
+            <Button 
+              onClick={handleReconnectGmail}
+              leftSection={<IconMail size={16} />}
+            >
+              Connect Gmail Account
             </Button>
           </Group>
         </Stack>
