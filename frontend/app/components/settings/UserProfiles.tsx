@@ -100,6 +100,28 @@ const getCsrfToken = async (): Promise<string> => {
   return '';
 };
 
+// Helper function to clean HTML signature (extract body, remove wrapper tags)
+const cleanHtmlSignature = (html: string): string => {
+  if (!html || !html.trim()) return '';
+  
+  let cleaned = html;
+  
+  // Extract body content if full HTML document is pasted
+  if (cleaned.includes('<body')) {
+    const bodyMatch = cleaned.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    if (bodyMatch) {
+      cleaned = bodyMatch[1].trim();
+    }
+  }
+  
+  // Remove DOCTYPE, html, head tags if present
+  cleaned = cleaned.replace(/<!DOCTYPE[^>]*>/gi, '');
+  cleaned = cleaned.replace(/<\/?html[^>]*>/gi, '');
+  cleaned = cleaned.replace(/<head>[\s\S]*?<\/head>/gi, '');
+  
+  return cleaned.trim();
+};
+
 export default function UserProfiles() {
   const [clinicians, setClinicians] = useState<Clinician[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -310,7 +332,7 @@ export default function UserProfiles() {
         registration_number: formRegistrationNumber || null,
         professional_body_url: formProfessionalBodyUrl || null,
         signature_image: signatureS3Key,
-        signature_html: formSignatureHtml || null,
+        signature_html: cleanHtmlSignature(formSignatureHtml) || null,  // Clean HTML before saving
       };
 
       const url = editingClinician
@@ -868,24 +890,11 @@ export default function UserProfiles() {
                         if (file) {
                           const reader = new FileReader();
                           reader.onload = (e) => {
-                            let html = e.target?.result as string;
-                            
-                            // Extract body content if full HTML document
-                            if (html.includes('<body')) {
-                              const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                              if (bodyMatch) {
-                                html = bodyMatch[1].trim();
-                              }
-                            }
-                            
-                            // Remove DOCTYPE, html, head tags if present
-                            html = html.replace(/<!DOCTYPE[^>]*>/gi, '');
-                            html = html.replace(/<\/?html[^>]*>/gi, '');
-                            html = html.replace(/<head>[\s\S]*?<\/head>/gi, '');
-                            
-                            setFormSignatureHtml(html);
+                            const rawHtml = e.target?.result as string;
+                            const cleanedHtml = cleanHtmlSignature(rawHtml);
+                            setFormSignatureHtml(cleanedHtml);
                             if (htmlSignatureEditor) {
-                              htmlSignatureEditor.commands.setContent(html);
+                              htmlSignatureEditor.commands.setContent(cleanedHtml);
                             }
                           };
                           reader.readAsText(file);
@@ -915,25 +924,9 @@ export default function UserProfiles() {
                   placeholder="Paste your complete HTML signature code here (including tables, images, etc.)..."
                   value={formSignatureHtml}
                   onChange={(e) => {
-                    let html = e.currentTarget.value;
-                    
-                    // Extract body content if full HTML document is pasted
-                    if (html.includes('<body')) {
-                      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                      if (bodyMatch) {
-                        html = bodyMatch[1].trim();
-                      }
-                    }
-                    
-                    // Remove DOCTYPE, html, head tags if present
-                    html = html.replace(/<!DOCTYPE[^>]*>/gi, '');
-                    html = html.replace(/<\/?html[^>]*>/gi, '');
-                    html = html.replace(/<head>[\s\S]*?<\/head>/gi, '');
-                    
-                    setFormSignatureHtml(html);
-                    if (htmlSignatureEditor) {
-                      htmlSignatureEditor.commands.setContent(html);
-                    }
+                    // Just store the raw value - don't process it!
+                    // The file upload handler will do the cleaning
+                    setFormSignatureHtml(e.currentTarget.value);
                   }}
                   minRows={15}
                   styles={{
@@ -960,7 +953,7 @@ export default function UserProfiles() {
                     >
                       {/* Render HTML exactly as email clients would */}
                       <div 
-                        dangerouslySetInnerHTML={{ __html: formSignatureHtml }}
+                        dangerouslySetInnerHTML={{ __html: cleanHtmlSignature(formSignatureHtml) }}
                       />
                     </div>
                     <Text size="xs" c="dimmed" mt="xs">
@@ -983,7 +976,7 @@ export default function UserProfiles() {
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-all'
                         }}>
-                          {formSignatureHtml}
+                          {cleanHtmlSignature(formSignatureHtml)}
                         </pre>
                       </Paper>
                     </details>
