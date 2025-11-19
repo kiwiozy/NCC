@@ -80,17 +80,20 @@ class SendInvoiceEmailView(APIView):
                     # Generate PDF (reuse existing PDF generation logic)
                     if document_type == 'quote':
                         from .quote_views import generate_xero_quote_pdf
-                        from django.http import HttpRequest
+                        from django.http import HttpRequest, QueryDict
                         
-                        # Create a fake request for PDF generation
+                        # Create a request for PDF generation
                         pdf_request = HttpRequest()
-                        pdf_request.user = request.user
+                        pdf_request.method = 'GET'
+                        pdf_request.GET = QueryDict('', mutable=True)
                         pdf_response = generate_xero_quote_pdf(pdf_request, str(invoice_id))
                     else:
-                        from django.http import HttpRequest
+                        from django.http import HttpRequest, QueryDict
                         pdf_request = HttpRequest()
-                        pdf_request.user = request.user
-                        pdf_request.GET = {'receipt': 'true'} if document_type == 'receipt' else {}
+                        pdf_request.method = 'GET'
+                        pdf_request.GET = QueryDict('', mutable=True)
+                        if document_type == 'receipt':
+                            pdf_request.GET['receipt'] = 'true'
                         
                         from .views import generate_xero_invoice_pdf
                         pdf_response = generate_xero_invoice_pdf(pdf_request, str(invoice_id))
@@ -104,41 +107,39 @@ class SendInvoiceEmailView(APIView):
                             'filename': pdf_filename,
                             'mimetype': 'application/pdf'
                         })
+                        logger.info(f"PDF attached: {pdf_filename} ({len(pdf_content)} bytes)")
                     else:
                         logger.warning(f"Failed to generate PDF attachment: {pdf_response.status_code}")
                 except Exception as e:
                     logger.error(f"Error generating PDF attachment: {e}")
+                    import traceback
+                    logger.error(traceback.format_exc())
                     # Continue without attachment
             
             # Send email via Gmail
             gmail_service = GmailService()
             
             # Split CC and BCC if multiple
-            cc_list = [email.strip() for email in cc_email.split(',') if email.strip()]
-            bcc_list = [email.strip() for email in bcc_email.split(',') if email.strip()]
+            cc_list = [email.strip() for email in cc_email.split(',') if email.strip()] if cc_email else []
+            bcc_list = [email.strip() for email in bcc_email.split(',') if email.strip()] if bcc_email else []
             
-            result = gmail_service.send_email(
-                to=to_email,
+            sent_email = gmail_service.send_email(
+                to_emails=[to_email],
                 subject=subject,
                 body_html=body_with_signature,
                 body_text=None,  # Gmail will auto-generate
-                from_email=from_email,
-                cc=cc_list if cc_list else None,
-                bcc=bcc_list if bcc_list else None,
+                from_address=from_email,
+                cc_emails=cc_list if cc_list else None,
+                bcc_emails=bcc_list if bcc_list else None,
                 attachments=attachments if attachments else None
             )
             
-            if result.get('success'):
-                logger.info(f"Email sent successfully for {document_type} {invoice_id}")
-                return Response({
-                    'success': True,
-                    'message': f'{document_type.capitalize()} email sent successfully'
-                })
-            else:
-                logger.error(f"Failed to send email: {result.get('error')}")
-                return Response({
-                    'error': result.get('error', 'Failed to send email')
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.info(f"Email sent successfully for {document_type} {invoice_id}")
+            return Response({
+                'success': True,
+                'message': f'{document_type.capitalize()} email sent successfully',
+                'email_id': str(sent_email.id)
+            })
                 
         except Exception as e:
             import traceback
