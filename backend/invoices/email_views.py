@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from xero_integration.models import XeroInvoiceLink, XeroQuoteLink
 from gmail_integration.services import GmailService
-from .email_signature_helper import append_signature_to_email
 from .email_wrapper import wrap_email_html, get_email_type_from_category
 from .models import EmailTemplate
 from .email_generator import EmailGenerator
@@ -121,12 +120,9 @@ class SendInvoiceEmailView(APIView):
                     title=title
                 )
             
-            # Append email signature
-            body_with_signature = append_signature_to_email(
-                email_body_html=email_html,
-                sender_email=from_email,
-                user=request.user
-            )
+            # Note: Signature is already handled by EmailGenerator/wrap_email_html
+            # No need to append signature again here
+            body_with_signature = email_html
             
             # Generate PDF attachment if requested
             attachments = []
