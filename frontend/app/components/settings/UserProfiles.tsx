@@ -890,6 +890,10 @@ export default function UserProfiles() {
 
                     <RichTextEditor.Content style={{ minHeight: rem(250), fontSize: 14 }} />
                   </RichTextEditor>
+                  
+                  <Text size="xs" c="dimmed" mt="xs">
+                    Tip: You can paste HTML directly into the editor, or use the HTML source button in your browser's dev tools to paste custom HTML.
+                  </Text>
                 </Box>
               ) : (
                 <Box style={{ textAlign: 'center', padding: '40px' }}>
@@ -897,6 +901,27 @@ export default function UserProfiles() {
                   <Text size="sm" c="dimmed" mt="md">Loading editor...</Text>
                 </Box>
               )}
+
+              {/* Alternative: Direct HTML Input */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  Or Paste HTML Code Directly
+                </Text>
+                <Textarea
+                  placeholder="Paste your HTML signature code here..."
+                  value={formSignatureHtml}
+                  onChange={(e) => {
+                    setFormSignatureHtml(e.currentTarget.value);
+                    if (htmlSignatureEditor) {
+                      htmlSignatureEditor.commands.setContent(e.currentTarget.value);
+                    }
+                  }}
+                  minRows={8}
+                  styles={{
+                    input: { fontFamily: 'monospace', fontSize: 12 }
+                  }}
+                />
+              </Box>
 
               {formSignatureHtml && (
                 <Box>
