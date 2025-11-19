@@ -925,8 +925,14 @@ export default function UserProfiles() {
                   value={formSignatureHtml}
                   onChange={(e) => {
                     // Just store the raw value - don't process it!
-                    // The file upload handler will do the cleaning
                     setFormSignatureHtml(e.currentTarget.value);
+                  }}
+                  onPaste={(e) => {
+                    // Prevent default paste behavior that might strip HTML
+                    e.preventDefault();
+                    // Get plain text from clipboard (preserves HTML source code)
+                    const pastedText = e.clipboardData.getData('text/plain');
+                    setFormSignatureHtml(pastedText);
                   }}
                   minRows={15}
                   styles={{
