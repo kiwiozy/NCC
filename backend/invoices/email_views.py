@@ -48,7 +48,13 @@ class SendInvoiceEmailView(APIView):
             subject = data.get('subject')  # Optional now
             body_html = data.get('body_html')  # Optional now
             attach_pdf = data.get('attach_pdf', True)
-            from_email = data.get('from_email', 'info@walkeasy.com.au')
+            from_email = data.get('from_email')
+            
+            # If no from_email provided, use company email from settings
+            if not from_email:
+                from .models import EmailGlobalSettings
+                settings = EmailGlobalSettings.get_settings()
+                from_email = settings.clinic_email or 'info@walkeasy.com.au'
             document_type = data.get('document_type', 'invoice')
             use_generator = data.get('use_generator', True)  # Default to generator
             template_id = data.get('template_id')
