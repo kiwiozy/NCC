@@ -102,7 +102,7 @@ def send_at_report_email_via_gmail(
                 }}
                 .checklist li:before {{
                     content: "✓ ";
-                    color: #10b981;
+                    color: #5b95cf;  /* WalkEasy Blue (no more green!) */
                     font-weight: bold;
                     margin-right: 8px;
                 }}

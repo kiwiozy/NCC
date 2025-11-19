@@ -49,12 +49,22 @@ def wrap_email_html(
     signature_html = ''
     try:
         from .models import EmailGlobalSettings
+        import logging
+        logger = logging.getLogger(__name__)
+        
         settings = EmailGlobalSettings.get_settings()
+        
+        logger.info(f"Email Signature Settings:")
+        logger.info(f"  - use_email_signatures: {settings.use_email_signatures}")
+        logger.info(f"  - clinician provided: {clinician is not None}")
+        logger.info(f"  - clinician has signature: {clinician.signature_html if clinician else 'N/A'}")
+        logger.info(f"  - company signature set: {bool(settings.company_signature_html)}")
         
         # Only add signature if use_email_signatures is enabled
         if settings.use_email_signatures:
             if clinician and clinician.signature_html:
                 # Use clinician's personal signature
+                logger.info("Using clinician's personal signature")
                 signature_html = f'''
                 <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
                     {clinician.signature_html}
@@ -62,14 +72,21 @@ def wrap_email_html(
                 '''
             elif settings.company_signature_html:
                 # No clinician provided, use company signature
+                logger.info("Using company signature")
                 signature_html = f'''
                 <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
                     {settings.company_signature_html}
                 </div>
                 '''
+            else:
+                logger.warning("No signature available (neither clinician nor company)")
+        else:
+            logger.info("Email signatures disabled in settings")
     except Exception as e:
         # Silently fail if no signature available
-        pass
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error loading signature: {e}")
     
     # Build complete HTML structure
     html = f"""<!DOCTYPE html>

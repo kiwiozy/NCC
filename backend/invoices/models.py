@@ -54,8 +54,8 @@ class EmailTemplate(models.Model):
     # Appearance
     header_color = models.CharField(
         max_length=7,
-        default='#10b981',
-        help_text='Hex color for email header (e.g., #10b981)'
+        default='#5b95cf',  # WalkEasy Blue (no more green!)
+        help_text='Hex color for email header (e.g., #5b95cf)'
     )
     
     # Settings

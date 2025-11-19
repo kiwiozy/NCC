@@ -116,7 +116,7 @@ class SendInvoiceEmailView(APIView):
                 # Wrap body_html in professional email structure
                 email_html = wrap_email_html(
                     body_html=body_html,
-                    header_color=header_color or '#10b981',
+                    header_color=header_color or '#5b95cf',  # WalkEasy Blue (no more green!)
                     email_type=email_type,
                     title=title
                 )
@@ -227,26 +227,41 @@ class SendInvoiceEmailView(APIView):
             from .models import EmailGlobalSettings
             settings = EmailGlobalSettings.get_settings()
             
+            logger.info(f"Determining signature for from_email: {from_email}")
+            logger.info(f"Company signature email: {settings.company_signature_email}")
+            
             # If sending from company email (info@...), use company signature (no clinician)
             # If sending from personal email, find the clinician who owns that email
             if from_email.lower() != settings.company_signature_email.lower():
-                # Try to find clinician by email
+                # Try to find clinician by user.email (most reliable)
                 from clinicians.models import Clinician
                 try:
-                    clinician = Clinician.objects.filter(email=from_email, active=True).first()
+                    # First try to find by user.email
+                    clinician = Clinician.objects.filter(user__email__iexact=from_email, active=True).first()
+                    
+                    # If not found, try by clinician.email
                     if not clinician:
-                        # Fallback: try to get from invoice clinician
+                        clinician = Clinician.objects.filter(email__iexact=from_email, active=True).first()
+                    
+                    # If still not found, try to get from invoice clinician
+                    if not clinician:
                         if hasattr(invoice, 'clinician') and invoice.clinician:
                             clinician = invoice.clinician
+                            logger.info(f"Using invoice clinician: {clinician}")
+                    else:
+                        logger.info(f"Found clinician: {clinician} for email {from_email}")
                 except Exception as e:
                     logger.warning(f"Could not find clinician for email {from_email}: {e}")
                     # Fallback: try invoice clinician
                     if hasattr(invoice, 'clinician') and invoice.clinician:
                         clinician = invoice.clinician
+            else:
+                logger.info(f"Using company signature (from_email matches company email)")
         else:
             # No from_email provided, use invoice clinician as fallback
             if hasattr(invoice, 'clinician') and invoice.clinician:
                 clinician = invoice.clinician
+                logger.info(f"No from_email, using invoice clinician: {clinician}")
         
         # Create generator with clinician for signature (or None for company signature)
         generator = EmailGenerator(

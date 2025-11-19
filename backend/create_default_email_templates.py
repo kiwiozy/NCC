@@ -38,7 +38,7 @@ def create_default_templates():
 <p>If you have any questions, please don't hesitate to contact us.</p>
 
 <p>Best regards,<br>{clinic_name}</p>''',
-            'header_color': '#10b981',
+            'header_color': '#5b95cf',  # WalkEasy Blue
             'is_default': True,
         },
         {
@@ -86,7 +86,7 @@ def create_default_templates():
 <p>If you have any questions or concerns, please contact us.</p>
 
 <p>Best regards,<br>{clinic_name}</p>''',
-            'header_color': '#10b981',
+            'header_color': '#5b95cf',  # WalkEasy Blue
             'is_default': False,
         },
         
@@ -113,7 +113,7 @@ def create_default_templates():
 <p>Thank you for your business!</p>
 
 <p>Best regards,<br>{clinic_name}</p>''',
-            'header_color': '#10b981',
+            'header_color': '#5b95cf',  # WalkEasy Blue
             'is_default': True,
         },
         
