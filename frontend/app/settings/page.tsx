@@ -6,6 +6,7 @@ import { Container, rem } from '@mantine/core';
 import Navigation from '../components/Navigation';
 
 // We'll import these as separate components
+import CompanySettings from '../components/settings/CompanySettings';
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 import ClinicsSettings from '../components/settings/ClinicsSettings';
 import DataManagementSettings from '../components/settings/DataManagementSettings';
@@ -39,12 +40,7 @@ export default function SettingsPage() {
         return <EmailTemplateManager />;
       case 'general':
       default:
-        return (
-          <div>
-            <h3 style={{ marginBottom: rem(16) }}>General Settings</h3>
-            <p>Coming soon...</p>
-          </div>
-        );
+        return <CompanySettings />;
     }
   };
 
