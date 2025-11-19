@@ -587,11 +587,23 @@ export default function UserProfiles() {
       <Modal
         opened={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingClinician ? 'Edit User Profile' : 'Add User Profile'}
+        title={
+          <Group gap="xs">
+            <IconUser size={22} />
+            <Text fw={600} size="lg">
+              {editingClinician ? 'Edit User Profile' : 'Add User Profile'}
+            </Text>
+          </Group>
+        }
         size="xl"
+        padding="xl"
+        styles={{
+          title: { fontWeight: 600, fontSize: 18 },
+          body: { paddingTop: 20 }
+        }}
       >
-        <Tabs value={activeTab} onChange={setActiveTab}>
-          <Tabs.List>
+        <Tabs value={activeTab} onChange={setActiveTab} variant="pills">
+          <Tabs.List mb="xl">
             <Tabs.Tab value="details" leftSection={<IconUser size={16} />}>
               Details
             </Tabs.Tab>
@@ -603,136 +615,225 @@ export default function UserProfiles() {
             </Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="details" pt="md">
-            <Stack gap="md">
-              <TextInput
-                label="Full Name"
-                placeholder="e.g., Craig Laird"
-                value={formFullName}
-                onChange={(e) => setFormFullName(e.currentTarget.value)}
-                required
-              />
+          <Tabs.Panel value="details" pt="xl">
+            <Stack gap="xl">
+              {/* Personal Information Section */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  Personal Information
+                </Text>
+                <Stack gap="lg">
+                  <TextInput
+                    label="Full Name"
+                    placeholder="Dr. Jane Smith"
+                    value={formFullName}
+                    onChange={(e) => setFormFullName(e.currentTarget.value)}
+                    required
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 }
+                    }}
+                  />
 
-              <TextInput
-                label="Professional Credentials"
-                placeholder="e.g., CPed CM au"
-                value={formCredential}
-                onChange={(e) => setFormCredential(e.currentTarget.value)}
-              />
+                  <TextInput
+                    label="Professional Credentials"
+                    placeholder="C.Ped CM Au"
+                    description="Displayed after your name (e.g., CPed CM au)"
+                    value={formCredential}
+                    onChange={(e) => setFormCredential(e.currentTarget.value)}
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 },
+                      description: { fontSize: 13, marginTop: 6 }
+                    }}
+                  />
+                </Stack>
+              </Box>
 
-              <TextInput
-                label="Registration Number"
-                placeholder="e.g., Pedorthic Registration # 3454"
-                value={formRegistrationNumber}
-                onChange={(e) => setFormRegistrationNumber(e.currentTarget.value)}
-              />
+              {/* Professional Details Section */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  Professional Details
+                </Text>
+                <Stack gap="lg">
+                  <TextInput
+                    label="Registration Number"
+                    placeholder="Pedorthic Registration # 3454"
+                    description="Your professional registration or license number"
+                    value={formRegistrationNumber}
+                    onChange={(e) => setFormRegistrationNumber(e.currentTarget.value)}
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 },
+                      description: { fontSize: 13, marginTop: 6 }
+                    }}
+                  />
 
-              <TextInput
-                label="Professional Body URL"
-                placeholder="e.g., www.pedorthics.org.au"
-                value={formProfessionalBodyUrl}
-                onChange={(e) => setFormProfessionalBodyUrl(e.currentTarget.value)}
-              />
+                  <TextInput
+                    label="Professional Body URL"
+                    placeholder="www.pedorthics.org.au"
+                    description="Website of your professional association"
+                    value={formProfessionalBodyUrl}
+                    onChange={(e) => setFormProfessionalBodyUrl(e.currentTarget.value)}
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 },
+                      description: { fontSize: 13, marginTop: 6 }
+                    }}
+                  />
 
-              <TextInput
-                label="Email"
-                placeholder="email@example.com"
-                type="email"
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.currentTarget.value)}
-              />
+                  <Select
+                    label="Role"
+                    placeholder="Select role"
+                    description="Your role in the organization"
+                    data={roleOptions}
+                    value={formRole}
+                    onChange={setFormRole}
+                    clearable
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 },
+                      description: { fontSize: 13, marginTop: 6 }
+                    }}
+                  />
+                </Stack>
+              </Box>
 
-              <TextInput
-                label="Phone"
-                placeholder="+61 412 345 678"
-                value={formPhone}
-                onChange={(e) => setFormPhone(e.currentTarget.value)}
-              />
+              {/* Contact Information Section */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  Contact Information
+                </Text>
+                <Stack gap="lg">
+                  <TextInput
+                    label="Email"
+                    placeholder="jane@walkeasy.com.au"
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.currentTarget.value)}
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 }
+                    }}
+                  />
 
-              <Select
-                label="Role"
-                placeholder="Select role"
-                data={roleOptions}
-                value={formRole}
-                onChange={setFormRole}
-                clearable
-              />
+                  <TextInput
+                    label="Phone"
+                    placeholder="+61 412 345 678"
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.currentTarget.value)}
+                    size="md"
+                    styles={{
+                      label: { fontWeight: 500, marginBottom: 8 },
+                      input: { fontSize: 15 }
+                    }}
+                  />
+                </Stack>
+              </Box>
 
-              <Select
-                label="Link to User Account"
-                placeholder="Select user account (optional)"
-                description="Link this profile to a Google OAuth login account"
-                data={userOptions}
-                value={formUser}
-                onChange={setFormUser}
-                searchable
-                clearable
-              />
+              {/* System Access Section */}
+              <Box>
+                <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                  System Access
+                </Text>
+                <Select
+                  label="Link to User Account"
+                  placeholder="Select user account (optional)"
+                  description="Link this profile to a login account for system access"
+                  data={userOptions}
+                  value={formUser}
+                  onChange={setFormUser}
+                  searchable
+                  clearable
+                  size="md"
+                  styles={{
+                    label: { fontWeight: 500, marginBottom: 8 },
+                    input: { fontSize: 15 },
+                    description: { fontSize: 13, marginTop: 6 }
+                  }}
+                />
+              </Box>
             </Stack>
           </Tabs.Panel>
 
-          <Tabs.Panel value="signature-image" pt="md">
-            <Stack gap="md">
-              <Text size="sm" c="dimmed">
-                Upload a signature image to be used in patient letters and PDFs. Recommended format: PNG with transparent background.
-              </Text>
+          <Tabs.Panel value="signature-image" pt="xl">
+            <Stack gap="xl">
+              <Box>
+                <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                  Upload a professional signature image to be included in patient letters and PDF documents. 
+                  For best results, use a PNG file with a transparent background.
+                </Text>
+              </Box>
 
               {signatureImagePreview && (
                 <Box>
-                  <Text size="sm" fw={500} mb="xs">
-                    Preview:
+                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                    Preview
                   </Text>
-                  <Paper withBorder p="md" style={{ display: 'inline-block' }}>
+                  <Paper withBorder p="xl" style={{ display: 'inline-block', backgroundColor: 'var(--mantine-color-gray-0)' }}>
                     <Image
                       src={signatureImagePreview}
                       alt="Signature preview"
-                      style={{ maxWidth: '400px', maxHeight: '200px' }}
+                      style={{ maxWidth: '400px', maxHeight: '150px' }}
                       fit="contain"
                     />
                   </Paper>
-                  <Button
-                    variant="subtle"
-                    color="red"
-                    size="xs"
-                    mt="xs"
-                    leftSection={<IconX size={14} />}
-                    onClick={() => {
-                      setSignatureImagePreview(null);
-                      setFormSignatureImage(null);
-                      if (resetButtonRef.current) {
-                        resetButtonRef.current();
-                      }
-                    }}
-                  >
-                    Remove
-                  </Button>
+                  <Group mt="md">
+                    <Button
+                      variant="subtle"
+                      color="red"
+                      size="sm"
+                      leftSection={<IconX size={16} />}
+                      onClick={() => {
+                        setSignatureImagePreview(null);
+                        setFormSignatureImage(null);
+                        if (resetButtonRef.current) {
+                          resetButtonRef.current();
+                        }
+                      }}
+                    >
+                      Remove Image
+                    </Button>
+                  </Group>
                 </Box>
               )}
 
-              <FileButton
-                onChange={handleSignatureImageSelect}
-                accept="image/png,image/jpeg,image/jpg"
-                resetRef={resetButtonRef}
-              >
-                {(props) => (
-                  <Button
-                    {...props}
-                    leftSection={<IconUpload size={16} />}
-                    variant="light"
-                    loading={uploadingSignature}
-                  >
-                    {signatureImagePreview ? 'Change Signature Image' : 'Upload Signature Image'}
-                  </Button>
-                )}
-              </FileButton>
+              <Box>
+                <FileButton
+                  onChange={handleSignatureImageSelect}
+                  accept="image/png,image/jpeg,image/jpg"
+                  resetRef={resetButtonRef}
+                >
+                  {(props) => (
+                    <Button
+                      {...props}
+                      leftSection={<IconUpload size={18} />}
+                      variant={signatureImagePreview ? "light" : "filled"}
+                      size="md"
+                      loading={uploadingSignature}
+                    >
+                      {signatureImagePreview ? 'Change Signature Image' : 'Upload Signature Image'}
+                    </Button>
+                  )}
+                </FileButton>
+              </Box>
             </Stack>
           </Tabs.Panel>
 
-          <Tabs.Panel value="signature-html" pt="md">
-            <Stack gap="md">
-              <Text size="sm" c="dimmed">
-                Create an HTML signature to be used in emails. This will be automatically appended to emails sent from the system.
-              </Text>
+          <Tabs.Panel value="signature-html" pt="xl">
+            <Stack gap="xl">
+              <Box>
+                <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                  Create a rich text email signature that will be automatically included in emails sent from the system. 
+                  You can format text, add links, and include contact information.
+                </Text>
+              </Box>
 
               <RichTextEditor editor={htmlSignatureEditor}>
                 <RichTextEditor.Toolbar sticky stickyOffset={60}>
@@ -775,15 +876,15 @@ export default function UserProfiles() {
                   </RichTextEditor.ControlsGroup>
                 </RichTextEditor.Toolbar>
 
-                <RichTextEditor.Content style={{ minHeight: rem(200) }} />
+                <RichTextEditor.Content style={{ minHeight: rem(250) }} />
               </RichTextEditor>
 
               {formSignatureHtml && (
                 <Box>
-                  <Text size="sm" fw={500} mb="xs">
-                    Preview:
+                  <Text size="sm" fw={600} mb="md" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                    Preview
                   </Text>
-                  <Paper withBorder p="md">
+                  <Paper withBorder p="xl" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
                     <div dangerouslySetInnerHTML={{ __html: formSignatureHtml }} />
                   </Paper>
                 </Box>
@@ -792,12 +893,21 @@ export default function UserProfiles() {
           </Tabs.Panel>
         </Tabs>
 
-        <Group justify="flex-end" mt="xl">
-          <Button variant="subtle" onClick={() => setModalOpen(false)}>
+        <Group justify="space-between" mt="xl" pt="xl" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+          <Button 
+            variant="subtle" 
+            onClick={() => setModalOpen(false)}
+            size="md"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} loading={loading}>
-            {editingClinician ? 'Update' : 'Create'}
+          <Button 
+            onClick={handleSubmit} 
+            loading={loading}
+            size="md"
+            leftSection={<IconCheck size={18} />}
+          >
+            {editingClinician ? 'Update Profile' : 'Create Profile'}
           </Button>
         </Group>
       </Modal>
