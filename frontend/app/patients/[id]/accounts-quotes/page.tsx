@@ -150,8 +150,12 @@ export default function PatientAccountsQuotesPage() {
     try {
       // Fetch invoices and quotes filtered by patient
       const [invoicesRes, quotesRes] = await Promise.all([
-        fetch(`https://localhost:8000/api/xero-invoice-links/?patient=${patientId}`),
-        fetch(`https://localhost:8000/api/xero-quote-links/?patient=${patientId}`)
+        fetch(`https://localhost:8000/api/xero-invoice-links/?patient=${patientId}`, {
+          credentials: 'include',
+        }),
+        fetch(`https://localhost:8000/api/xero-quote-links/?patient=${patientId}`, {
+          credentials: 'include',
+        })
       ]);
 
       if (!invoicesRes.ok || !quotesRes.ok) {
