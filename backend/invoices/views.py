@@ -207,9 +207,14 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 # Always regenerate reference from patient's CURRENT funding source
                 # This ensures PDFs always reflect the latest patient data, even if invoice was created months ago
                 if invoice_link.patient:
+                    # Force fresh query from database to avoid cached data
+                    from patients.models import Patient
+                    fresh_patient = Patient.objects.get(id=invoice_link.patient.id)
+                    
                     from xero_integration.services import generate_smart_reference
-                    xero_reference = generate_smart_reference(invoice_link.patient)
+                    xero_reference = generate_smart_reference(fresh_patient)
                     logger.info(f"Regenerated reference from current patient funding: {xero_reference}")
+                    logger.info(f"Patient funding_source: {fresh_patient.funding_source}, health_number: {fresh_patient.health_number}")
                 elif xero_invoice and hasattr(xero_invoice, 'reference'):
                     # No patient link - use whatever is in Xero
                     xero_reference = xero_invoice.reference

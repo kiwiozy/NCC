@@ -119,9 +119,14 @@ def generate_xero_quote_pdf(request, quote_link_id):
         # Always regenerate reference from patient's CURRENT funding source
         # This ensures PDFs always reflect the latest patient data, even if quote was created months ago
         if quote_link.patient:
+            # Force fresh query from database to avoid cached data
+            from patients.models import Patient
+            fresh_patient = Patient.objects.get(id=quote_link.patient.id)
+            
             from xero_integration.services import generate_smart_reference
-            xero_reference = generate_smart_reference(quote_link.patient)
+            xero_reference = generate_smart_reference(fresh_patient)
             logger.info(f"Regenerated reference from current patient funding: {xero_reference}")
+            logger.info(f"Patient funding_source: {fresh_patient.funding_source}, health_number: {fresh_patient.health_number}")
         elif hasattr(xero_quote, 'reference'):
             # No patient link - use whatever is in Xero
             xero_reference = xero_quote.reference
