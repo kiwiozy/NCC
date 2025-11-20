@@ -234,9 +234,9 @@ class SendInvoiceEmailView(APIView):
         
         # Build email data from invoice/quote
         if document_type == 'quote':
-            email_data = self._build_quote_data(invoice)
+            email_data = self._build_quote_data(invoice, clinician)
         else:
-            email_data = self._build_invoice_data(invoice, document_type)
+            email_data = self._build_invoice_data(invoice, document_type, clinician)
         
         # SIMPLE: If from_email is info@walkeasy.com.au → company signature (no clinician)
         #         Otherwise → find clinician for that email
@@ -276,10 +276,13 @@ class SendInvoiceEmailView(APIView):
         
         return email_html, subject
     
-    def _build_invoice_data(self, invoice, document_type):
+    def _build_invoice_data(self, invoice, document_type, clinician=None):
         """Build InvoiceEmailData or ReceiptEmailData from XeroInvoiceLink"""
         from datetime import datetime
         from .email_data_models import Contact, LineItem, PaymentMethod
+        
+        # Determine closing name based on whether it's from a clinician or company
+        closing_name = clinician.full_name if clinician else 'Walk Easy Team'
         
         # Parse line items (if available)
         line_items = []
@@ -359,7 +362,7 @@ class SendInvoiceEmailView(APIView):
                 'subtotal': Decimal(str(invoice.subtotal or 0)),
                 'tax_total': Decimal(str(invoice.total_tax or 0)),
                 'total': Decimal(str(invoice.total or 0)),
-                'clinic_name': 'Walk Easy Team',
+                'clinic_name': closing_name,
             }
         else:
             # Invoice-specific data (has due_date, amount_due, payment_methods)
@@ -379,15 +382,18 @@ class SendInvoiceEmailView(APIView):
                 'line_items': line_items,
                 'payment_methods': payment_methods,
                 'status': status_val,
-                'clinic_name': 'Walk Easy Team',
+                'clinic_name': closing_name,
             }
         
         return data
     
-    def _build_quote_data(self, quote):
+    def _build_quote_data(self, quote, clinician=None):
         """Build QuoteEmailData from XeroQuoteLink"""
         from datetime import datetime, timedelta
         from .email_data_models import Contact, LineItem
+        
+        # Determine closing name based on whether it's from a clinician or company
+        closing_name = clinician.full_name if clinician else 'Walk Easy Team'
         
         # Parse line items (if available)
         line_items = []
@@ -441,7 +447,7 @@ class SendInvoiceEmailView(APIView):
             'total': Decimal(str(quote.total or 0)),
             'line_items': line_items,
             'status': quote.status if hasattr(quote, 'status') and quote.status else 'DRAFT',
-            'clinic_name': 'Walk Easy Team',
+            'clinic_name': closing_name,
         }
         
         return data
