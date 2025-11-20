@@ -135,31 +135,20 @@ class SendInvoiceEmailView(APIView):
             attachments = []
             if attach_pdf:
                 try:
-                    # Generate PDF (reuse existing PDF generation logic)
+                    # Generate PDF by directly calling the PDF generation service
+                    # This is cleaner than creating fake HTTP requests
                     if document_type == 'quote':
-                        from .quote_views import generate_xero_quote_pdf
-                        from django.http import HttpRequest, QueryDict
-                        
-                        # Create a request for PDF generation
-                        pdf_request = HttpRequest()
-                        pdf_request.method = 'GET'
-                        pdf_request.GET = QueryDict('', mutable=True)
-                        pdf_response = generate_xero_quote_pdf(pdf_request, str(invoice_id))
+                        from .pdf_generator import generate_quote_pdf_bytes
+                        pdf_content = generate_quote_pdf_bytes(str(invoice_id))
+                        pdf_filename = f"{invoice.xero_quote_number}_{document_type}.pdf"
                     else:
-                        from django.http import HttpRequest, QueryDict
-                        pdf_request = HttpRequest()
-                        pdf_request.method = 'GET'
-                        pdf_request.GET = QueryDict('', mutable=True)
-                        if document_type == 'receipt':
-                            pdf_request.GET['receipt'] = 'true'
-                        
-                        from .views import generate_xero_invoice_pdf
-                        pdf_response = generate_xero_invoice_pdf(pdf_request, str(invoice_id))
+                        from .pdf_generator import generate_invoice_pdf_bytes
+                        is_receipt = (document_type == 'receipt')
+                        pdf_content = generate_invoice_pdf_bytes(str(invoice_id), is_receipt=is_receipt)
+                        invoice_number = getattr(invoice, 'xero_invoice_number', 'invoice')
+                        pdf_filename = f"{invoice_number}_{document_type}.pdf"
                     
-                    if pdf_response.status_code == 200:
-                        pdf_content = pdf_response.content
-                        pdf_filename = f"{invoice.xero_invoice_number if hasattr(invoice, 'xero_invoice_number') else invoice.xero_quote_number}_{document_type}.pdf"
-                        
+                    if pdf_content:
                         attachments.append({
                             'content': pdf_content,
                             'filename': pdf_filename,
@@ -167,7 +156,7 @@ class SendInvoiceEmailView(APIView):
                         })
                         logger.info(f"PDF attached: {pdf_filename} ({len(pdf_content)} bytes)")
                     else:
-                        logger.warning(f"Failed to generate PDF attachment: {pdf_response.status_code}")
+                        logger.warning(f"Failed to generate PDF attachment - no content returned")
                 except Exception as e:
                     logger.error(f"Error generating PDF attachment: {e}")
                     import traceback
