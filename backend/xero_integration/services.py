@@ -36,6 +36,52 @@ from .models import (
 )
 
 
+def generate_smart_reference(patient, custom_reference=None):
+    """
+    Generate invoice reference based on patient's funding source
+    
+    Simple logic:
+    1. Custom reference (user typed something) → use it
+    2. Patient funding source → show appropriate number
+    3. Default → patient name
+    
+    Examples:
+    - NDIS patient → "NDIS # 3333222"
+    - DVA patient → "DVA # 682730"
+    - Enable patient → "Enable Vendor # 508809"
+    - BUPA patient → "BUPA - John Smith"
+    - Private patient → "Invoice for John Smith"
+    """
+    from invoices.models import EmailGlobalSettings
+    
+    if custom_reference:
+        return custom_reference
+    
+    if not patient:
+        return "Invoice"
+    
+    # Get company settings for reference numbers
+    settings = EmailGlobalSettings.get_settings()
+    
+    # Check patient's funding source
+    if hasattr(patient, 'funding_source') and patient.funding_source:
+        
+        if patient.funding_source == 'NDIS' and patient.health_number:
+            return f"NDIS # {patient.health_number}"
+        
+        elif patient.funding_source == 'DVA' and settings.dva_number:
+            return f"DVA # {settings.dva_number}"
+        
+        elif patient.funding_source == 'ENABLE' and settings.enable_number:
+            return f"Enable Vendor # {settings.enable_number}"
+        
+        elif patient.funding_source in ['BUPA', 'MEDIBANK', 'AHM']:
+            return f"{patient.funding_source} - {patient.get_full_name()}"
+    
+    # Default: patient name
+    return f"Invoice for {patient.get_full_name()}"
+
+
 class XeroService:
     """
     Main service class for Xero API interactions
@@ -835,18 +881,8 @@ class XeroService:
                 # PATIENT AS PRIMARY CONTACT (default)
                 primary_contact_link = self.sync_contact(patient)
                 
-                # Company details go in reference (if applicable)
-                if company:
-                    reference = f"Bill to: {company.name}"
-                    if hasattr(company, 'abn') and company.abn:
-                        reference += f"\nABN: {company.abn}"
-                else:
-                    patient_name = f"{patient.first_name} {patient.last_name}"
-                    reference = f"Invoice for {patient_name}"
-            
-            # Add billing notes to reference
-            if billing_notes:
-                reference += f"\n{billing_notes}"
+                # Generate smart reference based on patient's funding source
+                reference = generate_smart_reference(patient, custom_reference=billing_notes if billing_notes else None)
             
             # Build line items
             xero_line_items = []
@@ -1552,8 +1588,12 @@ class XeroService:
                 if not patient:
                     raise ValueError("Either patient or company must be provided")
                 primary_contact_link = self.sync_contact(patient)
-                patient_name = f"{patient.first_name} {patient.last_name}"
-                reference = f"Quote for: {patient_name}"
+                
+                # Generate smart reference based on patient's funding source
+                reference = generate_smart_reference(patient, custom_reference=billing_notes if billing_notes else None)
+                # Change "Invoice" to "Quote" in the reference
+                if reference.startswith("Invoice for"):
+                    reference = reference.replace("Invoice for", "Quote for")
             
             # Build line items
             xero_line_items = []
