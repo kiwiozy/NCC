@@ -181,7 +181,32 @@ class EmailGlobalSettings(models.Model):
         help_text='Automatically append signatures to emails (company or user signatures)'
     )
     
+    # Provider Registration Numbers (for invoice reference generation)
+    provider_registration_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='4050009706',
+        help_text='NDIS/Medicare provider registration number (e.g., 4050009706)'
+    )
+    dva_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='682730',
+        help_text='DVA account number (e.g., 682730)'
+    )
+    enable_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='508809',
+        help_text='Enable vendor number (e.g., 508809)'
+    )
+    
     # Appearance Defaults
+    header_color = models.CharField(
+        max_length=7,
+        default='#5b95cf',
+        help_text='Default header color for emails (hex code, e.g., #5b95cf)'
+    )
     default_email_width = models.CharField(
         max_length=10,
         default='600px',

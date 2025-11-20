@@ -94,6 +94,24 @@ class Patient(models.Model):
         help_text="Health number (different from MRN)"
     )
     
+    # Funding Source (for invoice reference generation)
+    funding_source = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        choices=[
+            ('NDIS', 'NDIS'),
+            ('DVA', 'DVA'),
+            ('ENABLE', 'Enable'),
+            ('BUPA', 'BUPA'),
+            ('MEDIBANK', 'Medibank'),
+            ('AHM', 'AHM'),
+            ('PRIVATE', 'Private/Self-Funded'),
+            ('OTHER', 'Other'),
+        ],
+        help_text="Patient's primary funding source for billing/invoicing"
+    )
+    
     # Funding Source (ForeignKey to FundingSource)
     funding_type = models.ForeignKey(
         'settings.FundingSource',
