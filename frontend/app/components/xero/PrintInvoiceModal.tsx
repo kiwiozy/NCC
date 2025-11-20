@@ -15,12 +15,12 @@ interface PrintInvoiceModalProps {
 
 export default function PrintInvoiceModal({ opened, onClose, pdfUrl, title, type }: PrintInvoiceModalProps) {
   
-  // Auto-trigger print on non-Safari browsers
+  // Auto-trigger print on non-Safari browsers (same as Letters)
   useEffect(() => {
     if (opened && pdfUrl && !isSafari()) {
-      // Wait for iframe to load
+      // Wait for iframe to load, then trigger print
       const timer = setTimeout(() => {
-        const iframe = document.querySelector('iframe[title="PDF Print Preview"]') as HTMLIFrameElement;
+        const iframe = document.querySelector('iframe[title="PDF Preview"]') as HTMLIFrameElement;
         if (iframe && iframe.contentWindow) {
           try {
             iframe.contentWindow.print();
@@ -35,25 +35,12 @@ export default function PrintInvoiceModal({ opened, onClose, pdfUrl, title, type
   }, [opened, pdfUrl]);
   
   const handlePrint = () => {
-    if (isSafari()) {
-      // Safari: Open in new tab (more reliable)
-      if (pdfUrl) {
-        window.open(pdfUrl, '_blank');
-      }
+    // For Safari, try to print the iframe (same as Letters)
+    const iframe = document.querySelector('iframe[title="PDF Preview"]') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.print();
     } else {
-      // Chrome/Firefox/Edge: Print from iframe
-      const iframe = document.querySelector('iframe[title="PDF Print Preview"]') as HTMLIFrameElement;
-      if (iframe && iframe.contentWindow) {
-        try {
-          iframe.contentWindow.print();
-        } catch (error) {
-          console.error('Error printing from iframe:', error);
-          // Fallback to window.print()
-          window.print();
-        }
-      } else {
-        window.print();
-      }
+      window.print();
     }
   };
   
@@ -62,8 +49,9 @@ export default function PrintInvoiceModal({ opened, onClose, pdfUrl, title, type
       opened={opened}
       onClose={onClose}
       title={`Print ${title}`}
-      size="xl"
+      size="90vw"
       styles={{
+        body: { height: '85vh', overflow: 'hidden' },
         content: { height: '90vh' },
       }}
     >
@@ -93,7 +81,7 @@ export default function PrintInvoiceModal({ opened, onClose, pdfUrl, title, type
               height: 'calc(100% - 60px)',
               border: 'none',
             }}
-            title="PDF Print Preview"
+            title="PDF Preview"
           />
         </>
       )}
