@@ -26,6 +26,7 @@ interface Contact {
   clinic: string;
   clinicColor?: string; // Add clinic color
   funding: string;
+  funding_source?: string; // New: NDIS, DVA, Enable, BUPA, Medibank, AHM, Private, Other
   title: string;
   firstName: string;
   middleName?: string;
@@ -385,6 +386,7 @@ const transformPatientToContact = (patient: any): Contact => {
     dob: formattedDob,
     age: patient.age || 0,
     healthNumber: patient.health_number || '',
+    funding_source: patient.funding_source || '',
     coordinator: patient.coordinator_name ? {
       name: patient.coordinator_name,
       date: formatDateShort(patient.coordinator_date),
@@ -1423,6 +1425,32 @@ export default function ContactsPage() {
                                 setSelectedContact({ ...selectedContact, healthNumber: e.currentTarget.value });
                               }
                             }}
+                            styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
+                          />
+                        </Box>
+
+                        <Box style={{ width: '100%' }}>
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Funding Source</Text>
+                          <Select
+                            placeholder="Select funding source"
+                            value={selectedContact.funding_source}
+                            data={[
+                              { value: 'NDIS', label: 'NDIS' },
+                              { value: 'DVA', label: 'DVA' },
+                              { value: 'ENABLE', label: 'Enable' },
+                              { value: 'BUPA', label: 'BUPA' },
+                              { value: 'MEDIBANK', label: 'Medibank' },
+                              { value: 'AHM', label: 'AHM' },
+                              { value: 'PRIVATE', label: 'Private/Self-Funded' },
+                              { value: 'OTHER', label: 'Other' },
+                            ]}
+                            onChange={(value) => {
+                              if (selectedContact) {
+                                setSelectedContact({ ...selectedContact, funding_source: value || '' });
+                              }
+                            }}
+                            clearable
+                            searchable
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
