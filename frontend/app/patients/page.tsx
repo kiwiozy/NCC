@@ -1502,6 +1502,17 @@ export default function ContactsPage() {
                                   // CRITICAL: Invalidate cache to force fresh load
                                   await PatientCache.clear();
                                   console.log('🗑️ Cache cleared - next load will fetch fresh data');
+                                  
+                                  // Immediately reload this patient from API to show updated value
+                                  const freshResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    credentials: 'include',
+                                  });
+                                  if (freshResponse.ok) {
+                                    const freshPatient = await freshResponse.json();
+                                    const freshContact = transformPatientToContact(freshPatient);
+                                    setSelectedContact(freshContact);
+                                    console.log('✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
+                                  }
                                 } catch (error) {
                                   console.error('Error saving funding source:', error);
                                   notifications.show({
@@ -1511,7 +1522,7 @@ export default function ContactsPage() {
                                   });
                                 }
                               }
-                            }}
+                            }}}
                             clearable
                             searchable
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
