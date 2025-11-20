@@ -280,6 +280,12 @@ class Patient(models.Model):
         parts.append(self.last_name)
         return " ".join(parts)
     
+    def get_full_name_with_title(self):
+        """Return patient's full name with title (e.g., 'Mr. Craig Laird')"""
+        if self.title:
+            return f"{self.title} {self.get_full_name()}"
+        return self.get_full_name()
+    
     def archive(self, archived_by=None):
         """Archive this patient (soft delete)"""
         self.archived = True

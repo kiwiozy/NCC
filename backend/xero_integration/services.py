@@ -114,7 +114,7 @@ def generate_smart_reference(patient, custom_reference=None):
                     name=custom_source.name,
                     reference_number=custom_source.reference_number or '',
                     reference_number_label=ref_label,
-                    patient_name=patient.get_full_name(),
+                    patient_name=patient.get_full_name_with_title(),  # Include title (Mr./Mrs./etc.)
                     patient_health_number=patient.health_number or '',
                     custom_po=custom_reference or ''  # Support custom PO from invoice
                 )
@@ -133,7 +133,7 @@ def generate_smart_reference(patient, custom_reference=None):
                     return f"{base_ref}<br/>PO# {custom_reference}"
                 return base_ref
             else:
-                base_ref = f"{custom_source.name} - {patient.get_full_name()}"
+                base_ref = f"{custom_source.name} - {patient.get_full_name_with_title()}"
                 if custom_reference:
                     return f"{base_ref}<br/>PO# {custom_reference}"
                 return base_ref
@@ -162,22 +162,22 @@ def generate_smart_reference(patient, custom_reference=None):
             return base_ref
         
         elif patient.funding_source.upper() in ['BUPA', 'MEDIBANK', 'AHM']:
-            base_ref = f"{patient.funding_source} - {patient.get_full_name()}"
+            base_ref = f"{patient.funding_source} - {patient.get_full_name_with_title()}"
             if custom_reference:
                 return f"{base_ref}<br/>PO# {custom_reference}"
             return base_ref
         
         else:
-            # Generic fallback - just patient name
-            base_ref = patient.get_full_name()
+            # Generic fallback - just patient name with title
+            base_ref = patient.get_full_name_with_title()
             if custom_reference:
                 return f"{base_ref}<br/>PO# {custom_reference}"
             return base_ref
     
-    # Default: just patient name (no prefix) or custom reference if provided
+    # Default: just patient name with title (no prefix) or custom reference if provided
     if custom_reference:
-        return f"{patient.get_full_name()}<br/>PO# {custom_reference}"
-    return patient.get_full_name()
+        return f"{patient.get_full_name_with_title()}<br/>PO# {custom_reference}"
+    return patient.get_full_name_with_title()
 
 
 class XeroService:
