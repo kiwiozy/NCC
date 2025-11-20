@@ -560,7 +560,7 @@ export default function ContactsPage() {
   };
   
   // Load clinics and funding sources from API for filter dropdown
-  const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
+  const [clinics, setClinics] = useState<Array<{value: string, label: string}>>([]);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
   const [customFundingSources, setCustomFundingSources] = useState<any[]>([]); // Custom funding sources from API
 
@@ -831,10 +831,13 @@ export default function ContactsPage() {
           const data = await response.json();
           // Handle paginated response or direct array
           const clinicsList = Array.isArray(data) ? data : (data.results || []);
-          // Extract clinic names from API response for filter
-          const clinicNames = clinicsList.map((clinic: any) => clinic.name);
-          if (clinicNames.length > 0) {
-            setClinics(clinicNames);
+          // Transform clinics to value/label format with IDs
+          const clinicsData = clinicsList.map((clinic: any) => ({
+            value: clinic.id, // Use clinic ID (UUID)
+            label: clinic.name,
+          }));
+          if (clinicsData.length > 0) {
+            setClinics(clinicsData);
           }
           // Transform for reminder dialog (needs ID and name)
           const reminderClinicsList = clinicsList.map((clinic: any) => ({
@@ -1353,23 +1356,56 @@ export default function ContactsPage() {
                           label=""
                           value={selectedContact.title}
                           data={[
-                            'Mr.',
-                            'Mrs.',
-                            'Ms.',
-                            { value: 'separator1', label: '─────────', disabled: true },
-                            'Sr.',
-                            'Jr.',
-                            'Master',
-                            { value: 'separator2', label: '─────────', disabled: true },
-                            'Prof.',
-                            'Dr.',
-                            { value: 'separator3', label: '─────────', disabled: true },
-                            'Brother',
-                            'Sister',
+                            { value: 'Mr', label: 'Mr.' },
+                            { value: 'Mrs', label: 'Mrs.' },
+                            { value: 'Ms', label: 'Ms.' },
+                            { value: 'Miss', label: 'Miss' },
+                            { value: 'Dr', label: 'Dr.' },
+                            { value: 'Prof', label: 'Prof.' },
                           ]}
-                            onChange={(value) => {
+                          placeholder="Select title"
+                          clearable
+                            onChange={async (value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, title: value || '' });
+                                
+                                // Auto-save to backend
+                                try {
+                                  const csrfToken = await getCsrfToken();
+                                  const url = `https://localhost:8000/api/patients/${selectedContact.id}/`;
+                                  console.log('🔄 Saving title:', { value, url, patientId: selectedContact.id });
+                                  
+                                  const response = await fetch(url, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ title: value || '' }),
+                                  });
+                                  
+                                  console.log('📥 Response:', { status: response.status, statusText: response.statusText });
+                                  
+                                  if (response.ok) {
+                                    notifications.show({
+                                      title: 'Success',
+                                      message: 'Title saved',
+                                      color: 'green',
+                                    });
+                                  } else {
+                                    const errorText = await response.text();
+                                    console.error('❌ Save failed:', { status: response.status, error: errorText });
+                                    throw new Error(`Failed to save title (${response.status}): ${errorText}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error saving title:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: `Failed to save title: ${error.message}`,
+                                    color: 'red',
+                                  });
+                                }
                               }
                             }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
@@ -1380,7 +1416,45 @@ export default function ContactsPage() {
                         <TextInput
                           label=""
                           value={selectedContact.firstName}
-                          readOnly
+                          onChange={(e) => {
+                            if (selectedContact) {
+                              setSelectedContact({ ...selectedContact, firstName: e.currentTarget.value });
+                            }
+                          }}
+                          onBlur={async (e) => {
+                            const newValue = e.currentTarget.value;
+                            if (selectedContact && newValue !== selectedContact.firstName) {
+                              try {
+                                const csrfToken = await getCsrfToken();
+                                const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken,
+                                  },
+                                  credentials: 'include',
+                                  body: JSON.stringify({ first_name: newValue }),
+                                });
+                                
+                                if (response.ok) {
+                                  notifications.show({
+                                    title: 'Success',
+                                    message: 'First name saved',
+                                    color: 'green',
+                                  });
+                                } else {
+                                  throw new Error('Failed to save first name');
+                                }
+                              } catch (error) {
+                                console.error('Error saving first name:', error);
+                                notifications.show({
+                                  title: 'Error',
+                                  message: 'Failed to save first name',
+                                  color: 'red',
+                                });
+                              }
+                            }
+                          }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1390,7 +1464,45 @@ export default function ContactsPage() {
                           label=""
                           placeholder="Middle Name"
                           value={selectedContact.middleName}
-                          readOnly
+                          onChange={(e) => {
+                            if (selectedContact) {
+                              setSelectedContact({ ...selectedContact, middleName: e.currentTarget.value });
+                            }
+                          }}
+                          onBlur={async (e) => {
+                            const newValue = e.currentTarget.value;
+                            if (selectedContact && newValue !== selectedContact.middleName) {
+                              try {
+                                const csrfToken = await getCsrfToken();
+                                const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken,
+                                  },
+                                  credentials: 'include',
+                                  body: JSON.stringify({ middle_names: newValue }),
+                                });
+                                
+                                if (response.ok) {
+                                  notifications.show({
+                                    title: 'Success',
+                                    message: 'Middle name saved',
+                                    color: 'green',
+                                  });
+                                } else {
+                                  throw new Error('Failed to save middle name');
+                                }
+                              } catch (error) {
+                                console.error('Error saving middle name:', error);
+                                notifications.show({
+                                  title: 'Error',
+                                  message: 'Failed to save middle name',
+                                  color: 'red',
+                                });
+                              }
+                            }
+                          }}
                             styles={{ input: { fontWeight: 400, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1399,7 +1511,45 @@ export default function ContactsPage() {
                         <TextInput
                           label=""
                           value={selectedContact.lastName}
-                          readOnly
+                          onChange={(e) => {
+                            if (selectedContact) {
+                              setSelectedContact({ ...selectedContact, lastName: e.currentTarget.value });
+                            }
+                          }}
+                          onBlur={async (e) => {
+                            const newValue = e.currentTarget.value;
+                            if (selectedContact && newValue !== selectedContact.lastName) {
+                              try {
+                                const csrfToken = await getCsrfToken();
+                                const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken,
+                                  },
+                                  credentials: 'include',
+                                  body: JSON.stringify({ last_name: newValue }),
+                                });
+                                
+                                if (response.ok) {
+                                  notifications.show({
+                                    title: 'Success',
+                                    message: 'Last name saved',
+                                    color: 'green',
+                                  });
+                                } else {
+                                  throw new Error('Failed to save last name');
+                                }
+                              } catch (error) {
+                                console.error('Error saving last name:', error);
+                                notifications.show({
+                                  title: 'Error',
+                                  message: 'Failed to save last name',
+                                  color: 'red',
+                                });
+                              }
+                            }
+                          }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                         />
                         </Box>
@@ -1410,12 +1560,43 @@ export default function ContactsPage() {
                             placeholder="Select date of birth"
                             value={selectedContact.dob ? dayjs(selectedContact.dob).toDate() : null}
                             valueFormat="DD MMM YYYY"
-                            onChange={(date) => {
+                            onChange={async (date) => {
                               if (selectedContact) {
                                 const dateStr = date ? dayjs(date).format('YYYY-MM-DD') : '';
                                 // Calculate age from DOB
                                 const calculatedAge = date ? dayjs().diff(dayjs(date), 'year') : 0;
                                 setSelectedContact({ ...selectedContact, dob: dateStr, age: calculatedAge });
+                                
+                                // Auto-save to backend
+                                try {
+                                  const csrfToken = await getCsrfToken();
+                                  const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ dob: dateStr }),
+                                  });
+                                  
+                                  if (response.ok) {
+                                    notifications.show({
+                                      title: 'Success',
+                                      message: 'Date of birth saved',
+                                      color: 'green',
+                                    });
+                                  } else {
+                                    throw new Error('Failed to save date of birth');
+                                  }
+                                } catch (error) {
+                                  console.error('Error saving date of birth:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: 'Failed to save date of birth',
+                                    color: 'red',
+                                  });
+                                }
                               }
                             }}
                             maxDate={new Date()}
@@ -1450,6 +1631,40 @@ export default function ContactsPage() {
                                 setSelectedContact({ ...selectedContact, healthNumber: e.currentTarget.value });
                               }
                             }}
+                            onBlur={async (e) => {
+                              const newValue = e.currentTarget.value;
+                              if (selectedContact && newValue !== selectedContact.healthNumber) {
+                                try {
+                                  const csrfToken = await getCsrfToken();
+                                  const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ health_number: newValue }),
+                                  });
+                                  
+                                  if (response.ok) {
+                                    notifications.show({
+                                      title: 'Success',
+                                      message: 'Health number saved',
+                                      color: 'green',
+                                    });
+                                  } else {
+                                    throw new Error('Failed to save health number');
+                                  }
+                                } catch (error) {
+                                  console.error('Error saving health number:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: 'Failed to save health number',
+                                    color: 'red',
+                                  });
+                                }
+                              }
+                            }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
                           />
                         </Box>
@@ -1459,9 +1674,51 @@ export default function ContactsPage() {
                           <Select
                             value={selectedContact.clinic}
                             data={clinics}
-                            onChange={(value) => {
+                            onChange={async (value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, clinic: value || '' });
+                                
+                                // Auto-save to backend
+                                try {
+                                  const csrfToken = await getCsrfToken();
+                                  console.log('🔄 Saving clinic:', { value, patientId: selectedContact.id });
+                                  
+                                  // The value from Select is already the clinic ID (UUID)
+                                  if (!value) {
+                                    throw new Error('No clinic selected');
+                                  }
+                                  
+                                  const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({ clinic: value }),
+                                  });
+                                  
+                                  console.log('📥 Clinic response:', { status: response.status, statusText: response.statusText });
+                                  
+                                  if (response.ok) {
+                                    notifications.show({
+                                      title: 'Success',
+                                      message: 'Clinic saved',
+                                      color: 'green',
+                                    });
+                                  } else {
+                                    const errorText = await response.text();
+                                    console.error('❌ Save failed:', { status: response.status, error: errorText });
+                                    throw new Error(`Failed to save clinic (${response.status}): ${errorText}`);
+                                  }
+                                } catch (error) {
+                                  console.error('Error saving clinic:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: `Failed to save clinic: ${error.message}`,
+                                    color: 'red',
+                                  });
+                                }
                               }
                             }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
@@ -2382,6 +2639,68 @@ export default function ContactsPage() {
                       onChange={(e) => {
                         if (selectedContact) {
                           setSelectedContact({ ...selectedContact, note: e.currentTarget.value });
+                        }
+                      }}
+                      onBlur={async (e) => {
+                        const newValue = e.currentTarget.value;
+                        console.log('🔄 NOTE FIELD CHANGED');
+                        console.log('  New value:', newValue);
+                        console.log('  Old value:', selectedContact?.note);
+                        console.log('  Patient ID:', selectedContact?.id);
+                        
+                        if (selectedContact && newValue !== selectedContact.note) {
+                          // Auto-save to backend
+                          try {
+                            console.log('  📤 Sending PATCH request to backend...');
+                            const csrfToken = await getCsrfToken();
+                            
+                            const requestBody = {
+                              notes: newValue || '',  // Backend uses 'notes' (plural)
+                            };
+                            console.log('  Request body:', JSON.stringify(requestBody));
+                            
+                            const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                              },
+                              credentials: 'include',
+                              body: JSON.stringify(requestBody),
+                            });
+                            
+                            console.log('  📥 Response status:', response.status, response.statusText);
+                            
+                            if (!response.ok) {
+                              const errorText = await response.text();
+                              console.error('  ❌ Response error:', errorText);
+                              throw new Error('Failed to save note');
+                            }
+                            
+                            const responseData = await response.json();
+                            console.log('  ✅ Save successful, response data:', responseData);
+                            
+                            // ✅ SMART UPDATE: notes is not a list field, so we skip cache update
+                            // Notes are not used in search/filtering, so cache doesn't need to be updated
+                            console.log('  ✅ Note saved (cache update skipped for notes field)');
+                            
+                            // Show success notification
+                            notifications.show({
+                              title: 'Success',
+                              message: 'Note saved',
+                              color: 'green',
+                            });
+                            
+                          } catch (error) {
+                            console.error('  ❌ Error saving note:', error);
+                            notifications.show({
+                              title: 'Error',
+                              message: 'Failed to save note',
+                              color: 'red',
+                            });
+                          }
+                        } else {
+                          console.warn('  ⚠️ No change detected or no selectedContact available');
                         }
                       }}
                       minRows={4}

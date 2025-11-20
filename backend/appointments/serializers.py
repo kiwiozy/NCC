@@ -21,7 +21,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'id', 'clinic', 'clinic_name', 'patient', 'patient_name',
             'clinician', 'clinician_name', 'start_time', 'end_time',
             'status', 'reason', 'notes', 'duration_minutes',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
+            # Xero billing fields (added Nov 2025)
+            'invoice_contact_type', 'billing_company', 'billing_notes',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'patient_name', 'clinician_name', 'clinic_name', 'duration_minutes']
     
