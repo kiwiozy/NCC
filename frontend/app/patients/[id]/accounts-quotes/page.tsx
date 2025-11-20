@@ -104,7 +104,9 @@ export default function PatientAccountsQuotesPage() {
 
   const fetchPatient = async () => {
     try {
-      const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`);
+      const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch patient');
       const data = await response.json();
       setPatient(data);
@@ -121,8 +123,8 @@ export default function PatientAccountsQuotesPage() {
   const fetchPatientsAndCompanies = async () => {
     try {
       const [patientsRes, companiesRes] = await Promise.all([
-        fetch('https://localhost:8000/api/patients/'),
-        fetch('https://localhost:8000/api/companies/')
+        fetch('https://localhost:8000/api/patients/', { credentials: 'include' }),
+        fetch('https://localhost:8000/api/companies/', { credentials: 'include' })
       ]);
       
       if (patientsRes.ok) {
