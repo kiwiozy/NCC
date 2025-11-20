@@ -486,8 +486,6 @@ class DocumentPDFGenerator:
             # Direct billing: Show just patient name (no prefixes, no NDIS#)
             ref_info_text = f"<b>Reference / PO#</b><br/>{patient['name']}"
         
-        ref_info_text += f"<br/><b>Provider Registration #</b> {self.PROVIDER_REGISTRATION}"
-        
         # Add practitioner info to reference section
         if practitioner.get('name'):
             ref_info_text += f"<br/><br/><i>Practitioner:</i><br/><b>{practitioner['name']}</b>"
