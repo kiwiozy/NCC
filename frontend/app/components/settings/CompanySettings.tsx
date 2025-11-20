@@ -262,20 +262,15 @@ export default function CompanySettings() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', paddingBottom: '2rem' }}>
       <Stack gap="lg">
-        <Group justify="space-between" align="center">
-          <div>
-            <Title order={2}>
-              <IconBuilding size={28} style={{ verticalAlign: 'middle', marginRight: 8 }} />
-              Company Settings
-            </Title>
-            <Text size="sm" c="dimmed" mt={4}>
-              Manage your company information, provider numbers, and email signature
-            </Text>
-          </div>
-          <Button onClick={handleSave} loading={saving} size="md">
-            Save Settings
-          </Button>
-        </Group>
+        <div>
+          <Title order={2}>
+            <IconBuilding size={28} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+            Company Settings
+          </Title>
+          <Text size="sm" c="dimmed" mt={4}>
+            Manage your company information, provider numbers, and email signature
+          </Text>
+        </div>
 
         {error && (
           <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red" withCloseButton onClose={() => setError(null)}>
@@ -663,6 +658,13 @@ export default function CompanySettings() {
             </Group>
           </Stack>
         </Modal>
+
+        {/* Save Button at Bottom */}
+        <Group justify="flex-end" mt="xl">
+          <Button onClick={handleSave} loading={saving} size="lg" leftSection={<IconCheck size={18} />}>
+            Save Company Settings
+          </Button>
+        </Group>
       </Stack>
     </div>
   );
