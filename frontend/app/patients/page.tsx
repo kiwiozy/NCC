@@ -571,9 +571,15 @@ export default function ContactsPage() {
       if (response.ok) {
         const data = await response.json();
         setCustomFundingSources(data.results || data);
+      } else {
+        console.warn('Failed to load custom funding sources:', response.status);
+        // Set default empty array so patient loading isn't blocked
+        setCustomFundingSources([]);
       }
     } catch (error) {
       console.error('Failed to load custom funding sources:', error);
+      // Set default empty array so patient loading isn't blocked
+      setCustomFundingSources([]);
     }
   };
   
