@@ -73,7 +73,9 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const fetchInvoiceDetails = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/`);
+      const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch invoice details');
       
       const data = await response.json();
@@ -93,7 +95,9 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
   const fetchPayments = async () => {
     setLoadingPayments(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/xero/payments/?invoice_link=${invoiceId}`);
+      const response = await fetch(`https://localhost:8000/api/xero/payments/?invoice_link=${invoiceId}`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch payments');
       
       const data = await response.json();

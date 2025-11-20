@@ -62,7 +62,9 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
   const fetchQuoteDetails = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/`);
+      const response = await fetch(`https://localhost:8000/api/xero-quote-links/${quoteId}/`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch quote details');
       
       const data = await response.json();

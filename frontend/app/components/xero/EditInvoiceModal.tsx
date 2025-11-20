@@ -77,7 +77,9 @@ export function EditInvoiceModal({ opened, onClose, invoiceId, onSuccess }: Edit
   const fetchInvoiceDetails = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/`);
+      const response = await fetch(`https://localhost:8000/api/xero-invoice-links/${invoiceId}/`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Failed to fetch invoice details');
       
       const data = await response.json();
