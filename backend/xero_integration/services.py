@@ -87,6 +87,8 @@ def generate_smart_reference(patient, custom_reference=None):
                     patient_name=patient.get_full_name(),
                     patient_health_number=patient.health_number or ''
                 )
+                # Convert newlines to HTML <br/> tags for PDF rendering
+                formatted_ref = formatted_ref.replace('\n', '<br/>')
                 return formatted_ref.strip()
             
             # No display format - use default
