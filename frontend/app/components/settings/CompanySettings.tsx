@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Paper,
   Title,
@@ -68,6 +68,10 @@ export default function CompanySettings() {
     notes: '',
   });
   
+  // Track cursor position in the display format textarea
+  const displayFormatRef = useRef<HTMLTextAreaElement>(null);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  
   const [settings, setSettings] = useState<CompanySettings>({
     clinic_name: 'WalkEasy Pedorthics',
     clinic_phone: '02 6766 3153',
@@ -121,6 +125,31 @@ export default function CompanySettings() {
     setEditingFunding(funding);
     setFundingForm(funding);
     setFundingModalOpen(true);
+  };
+  
+  // Helper function to insert text at cursor position
+  const insertAtCursor = (textToInsert: string) => {
+    const textarea = displayFormatRef.current;
+    if (!textarea) {
+      // Fallback: just append to end
+      setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + textToInsert });
+      return;
+    }
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = fundingForm.display_format;
+    
+    // Insert text at cursor position
+    const newText = text.substring(0, start) + textToInsert + text.substring(end);
+    setFundingForm({ ...fundingForm, display_format: newText });
+    
+    // Set cursor position after inserted text
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + textToInsert.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   const handleSaveFunding = async () => {
@@ -477,7 +506,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="blue"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{patient_name}' })}
+                  onClick={() => insertAtCursor('{patient_name}')}
                 >
                   + Patient Name
                 </Button>
@@ -485,7 +514,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="green"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{reference_number}' })}
+                  onClick={() => insertAtCursor('{reference_number}')}
                 >
                   + Provider #
                 </Button>
@@ -493,7 +522,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="orange"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{patient_health_number}' })}
+                  onClick={() => insertAtCursor('{patient_health_number}')}
                 >
                   + Health #
                 </Button>
@@ -501,7 +530,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="cyan"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{custom_po}' })}
+                  onClick={() => insertAtCursor('{custom_po}')}
                 >
                   + Custom PO#
                 </Button>
@@ -509,7 +538,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="grape"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{name}' })}
+                  onClick={() => insertAtCursor('{name}')}
                 >
                   + Funding Name
                 </Button>
@@ -517,7 +546,7 @@ export default function CompanySettings() {
                   size="xs"
                   variant="light"
                   color="gray"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '\n' })}
+                  onClick={() => insertAtCursor('\n')}
                 >
                   + New Line
                 </Button>
@@ -525,6 +554,7 @@ export default function CompanySettings() {
               
               {/* Format Input */}
               <Textarea
+                ref={displayFormatRef}
                 placeholder="e.g., {patient_name}\nDVA # {reference_number}"
                 value={fundingForm.display_format}
                 onChange={(e) => setFundingForm({ ...fundingForm, display_format: e.target.value })}
