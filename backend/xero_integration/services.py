@@ -52,15 +52,19 @@ def generate_smart_reference(patient, custom_reference=None):
     - BUPA patient → "BUPA - John Smith"
     - Custom funding source (e.g., HCF) → "HCF # 789012" or "HCF - John Smith"
     - Private patient → "Invoice for John Smith"
+    
+    Placeholders supported in display_format:
+    - {patient_name} - Patient's full name
+    - {reference_number} - Provider/vendor registration number
+    - {patient_health_number} - Patient's health number (for NDIS)
+    - {custom_po} - Custom PO/reference from invoice creation
+    - {name} - Funding source name
     """
     from invoices.models import EmailGlobalSettings
     from invoices.custom_funding_model import CustomFundingSource
     
-    if custom_reference:
-        return custom_reference
-    
     if not patient:
-        return "Invoice"
+        return custom_reference if custom_reference else "Invoice"
     
     # Get company settings for reference numbers
     settings = EmailGlobalSettings.get_settings()
@@ -85,7 +89,8 @@ def generate_smart_reference(patient, custom_reference=None):
                     reference_number=custom_source.reference_number or '',
                     reference_number_label=ref_label,
                     patient_name=patient.get_full_name(),
-                    patient_health_number=patient.health_number or ''
+                    patient_health_number=patient.health_number or '',
+                    custom_po=custom_reference or ''  # NEW: Support custom PO from invoice
                 )
                 # Convert newlines to HTML <br/> tags for PDF rendering
                 formatted_ref = formatted_ref.replace('\n', '<br/>')
@@ -94,9 +99,16 @@ def generate_smart_reference(patient, custom_reference=None):
             # No display format - use default
             if custom_source.reference_number:
                 ref_label = getattr(custom_source, 'reference_number_label', None) or '#'
-                return f"{custom_source.name} {ref_label} {custom_source.reference_number}"
+                base_ref = f"{custom_source.name} {ref_label} {custom_source.reference_number}"
+                # If custom PO provided, add it on a new line
+                if custom_reference:
+                    return f"{base_ref}<br/>PO# {custom_reference}"
+                return base_ref
             else:
-                return f"{custom_source.name} - {patient.get_full_name()}"
+                base_ref = f"{custom_source.name} - {patient.get_full_name()}"
+                if custom_reference:
+                    return f"{base_ref}<br/>PO# {custom_reference}"
+                return base_ref
                 
         except CustomFundingSource.DoesNotExist:
             # Not in custom funding - check hardcoded fallbacks
@@ -104,22 +116,39 @@ def generate_smart_reference(patient, custom_reference=None):
         
         # Fallback: Check hardcoded funding sources (OLD system - legacy support)
         if patient.funding_source.upper() == 'NDIS' and patient.health_number:
-            return f"NDIS # {patient.health_number}"
+            base_ref = f"NDIS # {patient.health_number}"
+            if custom_reference:
+                return f"{base_ref}<br/>PO# {custom_reference}"
+            return base_ref
         
         elif patient.funding_source.upper() == 'DVA' and settings.dva_number:
-            return f"DVA # {settings.dva_number}"
+            base_ref = f"DVA # {settings.dva_number}"
+            if custom_reference:
+                return f"{base_ref}<br/>PO# {custom_reference}"
+            return base_ref
         
         elif patient.funding_source.upper() == 'ENABLE' and settings.enable_number:
-            return f"Enable Vendor # {settings.enable_number}"
+            base_ref = f"Enable Vendor # {settings.enable_number}"
+            if custom_reference:
+                return f"{base_ref}<br/>PO# {custom_reference}"
+            return base_ref
         
         elif patient.funding_source.upper() in ['BUPA', 'MEDIBANK', 'AHM']:
-            return f"{patient.funding_source} - {patient.get_full_name()}"
+            base_ref = f"{patient.funding_source} - {patient.get_full_name()}"
+            if custom_reference:
+                return f"{base_ref}<br/>PO# {custom_reference}"
+            return base_ref
         
         else:
             # Generic fallback - just patient name
-            return patient.get_full_name()
+            base_ref = patient.get_full_name()
+            if custom_reference:
+                return f"{base_ref}<br/>PO# {custom_reference}"
+            return base_ref
     
-    # Default: just patient name (no prefix)
+    # Default: just patient name (no prefix) or custom reference if provided
+    if custom_reference:
+        return f"{patient.get_full_name()}<br/>PO# {custom_reference}"
     return patient.get_full_name()
 
 

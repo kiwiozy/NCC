@@ -467,13 +467,117 @@ export default function CompanySettings() {
               onChange={(e) => setFundingForm({ ...fundingForm, reference_number: e.target.value })}
             />
 
-            <TextInput
-              label="Display Format (optional)"
-              description="How to display on invoice. Leave blank for default format."
-              placeholder="e.g., 'HCF Member #' or 'WorkCover Claim #'"
-              value={fundingForm.display_format}
-              onChange={(e) => setFundingForm({ ...fundingForm, display_format: e.target.value })}
-            />
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Display Format (optional)</Text>
+              <Text size="xs" c="dimmed">Click tokens below to build your format, or type directly</Text>
+              
+              {/* Token Buttons */}
+              <Group gap="xs">
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="blue"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{patient_name}' })}
+                >
+                  + Patient Name
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="green"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{reference_number}' })}
+                >
+                  + Provider #
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="orange"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{patient_health_number}' })}
+                >
+                  + Health #
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="cyan"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{custom_po}' })}
+                >
+                  + Custom PO#
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="grape"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '{name}' })}
+                >
+                  + Funding Name
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="gray"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: fundingForm.display_format + '\n' })}
+                >
+                  + New Line
+                </Button>
+              </Group>
+              
+              {/* Format Input */}
+              <Textarea
+                placeholder="e.g., {patient_name}\nDVA # {reference_number}"
+                value={fundingForm.display_format}
+                onChange={(e) => setFundingForm({ ...fundingForm, display_format: e.target.value })}
+                minRows={6}
+                autosize
+                styles={{
+                  input: {
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                  }
+                }}
+              />
+              
+              {/* Preview */}
+              {fundingForm.display_format && (
+                <Alert color="blue" title="Preview" icon={<IconInfoCircle size={16} />}>
+                  <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                    {fundingForm.display_format
+                      .replace(/{patient_name}/g, 'John Smith')
+                      .replace(/{reference_number}/g, fundingForm.reference_number || '123456')
+                      .replace(/{patient_health_number}/g, '3333222')
+                      .replace(/{custom_po}/g, 'PO-789')
+                      .replace(/{name}/g, fundingForm.name || 'Funding Source')}
+                  </Text>
+                </Alert>
+              )}
+              
+              {/* Quick Templates */}
+              <Text size="xs" fw={500} mt="xs">Quick Templates:</Text>
+              <Group gap="xs">
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{patient_name}\n{name} # {reference_number}' })}
+                >
+                  Standard Format
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{patient_name}\n{name} # {patient_health_number}\n\n{name} Registration # {reference_number}' })}
+                >
+                  NDIS Format
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{name} - {patient_name}' })}
+                >
+                  Simple Format
+                </Button>
+              </Group>
+            </Stack>
 
             <Textarea
               label="Notes (optional)"
