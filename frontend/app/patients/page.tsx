@@ -560,6 +560,22 @@ export default function ContactsPage() {
   // Load clinics and funding sources from API for filter dropdown
   const [clinics, setClinics] = useState<string[]>(['Newcastle', 'Tamworth', 'Port Macquarie', 'Armidale']);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
+  const [customFundingSources, setCustomFundingSources] = useState<any[]>([]); // Custom funding sources from API
+
+  // Load custom funding sources from API
+  const loadCustomFundingSources = async () => {
+    try {
+      const response = await fetch('https://localhost:8000/api/invoices/custom-funding-sources/?is_active=true', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCustomFundingSources(data.results || data);
+      }
+    } catch (error) {
+      console.error('Failed to load custom funding sources:', error);
+    }
+  };
   
   // Apply filters to contacts (archived filter is handled at API level, not here)
   const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string | boolean>) => {
@@ -616,6 +632,7 @@ export default function ContactsPage() {
     };
     
     loadArchivedCount();
+    loadCustomFundingSources(); // Load custom funding sources
   }, [activeType]);
 
   // Load patients from API
@@ -1443,6 +1460,11 @@ export default function ContactsPage() {
                               { value: 'AHM', label: 'AHM' },
                               { value: 'PRIVATE', label: 'Private/Self-Funded' },
                               { value: 'OTHER', label: 'Other' },
+                              // Add custom funding sources dynamically
+                              ...customFundingSources.map((source: any) => ({
+                                value: source.name,
+                                label: source.name,
+                              })),
                             ]}
                             onChange={(value) => {
                               if (selectedContact) {

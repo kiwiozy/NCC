@@ -15,8 +15,11 @@ import {
   Text,
   FileButton,
   Tabs,
+  Table,
+  ActionIcon,
+  Modal,
 } from '@mantine/core';
-import { IconAlertCircle, IconCheck, IconBuilding, IconMail, IconFileText } from '@tabler/icons-react';
+import { IconAlertCircle, IconCheck, IconBuilding, IconMail, IconFileText, IconPlus, IconEdit, IconTrash, IconInfoCircle } from '@tabler/icons-react';
 import { getCsrfToken } from '../../utils/csrf';
 
 interface CompanySettings {
@@ -37,12 +40,34 @@ interface CompanySettings {
   company_signature_html: string;
 }
 
+interface CustomFundingSource {
+  id?: string;
+  name: string;
+  reference_number: string;
+  display_format: string;
+  is_active: boolean;
+  notes: string;
+}
+
 export default function CompanySettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('business');
+  
+  // Custom Funding Sources
+  const [customFundingSources, setCustomFundingSources] = useState<CustomFundingSource[]>([]);
+  const [fundingModalOpen, setFundingModalOpen] = useState(false);
+  const [editingFunding, setEditingFunding] = useState<CustomFundingSource | null>(null);
+  const [fundingForm, setFundingForm] = useState<CustomFundingSource>({
+    name: '',
+    reference_number: '',
+    display_format: '',
+    is_active: true,
+    notes: '',
+  });
+  
   const [settings, setSettings] = useState<CompanySettings>({
     clinic_name: 'WalkEasy Pedorthics',
     clinic_phone: '02 6766 3153',
@@ -60,7 +85,103 @@ export default function CompanySettings() {
 
   useEffect(() => {
     fetchSettings();
+    fetchCustomFundingSources();
   }, []);
+
+  const fetchCustomFundingSources = async () => {
+    try {
+      const response = await fetch('https://localhost:8000/api/invoices/custom-funding-sources/', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load custom funding sources');
+      }
+
+      const data = await response.json();
+      setCustomFundingSources(data.results || data);
+    } catch (err: any) {
+      console.error('Error loading custom funding sources:', err);
+    }
+  };
+
+  const handleAddFunding = () => {
+    setEditingFunding(null);
+    setFundingForm({
+      name: '',
+      reference_number: '',
+      display_format: '',
+      is_active: true,
+      notes: '',
+    });
+    setFundingModalOpen(true);
+  };
+
+  const handleEditFunding = (funding: CustomFundingSource) => {
+    setEditingFunding(funding);
+    setFundingForm(funding);
+    setFundingModalOpen(true);
+  };
+
+  const handleSaveFunding = async () => {
+    try {
+      const csrfToken = await getCsrfToken();
+      const url = editingFunding
+        ? `https://localhost:8000/api/invoices/custom-funding-sources/${editingFunding.id}/`
+        : 'https://localhost:8000/api/invoices/custom-funding-sources/';
+      
+      const method = editingFunding ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(fundingForm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save funding source');
+      }
+
+      setFundingModalOpen(false);
+      await fetchCustomFundingSources();
+      setSuccess(`✅ Funding source ${editingFunding ? 'updated' : 'created'} successfully!`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error saving funding source:', err);
+      setError(err.message || 'Failed to save funding source');
+    }
+  };
+
+  const handleDeleteFunding = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this funding source?')) return;
+
+    try {
+      const csrfToken = await getCsrfToken();
+      const response = await fetch(`https://localhost:8000/api/invoices/custom-funding-sources/${id}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete funding source');
+      }
+
+      await fetchCustomFundingSources();
+      setSuccess('✅ Funding source deleted successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error('Error deleting funding source:', err);
+      setError(err.message || 'Failed to delete funding source');
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -178,6 +299,9 @@ export default function CompanySettings() {
             </Tabs.Tab>
             <Tabs.Tab value="signature" leftSection={<IconMail size={16} />}>
               Email Signature
+            </Tabs.Tab>
+            <Tabs.Tab value="funding" leftSection={<IconPlus size={16} />}>
+              Custom Funding Sources
             </Tabs.Tab>
           </Tabs.List>
 
@@ -394,7 +518,151 @@ export default function CompanySettings() {
               </Stack>
             </Paper>
           </Tabs.Panel>
+
+          <Tabs.Panel value="funding" pt="xl">
+            <Paper p="xl" withBorder>
+              <Stack gap="md">
+                <Group justify="space-between" align="center">
+                  <div>
+                    <Title order={4}>Custom Funding Sources</Title>
+                    <Text size="sm" c="dimmed" mt={4}>
+                      Add insurance companies, programs, or partners beyond the default options
+                    </Text>
+                  </div>
+                  <Button leftSection={<IconPlus size={16} />} onClick={handleAddFunding}>
+                    Add Funding Source
+                  </Button>
+                </Group>
+
+                {customFundingSources.length > 0 ? (
+                  <Table striped highlightOnHover>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Name</Table.Th>
+                        <Table.Th>Reference Number</Table.Th>
+                        <Table.Th>Display Format</Table.Th>
+                        <Table.Th>Status</Table.Th>
+                        <Table.Th>Actions</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {customFundingSources.map((source) => (
+                        <Table.Tr key={source.id}>
+                          <Table.Td>
+                            <Text fw={500}>{source.name}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" c="dimmed">{source.reference_number || '-'}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" c="dimmed">{source.display_format || '-'}</Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text size="sm" c={source.is_active ? 'green' : 'red'}>
+                              {source.is_active ? 'Active' : 'Inactive'}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Group gap="xs">
+                              <ActionIcon
+                                variant="light"
+                                color="blue"
+                                onClick={() => handleEditFunding(source)}
+                              >
+                                <IconEdit size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                color="red"
+                                onClick={() => handleDeleteFunding(source.id!)}
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                            </Group>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                ) : (
+                  <Alert icon={<IconInfoCircle size={16} />} color="gray">
+                    No custom funding sources added yet. Click "Add Funding Source" to create one.
+                  </Alert>
+                )}
+
+                <Alert color="blue" title="How it works">
+                  <Text size="sm">
+                    Custom funding sources appear in the Patient form dropdown alongside the default options (NDIS, DVA, Enable, etc.).
+                  </Text>
+                  <ul style={{ marginTop: 8, fontSize: '0.875rem' }}>
+                    <li><strong>With Reference Number:</strong> "HCF # 123456"</li>
+                    <li><strong>Without Reference Number:</strong> "HCF - [Patient Name]"</li>
+                    <li><strong>Custom Display Format:</strong> Define how it appears on invoices</li>
+                  </ul>
+                </Alert>
+              </Stack>
+            </Paper>
+          </Tabs.Panel>
         </Tabs>
+
+        {/* Modal for Add/Edit Custom Funding Source */}
+        <Modal
+          opened={fundingModalOpen}
+          onClose={() => setFundingModalOpen(false)}
+          title={editingFunding ? 'Edit Funding Source' : 'Add Funding Source'}
+          size="lg"
+        >
+          <Stack gap="md">
+            <TextInput
+              label="Name"
+              placeholder="e.g., HCF, WorkCover, NIB"
+              value={fundingForm.name}
+              onChange={(e) => setFundingForm({ ...fundingForm, name: e.target.value })}
+              required
+            />
+
+            <TextInput
+              label="Reference Number (optional)"
+              description="Account/vendor number for this funding source"
+              placeholder="e.g., 123456"
+              value={fundingForm.reference_number}
+              onChange={(e) => setFundingForm({ ...fundingForm, reference_number: e.target.value })}
+            />
+
+            <TextInput
+              label="Display Format (optional)"
+              description="How to display on invoice. Leave blank for default format."
+              placeholder="e.g., 'HCF Member #' or 'WorkCover Claim #'"
+              value={fundingForm.display_format}
+              onChange={(e) => setFundingForm({ ...fundingForm, display_format: e.target.value })}
+            />
+
+            <Textarea
+              label="Notes (optional)"
+              description="Internal notes about this funding source"
+              placeholder="e.g., 'Use for corporate health insurance claims'"
+              value={fundingForm.notes}
+              onChange={(e) => setFundingForm({ ...fundingForm, notes: e.target.value })}
+              minRows={3}
+            />
+
+            <Switch
+              label="Active"
+              description="Only active funding sources appear in dropdowns"
+              checked={fundingForm.is_active}
+              onChange={(e) => setFundingForm({ ...fundingForm, is_active: e.currentTarget.checked })}
+            />
+
+            <Group justify="flex-end" mt="md">
+              <Button variant="light" onClick={() => setFundingModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveFunding} disabled={!fundingForm.name.trim()}>
+                {editingFunding ? 'Update' : 'Create'}
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
       </Stack>
     </div>
   );
