@@ -228,31 +228,102 @@ Provider Registration # 4050009706
 
 ---
 
-## 💡 Proposed Solution Architecture
+## 💡 Proposed Solution Architecture (UPDATED)
 
-### Phase 1: Database Updates ✅ (Minimal - mostly done!)
+### Phase 1: Database Updates
 
-#### 1.1 Add `provider_registration_number` to Clinician
+#### 1.1 Add `provider_registration_number` to Company Settings
+**NOT to individual Clinician!** The company has the provider number.
+
+**Option A: Add to EmailGlobalSettings (Quick)**
 ```python
-# backend/clinicians/models.py
-class Clinician:
+# backend/invoices/models.py
+class EmailGlobalSettings:
     # ... existing fields ...
     
     provider_registration_number = models.CharField(
         max_length=100,
         null=True,
         blank=True,
-        help_text="Provider registration number for NDIS/DVA/Medicare (e.g., '4050009706')"
+        help_text="Company's provider registration number for NDIS/DVA/Medicare (e.g., '4050009706')"
     )
 ```
 
-#### 1.2 Migration
-```bash
-python manage.py makemigrations clinicians
-python manage.py migrate
+**Option B: Create dedicated CompanySettings model (Better long-term)**
+```python
+# backend/clinicians/models.py or new backend/company/models.py
+class CompanySettings(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    
+    # Company Info
+    company_name = models.CharField(max_length=200, default="Walk Easy Pedorthics Australia Pty LTD")
+    abn = models.CharField(max_length=20, default="63 612 528 971")
+    phone = models.CharField(max_length=20, default="02 6766-3153")
+    email = models.EmailField(default="info@walkeasy.com.au")
+    website = models.CharField(max_length=200, default="www.walkeasy.com.au")
+    
+    # Provider Registration (for NDIS/DVA billing)
+    provider_registration_number = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Company's provider registration number for NDIS/DVA/Medicare (e.g., '4050009706')"
+    )
+    
+    # Address
+    street_address = models.CharField(max_length=200, default="21 Dowe St, Tamworth, NSW 2340")
+    postal_address = models.CharField(max_length=200, default="PO Box 210, Tamworth, NSW 2340")
+    
+    # Banking (for invoices)
+    bank_bsb = models.CharField(max_length=10, default="013287")
+    bank_account = models.CharField(max_length=20, default="222796921")
+    
+    # Singleton pattern
+    class Meta:
+        db_table = 'company_settings'
+    
+    @classmethod
+    def get_settings(cls):
+        settings, created = cls.objects.get_or_create(id=1)
+        return settings
 ```
 
-**Status:** ✅ `XeroInvoiceLink.clinician` FK already exists (added in previous feature)
+**RECOMMENDATION:** Use Option B (CompanySettings model) - more organized and scalable.
+
+#### 1.2 Add `vendor_numbers` to Company Model
+```python
+# backend/companies/models.py
+class Company:
+    # ... existing fields ...
+    
+    vendor_numbers = models.JSONField(
+        null=True,
+        blank=True,
+        default=dict,
+        help_text="Vendor/account numbers by type (e.g., {'Enable': '508809', 'DVA': '682730'})"
+    )
+```
+
+**Example data for Enable:**
+```json
+{
+  "Enable": "508809",
+  "Enable Alt": "999999"
+}
+```
+
+**Example data for DVA:**
+```json
+{
+  "DVA": "682730"
+}
+```
+
+#### 1.3 Migrations
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
 
 ---
 
@@ -263,32 +334,100 @@ python manage.py migrate
 **File:** `backend/xero_integration/services.py`
 
 ```python
-def generate_smart_reference(patient, company, custom_reference=None):
+def generate_smart_reference(patient, company, selected_vendor_type=None, custom_reference=None):
     """
     Generate smart reference/PO# for invoice
     
     Priority:
-    1. Custom reference (if provided)
-    2. NDIS number (if patient has health_number)
-    3. Company name + invoice number
-    4. Default: Patient name
+    1. Custom reference (if user typed something)
+    2. Selected vendor number (if quick-select button clicked)
+    3. NDIS number (if patient has health_number)
+    4. Company name
+    5. Default: Patient name
     """
     if custom_reference:
         return custom_reference
     
+    # Check if vendor number was selected
+    if selected_vendor_type and company and company.vendor_numbers:
+        vendor_num = company.vendor_numbers.get(selected_vendor_type)
+        if vendor_num:
+            return f"{selected_vendor_type} Vendor # {vendor_num}"
+    
+    # Check for NDIS number
     if patient and patient.health_number:
         return f"NDIS # {patient.health_number}"
     
+    # Fallback to company name
     if company:
-        return f"{company.name} - Invoice"
+        return f"Invoice for {company.name}"
     
+    # Last resort: patient name
     if patient:
-        return f"Invoice for {patient.full_name}"
+        return f"Invoice for {patient.get_full_name()}"
     
     return "Invoice"
 ```
 
-#### 2.2 Update Create Invoice Endpoint
+#### 2.2 Add Vendor Numbers API Endpoints
+
+**File:** `backend/companies/views.py`
+
+```python
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['GET'])
+def get_company_vendor_numbers(request, company_id):
+    """Get all vendor numbers for a company"""
+    try:
+        company = Company.objects.get(id=company_id)
+        return Response({
+            'vendor_numbers': company.vendor_numbers or {}
+        })
+    except Company.DoesNotExist:
+        return Response({'error': 'Company not found'}, status=404)
+
+@api_view(['POST'])
+def add_company_vendor_number(request, company_id):
+    """Add a new vendor number to a company"""
+    try:
+        company = Company.objects.get(id=company_id)
+        vendor_type = request.data.get('vendor_type')
+        vendor_number = request.data.get('vendor_number')
+        
+        if not vendor_type or not vendor_number:
+            return Response({'error': 'vendor_type and vendor_number required'}, status=400)
+        
+        if not company.vendor_numbers:
+            company.vendor_numbers = {}
+        
+        company.vendor_numbers[vendor_type] = vendor_number
+        company.save()
+        
+        return Response({
+            'success': True,
+            'vendor_numbers': company.vendor_numbers
+        })
+    except Company.DoesNotExist:
+        return Response({'error': 'Company not found'}, status=404)
+
+@api_view(['DELETE'])
+def delete_company_vendor_number(request, company_id, vendor_type):
+    """Remove a vendor number from a company"""
+    try:
+        company = Company.objects.get(id=company_id)
+        
+        if company.vendor_numbers and vendor_type in company.vendor_numbers:
+            del company.vendor_numbers[vendor_type]
+            company.save()
+        
+        return Response({'success': True})
+    except Company.DoesNotExist:
+        return Response({'error': 'Company not found'}, status=404)
+```
+
+#### 2.3 Update Create Invoice Endpoint
 
 **File:** `backend/xero_integration/views.py`
 
@@ -297,21 +436,28 @@ def generate_smart_reference(patient, company, custom_reference=None):
 def create_xero_invoice(request):
     # ... existing code ...
     
-    # NEW: Get clinician_id from request
+    # Get clinician_id from request (already implemented)
     clinician_id = request.data.get('clinician_id')
     if not clinician_id:
-        # Default to logged-in user's clinician profile
         try:
             clinician = request.user.clinician_profile
             clinician_id = clinician.id
         except:
             clinician_id = None
     
+    # NEW: Get vendor type selection (from quick-select button)
+    selected_vendor_type = request.data.get('vendor_type')  # e.g., "Enable", "DVA"
+    
     # NEW: Generate smart reference
     custom_reference = request.data.get('reference')
-    reference = generate_smart_reference(patient, company, custom_reference)
+    reference = generate_smart_reference(
+        patient=patient, 
+        company=company, 
+        selected_vendor_type=selected_vendor_type,
+        custom_reference=custom_reference
+    )
     
-    # Create invoice with clinician
+    # Create invoice with clinician and reference
     invoice_link = xero_service.create_invoice(
         # ... existing params ...
         clinician_id=clinician_id,
@@ -319,36 +465,41 @@ def create_xero_invoice(request):
     )
 ```
 
-#### 2.3 Update PDF Generator
+#### 2.4 Update PDF Generator
 
-**File:** `backend/invoices/document_pdf_generator.py` (or similar)
+**File:** `backend/invoices/document_pdf_generator.py`
 
-Add clinician credentials section to PDF:
+Add practitioner credentials section to PDF:
 
 ```python
-def add_practitioner_box(canvas, x, y, clinician, reference):
-    """Draw practitioner credentials box on PDF"""
-    if not clinician:
-        return
+def add_practitioner_box(canvas, x, y, clinician, reference, company_settings):
+    """Draw practitioner credentials box on PDF (top right corner)"""
+    from invoices.models import CompanySettings  # or EmailGlobalSettings
+    
+    # Get company settings for provider registration number
+    if not company_settings:
+        company_settings = CompanySettings.get_settings()
     
     # Title
+    canvas.setFont("Helvetica-Bold", 10)
     canvas.drawString(x, y, "Reference / PO#")
     y -= 15
     
     # Clinician name
-    canvas.setFont("Helvetica-Bold", 10)
-    canvas.drawString(x, y, clinician.full_name)
-    y -= 12
-    
-    # Reference (NDIS # or PO#)
     canvas.setFont("Helvetica", 9)
+    if clinician:
+        canvas.drawString(x, y, clinician.full_name)
+        y -= 12
+    
+    # Invoice/Order number (if available in reference)
+    # Extract from reference if it contains order/invoice number
     if reference:
         canvas.drawString(x, y, reference)
         y -= 12
     
-    # Provider Registration Number
-    if clinician.provider_registration_number:
-        canvas.drawString(x, y, f"Provider Registration # {clinician.provider_registration_number}")
+    # Provider Registration Number (COMPANY level, not clinician)
+    if company_settings.provider_registration_number:
+        canvas.drawString(x, y, f"Provider Registration # {company_settings.provider_registration_number}")
         y -= 15
     
     # Section: Practitioner
@@ -356,25 +507,26 @@ def add_practitioner_box(canvas, x, y, clinician, reference):
     canvas.drawString(x, y, "Practitioner:")
     y -= 12
     
-    # Full name + credential
-    canvas.setFont("Helvetica-Bold", 10)
-    if clinician.credential:
-        canvas.drawString(x, y, f"{clinician.full_name}, {clinician.credential}")
-    else:
-        canvas.drawString(x, y, clinician.full_name)
-    y -= 12
-    
-    # Professional registration
-    canvas.setFont("Helvetica", 9)
-    if clinician.registration_number:
-        canvas.drawString(x, y, clinician.registration_number)
+    if clinician:
+        # Full name + credential
+        canvas.setFont("Helvetica-Bold", 10)
+        if clinician.credential:
+            canvas.drawString(x, y, f"{clinician.full_name}, {clinician.credential}")
+        else:
+            canvas.drawString(x, y, clinician.full_name)
         y -= 12
-    
-    # Professional body URL
-    if clinician.professional_body_url:
-        canvas.setFill(colors.blue)
-        canvas.drawString(x, y, clinician.professional_body_url)
-        canvas.setFill(colors.black)
+        
+        # Pedorthic registration (clinician's personal registration)
+        canvas.setFont("Helvetica", 9)
+        if clinician.registration_number:
+            canvas.drawString(x, y, clinician.registration_number)
+            y -= 12
+        
+        # Professional body URL
+        if clinician.professional_body_url:
+            canvas.setFill(colors.blue)
+            canvas.drawString(x, y, clinician.professional_body_url)
+            canvas.setFill(colors.black)
 ```
 
 ---
@@ -468,42 +620,205 @@ const fetchCurrentUserClinician = async () => {
 </Paper>
 ```
 
-#### 3.2 Add Custom Reference Field (Optional Override)
+#### 3.2 Add Vendor Number Quick-Select Buttons
 
-**After Patient/Company Selection:**
+**After Company Selection, dynamically load vendor numbers:**
 
 ```tsx
-<TextInput
-  label="Reference / PO Number"
-  placeholder="Auto-generated (NDIS # or custom PO)"
-  description="Leave blank to auto-generate from NDIS # or patient name"
-  value={customReference}
-  onChange={(e) => setCustomReference(e.currentTarget.value)}
-  icon={<IconFileText size={16} />}
-/>
+// State
+const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+const [vendorNumbers, setVendorNumbers] = useState<Record<string, string>>({});
+const [selectedVendorType, setSelectedVendorType] = useState<string | null>(null);
+const [customReference, setCustomReference] = useState('');
 
-{/* Show preview of what reference will be */}
-{selectedPatient && (
+// Fetch vendor numbers when company changes
+useEffect(() => {
+  if (selectedCompany) {
+    fetchVendorNumbers(selectedCompany.id);
+  } else {
+    setVendorNumbers({});
+    setSelectedVendorType(null);
+  }
+}, [selectedCompany]);
+
+const fetchVendorNumbers = async (companyId: string) => {
+  const response = await fetch(`https://localhost:8000/api/companies/${companyId}/vendor-numbers/`, {
+    credentials: 'include',
+  });
+  const data = await response.json();
+  setVendorNumbers(data.vendor_numbers || {});
+};
+
+const handleVendorButtonClick = (vendorType: string, vendorNumber: string) => {
+  setSelectedVendorType(vendorType);
+  setCustomReference(`${vendorType} Vendor # ${vendorNumber}`);
+};
+
+// UI Component
+<Paper p="md" withBorder mb="md">
+  <Group align="center" mb="xs">
+    <IconFileText size={20} />
+    <Text fw={600}>Reference / PO Number</Text>
+  </Group>
+  
+  {/* Show vendor number quick-select buttons if company selected */}
+  {selectedCompany && Object.keys(vendorNumbers).length > 0 && (
+    <>
+      <Text size="sm" c="dimmed" mb="xs">Quick Select Vendor Number:</Text>
+      <Group mb="md">
+        {Object.entries(vendorNumbers).map(([type, number]) => (
+          <Button
+            key={type}
+            variant={selectedVendorType === type ? 'filled' : 'outline'}
+            size="sm"
+            onClick={() => handleVendorButtonClick(type, number)}
+          >
+            <Stack gap={2} align="center">
+              <Text size="xs" fw={600}>{type}</Text>
+              <Text size="xs">{number}</Text>
+            </Stack>
+          </Button>
+        ))}
+      </Group>
+    </>
+  )}
+  
+  {/* Manual reference input */}
+  <TextInput
+    label="Reference / PO Number"
+    placeholder={
+      selectedPatient?.health_number 
+        ? `Auto: NDIS # ${selectedPatient.health_number}` 
+        : "Leave blank to auto-generate"
+    }
+    description="Click a button above or type custom reference"
+    value={customReference}
+    onChange={(e) => {
+      setCustomReference(e.currentTarget.value);
+      setSelectedVendorType(null); // Clear button selection if manually typing
+    }}
+    icon={<IconFileText size={16} />}
+  />
+  
+  {/* Preview what will be used */}
   <Alert color="gray" mt="xs">
     <Text size="xs">
       Reference will be: <strong>{
         customReference || 
-        (selectedPatient.health_number 
+        (selectedPatient?.health_number 
           ? `NDIS # ${selectedPatient.health_number}` 
-          : `Invoice for ${selectedPatient.full_name}`)
+          : `Invoice for ${selectedPatient?.full_name || selectedCompany?.name || 'Patient'}`)
       }</strong>
     </Text>
   </Alert>
-)}
+</Paper>
 ```
 
-#### 3.3 Update Submit Payload
+#### 3.3 Add Vendor Number Management to Company Settings
+
+**File:** `frontend/app/components/settings/CompanySettings.tsx` (or create new component)
+
+```tsx
+const [vendorNumbers, setVendorNumbers] = useState<Record<string, string>>({});
+const [newVendorType, setNewVendorType] = useState('');
+const [newVendorNumber, setNewVendorNumber] = useState('');
+
+const handleAddVendorNumber = async () => {
+  if (!newVendorType || !newVendorNumber) {
+    notifications.show({
+      title: 'Validation Error',
+      message: 'Please enter both vendor type and number',
+      color: 'red',
+    });
+    return;
+  }
+  
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(`https://localhost:8000/api/companies/${companyId}/vendor-numbers/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken,
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      vendor_type: newVendorType,
+      vendor_number: newVendorNumber,
+    }),
+  });
+  
+  if (response.ok) {
+    const data = await response.json();
+    setVendorNumbers(data.vendor_numbers);
+    setNewVendorType('');
+    setNewVendorNumber('');
+    notifications.show({
+      title: 'Success',
+      message: 'Vendor number added',
+      color: 'green',
+    });
+  }
+};
+
+// UI Component
+<Paper p="xl" shadow="sm" radius="md">
+  <Title order={3} mb="md">Vendor/Account Numbers</Title>
+  
+  {/* Existing vendor numbers */}
+  <Table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Number</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {Object.entries(vendorNumbers).map(([type, number]) => (
+        <tr key={type}>
+          <td>{type}</td>
+          <td>{number}</td>
+          <td>
+            <ActionIcon color="red" onClick={() => handleDeleteVendorNumber(type)}>
+              <IconTrash size={16} />
+            </ActionIcon>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </Table>
+  
+  {/* Add new vendor number */}
+  <Divider my="md" />
+  <Title order={4} mb="md">Add New Vendor Number</Title>
+  <Group>
+    <TextInput
+      label="Vendor Type"
+      placeholder="e.g., Enable, DVA, BUPA"
+      value={newVendorType}
+      onChange={(e) => setNewVendorType(e.currentTarget.value)}
+    />
+    <TextInput
+      label="Vendor Number"
+      placeholder="e.g., 508809"
+      value={newVendorNumber}
+      onChange={(e) => setNewVendorNumber(e.currentTarget.value)}
+    />
+    <Button onClick={handleAddVendorNumber} mt="md">
+      <IconPlus size={16} /> Add
+    </Button>
+  </Group>
+</Paper>
+```
+
+#### 3.4 Update Submit Payload
 
 ```tsx
 const payload = {
   // ... existing fields ...
   clinician_id: selectedClinician,
-  reference: customReference || null, // Backend will auto-generate if null
+  vendor_type: selectedVendorType, // Which button was clicked (e.g., "Enable", "DVA")
+  reference: customReference || null, // Manual override or null for auto-generation
 };
 ```
 
@@ -569,43 +884,55 @@ const payload = {
 
 ---
 
-## 🚀 Implementation Checklist
+## 🚀 Implementation Checklist (UPDATED)
 
 ### Phase 1: Database ✅
-- [ ] Add `provider_registration_number` field to `Clinician` model
-- [ ] Create and run migration
-- [ ] Update User Profiles UI to include provider registration field
-- [ ] Test with sample data (Craig's credentials)
+- [ ] Create `CompanySettings` model (or add to `EmailGlobalSettings`)
+- [ ] Add `provider_registration_number` field to company settings
+- [ ] Add `vendor_numbers` JSON field to `Company` model
+- [ ] Create and run migrations
+- [ ] Add sample data (Enable: 508809, DVA: 682730, etc.)
+- [ ] Update Company Settings UI to include provider registration field
 
 ### Phase 2: Backend Logic
-- [ ] Create `generate_smart_reference()` helper function
-- [ ] Update `create_xero_invoice()` to accept `clinician_id`
+- [ ] Create `generate_smart_reference()` helper function (with vendor_type support)
+- [ ] Add vendor number API endpoints:
+  - [ ] `GET /api/companies/{id}/vendor-numbers/`
+  - [ ] `POST /api/companies/{id}/vendor-numbers/`
+  - [ ] `DELETE /api/companies/{id}/vendor-numbers/{type}/`
+- [ ] Update `create_xero_invoice()` to accept `clinician_id` and `vendor_type`
 - [ ] Update `create_xero_invoice()` to auto-select logged-in user's clinician
 - [ ] Update `create_xero_invoice()` to generate smart reference
 - [ ] Add `GET /api/clinicians/me/` endpoint for current user's clinician
-- [ ] Update PDF generator to include practitioner credentials box
+- [ ] Update PDF generator to include practitioner credentials box (with company provider #)
 
 ### Phase 3: Frontend UI/UX
 - [ ] Add clinician selector to `CreateInvoiceDialog.tsx`
 - [ ] Add clinician selector to `CreateInvoiceModal.tsx`
+- [ ] Add vendor number quick-select buttons (dynamic per company)
 - [ ] Add custom reference field with auto-generation preview
+- [ ] Add vendor number management to Company Settings
 - [ ] Fetch clinicians on modal open
+- [ ] Fetch vendor numbers when company is selected
 - [ ] Auto-select current user's clinician profile
 - [ ] Show credentials preview when clinician selected
-- [ ] Update submit payload to include `clinician_id` and `reference`
+- [ ] Update submit payload to include `clinician_id`, `vendor_type`, and `reference`
 
 ### Phase 4: Testing
 - [ ] Test invoice creation with different clinicians
-- [ ] Test auto-generation of NDIS reference
+- [ ] Test auto-generation of NDIS reference (patient with health_number)
+- [ ] Test vendor number quick-select buttons (Enable, DVA, BUPA)
 - [ ] Test custom PO number override
-- [ ] Test PDF display of practitioner credentials
+- [ ] Test PDF display of practitioner credentials (with company provider #)
 - [ ] Test with company billing (DVA, insurance)
 - [ ] Test quotes (same logic should apply)
+- [ ] Test vendor number management (add/delete in Company Settings)
 
 ### Phase 5: Documentation
-- [ ] Update `docs/architecture/DATABASE_SCHEMA.md` with new field
+- [ ] Update `docs/architecture/DATABASE_SCHEMA.md` with new fields
 - [ ] Create user guide for practitioner selection
 - [ ] Document smart reference generation logic
+- [ ] Document vendor number management
 
 ---
 
@@ -719,28 +1046,71 @@ const payload = {
 
 ---
 
-## ❓ Questions for Review
+## ✅ Decisions Made (Q&A with User)
 
-1. **Provider Registration Number:**
-   - Do you need to store multiple provider numbers per clinician? (e.g., one for NDIS, one for DVA)
-   - Or is a single provider number sufficient?
+### 1. **Provider Registration Number** ✅
+**Decision:** Store at **Company Level** (not individual clinician level)
+- The clinic (Walk Easy Pedorthics) has the provider registration # (e.g., `4050009706`)
+- This is used for NDIS/DVA/Medicare billing
+- Individual clinicians have their own **Pedorthic Registration #** (already stored in `Clinician.registration_number`)
 
-2. **Reference Format:**
-   - Is `"NDIS # 3333222"` the correct format?
-   - Should we support other formats (e.g., `"NDIS-3333222"`, `"3333222"`)?
+**Implementation:**
+- Add `provider_registration_number` to `EmailGlobalSettings` or create dedicated `CompanySettings` model
+- Display company's provider # on all invoices
 
-3. **Clinician Selection:**
-   - Should admin users be able to override the clinician after invoice creation?
-   - Or should it be locked once created?
+### 2. **Vendor Number Buttons (BUPA, Enable, DVA)** ✅
+**Decision:** Dynamic vendor numbers per company with quick-select buttons
 
-4. **PDF Layout:**
-   - Is the proposed "top right corner" layout correct?
-   - Do you want the practitioner info in a box/border, or plain text?
+**How it works:**
+- Each company (Enable, DVA, BUPA, etc.) can have multiple vendor/account numbers
+- Store in `Company.vendor_numbers` JSON field
+- Examples:
+  - Enable → `{"Enable": "508809"}`
+  - DVA → `{"DVA": "682730"}`
+  - BUPA → `{"BUPA": "123456"}`
 
-5. **Account/Tax Type Buttons:**
-   - In FileMaker, you have BUPA, Medibank, AHM, DVA buttons
-   - Should these be quick-select buttons for company selection?
-   - Or are they related to tax types/account codes?
+**UI Flow:**
+1. User selects company (e.g., "Enable")
+2. System shows quick-select buttons for that company's vendor numbers
+3. Clicking button auto-fills reference: `"Enable Vendor # 508809"`
+4. User can override manually if needed
+
+**Reference Display on Invoice:**
+```
+Reference / PO#
+Mr. Craig Laird
+883t0
+Enable Vendor # 508809
+```
+
+### 3. **Reference Format** ✅
+**Confirmed formats:**
+- NDIS patients: `"NDIS # {health_number}"` (e.g., `"NDIS # 3333222"`)
+- Company vendor: `"{Type} Vendor # {number}"` (e.g., `"Enable Vendor # 508809"`)
+- DVA: `"DVA # {number}"` (e.g., `"DVA # 682730"`)
+- Custom: User can type anything
+
+### 4. **PDF Layout** ✅
+**Confirmed:** Top right corner with practitioner credentials
+```
+Reference / PO#
+Craig Laird
+883t0
+Enable Vendor # 508809
+Provider Registration # 4050009706  ← Company's provider #
+
+Practitioner:
+Craig Laird
+C.Ped CM AU
+Pedorthic Registration # 3454       ← Clinician's personal registration
+www.pedorthics.org.au
+```
+
+### 5. **Clinician Selection** ✅
+**Decision:** Allow override for admin users
+- Smart default: Auto-select logged-in user's clinician profile
+- Admin can change if creating invoice on behalf of another clinician
+- Once invoice is created, clinician is locked (for audit trail)
 
 ---
 
