@@ -1498,6 +1498,10 @@ export default function ContactsPage() {
                                   }
                                   
                                   console.log('Funding source saved:', value);
+                                  
+                                  // CRITICAL: Invalidate cache to force fresh load
+                                  await PatientCache.clear();
+                                  console.log('🗑️ Cache cleared - next load will fetch fresh data');
                                 } catch (error) {
                                   console.error('Error saving funding source:', error);
                                   notifications.show({
