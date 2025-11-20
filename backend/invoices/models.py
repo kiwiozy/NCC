@@ -3,6 +3,7 @@ Email Template Models - Multi-Template Library System
 """
 from django.db import models
 from django.contrib.auth.models import User
+from .custom_funding_model import CustomFundingSource  # Import custom funding source model
 
 
 class EmailTemplate(models.Model):

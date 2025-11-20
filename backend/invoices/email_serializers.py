@@ -3,6 +3,25 @@ Email Template Serializers
 """
 from rest_framework import serializers
 from .models import EmailTemplate, EmailGlobalSettings
+from .custom_funding_model import CustomFundingSource
+
+
+class CustomFundingSourceSerializer(serializers.ModelSerializer):
+    """Serializer for CustomFundingSource model"""
+    
+    class Meta:
+        model = CustomFundingSource
+        fields = [
+            'id',
+            'name',
+            'reference_number',
+            'display_format',
+            'is_active',
+            'notes',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):

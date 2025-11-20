@@ -50,9 +50,11 @@ def generate_smart_reference(patient, custom_reference=None):
     - DVA patient → "DVA # 682730"
     - Enable patient → "Enable Vendor # 508809"
     - BUPA patient → "BUPA - John Smith"
+    - Custom funding source (e.g., HCF) → "HCF # 789012" or "HCF - John Smith"
     - Private patient → "Invoice for John Smith"
     """
     from invoices.models import EmailGlobalSettings
+    from invoices.custom_funding_model import CustomFundingSource
     
     if custom_reference:
         return custom_reference
@@ -66,6 +68,7 @@ def generate_smart_reference(patient, custom_reference=None):
     # Check patient's funding source
     if hasattr(patient, 'funding_source') and patient.funding_source:
         
+        # Check hardcoded funding sources first
         if patient.funding_source == 'NDIS' and patient.health_number:
             return f"NDIS # {patient.health_number}"
         
@@ -77,6 +80,18 @@ def generate_smart_reference(patient, custom_reference=None):
         
         elif patient.funding_source in ['BUPA', 'MEDIBANK', 'AHM']:
             return f"{patient.funding_source} - {patient.get_full_name()}"
+        
+        else:
+            # Check if it's a custom funding source
+            try:
+                custom_source = CustomFundingSource.objects.get(
+                    name=patient.funding_source,
+                    is_active=True
+                )
+                return custom_source.get_formatted_reference(patient.get_full_name())
+            except CustomFundingSource.DoesNotExist:
+                # Not a custom source either - use default format
+                return f"{patient.funding_source} - {patient.get_full_name()}"
     
     # Default: patient name
     return f"Invoice for {patient.get_full_name()}"

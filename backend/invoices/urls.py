@@ -7,11 +7,13 @@ from . import views
 from . import quote_views
 from . import email_settings_views
 from . import email_views
+from . import custom_funding_views
 
 # Create router for viewsets
 router = DefaultRouter()
 router.register(r'email-templates', email_settings_views.EmailTemplateViewSet, basename='email-template')
 router.register(r'email-global-settings', email_settings_views.EmailGlobalSettingsViewSet, basename='email-global-settings')
+router.register(r'custom-funding-sources', custom_funding_views.CustomFundingSourceViewSet, basename='custom-funding-source')
 
 urlpatterns = [
     # PDF Generation
