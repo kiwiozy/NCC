@@ -290,20 +290,40 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
   const handlePrintClick = async (item: CombinedItem) => {
     try {
       const isInvoice = item.type === 'invoice';
+      
+      console.log('Print clicked:', {
+        type: item.type,
+        id: item.id,
+        number: item.number,
+        isInvoice
+      });
+      
       const endpoint = isInvoice 
-        ? `https://localhost:8000/api/xero-invoice-links/${item.id}/pdf/`
-        : `https://localhost:8000/api/xero-quote-links/${item.id}/pdf/`;
+        ? `https://localhost:8000/api/invoices/xero/${item.id}/pdf/`
+        : `https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`;
+      
+      console.log('Fetching PDF from:', endpoint);
       
       const response = await fetch(endpoint, {
         credentials: 'include',
       });
       
+      console.log('PDF response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('PDF error response:', errorText);
         throw new Error('Failed to generate PDF');
       }
       
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
+      
+      console.log('PDF blob created, URL:', url);
       
       setPrintPdfUrl(url);
       setPrintTitle(`${isInvoice ? 'Invoice' : 'Quote'} #${item.number}`);
