@@ -27,7 +27,7 @@ def generate_invoice_pdf_bytes(invoice_link_id: str, is_receipt: bool = False) -
         from patients.models import Patient
         from companies.models import Company
         from xero_integration.services import XeroService
-        from .invoice_generator import generate_invoice_pdf
+        from .document_pdf_generator import generate_invoice_pdf
         from decimal import Decimal
         
         # Get invoice link
@@ -145,7 +145,7 @@ def generate_quote_pdf_bytes(quote_link_id: str) -> Optional[bytes]:
         from patients.models import Patient
         from companies.models import Company
         from xero_integration.services import XeroService
-        from .quote_generator import generate_quote_pdf
+        from .document_pdf_generator import generate_quote_pdf
         from decimal import Decimal
         
         # Get quote link
