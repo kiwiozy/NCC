@@ -290,39 +290,170 @@ class CompanySettings(models.Model):
 
 **RECOMMENDATION:** Use Option B (CompanySettings model) - more organized and scalable.
 
-#### 1.2 Add `vendor_numbers` to Company Model
+#### 1.2 Create `VendorNumber` Model (Link Vendor Numbers to Companies)
+
+**Better approach:** Create a dedicated model for vendor numbers linked to companies!
+
 ```python
 # backend/companies/models.py
-class Company:
-    # ... existing fields ...
+class VendorNumber(models.Model):
+    """
+    Vendor/account numbers for companies (Enable, DVA, BUPA, etc.)
+    Each company can have one or more vendor numbers for different billing contexts.
     
-    vendor_numbers = models.JSONField(
+    Examples:
+    - Company: Enable → Vendor Type: "Enable" → Number: "508809"
+    - Company: DVA → Vendor Type: "DVA" → Number: "682730"
+    - Company: BUPA → Vendor Type: "BUPA" → Number: "123456"
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Link to company
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.CASCADE,
+        related_name='vendor_numbers',
+        help_text="Company this vendor number belongs to"
+    )
+    
+    # Vendor details
+    vendor_type = models.CharField(
+        max_length=100,
+        help_text="Vendor type/scheme (e.g., 'Enable', 'DVA', 'BUPA', 'Medibank')"
+    )
+    
+    vendor_number = models.CharField(
+        max_length=100,
+        help_text="Vendor/account number (e.g., '508809')"
+    )
+    
+    # Display on invoice
+    display_format = models.CharField(
+        max_length=200,
         null=True,
         blank=True,
-        default=dict,
-        help_text="Vendor/account numbers by type (e.g., {'Enable': '508809', 'DVA': '682730'})"
+        help_text="How to display on invoice (e.g., 'Enable Vendor #', 'DVA #'). Leave blank for default: '{vendor_type} Vendor #'"
     )
+    
+    # Status
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this vendor number is currently active"
+    )
+    
+    # Metadata
+    notes = models.TextField(
+        blank=True,
+        help_text="Internal notes about this vendor number"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'company_vendor_numbers'
+        ordering = ['company', 'vendor_type']
+        unique_together = ['company', 'vendor_type']  # Each company can only have one number per vendor type
+        indexes = [
+            models.Index(fields=['company', 'is_active']),
+            models.Index(fields=['vendor_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.company.name} - {self.vendor_type}: {self.vendor_number}"
+    
+    def get_display_format(self):
+        """Get the display format for invoices"""
+        if self.display_format:
+            return self.display_format
+        return f"{self.vendor_type} Vendor #"
+    
+    def get_formatted_reference(self):
+        """Get the full formatted reference for invoices"""
+        return f"{self.get_display_format()} {self.vendor_number}"
 ```
 
-**Example data for Enable:**
-```json
-{
-  "Enable": "508809",
-  "Enable Alt": "999999"
-}
-```
+**Example data:**
+```python
+# Enable company
+VendorNumber.objects.create(
+    company=enable_company,
+    vendor_type="Enable",
+    vendor_number="508809",
+    display_format="Enable Vendor #"
+)
 
-**Example data for DVA:**
-```json
-{
-  "DVA": "682730"
-}
+# DVA company
+VendorNumber.objects.create(
+    company=dva_company,
+    vendor_type="DVA",
+    vendor_number="682730",
+    display_format="DVA #"
+)
+
+# BUPA company (multiple vendor numbers if needed)
+VendorNumber.objects.create(
+    company=bupa_company,
+    vendor_type="BUPA",
+    vendor_number="123456",
+    display_format="BUPA Account #"
+)
 ```
 
 #### 1.3 Migrations
 ```bash
 python manage.py makemigrations
 python manage.py migrate
+```
+
+#### 1.4 Create Sample Data Script
+
+**File:** `backend/companies/management/commands/setup_vendor_numbers.py`
+
+```python
+from django.core.management.base import BaseCommand
+from companies.models import Company, VendorNumber
+
+class Command(BaseCommand):
+    help = 'Setup initial vendor numbers for companies'
+
+    def handle(self, *args, **options):
+        # Get or create companies
+        enable, _ = Company.objects.get_or_create(
+            name="Enable",
+            defaults={'abn': ''}
+        )
+        
+        dva, _ = Company.objects.get_or_create(
+            name="DVA",
+            defaults={'abn': ''}
+        )
+        
+        # Create vendor numbers
+        VendorNumber.objects.get_or_create(
+            company=enable,
+            vendor_type="Enable",
+            defaults={
+                'vendor_number': '508809',
+                'display_format': 'Enable Vendor #'
+            }
+        )
+        
+        VendorNumber.objects.get_or_create(
+            company=dva,
+            vendor_type="DVA",
+            defaults={
+                'vendor_number': '682730',
+                'display_format': 'DVA #'
+            }
+        )
+        
+        self.stdout.write(self.style.SUCCESS('✅ Vendor numbers setup complete!'))
+```
+
+**Run:**
+```bash
+python manage.py setup_vendor_numbers
 ```
 
 ---
@@ -334,7 +465,7 @@ python manage.py migrate
 **File:** `backend/xero_integration/services.py`
 
 ```python
-def generate_smart_reference(patient, company, selected_vendor_type=None, custom_reference=None):
+def generate_smart_reference(patient, company, selected_vendor_number_id=None, custom_reference=None):
     """
     Generate smart reference/PO# for invoice
     
@@ -349,10 +480,14 @@ def generate_smart_reference(patient, company, selected_vendor_type=None, custom
         return custom_reference
     
     # Check if vendor number was selected
-    if selected_vendor_type and company and company.vendor_numbers:
-        vendor_num = company.vendor_numbers.get(selected_vendor_type)
-        if vendor_num:
-            return f"{selected_vendor_type} Vendor # {vendor_num}"
+    if selected_vendor_number_id:
+        from companies.models import VendorNumber
+        try:
+            vendor_num = VendorNumber.objects.get(id=selected_vendor_number_id, is_active=True)
+            return vendor_num.get_formatted_reference()
+            # Returns: "Enable Vendor # 508809" or "DVA # 682730"
+        except VendorNumber.DoesNotExist:
+            pass
     
     # Check for NDIS number
     if patient and patient.health_number:
@@ -376,55 +511,123 @@ def generate_smart_reference(patient, company, selected_vendor_type=None, custom
 ```python
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
+from companies.models import Company, VendorNumber
+from companies.serializers import VendorNumberSerializer
 
 @api_view(['GET'])
 def get_company_vendor_numbers(request, company_id):
     """Get all vendor numbers for a company"""
     try:
-        company = Company.objects.get(id=company_id)
+        vendor_numbers = VendorNumber.objects.filter(
+            company_id=company_id, 
+            is_active=True
+        )
+        serializer = VendorNumberSerializer(vendor_numbers, many=True)
         return Response({
-            'vendor_numbers': company.vendor_numbers or {}
+            'vendor_numbers': serializer.data
         })
-    except Company.DoesNotExist:
-        return Response({'error': 'Company not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def add_company_vendor_number(request, company_id):
     """Add a new vendor number to a company"""
     try:
         company = Company.objects.get(id=company_id)
+        
         vendor_type = request.data.get('vendor_type')
         vendor_number = request.data.get('vendor_number')
+        display_format = request.data.get('display_format', '')
         
         if not vendor_type or not vendor_number:
-            return Response({'error': 'vendor_type and vendor_number required'}, status=400)
+            return Response(
+                {'error': 'vendor_type and vendor_number required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        if not company.vendor_numbers:
-            company.vendor_numbers = {}
+        # Create vendor number
+        vendor_num = VendorNumber.objects.create(
+            company=company,
+            vendor_type=vendor_type,
+            vendor_number=vendor_number,
+            display_format=display_format if display_format else f"{vendor_type} Vendor #"
+        )
         
-        company.vendor_numbers[vendor_type] = vendor_number
-        company.save()
-        
+        serializer = VendorNumberSerializer(vendor_num)
         return Response({
             'success': True,
-            'vendor_numbers': company.vendor_numbers
-        })
+            'vendor_number': serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
     except Company.DoesNotExist:
-        return Response({'error': 'Company not found'}, status=404)
+        return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+def update_company_vendor_number(request, vendor_number_id):
+    """Update a vendor number"""
+    try:
+        vendor_num = VendorNumber.objects.get(id=vendor_number_id)
+        
+        if 'vendor_type' in request.data:
+            vendor_num.vendor_type = request.data['vendor_type']
+        if 'vendor_number' in request.data:
+            vendor_num.vendor_number = request.data['vendor_number']
+        if 'display_format' in request.data:
+            vendor_num.display_format = request.data['display_format']
+        if 'is_active' in request.data:
+            vendor_num.is_active = request.data['is_active']
+        
+        vendor_num.save()
+        
+        serializer = VendorNumberSerializer(vendor_num)
+        return Response({
+            'success': True,
+            'vendor_number': serializer.data
+        })
+        
+    except VendorNumber.DoesNotExist:
+        return Response({'error': 'Vendor number not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['DELETE'])
-def delete_company_vendor_number(request, company_id, vendor_type):
+def delete_company_vendor_number(request, vendor_number_id):
     """Remove a vendor number from a company"""
     try:
-        company = Company.objects.get(id=company_id)
+        vendor_num = VendorNumber.objects.get(id=vendor_number_id)
+        vendor_num.delete()
         
-        if company.vendor_numbers and vendor_type in company.vendor_numbers:
-            del company.vendor_numbers[vendor_type]
-            company.save()
+        return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
         
-        return Response({'success': True})
-    except Company.DoesNotExist:
-        return Response({'error': 'Company not found'}, status=404)
+    except VendorNumber.DoesNotExist:
+        return Response({'error': 'Vendor number not found'}, status=status.HTTP_404_NOT_FOUND)
+```
+
+**File:** `backend/companies/serializers.py`
+
+```python
+from rest_framework import serializers
+from .models import Company, VendorNumber
+
+class VendorNumberSerializer(serializers.ModelSerializer):
+    formatted_reference = serializers.CharField(source='get_formatted_reference', read_only=True)
+    
+    class Meta:
+        model = VendorNumber
+        fields = [
+            'id', 'company', 'vendor_type', 'vendor_number', 
+            'display_format', 'is_active', 'notes', 
+            'formatted_reference', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'formatted_reference', 'created_at', 'updated_at']
+
+class CompanySerializer(serializers.ModelSerializer):
+    vendor_numbers = VendorNumberSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Company
+        fields = '__all__'
 ```
 
 #### 2.3 Update Create Invoice Endpoint
@@ -445,15 +648,15 @@ def create_xero_invoice(request):
         except:
             clinician_id = None
     
-    # NEW: Get vendor type selection (from quick-select button)
-    selected_vendor_type = request.data.get('vendor_type')  # e.g., "Enable", "DVA"
+    # NEW: Get vendor number ID (from quick-select button)
+    selected_vendor_number_id = request.data.get('vendor_number_id')  # UUID of selected VendorNumber
     
     # NEW: Generate smart reference
     custom_reference = request.data.get('reference')
     reference = generate_smart_reference(
         patient=patient, 
         company=company, 
-        selected_vendor_type=selected_vendor_type,
+        selected_vendor_number_id=selected_vendor_number_id,
         custom_reference=custom_reference
     )
     
@@ -627,17 +830,26 @@ const fetchCurrentUserClinician = async () => {
 ```tsx
 // State
 const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-const [vendorNumbers, setVendorNumbers] = useState<Record<string, string>>({});
-const [selectedVendorType, setSelectedVendorType] = useState<string | null>(null);
+const [vendorNumbers, setVendorNumbers] = useState<VendorNumber[]>([]);
+const [selectedVendorNumber, setSelectedVendorNumber] = useState<VendorNumber | null>(null);
 const [customReference, setCustomReference] = useState('');
+
+// TypeScript interface
+interface VendorNumber {
+  id: string;
+  vendor_type: string;
+  vendor_number: string;
+  display_format: string;
+  formatted_reference: string; // e.g., "Enable Vendor # 508809"
+}
 
 // Fetch vendor numbers when company changes
 useEffect(() => {
   if (selectedCompany) {
     fetchVendorNumbers(selectedCompany.id);
   } else {
-    setVendorNumbers({});
-    setSelectedVendorType(null);
+    setVendorNumbers([]);
+    setSelectedVendorNumber(null);
   }
 }, [selectedCompany]);
 
@@ -646,12 +858,12 @@ const fetchVendorNumbers = async (companyId: string) => {
     credentials: 'include',
   });
   const data = await response.json();
-  setVendorNumbers(data.vendor_numbers || {});
+  setVendorNumbers(data.vendor_numbers || []);
 };
 
-const handleVendorButtonClick = (vendorType: string, vendorNumber: string) => {
-  setSelectedVendorType(vendorType);
-  setCustomReference(`${vendorType} Vendor # ${vendorNumber}`);
+const handleVendorButtonClick = (vendorNum: VendorNumber) => {
+  setSelectedVendorNumber(vendorNum);
+  setCustomReference(vendorNum.formatted_reference);
 };
 
 // UI Component
@@ -662,20 +874,20 @@ const handleVendorButtonClick = (vendorType: string, vendorNumber: string) => {
   </Group>
   
   {/* Show vendor number quick-select buttons if company selected */}
-  {selectedCompany && Object.keys(vendorNumbers).length > 0 && (
+  {selectedCompany && vendorNumbers.length > 0 && (
     <>
       <Text size="sm" c="dimmed" mb="xs">Quick Select Vendor Number:</Text>
       <Group mb="md">
-        {Object.entries(vendorNumbers).map(([type, number]) => (
+        {vendorNumbers.map((vendorNum) => (
           <Button
-            key={type}
-            variant={selectedVendorType === type ? 'filled' : 'outline'}
+            key={vendorNum.id}
+            variant={selectedVendorNumber?.id === vendorNum.id ? 'filled' : 'outline'}
             size="sm"
-            onClick={() => handleVendorButtonClick(type, number)}
+            onClick={() => handleVendorButtonClick(vendorNum)}
           >
             <Stack gap={2} align="center">
-              <Text size="xs" fw={600}>{type}</Text>
-              <Text size="xs">{number}</Text>
+              <Text size="xs" fw={600}>{vendorNum.vendor_type}</Text>
+              <Text size="xs">{vendorNum.vendor_number}</Text>
             </Stack>
           </Button>
         ))}
@@ -695,7 +907,7 @@ const handleVendorButtonClick = (vendorType: string, vendorNumber: string) => {
     value={customReference}
     onChange={(e) => {
       setCustomReference(e.currentTarget.value);
-      setSelectedVendorType(null); // Clear button selection if manually typing
+      setSelectedVendorNumber(null); // Clear button selection if manually typing
     }}
     icon={<IconFileText size={16} />}
   />
@@ -714,14 +926,23 @@ const handleVendorButtonClick = (vendorType: string, vendorNumber: string) => {
 </Paper>
 ```
 
-#### 3.3 Add Vendor Number Management to Company Settings
+#### 3.3 Add Vendor Number Management to Company Profile Page
 
-**File:** `frontend/app/components/settings/CompanySettings.tsx` (or create new component)
+**File:** `frontend/app/companies/[id]/page.tsx` (or within Company edit modal)
 
 ```tsx
-const [vendorNumbers, setVendorNumbers] = useState<Record<string, string>>({});
+const [vendorNumbers, setVendorNumbers] = useState<VendorNumber[]>([]);
 const [newVendorType, setNewVendorType] = useState('');
 const [newVendorNumber, setNewVendorNumber] = useState('');
+const [newDisplayFormat, setNewDisplayFormat] = useState('');
+
+const fetchVendorNumbers = async () => {
+  const response = await fetch(`https://localhost:8000/api/companies/${companyId}/vendor-numbers/`, {
+    credentials: 'include',
+  });
+  const data = await response.json();
+  setVendorNumbers(data.vendor_numbers || []);
+};
 
 const handleAddVendorNumber = async () => {
   if (!newVendorType || !newVendorNumber) {
@@ -744,14 +965,15 @@ const handleAddVendorNumber = async () => {
     body: JSON.stringify({
       vendor_type: newVendorType,
       vendor_number: newVendorNumber,
+      display_format: newDisplayFormat || `${newVendorType} Vendor #`,
     }),
   });
   
   if (response.ok) {
-    const data = await response.json();
-    setVendorNumbers(data.vendor_numbers);
+    await fetchVendorNumbers();
     setNewVendorType('');
     setNewVendorNumber('');
+    setNewDisplayFormat('');
     notifications.show({
       title: 'Success',
       message: 'Vendor number added',
@@ -760,54 +982,127 @@ const handleAddVendorNumber = async () => {
   }
 };
 
+const handleDeleteVendorNumber = async (vendorNumberId: string) => {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(`https://localhost:8000/api/vendor-numbers/${vendorNumberId}/`, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRFToken': csrfToken,
+    },
+    credentials: 'include',
+  });
+  
+  if (response.ok) {
+    await fetchVendorNumbers();
+    notifications.show({
+      title: 'Success',
+      message: 'Vendor number deleted',
+      color: 'green',
+    });
+  }
+};
+
 // UI Component
-<Paper p="xl" shadow="sm" radius="md">
-  <Title order={3} mb="md">Vendor/Account Numbers</Title>
+<Paper p="xl" shadow="sm" radius="md" mt="md">
+  <Title order={3} mb="md">
+    <Group>
+      <IconFileText size={24} />
+      Vendor/Account Numbers
+    </Group>
+  </Title>
+  
+  <Text size="sm" c="dimmed" mb="md">
+    Manage vendor/account numbers for this company. These will appear as quick-select buttons when creating invoices.
+  </Text>
   
   {/* Existing vendor numbers */}
-  <Table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Number</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {Object.entries(vendorNumbers).map(([type, number]) => (
-        <tr key={type}>
-          <td>{type}</td>
-          <td>{number}</td>
-          <td>
-            <ActionIcon color="red" onClick={() => handleDeleteVendorNumber(type)}>
-              <IconTrash size={16} />
-            </ActionIcon>
-          </td>
+  {vendorNumbers.length > 0 ? (
+    <Table striped highlightOnHover mb="xl">
+      <thead>
+        <tr>
+          <th>Vendor Type</th>
+          <th>Number</th>
+          <th>Display Format</th>
+          <th>Preview</th>
+          <th>Actions</th>
         </tr>
-      ))}
-    </tbody>
-  </Table>
+      </thead>
+      <tbody>
+        {vendorNumbers.map((vendorNum) => (
+          <tr key={vendorNum.id}>
+            <td><Badge>{vendorNum.vendor_type}</Badge></td>
+            <td><Text fw={500}>{vendorNum.vendor_number}</Text></td>
+            <td><Text size="sm" c="dimmed">{vendorNum.display_format}</Text></td>
+            <td><Text size="sm">{vendorNum.formatted_reference}</Text></td>
+            <td>
+              <ActionIcon 
+                color="red" 
+                variant="subtle"
+                onClick={() => handleDeleteVendorNumber(vendorNum.id)}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  ) : (
+    <Alert icon={<IconInfoCircle size={16} />} mb="xl">
+      No vendor numbers configured for this company yet.
+    </Alert>
+  )}
   
   {/* Add new vendor number */}
-  <Divider my="md" />
-  <Title order={4} mb="md">Add New Vendor Number</Title>
-  <Group>
-    <TextInput
-      label="Vendor Type"
-      placeholder="e.g., Enable, DVA, BUPA"
-      value={newVendorType}
-      onChange={(e) => setNewVendorType(e.currentTarget.value)}
-    />
-    <TextInput
-      label="Vendor Number"
-      placeholder="e.g., 508809"
-      value={newVendorNumber}
-      onChange={(e) => setNewVendorNumber(e.currentTarget.value)}
-    />
-    <Button onClick={handleAddVendorNumber} mt="md">
-      <IconPlus size={16} /> Add
-    </Button>
-  </Group>
+  <Divider my="md" label="Add New Vendor Number" />
+  
+  <Grid>
+    <Grid.Col span={4}>
+      <TextInput
+        label="Vendor Type"
+        placeholder="e.g., Enable, DVA, BUPA"
+        value={newVendorType}
+        onChange={(e) => setNewVendorType(e.currentTarget.value)}
+        required
+      />
+    </Grid.Col>
+    <Grid.Col span={4}>
+      <TextInput
+        label="Vendor Number"
+        placeholder="e.g., 508809"
+        value={newVendorNumber}
+        onChange={(e) => setNewVendorNumber(e.currentTarget.value)}
+        required
+      />
+    </Grid.Col>
+    <Grid.Col span={4}>
+      <TextInput
+        label="Display Format (optional)"
+        placeholder="e.g., Enable Vendor #"
+        description="Leave blank for default format"
+        value={newDisplayFormat}
+        onChange={(e) => setNewDisplayFormat(e.currentTarget.value)}
+      />
+    </Grid.Col>
+  </Grid>
+  
+  {newVendorType && newVendorNumber && (
+    <Alert color="blue" mt="md" icon={<IconEye size={16} />}>
+      <Text size="sm" fw={500}>Preview:</Text>
+      <Text size="sm">
+        {newDisplayFormat || `${newVendorType} Vendor #`} {newVendorNumber}
+      </Text>
+    </Alert>
+  )}
+  
+  <Button 
+    onClick={handleAddVendorNumber} 
+    mt="md" 
+    leftSection={<IconPlus size={16} />}
+    disabled={!newVendorType || !newVendorNumber}
+  >
+    Add Vendor Number
+  </Button>
 </Paper>
 ```
 
@@ -817,7 +1112,7 @@ const handleAddVendorNumber = async () => {
 const payload = {
   // ... existing fields ...
   clinician_id: selectedClinician,
-  vendor_type: selectedVendorType, // Which button was clicked (e.g., "Enable", "DVA")
+  vendor_number_id: selectedVendorNumber?.id || null, // UUID of selected VendorNumber object
   reference: customReference || null, // Manual override or null for auto-generation
 };
 ```
@@ -889,18 +1184,22 @@ const payload = {
 ### Phase 1: Database ✅
 - [ ] Create `CompanySettings` model (or add to `EmailGlobalSettings`)
 - [ ] Add `provider_registration_number` field to company settings
-- [ ] Add `vendor_numbers` JSON field to `Company` model
+- [ ] Create `VendorNumber` model (linked to Company)
 - [ ] Create and run migrations
-- [ ] Add sample data (Enable: 508809, DVA: 682730, etc.)
+- [ ] Create setup script for sample data (Enable: 508809, DVA: 682730)
+- [ ] Run setup script
 - [ ] Update Company Settings UI to include provider registration field
 
 ### Phase 2: Backend Logic
-- [ ] Create `generate_smart_reference()` helper function (with vendor_type support)
+- [ ] Create `VendorNumberSerializer`
+- [ ] Create `generate_smart_reference()` helper function (with vendor_number_id support)
 - [ ] Add vendor number API endpoints:
   - [ ] `GET /api/companies/{id}/vendor-numbers/`
   - [ ] `POST /api/companies/{id}/vendor-numbers/`
-  - [ ] `DELETE /api/companies/{id}/vendor-numbers/{type}/`
-- [ ] Update `create_xero_invoice()` to accept `clinician_id` and `vendor_type`
+  - [ ] `PUT /api/vendor-numbers/{id}/`
+  - [ ] `DELETE /api/vendor-numbers/{id}/`
+- [ ] Add URL routes for vendor number endpoints
+- [ ] Update `create_xero_invoice()` to accept `clinician_id` and `vendor_number_id`
 - [ ] Update `create_xero_invoice()` to auto-select logged-in user's clinician
 - [ ] Update `create_xero_invoice()` to generate smart reference
 - [ ] Add `GET /api/clinicians/me/` endpoint for current user's clinician
@@ -911,12 +1210,12 @@ const payload = {
 - [ ] Add clinician selector to `CreateInvoiceModal.tsx`
 - [ ] Add vendor number quick-select buttons (dynamic per company)
 - [ ] Add custom reference field with auto-generation preview
-- [ ] Add vendor number management to Company Settings
+- [ ] Add vendor number management to Company Profile page
 - [ ] Fetch clinicians on modal open
 - [ ] Fetch vendor numbers when company is selected
 - [ ] Auto-select current user's clinician profile
 - [ ] Show credentials preview when clinician selected
-- [ ] Update submit payload to include `clinician_id`, `vendor_type`, and `reference`
+- [ ] Update submit payload to include `clinician_id`, `vendor_number_id`, and `reference`
 
 ### Phase 4: Testing
 - [ ] Test invoice creation with different clinicians
@@ -926,10 +1225,11 @@ const payload = {
 - [ ] Test PDF display of practitioner credentials (with company provider #)
 - [ ] Test with company billing (DVA, insurance)
 - [ ] Test quotes (same logic should apply)
-- [ ] Test vendor number management (add/delete in Company Settings)
+- [ ] Test vendor number management (add/edit/delete in Company Profile)
+- [ ] Test unique constraint (company can't have duplicate vendor types)
 
 ### Phase 5: Documentation
-- [ ] Update `docs/architecture/DATABASE_SCHEMA.md` with new fields
+- [ ] Update `docs/architecture/DATABASE_SCHEMA.md` with new models
 - [ ] Create user guide for practitioner selection
 - [ ] Document smart reference generation logic
 - [ ] Document vendor number management
