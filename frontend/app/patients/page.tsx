@@ -1504,7 +1504,24 @@ export default function ContactsPage() {
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Funding</Text>
                           <Select
                             value={selectedContact.funding}
-                            data={fundingSources}
+                            data={
+                              customFundingSources.length > 0
+                                ? customFundingSources.map((source: any) => ({
+                                    value: source.name,
+                                    label: source.name,
+                                  }))
+                                : [
+                                    // Fallback if API fails to load
+                                    { value: 'NDIS', label: 'NDIS' },
+                                    { value: 'DVA', label: 'DVA' },
+                                    { value: 'ENABLE', label: 'Enable' },
+                                    { value: 'BUPA', label: 'BUPA' },
+                                    { value: 'MEDIBANK', label: 'Medibank' },
+                                    { value: 'AHM', label: 'AHM' },
+                                    { value: 'PRIVATE', label: 'Private/Self-Funded' },
+                                    { value: 'OTHER', label: 'Other' },
+                                  ]
+                            }
                             onChange={(value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, funding: value || '' });
