@@ -599,7 +599,9 @@ export default function ContactsPage() {
     
     const loadArchivedCount = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+        const response = await fetch('https://localhost:8000/api/patients/?archived=true', {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           const archivedPatients = data.results || data;
@@ -662,7 +664,9 @@ export default function ContactsPage() {
           } else {
             // Patient not in cache (maybe archived?) - fetch just that one patient
             console.log(`⚠️ Patient ${patientId} not in cache, fetching individually...`);
-            const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`);
+            const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`, {
+              credentials: 'include',
+            });
             if (response.ok) {
               const patient = await response.json();
               const transformedPatient = transformPatientToContact(patient);
@@ -1113,7 +1117,9 @@ export default function ContactsPage() {
                 params.append('archived', 'false');
               }
               
-              const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`);
+              const response = await fetch(`https://localhost:8000/api/patients/?${params.toString()}`, {
+                credentials: 'include',
+              });
               if (response.ok) {
                 const data = await response.json();
                 const patients = data.results || data;
@@ -1132,7 +1138,9 @@ export default function ContactsPage() {
           // Reload archived count after archiving
           const loadArchivedCount = async () => {
             try {
-              const response = await fetch('https://localhost:8000/api/patients/?archived=true');
+              const response = await fetch('https://localhost:8000/api/patients/?archived=true', {
+                credentials: 'include',
+              });
               if (response.ok) {
                 const data = await response.json();
                 const archivedPatients = data.results || data;
