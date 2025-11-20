@@ -877,14 +877,9 @@ class XeroService:
                 # COMPANY AS PRIMARY CONTACT
                 primary_contact_link = self.sync_company_contact(company)
                 
-                # Patient details go in reference (just name, no "Service for:" prefix)
+                # Patient name only in reference (clean, no MRN/DOB)
                 patient_name = f"{patient.first_name} {patient.last_name}"
                 reference = patient_name
-                # Add MRN and DOB as additional lines if available
-                if patient.mrn:
-                    reference += f"\nMRN: {patient.mrn}"
-                if patient.dob:
-                    reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
                 
                 # Add patient name to line item descriptions
                 enhanced_line_items = []
