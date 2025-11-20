@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconMail } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { InvoiceDetailModal } from './InvoiceDetailModal';
 import { QuoteDetailModal } from './QuoteDetailModal';
 import { CreateInvoiceModal } from './CreateInvoiceModal';
 import { CreateQuoteModal } from './CreateQuoteModal';
 import { EditInvoiceModal } from './EditInvoiceModal';
+import EmailInvoiceModal from './EmailInvoiceModal';
 import { PatientBillingWizard } from './PatientBillingWizard';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 import { getCsrfToken } from '../../utils/csrf';
@@ -59,8 +60,11 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
   const [editInvoiceModalOpened, setEditInvoiceModalOpened] = useState(false);
   const [invoiceDetailModalOpened, setInvoiceDetailModalOpened] = useState(false);
   const [quoteDetailModalOpened, setQuoteDetailModalOpened] = useState(false);
+  const [emailModalOpened, setEmailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [selectedEmailItem, setSelectedEmailItem] = useState<any>(null);
+  const [selectedEmailType, setSelectedEmailType] = useState<'invoice' | 'receipt' | 'quote'>('invoice');
   const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>();
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -259,6 +263,20 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleEmailClick = (item: any) => {
+    setSelectedEmailItem(item);
+    
+    if (item.type === 'quote') {
+      setSelectedEmailType('quote');
+    } else if (item.type === 'invoice') {
+      // Check if fully paid
+      const amountDue = parseFloat(item.amount_due || '0');
+      setSelectedEmailType(amountDue === 0 ? 'receipt' : 'invoice');
+    }
+    
+    setEmailModalOpened(true);
   };
 
   const handleAuthorizeInvoice = async (invoiceId: string) => {
@@ -490,6 +508,17 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
                     }}
                   >
                     <IconEye size={16} />
+                  </ActionIcon>
+                </Tooltip>
+                
+                {/* Email button */}
+                <Tooltip label="Email Invoice/Quote">
+                  <ActionIcon
+                    variant="subtle"
+                    color="blue"
+                    onClick={() => handleEmailClick(item)}
+                  >
+                    <IconMail size={16} />
                   </ActionIcon>
                 </Tooltip>
                 
@@ -979,6 +1008,17 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
           </Group>
         </Stack>
       </Modal>
+
+      {/* Email Invoice/Quote Modal */}
+      <EmailInvoiceModal
+        opened={emailModalOpened}
+        onClose={() => {
+          setEmailModalOpened(false);
+          setSelectedEmailItem(null);
+        }}
+        invoice={selectedEmailItem}
+        type={selectedEmailType}
+      />
     </Stack>
   );
 }
