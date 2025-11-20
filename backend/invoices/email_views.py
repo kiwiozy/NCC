@@ -359,7 +359,7 @@ class SendInvoiceEmailView(APIView):
                 'subtotal': Decimal(str(invoice.subtotal or 0)),
                 'tax_total': Decimal(str(invoice.total_tax or 0)),
                 'total': Decimal(str(invoice.total or 0)),
-                'clinic_name': 'WalkEasy Team',
+                'clinic_name': 'Walk Easy Team',
             }
         else:
             # Invoice-specific data (has due_date, amount_due, payment_methods)
@@ -379,7 +379,7 @@ class SendInvoiceEmailView(APIView):
                 'line_items': line_items,
                 'payment_methods': payment_methods,
                 'status': status_val,
-                'clinic_name': 'WalkEasy Team',
+                'clinic_name': 'Walk Easy Team',
             }
         
         return data
@@ -441,7 +441,7 @@ class SendInvoiceEmailView(APIView):
             'total': Decimal(str(quote.total or 0)),
             'line_items': line_items,
             'status': quote.status if hasattr(quote, 'status') and quote.status else 'DRAFT',
-            'clinic_name': 'WalkEasy Nexus',
+            'clinic_name': 'Walk Easy Team',
         }
         
         return data
