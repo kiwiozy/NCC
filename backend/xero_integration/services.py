@@ -59,9 +59,35 @@ def generate_smart_reference(patient, custom_reference=None):
     - {patient_health_number} - Patient's health number (for NDIS)
     - {custom_po} - Custom PO/reference from invoice creation
     - {name} - Funding source name
+    
+    Empty placeholder handling:
+    - Lines containing only empty placeholders are removed
+    - Lines with partial content and empty placeholders keep the content
     """
     from invoices.models import EmailGlobalSettings
     from invoices.custom_funding_model import CustomFundingSource
+    
+    def clean_empty_lines(text):
+        """
+        Remove lines that contain only empty placeholders or whitespace.
+        Example: "PO# {custom_po}" where custom_po is empty → line removed
+        """
+        if not text:
+            return text
+        
+        lines = text.split('<br/>')
+        cleaned_lines = []
+        
+        for line in lines:
+            # Strip HTML tags and whitespace to check if line has content
+            import re
+            text_only = re.sub(r'<[^>]+>', '', line).strip()
+            
+            # Keep the line if it has any actual text content (not just whitespace/punctuation)
+            if text_only and not all(c in ' #-:/' for c in text_only):
+                cleaned_lines.append(line)
+        
+        return '<br/>'.join(cleaned_lines)
     
     if not patient:
         return custom_reference if custom_reference else "Invoice"
@@ -90,10 +116,12 @@ def generate_smart_reference(patient, custom_reference=None):
                     reference_number_label=ref_label,
                     patient_name=patient.get_full_name(),
                     patient_health_number=patient.health_number or '',
-                    custom_po=custom_reference or ''  # NEW: Support custom PO from invoice
+                    custom_po=custom_reference or ''  # Support custom PO from invoice
                 )
                 # Convert newlines to HTML <br/> tags for PDF rendering
                 formatted_ref = formatted_ref.replace('\n', '<br/>')
+                # Clean up lines that are empty after placeholder substitution
+                formatted_ref = clean_empty_lines(formatted_ref)
                 return formatted_ref.strip()
             
             # No display format - use default

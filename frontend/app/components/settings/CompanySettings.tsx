@@ -477,7 +477,7 @@ export default function CompanySettings() {
           opened={fundingModalOpen}
           onClose={() => setFundingModalOpen(false)}
           title={editingFunding ? 'Edit Funding Source' : 'Add Funding Source'}
-          size="lg"
+          size="xl"
         >
           <Stack gap="md">
             <TextInput
