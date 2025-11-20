@@ -67,7 +67,7 @@ def wrap_email_html(
                 # Use clinician's personal signature
                 logger.info("→ Using clinician's personal signature")
                 signature_html = f'''
-                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb; background: transparent;">
                     {clinician.signature_html}
                 </div>
                 '''
@@ -75,7 +75,7 @@ def wrap_email_html(
                 # No clinician provided, use company signature
                 logger.info("→ Using company signature")
                 signature_html = f'''
-                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb; background: transparent;">
                     {settings.company_signature_html}
                 </div>
                 '''

@@ -1,0 +1,120 @@
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: craig@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: craig@walkeasy.com.au
+Is info?: False
+Found clinician: Craig Laird, C.Ped CM Au
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: info@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: info@walkeasy.com.au
+Is info?: True
+Using company signature (clinician=None)
+================================================================================
+_generate_email_with_generator called
+  from_email: craig@walkeasy.com.au
+  document_type: receipt
+================================================================================
+Checking from_email: craig@walkeasy.com.au
+Is info?: False
+Found clinician: Craig Laird, C.Ped CM Au
+================================================================================
+_generate_email_with_generator called
+  from_email: craig@walkeasy.com.au
+  document_type: quote
+================================================================================
+Checking from_email: craig@walkeasy.com.au
+Is info?: False
+Found clinician: Craig Laird, C.Ped CM Au
