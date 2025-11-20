@@ -49,7 +49,7 @@ export default function PrintInvoiceModal({ opened, onClose, pdfUrl, title, type
       opened={opened}
       onClose={onClose}
       title={`Print ${title}`}
-      size="60vw"
+      size="xl"
       styles={{
         body: { height: '85vh', overflow: 'hidden' },
         content: { height: '90vh' },
