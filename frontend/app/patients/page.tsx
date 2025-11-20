@@ -6,6 +6,7 @@ import { Container, Paper, Text, Loader, Center, Grid, Stack, Box, ScrollArea, U
 import { DatePickerInput } from '@mantine/dates';
 import { IconPlus, IconCalendar, IconSearch, IconListCheck, IconEdit, IconTrash, IconX } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import Navigation from '../components/Navigation';
 import ContactHeader from '../components/ContactHeader';
 import NotesDialog from '../components/dialogs/NotesDialog';
@@ -16,6 +17,7 @@ import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
 import { PatientCacheIDB as PatientCache } from '../utils/patientCacheIDB';
+import { getCsrfToken } from '../utils/csrf';
 import dayjs from 'dayjs';
 
 type ContactType = 'patients' | 'referrers' | 'coordinator' | 'ndis-lac' | 'contacts' | 'companies' | 'clinics';
@@ -264,7 +266,7 @@ const transformPatientToContact = (patient: any): Contact => {
   // Extract clinic and funding names (may not be in list serializer)
   const clinicName = patient.clinic?.name || '';
   const clinicColor = patient.clinic?.color || undefined;
-  const fundingName = patient.funding_type?.name || '';
+  const fundingName = patient.funding_source || patient.funding_type?.name || '';
 
   // Extract contact info - handle both old string format and new array format
   const contactJson = patient.contact_json || {};
@@ -1476,51 +1478,78 @@ export default function ContactsPage() {
                                   ]
                             }
                             onChange={async (value) => {
+                              console.log('🔄 FUNDING DROPDOWN CHANGED');
+                              console.log('  New value:', value);
+                              console.log('  Old value:', selectedContact?.funding_source);
+                              console.log('  Patient ID:', selectedContact?.id);
+                              console.log('  Patient Name:', selectedContact?.name);
+                              
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, funding_source: value || '' });
+                                console.log('  ✅ Updated selectedContact state');
                                 
                                 // Auto-save to backend immediately
                                 try {
+                                  console.log('  📤 Sending PATCH request to backend...');
+                                  const csrfToken = await getCsrfToken();
+                                  console.log('  CSRF Token:', csrfToken ? 'Present' : 'MISSING');
+                                  
+                                  const requestBody = {
+                                    funding_source: value || '',
+                                  };
+                                  console.log('  Request body:', JSON.stringify(requestBody));
+                                  
                                   const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                                     method: 'PATCH',
                                     headers: {
                                       'Content-Type': 'application/json',
-                                      'X-CSRFToken': getCsrfToken(),
+                                      'X-CSRFToken': csrfToken,
                                     },
                                     credentials: 'include',
-                                    body: JSON.stringify({
-                                      funding_source: value || '',
-                                    }),
+                                    body: JSON.stringify(requestBody),
                                   });
                                   
+                                  console.log('  📥 Response status:', response.status, response.statusText);
+                                  
                                   if (!response.ok) {
+                                    const errorText = await response.text();
+                                    console.error('  ❌ Response error:', errorText);
                                     throw new Error('Failed to save funding source');
                                   }
                                   
-                                  console.log('Funding source saved:', value);
+                                  const responseData = await response.json();
+                                  console.log('  ✅ Save successful, response data:', responseData);
+                                  console.log('  Funding source saved:', value);
                                   
                                   // CRITICAL: Invalidate cache to force fresh load
                                   await PatientCache.clear();
-                                  console.log('🗑️ Cache cleared - next load will fetch fresh data');
+                                  console.log('  🗑️ Cache cleared - next load will fetch fresh data');
                                   
                                   // Immediately reload this patient from API to show updated value
+                                  console.log('  🔄 Reloading patient from API...');
                                   const freshResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                                     credentials: 'include',
                                   });
+                                  console.log('  📥 Fresh patient response status:', freshResponse.status);
+                                  
                                   if (freshResponse.ok) {
                                     const freshPatient = await freshResponse.json();
+                                    console.log('  📄 Fresh patient data:', freshPatient);
                                     const freshContact = transformPatientToContact(freshPatient);
+                                    console.log('  📄 Transformed contact:', freshContact);
                                     setSelectedContact(freshContact);
-                                    console.log('✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
+                                    console.log('  ✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
                                   }
                                 } catch (error) {
-                                  console.error('Error saving funding source:', error);
+                                  console.error('  ❌ Error saving funding source:', error);
                                   notifications.show({
                                     title: 'Error',
                                     message: 'Failed to save funding source',
                                     color: 'red',
                                   });
                                 }
+                              } else {
+                                console.warn('  ⚠️ No selectedContact available');
                               }
                             }}
                             clearable
@@ -1565,9 +1594,79 @@ export default function ContactsPage() {
                                     { value: 'OTHER', label: 'Other' },
                                   ]
                             }
-                            onChange={(value) => {
+                            onChange={async (value) => {
+                              console.log('🔄 FUNDING DROPDOWN CHANGED (old field)');
+                              console.log('  New value:', value);
+                              console.log('  Old value:', selectedContact?.funding);
+                              console.log('  Patient ID:', selectedContact?.id);
+                              console.log('  Patient Name:', selectedContact?.name);
+                              
                               if (selectedContact) {
-                                setSelectedContact({ ...selectedContact, funding: value || '' });
+                                setSelectedContact({ ...selectedContact, funding: value || '', funding_source: value || '' });
+                                console.log('  ✅ Updated selectedContact state (both funding and funding_source)');
+                                
+                                // Auto-save to backend immediately
+                                try {
+                                  console.log('  📤 Sending PATCH request to backend...');
+                                  const csrfToken = await getCsrfToken();
+                                  console.log('  CSRF Token:', csrfToken ? 'Present' : 'MISSING');
+                                  
+                                  const requestBody = {
+                                    funding_source: value || '',
+                                  };
+                                  console.log('  Request body:', JSON.stringify(requestBody));
+                                  
+                                  const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': csrfToken,
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify(requestBody),
+                                  });
+                                  
+                                  console.log('  📥 Response status:', response.status, response.statusText);
+                                  
+                                  if (!response.ok) {
+                                    const errorText = await response.text();
+                                    console.error('  ❌ Response error:', errorText);
+                                    throw new Error('Failed to save funding source');
+                                  }
+                                  
+                                  const responseData = await response.json();
+                                  console.log('  ✅ Save successful, response data:', responseData);
+                                  console.log('  Funding source saved:', value);
+                                  
+                                  // CRITICAL: Invalidate cache to force fresh load
+                                  await PatientCache.clear();
+                                  console.log('  🗑️ Cache cleared - next load will fetch fresh data');
+                                  
+                                  // Immediately reload this patient from API to show updated value
+                                  console.log('  🔄 Reloading patient from API...');
+                                  const freshResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    credentials: 'include',
+                                  });
+                                  console.log('  📥 Fresh patient response status:', freshResponse.status);
+                                  
+                                  if (freshResponse.ok) {
+                                    const freshPatient = await freshResponse.json();
+                                    console.log('  📄 Fresh patient data:', freshPatient);
+                                    const freshContact = transformPatientToContact(freshPatient);
+                                    console.log('  📄 Transformed contact:', freshContact);
+                                    setSelectedContact(freshContact);
+                                    console.log('  ✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
+                                  }
+                                } catch (error) {
+                                  console.error('  ❌ Error saving funding source:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: 'Failed to save funding source',
+                                    color: 'red',
+                                  });
+                                }
+                              } else {
+                                console.warn('  ⚠️ No selectedContact available');
                               }
                             }}
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}

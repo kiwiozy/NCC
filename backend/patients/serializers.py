@@ -101,7 +101,7 @@ class PatientListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            'id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 
+            'id', 'mrn', 'full_name', 'dob', 'age', 'clinic', 'funding_type', 'funding_source',
             'first_name', 'last_name', 'middle_names', 'title', 'health_number',
             'contact_json', 'address_json', 'plan_dates_json',  # Include JSON fields for communication/address
             'ndis_plan_start_date', 'ndis_plan_end_date',  # Include NDIS plan dates from import
