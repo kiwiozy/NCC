@@ -191,6 +191,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
         
         # Parse line items - fetch from Xero API since they're not stored in DB
         line_items = []
+        xero_reference = None  # Will store the Reference/PO# from Xero invoice
         
         # Try to fetch full invoice details from Xero
         try:
@@ -202,6 +203,11 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             if connection:
                 xero_service = XeroService()  # XeroService doesn't take connection in __init__
                 xero_invoice = xero_service.get_invoice(invoice_link.xero_invoice_id)
+                
+                # Extract reference/PO# from Xero invoice
+                if xero_invoice and hasattr(xero_invoice, 'reference'):
+                    xero_reference = xero_invoice.reference
+                    logger.info(f"Xero invoice reference: {xero_reference}")
                 
                 if xero_invoice and xero_invoice.line_items:
                     for item in xero_invoice.line_items:
@@ -277,6 +283,7 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
             'due_date': invoice_link.due_date or (datetime.now() + timedelta(days=7)),
             'patient': patient_info,
             'patient_reference': patient_reference,  # Separate patient reference for company billing
+            'xero_reference': xero_reference,  # Reference/PO# from Xero invoice (funding-based)
             'practitioner': {
                 'name': 'Craig Laird',
                 'qualification': 'CPed CM au',

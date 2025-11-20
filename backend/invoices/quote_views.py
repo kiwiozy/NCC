@@ -114,6 +114,13 @@ def generate_xero_quote_pdf(request, quote_link_id):
         
         # Convert Xero line items to PDF format
         line_items = []
+        xero_reference = None  # Will store the Reference/PO# from Xero quote
+        
+        # Extract reference/PO# from Xero quote
+        if hasattr(xero_quote, 'reference'):
+            xero_reference = xero_quote.reference
+            logger.info(f"Xero quote reference: {xero_reference}")
+        
         if xero_quote.line_items:
             for item in xero_quote.line_items:
                 # Determine GST rate based on tax_type
@@ -139,6 +146,7 @@ def generate_xero_quote_pdf(request, quote_link_id):
             'expiry_date': quote_link.expiry_date or (datetime.now() + timedelta(days=30)),
             'patient': patient_info,
             'patient_reference': patient_reference,  # Separate patient reference for company billing
+            'xero_reference': xero_reference,  # Reference/PO# from Xero quote (funding-based)
             'practitioner': {
                 'name': 'Craig Laird',
                 'qualification': 'CPed CM au',
