@@ -170,170 +170,28 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
       opened={opened} 
       onClose={onClose} 
       title={
-        <Group>
-          <Text size="lg" fw={600}>Quote Details</Text>
-          <Badge color={STATUS_COLORS[normalizedStatus] || 'gray'}>
-            {normalizedStatus}
-          </Badge>
+        <Group gap="xs">
+          <Text fw={700} size="xl">QUOTE</Text>
+          {quote && (
+            <Badge size="lg" color={STATUS_COLORS[normalizeStatus(quote.status)] || 'gray'}>
+              {normalizeStatus(quote.status)}
+            </Badge>
+          )}
         </Group>
       }
-      size="lg"
+      size="1200px"
+      padding="xl"
     >
-      <Stack gap="md">
-        {/* Header Info */}
-        <Paper p="md" withBorder>
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <div>
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Quote Number</Text>
-                <Text size="lg" fw={600}>{quote.xero_quote_number}</Text>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Amount</Text>
-                <Text size="lg" fw={600} c="blue">${parseFloat(quote.total).toFixed(2)}</Text>
-              </div>
-            </Group>
-
-            <Divider my="xs" />
-
-            <Group grow>
-              <div>
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Contact</Text>
-                <Text>{quote.patient_name || quote.company_name || '—'}</Text>
-                {quote.patient_name && quote.company_name && (
-                  <Text size="sm" c="dimmed">via {quote.company_name}</Text>
-                )}
-              </div>
-              <div>
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Quote Date</Text>
-                <Text>{quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}</Text>
-              </div>
-              <div>
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Expiry Date</Text>
-                <Text>{quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}</Text>
-              </div>
-            </Group>
-
-            {quote.reference && (
-              <>
-                <Divider my="xs" />
-                <div>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Reference</Text>
-                  <Text>{quote.reference}</Text>
-                </div>
-              </>
-            )}
-
-            {quote.terms && (
-              <>
-                <Divider my="xs" />
-                <div>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Terms / Notes</Text>
-                  <Text>{quote.terms}</Text>
-                </div>
-              </>
-            )}
-          </Stack>
-        </Paper>
-
-        {/* Line Items */}
-        {quote.line_items && quote.line_items.length > 0 && (
-          <Paper p="md" withBorder>
-            <Text size="sm" fw={600} mb="md">Line Items</Text>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Description</Table.Th>
-                  <Table.Th style={{ textAlign: 'right' }}>Quantity</Table.Th>
-                  <Table.Th style={{ textAlign: 'right' }}>Unit Price</Table.Th>
-                  {quote.line_items.some((item: any) => item.discount_rate > 0) && (
-                    <Table.Th style={{ textAlign: 'right' }}>Discount</Table.Th>
-                  )}
-                  <Table.Th style={{ textAlign: 'right' }}>Tax</Table.Th>
-                  <Table.Th style={{ textAlign: 'right' }}>Total</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {quote.line_items.map((item: any, index: number) => {
-                  const unitAmount = parseFloat(item.unit_amount || 0);
-                  const quantity = parseFloat(item.quantity || 0);
-                  const discountRate = parseFloat(item.discount_rate || 0);
-                  const lineTotal = unitAmount * quantity;
-                  const discountAmount = lineTotal * (discountRate / 100);
-                  const discountedTotal = lineTotal - discountAmount;
-                  
-                  return (
-                    <Table.Tr key={index}>
-                      <Table.Td>{item.description}</Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}>{quantity}</Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}>${unitAmount.toFixed(2)}</Table.Td>
-                      {quote.line_items.some((item: any) => item.discount_rate > 0) && (
-                        <Table.Td style={{ textAlign: 'right', color: discountRate > 0 ? 'red' : 'inherit' }}>
-                          {discountRate > 0 ? `${discountRate}%` : '—'}
-                        </Table.Td>
-                      )}
-                      <Table.Td style={{ textAlign: 'right' }}>{item.tax_type || '—'}</Table.Td>
-                      <Table.Td style={{ textAlign: 'right' }}>
-                        ${discountedTotal.toFixed(2)}
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
-
-            <Divider my="md" />
-
-            <Stack gap="xs" align="flex-end">
-              <Group gap="xl">
-                <Text size="sm" c="dimmed">Subtotal:</Text>
-                <Text size="sm" fw={500}>${parseFloat(quote.subtotal).toFixed(2)}</Text>
-              </Group>
-              {quote.line_items.some((item: any) => item.discount_rate > 0) && (
-                <Group gap="xl">
-                  <Text size="sm" c="red">Total Discount:</Text>
-                  <Text size="sm" fw={500} c="red">
-                    -${quote.line_items.reduce((sum: number, item: any) => {
-                      const lineTotal = parseFloat(item.unit_amount || 0) * parseFloat(item.quantity || 0);
-                      const discountAmount = lineTotal * (parseFloat(item.discount_rate || 0) / 100);
-                      return sum + discountAmount;
-                    }, 0).toFixed(2)}
-                  </Text>
-                </Group>
-              )}
-              <Group gap="xl">
-                <Text size="sm" c="dimmed">Tax:</Text>
-                <Text size="sm" fw={500}>${parseFloat(quote.total_tax).toFixed(2)}</Text>
-              </Group>
-              <Group gap="xl">
-                <Text size="lg" fw={700}>Total:</Text>
-                <Text size="lg" fw={700} c="blue">${parseFloat(quote.total).toFixed(2)}</Text>
-              </Group>
-            </Stack>
-          </Paper>
-        )}
-
-        {/* Actions */}
+      <Stack gap="xl">
+        {/* Action Buttons at Top */}
         <Group justify="space-between">
           <Group>
-            <Button
-              leftSection={<IconExternalLink size={16} />}
-              variant="light"
-              onClick={handleOpenInXero}
-            >
-              Open in Xero
-            </Button>
-            <Button
-              leftSection={<IconRefresh size={16} />}
-              variant="light"
-              onClick={fetchQuoteDetails}
-            >
-              Refresh
-            </Button>
             {canConvertToInvoice() && (
               <Button
-                leftSection={<IconFileInvoice size={16} />}
+                size="md"
+                variant="filled"
                 color="green"
+                leftSection={<IconFileInvoice size={18} />}
                 onClick={handleConvertToInvoice}
                 loading={converting}
               >
@@ -341,28 +199,122 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
               </Button>
             )}
           </Group>
+          
           <Group>
-            {onEdit && (
-              <Button
-                leftSection={<IconEdit size={16} />}
-                variant="light"
-                onClick={handleEdit}
-              >
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                leftSection={<IconTrash size={16} />}
-                color="red"
-                variant="light"
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-            )}
+            <Button
+              size="md"
+              variant="light"
+              leftSection={<IconExternalLink size={18} />}
+              component="a"
+              href={getXeroQuoteUrl(quote.xero_quote_id)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in Xero
+            </Button>
+            
+            <Button
+              size="md"
+              variant="light"
+              leftSection={<IconRefresh size={18} />}
+              onClick={fetchQuoteDetails}
+            >
+              Refresh
+            </Button>
+            
+            <Button size="md" onClick={onClose}>
+              Close
+            </Button>
           </Group>
         </Group>
+
+        {/* Quote Header - Like a real quote */}
+        <Paper p="xl" withBorder radius="md" style={{ borderTop: '4px solid #9775fa' }}>
+          <Group justify="space-between" align="flex-start">
+            {/* Left: Contact */}
+            <Stack gap="xs" style={{ flex: 1 }}>
+              <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Contact</Text>
+              {quote.patient_name && (
+                <Text fw={600} size="lg">{quote.patient_name}</Text>
+              )}
+              {quote.company_name && (
+                <Text fw={500} size="sm" c="dimmed">via {quote.company_name}</Text>
+              )}
+            </Stack>
+
+            {/* Right: Quote Details */}
+            <Stack gap="xs" style={{ flex: 1 }} align="flex-end">
+              <Group gap="xs" justify="flex-end">
+                <Text size="sm" c="dimmed">Quote #</Text>
+                <Text fw={700} size="xl">{quote.xero_quote_number}</Text>
+              </Group>
+              <Group gap="xs" justify="flex-end">
+                <Text size="sm" c="dimmed">Quote Date:</Text>
+                <Text fw={500}>{quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}</Text>
+              </Group>
+              <Group gap="xs" justify="flex-end">
+                <Text size="sm" c="dimmed">Expiry Date:</Text>
+                <Text fw={500}>{quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}</Text>
+              </Group>
+            </Stack>
+          </Group>
+        </Paper>
+
+        {/* Line Items */}
+        {quote.line_items && quote.line_items.length > 0 && (
+          <Paper p="md" withBorder radius="md">
+            <Table highlightOnHover>
+              <Table.Thead>
+                <Table.Tr style={{ 
+                  backgroundColor: 'var(--mantine-color-dark-6)',
+                }}>
+                  <Table.Th style={{ color: 'white' }}>Description</Table.Th>
+                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Quantity</Table.Th>
+                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Unit Price</Table.Th>
+                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Tax</Table.Th>
+                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Amount</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {quote.line_items.map((item: any, index: number) => (
+                  <Table.Tr key={index}>
+                    <Table.Td>{item.description}</Table.Td>
+                    <Table.Td style={{ textAlign: 'right' }}>{item.quantity}</Table.Td>
+                    <Table.Td style={{ textAlign: 'right' }}>${parseFloat(item.unit_amount || 0).toFixed(2)}</Table.Td>
+                    <Table.Td style={{ textAlign: 'right' }}>
+                      {item.tax_type === 'EXEMPTOUTPUT' && 'EXEMPT'}
+                      {item.tax_type === 'OUTPUT' && 'GST'}
+                      {!item.tax_type && '—'}
+                    </Table.Td>
+                    <Table.Td style={{ textAlign: 'right', fontWeight: 600 }}>
+                      ${(parseFloat(item.unit_amount || 0) * parseFloat(item.quantity || 0)).toFixed(2)}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+
+            <Divider my="lg" />
+
+            <Group justify="flex-end" mb="md">
+              <Stack gap="sm" style={{ minWidth: '300px' }}>
+                <Group justify="space-between">
+                  <Text size="md">Subtotal</Text>
+                  <Text size="md" fw={500}>${parseFloat(quote.subtotal).toFixed(2)}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="md">Tax</Text>
+                  <Text size="md" fw={500}>${parseFloat(quote.total_tax).toFixed(2)}</Text>
+                </Group>
+                <Divider />
+                <Group justify="space-between">
+                  <Text size="xl" fw={700}>TOTAL</Text>
+                  <Text size="xl" fw={700} c="violet">${parseFloat(quote.total).toFixed(2)} AUD</Text>
+                </Group>
+              </Stack>
+            </Group>
+          </Paper>
+        )}
       </Stack>
     </Modal>
   );
