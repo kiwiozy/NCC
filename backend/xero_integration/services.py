@@ -77,10 +77,13 @@ def generate_smart_reference(patient, custom_reference=None):
             
             # Use display format if provided
             if custom_source.display_format:
+                # Get reference_number_label safely (may not exist in old migrations)
+                ref_label = getattr(custom_source, 'reference_number_label', None) or 'Number'
+                
                 formatted_ref = custom_source.display_format.format(
                     name=custom_source.name,
                     reference_number=custom_source.reference_number or '',
-                    reference_number_label=custom_source.reference_number_label or 'Number',
+                    reference_number_label=ref_label,
                     patient_name=patient.get_full_name(),
                     patient_health_number=patient.health_number or ''
                 )
@@ -88,8 +91,8 @@ def generate_smart_reference(patient, custom_reference=None):
             
             # No display format - use default
             if custom_source.reference_number:
-                label = custom_source.reference_number_label or '#'
-                return f"{custom_source.name} {label} {custom_source.reference_number}"
+                ref_label = getattr(custom_source, 'reference_number_label', None) or '#'
+                return f"{custom_source.name} {ref_label} {custom_source.reference_number}"
             else:
                 return f"{custom_source.name} - {patient.get_full_name()}"
                 
