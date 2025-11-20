@@ -119,6 +119,15 @@ def generate_xero_quote_pdf(request, quote_link_id):
         # Extract reference/PO# from Xero quote
         if hasattr(xero_quote, 'reference'):
             xero_reference = xero_quote.reference
+            
+            # Clean up old "Service for:" references
+            if xero_reference and xero_reference.startswith('Service for:'):
+                # Extract just the patient name (first line after "Service for:")
+                lines = xero_reference.split('\n')
+                if lines:
+                    # Remove "Service for: " prefix
+                    xero_reference = lines[0].replace('Service for: ', '').strip()
+            
             logger.info(f"Xero quote reference: {xero_reference}")
         
         if xero_quote.line_items:

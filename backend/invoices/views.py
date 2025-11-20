@@ -207,6 +207,15 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 # Extract reference/PO# from Xero invoice
                 if xero_invoice and hasattr(xero_invoice, 'reference'):
                     xero_reference = xero_invoice.reference
+                    
+                    # Clean up old "Service for:" references
+                    if xero_reference and xero_reference.startswith('Service for:'):
+                        # Extract just the patient name (first line after "Service for:")
+                        lines = xero_reference.split('\n')
+                        if lines:
+                            # Remove "Service for: " prefix
+                            xero_reference = lines[0].replace('Service for: ', '').strip()
+                    
                     logger.info(f"Xero invoice reference: {xero_reference}")
                 
                 if xero_invoice and xero_invoice.line_items:
