@@ -287,14 +287,15 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     setEmailModalOpened(true);
   };
   
-  const handlePrintClick = async (item: CombinedItem) => {
+  const handlePrintClick = async (item: any) => {
     try {
       const isInvoice = item.type === 'invoice';
+      const itemNumber = isInvoice ? item.xero_invoice_number : item.xero_quote_number;
       
       console.log('Print clicked:', {
         type: item.type,
         id: item.id,
-        number: item.number,
+        number: itemNumber,
         isInvoice
       });
       
@@ -326,7 +327,7 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
       console.log('PDF blob created, URL:', url);
       
       setPrintPdfUrl(url);
-      setPrintTitle(`${isInvoice ? 'Invoice' : 'Quote'} #${item.number}`);
+      setPrintTitle(`${isInvoice ? 'Invoice' : 'Quote'} #${itemNumber}`);
       setPrintType(isInvoice ? 'invoice' : 'quote');
       setPrintModalOpened(true);
     } catch (error) {
