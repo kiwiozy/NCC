@@ -245,7 +245,9 @@ export class PatientCacheIDB {
       let nextUrl: string | null = `https://localhost:8000/api/patients/?${params.toString()}`;
       
       while (nextUrl) {
-        const response = await fetch(nextUrl);
+        const response = await fetch(nextUrl, {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           const patients = data.results || data;

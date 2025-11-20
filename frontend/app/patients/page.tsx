@@ -731,7 +731,9 @@ export default function ContactsPage() {
         let pageCount = 0;
         while (nextUrl) {
           pageCount++;
-          const response = await fetch(nextUrl);
+          const response = await fetch(nextUrl, {
+            credentials: 'include',
+          });
           if (response.ok) {
             const data = await response.json();
             const patients = data.results || data;
@@ -795,7 +797,9 @@ export default function ContactsPage() {
     // Load clinics from API
     const loadClinics = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/clinics/');
+        const response = await fetch('https://localhost:8000/api/clinics/', {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           // Handle paginated response or direct array
@@ -846,7 +850,9 @@ export default function ContactsPage() {
     // Load funding sources from API
     const loadFundingSources = async () => {
       try {
-        const response = await fetch('https://localhost:8000/api/settings/funding-sources/?active=true');
+        const response = await fetch('https://localhost:8000/api/settings/funding-sources/?active=true', {
+          credentials: 'include',
+        });
         if (response.ok) {
           const data = await response.json();
           // Extract funding source names from API response (handles paginated response)
@@ -1581,6 +1587,7 @@ export default function ContactsPage() {
                                               const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                                                 method: 'PATCH',
                                                 headers: { 'Content-Type': 'application/json' },
+                                                credentials: 'include',
                                                 body: JSON.stringify({
                                                   plan_dates_json: updatedPlanDates,
                                                 }),
@@ -3141,6 +3148,7 @@ export default function ContactsPage() {
                     const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
                       method: 'PATCH',
                       headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
                       body: JSON.stringify({
                         plan_dates_json: updatedPlanDates,
                       }),
