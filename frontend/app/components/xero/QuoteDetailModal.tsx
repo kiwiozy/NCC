@@ -231,10 +231,6 @@ export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalP
               >
                 Download PDF
               </Button>
-              
-              <Button size="sm" onClick={onClose}>
-                Close
-              </Button>
             </Group>
           </Group>
 

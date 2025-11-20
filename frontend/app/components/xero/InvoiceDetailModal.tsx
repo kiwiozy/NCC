@@ -185,10 +185,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
                 >
                   Download PDF
                 </Button>
-                
-                <Button size="sm" onClick={onClose}>
-                  Close
-                </Button>
               </Group>
             </Group>
 
