@@ -1,10 +1,9 @@
 'use client';
 
-import { Modal, Stack, Group, Text, Badge, Divider, Table, Paper, Button, Loader, Center, Alert } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconEdit, IconTrash, IconFileInvoice } from '@tabler/icons-react';
+import { Modal, Stack, Group, Text, Badge, Button, Loader, Center } from '@mantine/core';
+import { IconExternalLink, IconRefresh, IconDownload, IconFileInvoice } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
-import { formatDateOnlyAU } from '../../utils/dateFormatting';
 import { getCsrfToken } from '../../utils/csrf';
 
 interface QuoteDetailModalProps {
@@ -21,15 +20,6 @@ interface QuoteDetail {
   xero_quote_number: string;
   status: string;
   total: string;
-  subtotal: string;
-  total_tax: string;
-  quote_date: string | null;
-  expiry_date: string | null;
-  patient_name?: string;
-  company_name?: string;
-  line_items?: any[];
-  reference?: string;
-  terms?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,14 +38,23 @@ const normalizeStatus = (status: string): string => {
   return status;
 };
 
-export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }: QuoteDetailModalProps) {
+export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalProps) {
   const [quote, setQuote] = useState<QuoteDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   useEffect(() => {
     if (opened && quoteId) {
       fetchQuoteDetails();
+      generatePdfPreview();
+    } else {
+      // Clean up PDF URL when modal closes
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        setPdfUrl(null);
+      }
     }
   }, [opened, quoteId]);
 
@@ -81,28 +80,32 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
     }
   };
 
+  const generatePdfPreview = async () => {
+    setLoadingPdf(true);
+    try {
+      const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${quoteId}/pdf/`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to load PDF preview',
+        color: 'red',
+      });
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
   const getXeroQuoteUrl = (xeroQuoteId: string) => {
     return `https://go.xero.com/Quotes/View.aspx?QuoteID=${xeroQuoteId}`;
-  };
-
-  const handleOpenInXero = () => {
-    if (quote) {
-      window.open(getXeroQuoteUrl(quote.xero_quote_id), '_blank');
-    }
-  };
-
-  const handleEdit = () => {
-    if (onEdit) {
-      onEdit();
-      onClose();
-    }
-  };
-
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
-      onClose();
-    }
   };
 
   const handleConvertToInvoice = async () => {
@@ -134,6 +137,7 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
       
       // Refresh quote details to show updated status
       await fetchQuoteDetails();
+      await generatePdfPreview();
       
     } catch (error: any) {
       console.error('Error converting quote:', error);
@@ -153,22 +157,36 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
     return (status === 'SENT' || status === 'ACCEPTED') && status !== 'INVOICED';
   };
 
-  if (loading || !quote) {
-    return (
-      <Modal opened={opened} onClose={onClose} title="Quote Details" size="lg">
-        <Center h={200}>
-          <Loader />
-        </Center>
-      </Modal>
-    );
-  }
-
-  const normalizedStatus = normalizeStatus(quote.status);
+  const handleDownloadPDF = async () => {
+    if (!quote || !pdfUrl) return;
+    
+    try {
+      const a = document.createElement('a');
+      a.href = pdfUrl;
+      a.download = `Quote_${quote.xero_quote_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Quote PDF downloaded successfully',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to download PDF',
+        color: 'red',
+      });
+    }
+  };
 
   return (
-    <Modal 
-      opened={opened} 
-      onClose={onClose} 
+    <Modal
+      opened={opened}
+      onClose={onClose}
       title={
         <Group gap="xs">
           <Text fw={700} size="xl">QUOTE</Text>
@@ -179,144 +197,96 @@ export function QuoteDetailModal({ opened, onClose, quoteId, onEdit, onDelete }:
           )}
         </Group>
       }
-      size="1200px"
-      padding="xl"
+      size="xl"
+      styles={{
+        body: { height: '85vh', overflow: 'hidden' },
+        content: { height: '90vh' },
+      }}
     >
-      <Stack gap="xl">
-        {/* Action Buttons at Top */}
-        <Group justify="space-between">
-          <Group>
-            {canConvertToInvoice() && (
-              <Button
-                size="md"
-                variant="filled"
-                color="green"
-                leftSection={<IconFileInvoice size={18} />}
-                onClick={handleConvertToInvoice}
-                loading={converting}
-              >
-                Convert to Invoice
-              </Button>
-            )}
-          </Group>
-          
-          <Group>
-            <Button
-              size="md"
-              variant="light"
-              leftSection={<IconExternalLink size={18} />}
-              component="a"
-              href={getXeroQuoteUrl(quote.xero_quote_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open in Xero
-            </Button>
-            
-            <Button
-              size="md"
-              variant="light"
-              leftSection={<IconRefresh size={18} />}
-              onClick={fetchQuoteDetails}
-            >
-              Refresh
-            </Button>
-            
-            <Button size="md" onClick={onClose}>
-              Close
-            </Button>
-          </Group>
-        </Group>
-
-        {/* Quote Header - Like a real quote */}
-        <Paper p="xl" withBorder radius="md" style={{ borderTop: '4px solid #9775fa' }}>
-          <Group justify="space-between" align="flex-start">
-            {/* Left: Contact */}
-            <Stack gap="xs" style={{ flex: 1 }}>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Contact</Text>
-              {quote.patient_name && (
-                <Text fw={600} size="lg">{quote.patient_name}</Text>
+      {loading || loadingPdf ? (
+        <Center p="xl">
+          <Loader />
+        </Center>
+      ) : quote ? (
+        <Stack gap="md" style={{ height: '100%' }}>
+          {/* Action Buttons at Top */}
+          <Group justify="space-between">
+            <Group>
+              {canConvertToInvoice() && (
+                <Button
+                  size="sm"
+                  variant="filled"
+                  color="green"
+                  leftSection={<IconFileInvoice size={16} />}
+                  onClick={handleConvertToInvoice}
+                  loading={converting}
+                >
+                  Convert to Invoice
+                </Button>
               )}
-              {quote.company_name && (
-                <Text fw={500} size="sm" c="dimmed">via {quote.company_name}</Text>
-              )}
-            </Stack>
-
-            {/* Right: Quote Details */}
-            <Stack gap="xs" style={{ flex: 1 }} align="flex-end">
-              <Group gap="xs" justify="flex-end">
-                <Text size="sm" c="dimmed">Quote #</Text>
-                <Text fw={700} size="xl">{quote.xero_quote_number}</Text>
-              </Group>
-              <Group gap="xs" justify="flex-end">
-                <Text size="sm" c="dimmed">Quote Date:</Text>
-                <Text fw={500}>{quote.quote_date ? formatDateOnlyAU(quote.quote_date) : '—'}</Text>
-              </Group>
-              <Group gap="xs" justify="flex-end">
-                <Text size="sm" c="dimmed">Expiry Date:</Text>
-                <Text fw={500}>{quote.expiry_date ? formatDateOnlyAU(quote.expiry_date) : '—'}</Text>
-              </Group>
-            </Stack>
-          </Group>
-        </Paper>
-
-        {/* Line Items */}
-        {quote.line_items && quote.line_items.length > 0 && (
-          <Paper p="md" withBorder radius="md">
-            <Table highlightOnHover>
-              <Table.Thead>
-                <Table.Tr style={{ 
-                  backgroundColor: 'var(--mantine-color-dark-6)',
-                }}>
-                  <Table.Th style={{ color: 'white' }}>Description</Table.Th>
-                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Quantity</Table.Th>
-                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Unit Price</Table.Th>
-                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Tax</Table.Th>
-                  <Table.Th style={{ textAlign: 'right', color: 'white' }}>Amount</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {quote.line_items.map((item: any, index: number) => (
-                  <Table.Tr key={index}>
-                    <Table.Td>{item.description}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>{item.quantity}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>${parseFloat(item.unit_amount || 0).toFixed(2)}</Table.Td>
-                    <Table.Td style={{ textAlign: 'right' }}>
-                      {item.tax_type === 'EXEMPTOUTPUT' && 'EXEMPT'}
-                      {item.tax_type === 'OUTPUT' && 'GST'}
-                      {!item.tax_type && '—'}
-                    </Table.Td>
-                    <Table.Td style={{ textAlign: 'right', fontWeight: 600 }}>
-                      ${(parseFloat(item.unit_amount || 0) * parseFloat(item.quantity || 0)).toFixed(2)}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-
-            <Divider my="lg" />
-
-            <Group justify="flex-end" mb="md">
-              <Stack gap="sm" style={{ minWidth: '300px' }}>
-                <Group justify="space-between">
-                  <Text size="md">Subtotal</Text>
-                  <Text size="md" fw={500}>${parseFloat(quote.subtotal).toFixed(2)}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="md">Tax</Text>
-                  <Text size="md" fw={500}>${parseFloat(quote.total_tax).toFixed(2)}</Text>
-                </Group>
-                <Divider />
-                <Group justify="space-between">
-                  <Text size="xl" fw={700}>TOTAL</Text>
-                  <Text size="xl" fw={700} c="violet">${parseFloat(quote.total).toFixed(2)} AUD</Text>
-                </Group>
-              </Stack>
             </Group>
-          </Paper>
-        )}
-      </Stack>
+            
+            <Group>
+              <Button
+                size="sm"
+                variant="light"
+                leftSection={<IconDownload size={16} />}
+                onClick={handleDownloadPDF}
+              >
+                Download PDF
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="light"
+                leftSection={<IconExternalLink size={16} />}
+                component="a"
+                href={getXeroQuoteUrl(quote.xero_quote_id)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Xero
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="light"
+                leftSection={<IconRefresh size={16} />}
+                onClick={() => {
+                  fetchQuoteDetails();
+                  generatePdfPreview();
+                }}
+              >
+                Refresh
+              </Button>
+              
+              <Button size="sm" onClick={onClose}>
+                Close
+              </Button>
+            </Group>
+          </Group>
+
+          {/* PDF Preview */}
+          {pdfUrl ? (
+            <iframe
+              src={pdfUrl}
+              style={{
+                width: '100%',
+                height: 'calc(100% - 60px)',
+                border: '1px solid var(--mantine-color-default-border)',
+                borderRadius: '4px',
+              }}
+              title="Quote PDF Preview"
+            />
+          ) : (
+            <Center style={{ flex: 1 }}>
+              <Text c="dimmed">PDF preview not available</Text>
+            </Center>
+          )}
+        </Stack>
+      ) : (
+        <Text c="dimmed">No quote data available</Text>
+      )}
     </Modal>
   );
 }
-
