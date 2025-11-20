@@ -91,7 +91,12 @@ class EmailGlobalSettingsSerializer(serializers.ModelSerializer):
             'company_signature_html',
             'company_signature_email',
             'use_email_signatures',
+            # Provider Registration Numbers
+            'provider_registration_number',
+            'dva_number',
+            'enable_number',
             # Appearance
+            'header_color',
             'default_email_width',
             'show_logo',
             'show_contact_info',

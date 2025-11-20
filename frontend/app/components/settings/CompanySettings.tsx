@@ -26,6 +26,11 @@ interface CompanySettings {
   clinic_address: string;
   clinic_abn: string;
   clinic_website: string;
+  // Provider Registration Numbers
+  provider_registration_number: string;
+  dva_number: string;
+  enable_number: string;
+  // Email Signature
   use_email_signatures: boolean;
   company_signature_email: string;
   company_signature_html: string;
@@ -43,6 +48,9 @@ export default function CompanySettings() {
     clinic_address: '43 Harrison St, Cardiff, NSW 2285\n21 Dowe St, Tamworth, NSW 2340',
     clinic_abn: '',
     clinic_website: 'www.walkeasy.com.au',
+    provider_registration_number: '4050009706',
+    dva_number: '682730',
+    enable_number: '508809',
     use_email_signatures: true,
     company_signature_email: 'info@walkeasy.com.au',
     company_signature_html: '',
@@ -207,6 +215,57 @@ export default function CompanySettings() {
             onChange={(e) => setSettings({ ...settings, clinic_website: e.target.value })}
             size="md"
           />
+        </Stack>
+      </Paper>
+
+      <Paper p="xl" withBorder>
+        <Stack gap="md">
+          <div>
+            <Title order={4}>Provider Registration Numbers</Title>
+            <Text size="sm" c="dimmed" mt={4}>
+              These numbers are used for invoice reference generation based on patient funding source
+            </Text>
+          </div>
+
+          <TextInput
+            label="Provider Registration Number"
+            description="NDIS/Medicare provider registration number (e.g., 4050009706)"
+            placeholder="4050009706"
+            value={settings.provider_registration_number}
+            onChange={(e) => setSettings({ ...settings, provider_registration_number: e.target.value })}
+            size="md"
+          />
+
+          <TextInput
+            label="DVA Account Number"
+            description="Department of Veterans' Affairs account number (e.g., 682730)"
+            placeholder="682730"
+            value={settings.dva_number}
+            onChange={(e) => setSettings({ ...settings, dva_number: e.target.value })}
+            size="md"
+          />
+
+          <TextInput
+            label="Enable Vendor Number"
+            description="Enable vendor/account number (e.g., 508809)"
+            placeholder="508809"
+            value={settings.enable_number}
+            onChange={(e) => setSettings({ ...settings, enable_number: e.target.value })}
+            size="md"
+          />
+
+          <Alert color="blue" title="How it works">
+            <Text size="sm">
+              When creating invoices, the system automatically generates references based on the patient's funding source:
+            </Text>
+            <ul style={{ marginTop: 8, fontSize: '0.875rem' }}>
+              <li><strong>NDIS patients:</strong> "NDIS # [patient's health number]"</li>
+              <li><strong>DVA patients:</strong> "DVA # {settings.dva_number}"</li>
+              <li><strong>Enable patients:</strong> "Enable Vendor # {settings.enable_number}"</li>
+              <li><strong>BUPA/Medibank/AHM:</strong> "[Funding Source] - [Patient Name]"</li>
+              <li><strong>Private patients:</strong> "Invoice for [Patient Name]"</li>
+            </ul>
+          </Alert>
         </Stack>
       </Paper>
 
