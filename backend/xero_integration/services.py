@@ -70,15 +70,25 @@ def generate_smart_reference(patient, custom_reference=None):
     def clean_empty_lines(text):
         """
         Remove lines that contain only empty placeholders or whitespace.
+        But preserve intentional blank lines (empty lines in the original format).
+        
         Example: "PO# {custom_po}" where custom_po is empty → line removed
+        But: intentional blank line → preserved
         """
         if not text:
             return text
         
+        # Split by <br/> but track which lines were originally empty
         lines = text.split('<br/>')
         cleaned_lines = []
         
         for line in lines:
+            # Check if this was an intentional blank line (empty before formatting)
+            if line.strip() == '':
+                # This is an intentional blank line - keep it
+                cleaned_lines.append('')
+                continue
+            
             # Strip HTML tags and whitespace to check if line has content
             import re
             text_only = re.sub(r'<[^>]+>', '', line).strip()
@@ -86,6 +96,7 @@ def generate_smart_reference(patient, custom_reference=None):
             # Keep the line if it has any actual text content (not just whitespace/punctuation)
             if text_only and not all(c in ' #-:/' for c in text_only):
                 cleaned_lines.append(line)
+            # else: Line has placeholders that resulted in empty content - remove it
         
         return '<br/>'.join(cleaned_lines)
     
