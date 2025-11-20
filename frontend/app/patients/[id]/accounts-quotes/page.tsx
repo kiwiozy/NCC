@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconArrowLeft } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconArrowLeft, IconMail } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../../components/Navigation';
 import { InvoiceDetailModal } from '../../../components/xero/InvoiceDetailModal';
@@ -12,6 +12,7 @@ import { QuickCreateModal } from '../../../components/xero/QuickCreateModal';
 import { CreateInvoiceModal } from '../../../components/xero/CreateInvoiceModal';
 import { CreateQuoteModal } from '../../../components/xero/CreateQuoteModal';
 import { EditInvoiceModal } from '../../../components/xero/EditInvoiceModal';
+import EmailInvoiceModal from '../../../components/xero/EmailInvoiceModal';
 import { formatDateOnlyAU } from '../../../utils/dateFormatting';
 
 interface Patient {
@@ -83,8 +84,11 @@ export default function PatientAccountsQuotesPage() {
   const [editInvoiceModalOpened, setEditInvoiceModalOpened] = useState(false);
   const [invoiceDetailModalOpened, setInvoiceDetailModalOpened] = useState(false);
   const [quoteDetailModalOpened, setQuoteDetailModalOpened] = useState(false);
+  const [emailModalOpened, setEmailModalOpened] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [selectedEmailItem, setSelectedEmailItem] = useState<any>(null);
+  const [selectedEmailType, setSelectedEmailType] = useState<'invoice' | 'receipt' | 'quote'>('invoice');
   const [patients, setPatients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   
@@ -267,6 +271,20 @@ export default function PatientAccountsQuotesPage() {
       setSelectedQuoteId(item.id);
       setQuoteDetailModalOpened(true);
     }
+  };
+
+  const handleEmailClick = (item: CombinedItem) => {
+    setSelectedEmailItem(item);
+    
+    if (item.type === 'quote') {
+      setSelectedEmailType('quote');
+    } else if (item.type === 'invoice') {
+      // Check if fully paid
+      const amountDue = parseFloat((item as any).amount_due || '0');
+      setSelectedEmailType(amountDue === 0 ? 'receipt' : 'invoice');
+    }
+    
+    setEmailModalOpened(true);
   };
 
   const handleEdit = (invoiceId: string) => {
@@ -660,6 +678,13 @@ export default function PatientAccountsQuotesPage() {
                       </ActionIcon>
                     </Tooltip>
 
+                    {/* Email button - for invoices and quotes */}
+                    <Tooltip label="Email Invoice/Quote">
+                      <ActionIcon variant="subtle" color="blue" onClick={() => handleEmailClick(item)}>
+                        <IconMail size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+
                     {/* Send to Xero button for DRAFT invoices */}
                     {item.type === 'invoice' && item.status === 'DRAFT' && (
                       <Tooltip label="Send to Xero">
@@ -992,6 +1017,17 @@ export default function PatientAccountsQuotesPage() {
           </Group>
         </Stack>
       </Modal>
+
+      {/* Email Invoice/Quote Modal */}
+      <EmailInvoiceModal
+        opened={emailModalOpened}
+        onClose={() => {
+          setEmailModalOpened(false);
+          setSelectedEmailItem(null);
+        }}
+        invoice={selectedEmailItem}
+        type={selectedEmailType}
+      />
     </div>
   );
 }
