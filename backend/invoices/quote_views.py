@@ -116,27 +116,18 @@ def generate_xero_quote_pdf(request, quote_link_id):
         line_items = []
         xero_reference = None  # Will store the Reference/PO# from Xero quote
         
-        # Extract reference/PO# from Xero quote
-        if hasattr(xero_quote, 'reference'):
+        # Always regenerate reference from patient's CURRENT funding source
+        # This ensures PDFs always reflect the latest patient data, even if quote was created months ago
+        if quote_link.patient:
+            from xero_integration.services import generate_smart_reference
+            xero_reference = generate_smart_reference(quote_link.patient)
+            logger.info(f"Regenerated reference from current patient funding: {xero_reference}")
+        elif hasattr(xero_quote, 'reference'):
+            # No patient link - use whatever is in Xero
             xero_reference = xero_quote.reference
-            logger.info(f"Original Xero reference: {xero_reference}")
-            
-            # Always regenerate reference from patient funding if patient exists
-            # This ensures old quotes get updated references based on current funding
-            if quote_link.patient:
-                from xero_integration.services import generate_smart_reference
-                regenerated_reference = generate_smart_reference(quote_link.patient)
-                
-                # Only use regenerated reference if it's different from just the patient name
-                # (i.e., if there's actual funding source info)
-                patient_full_name = quote_link.patient.get_full_name()
-                if regenerated_reference != patient_full_name:
-                    xero_reference = regenerated_reference
-                    logger.info(f"Using regenerated reference from funding source: {xero_reference}")
-                else:
-                    logger.info(f"No funding source, keeping original reference")
-            
-            logger.info(f"Final Xero quote reference: {xero_reference}")
+            logger.info(f"Using original Xero reference (no patient link): {xero_reference}")
+        else:
+            xero_reference = None
         
         if xero_quote.line_items:
             for item in xero_quote.line_items:

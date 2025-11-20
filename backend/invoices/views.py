@@ -204,27 +204,18 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 xero_service = XeroService()  # XeroService doesn't take connection in __init__
                 xero_invoice = xero_service.get_invoice(invoice_link.xero_invoice_id)
                 
-                # Extract reference/PO# from Xero invoice
-                if xero_invoice and hasattr(xero_invoice, 'reference'):
+                # Always regenerate reference from patient's CURRENT funding source
+                # This ensures PDFs always reflect the latest patient data, even if invoice was created months ago
+                if invoice_link.patient:
+                    from xero_integration.services import generate_smart_reference
+                    xero_reference = generate_smart_reference(invoice_link.patient)
+                    logger.info(f"Regenerated reference from current patient funding: {xero_reference}")
+                elif xero_invoice and hasattr(xero_invoice, 'reference'):
+                    # No patient link - use whatever is in Xero
                     xero_reference = xero_invoice.reference
-                    logger.info(f"Original Xero reference: {xero_reference}")
-                    
-                    # Always regenerate reference from patient funding if patient exists
-                    # This ensures old invoices get updated references based on current funding
-                    if invoice_link.patient:
-                        from xero_integration.services import generate_smart_reference
-                        regenerated_reference = generate_smart_reference(invoice_link.patient)
-                        
-                        # Only use regenerated reference if it's different from just the patient name
-                        # (i.e., if there's actual funding source info)
-                        patient_full_name = invoice_link.patient.get_full_name()
-                        if regenerated_reference != patient_full_name:
-                            xero_reference = regenerated_reference
-                            logger.info(f"Using regenerated reference from funding source: {xero_reference}")
-                        else:
-                            logger.info(f"No funding source, keeping original reference")
-                    
-                    logger.info(f"Final Xero invoice reference: {xero_reference}")
+                    logger.info(f"Using original Xero reference (no patient link): {xero_reference}")
+                else:
+                    xero_reference = None
                 
                 if xero_invoice and xero_invoice.line_items:
                     for item in xero_invoice.line_items:
