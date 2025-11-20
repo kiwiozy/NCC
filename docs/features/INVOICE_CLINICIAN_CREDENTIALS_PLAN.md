@@ -228,41 +228,20 @@ Provider Registration # 4050009706
 
 ---
 
-## 💡 Proposed Solution Architecture (UPDATED)
+## 💡 SIMPLIFIED Solution (Using Patient Funding Source)
 
 ### Phase 1: Database Updates
 
 #### 1.1 Add `provider_registration_number` to Company Settings
-**NOT to individual Clinician!** The company has the provider number.
 
-**Option A: Add to EmailGlobalSettings (Quick)**
+**Store the company's NDIS provider number (4050009706) in global settings:**
+
 ```python
 # backend/invoices/models.py
 class EmailGlobalSettings:
     # ... existing fields ...
     
-    provider_registration_number = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        help_text="Company's provider registration number for NDIS/DVA/Medicare (e.g., '4050009706')"
-    )
-```
-
-**Option B: Create dedicated CompanySettings model (Better long-term)**
-```python
-# backend/clinicians/models.py or new backend/company/models.py
-class CompanySettings(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    
-    # Company Info
-    company_name = models.CharField(max_length=200, default="Walk Easy Pedorthics Australia Pty LTD")
-    abn = models.CharField(max_length=20, default="63 612 528 971")
-    phone = models.CharField(max_length=20, default="02 6766-3153")
-    email = models.EmailField(default="info@walkeasy.com.au")
-    website = models.CharField(max_length=200, default="www.walkeasy.com.au")
-    
-    # Provider Registration (for NDIS/DVA billing)
+    # Company Provider Registration (for NDIS/DVA/Medicare billing)
     provider_registration_number = models.CharField(
         max_length=100,
         null=True,
@@ -270,29 +249,33 @@ class CompanySettings(models.Model):
         help_text="Company's provider registration number for NDIS/DVA/Medicare (e.g., '4050009706')"
     )
     
-    # Address
-    street_address = models.CharField(max_length=200, default="21 Dowe St, Tamworth, NSW 2340")
-    postal_address = models.CharField(max_length=200, default="PO Box 210, Tamworth, NSW 2340")
+    # Reference numbers for different funding sources
+    dva_number = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        default="682730",
+        help_text="DVA account number (e.g., '682730')"
+    )
     
-    # Banking (for invoices)
-    bank_bsb = models.CharField(max_length=10, default="013287")
-    bank_account = models.CharField(max_length=20, default="222796921")
-    
-    # Singleton pattern
-    class Meta:
-        db_table = 'company_settings'
-    
-    @classmethod
-    def get_settings(cls):
-        settings, created = cls.objects.get_or_create(id=1)
-        return settings
+    enable_number = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        default="508809",
+        help_text="Enable vendor number (e.g., '508809')"
+    )
 ```
 
-**RECOMMENDATION:** Use Option B (CompanySettings model) - more organized and scalable.
+**Migration:**
+```bash
+python manage.py makemigrations invoices
+python manage.py migrate
+```
 
-#### 1.2 Add `funding_source` to Patient Model
+---
 
-**Critical:** Patients have funding sources (NDIS, BUPA, etc.) - these are NOT companies!
+#### 1.2 Add `funding_source` to Patient Model (if doesn't exist)
 
 ```python
 # backend/patients/models.py
@@ -305,183 +288,22 @@ class Patient:
         blank=True,
         choices=[
             ('NDIS', 'NDIS'),
+            ('DVA', 'DVA'),
+            ('ENABLE', 'Enable'),
             ('BUPA', 'BUPA'),
             ('MEDIBANK', 'Medibank'),
             ('AHM', 'AHM'),
-            ('DVA', 'DVA'),
-            ('ENABLE', 'Enable'),
             ('PRIVATE', 'Private/Self-Funded'),
             ('OTHER', 'Other'),
         ],
-        help_text="Patient's primary funding source/insurance type"
+        help_text="Patient's primary funding source"
     )
 ```
 
-**Usage:**
-- When patient has NDIS funding → show `NDIS # {health_number}` on invoice
-- When patient has BUPA insurance → show `BUPA - {patient_name}` on invoice
-- This is **NOT** the same as the Company field (which is who you're billing)
-
----
-
-#### 1.3 Create `VendorNumber` Model (Link Vendor Numbers to Companies)
-
-**For DVA and Enable companies only!**
-
-```python
-# backend/companies/models.py
-class VendorNumber(models.Model):
-    """
-    Vendor/account numbers for companies (DVA, Enable)
-    These are PAYERS (companies you bill), not patient insurance types.
-    
-    Examples:
-    - Company: Enable → Vendor Type: "Enable" → Number: "508809"
-    - Company: DVA → Vendor Type: "DVA" → Number: "682730"
-    
-    NOTE: BUPA, Medibank, AHM are NOT companies - they are patient funding sources!
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # Link to company
-    company = models.ForeignKey(
-        'Company',
-        on_delete=models.CASCADE,
-        related_name='vendor_numbers',
-        help_text="Company this vendor number belongs to"
-    )
-    
-    # Vendor details
-    vendor_type = models.CharField(
-        max_length=100,
-        help_text="Vendor type/scheme (e.g., 'Enable', 'DVA', 'BUPA', 'Medibank')"
-    )
-    
-    vendor_number = models.CharField(
-        max_length=100,
-        help_text="Vendor/account number (e.g., '508809')"
-    )
-    
-    # Display on invoice
-    display_format = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True,
-        help_text="How to display on invoice (e.g., 'Enable Vendor #', 'DVA #'). Leave blank for default: '{vendor_type} Vendor #'"
-    )
-    
-    # Status
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Whether this vendor number is currently active"
-    )
-    
-    # Metadata
-    notes = models.TextField(
-        blank=True,
-        help_text="Internal notes about this vendor number"
-    )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        db_table = 'company_vendor_numbers'
-        ordering = ['company', 'vendor_type']
-        unique_together = ['company', 'vendor_type']  # Each company can only have one number per vendor type
-        indexes = [
-            models.Index(fields=['company', 'is_active']),
-            models.Index(fields=['vendor_type']),
-        ]
-    
-    def __str__(self):
-        return f"{self.company.name} - {self.vendor_type}: {self.vendor_number}"
-    
-    def get_display_format(self):
-        """Get the display format for invoices"""
-        if self.display_format:
-            return self.display_format
-        return f"{self.vendor_type} Vendor #"
-    
-    def get_formatted_reference(self):
-        """Get the full formatted reference for invoices"""
-        return f"{self.get_display_format()} {self.vendor_number}"
-```
-
-**Example data:**
-```python
-# Enable company (actual payer)
-VendorNumber.objects.create(
-    company=enable_company,
-    vendor_type="Enable",
-    vendor_number="508809",
-    display_format="Enable Vendor #"
-)
-
-# DVA company (actual payer)
-VendorNumber.objects.create(
-    company=dva_company,
-    vendor_type="DVA",
-    vendor_number="682730",
-    display_format="DVA #"
-)
-
-# ❌ DO NOT create VendorNumbers for BUPA, Medibank, AHM
-# These are patient funding sources, not companies!
-```
-
-#### 1.4 Migrations
+**Migration:**
 ```bash
-python manage.py makemigrations patients  # For funding_source
-python manage.py makemigrations companies  # For VendorNumber
-python manage.py makemigrations invoices   # For CompanySettings (if created)
+python manage.py makemigrations patients
 python manage.py migrate
-```
-
-#### 1.5 Create Sample Data Script
-
-**File:** `backend/companies/management/commands/setup_vendor_numbers.py`
-
-```python
-from django.core.management.base import BaseCommand
-from companies.models import Company, VendorNumber
-
-class Command(BaseCommand):
-    help = 'Setup initial vendor numbers for companies'
-
-    def handle(self, *args, **options):
-        # Get or create DVA and Enable companies
-        enable, _ = Company.objects.get_or_create(
-            name="Enable",
-            defaults={'abn': ''}
-        )
-        
-        dva, _ = Company.objects.get_or_create(
-            name="DVA",
-            defaults={'abn': ''}
-        )
-        
-        # Create vendor numbers
-        VendorNumber.objects.get_or_create(
-            company=enable,
-            vendor_type="Enable",
-            defaults={
-                'vendor_number': '508809',
-                'display_format': 'Enable Vendor #'
-            }
-        )
-        
-        VendorNumber.objects.get_or_create(
-            company=dva,
-            vendor_type="DVA",
-            defaults={
-                'vendor_number': '682730',
-                'display_format': 'DVA #'
-            }
-        )
-        
-        self.stdout.write(self.style.SUCCESS('✅ Vendor numbers setup complete!'))
-        self.stdout.write(self.style.WARNING('Note: BUPA, Medibank, AHM are patient funding sources, not companies!'))
 ```
 
 **Run:**
