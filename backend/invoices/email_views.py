@@ -232,14 +232,9 @@ class SendInvoiceEmailView(APIView):
             f.write(f"  document_type: {document_type}\n")
             f.write("="*80 + "\n")
         
-        # Build email data from invoice/quote
-        if document_type == 'quote':
-            email_data = self._build_quote_data(invoice, clinician)
-        else:
-            email_data = self._build_invoice_data(invoice, document_type, clinician)
-        
-        # SIMPLE: If from_email is info@walkeasy.com.au → company signature (no clinician)
-        #         Otherwise → find clinician for that email
+        # FIRST: Determine clinician based on from_email
+        # If from_email is info@walkeasy.com.au → company (no clinician)
+        # Otherwise → find clinician for that email
         clinician = None
         
         # DEBUG
@@ -259,6 +254,12 @@ class SendInvoiceEmailView(APIView):
         else:
             with open('/Users/craig/Documents/nexus-core-clinic/backend/email_debug.txt', 'a') as f:
                 f.write(f"Using company signature (clinician=None)\n")
+        
+        # Build email data from invoice/quote (now that we have clinician)
+        if document_type == 'quote':
+            email_data = self._build_quote_data(invoice, clinician)
+        else:
+            email_data = self._build_invoice_data(invoice, document_type, clinician)
         
         # Create generator with clinician for signature (or None for company signature)
         generator = EmailGenerator(
