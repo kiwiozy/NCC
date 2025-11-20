@@ -119,19 +119,24 @@ def generate_xero_quote_pdf(request, quote_link_id):
         # Extract reference/PO# from Xero quote
         if hasattr(xero_quote, 'reference'):
             xero_reference = xero_quote.reference
+            logger.info(f"Original Xero reference: {xero_reference}")
             
-            # Clean up old "Service for:" references - regenerate from patient funding
-            if xero_reference and (xero_reference.startswith('Service for:') or xero_reference == patient_info['name']):
-                # Old reference format detected - regenerate from patient's funding source
-                if quote_link.patient:
-                    from xero_integration.services import generate_smart_reference
-                    xero_reference = generate_smart_reference(quote_link.patient)
-                    logger.info(f"Regenerated reference from funding source: {xero_reference}")
+            # Always regenerate reference from patient funding if patient exists
+            # This ensures old quotes get updated references based on current funding
+            if quote_link.patient:
+                from xero_integration.services import generate_smart_reference
+                regenerated_reference = generate_smart_reference(quote_link.patient)
+                
+                # Only use regenerated reference if it's different from just the patient name
+                # (i.e., if there's actual funding source info)
+                patient_full_name = quote_link.patient.get_full_name()
+                if regenerated_reference != patient_full_name:
+                    xero_reference = regenerated_reference
+                    logger.info(f"Using regenerated reference from funding source: {xero_reference}")
                 else:
-                    # No patient link - just use the name
-                    xero_reference = patient_info['name']
+                    logger.info(f"No funding source, keeping original reference")
             
-            logger.info(f"Xero quote reference: {xero_reference}")
+            logger.info(f"Final Xero quote reference: {xero_reference}")
         
         if xero_quote.line_items:
             for item in xero_quote.line_items:
