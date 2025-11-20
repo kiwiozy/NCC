@@ -120,13 +120,16 @@ def generate_xero_quote_pdf(request, quote_link_id):
         if hasattr(xero_quote, 'reference'):
             xero_reference = xero_quote.reference
             
-            # Clean up old "Service for:" references
-            if xero_reference and xero_reference.startswith('Service for:'):
-                # Extract just the patient name (first line after "Service for:")
-                lines = xero_reference.split('\n')
-                if lines:
-                    # Remove "Service for: " prefix
-                    xero_reference = lines[0].replace('Service for: ', '').strip()
+            # Clean up old "Service for:" references - regenerate from patient funding
+            if xero_reference and (xero_reference.startswith('Service for:') or xero_reference == patient_info['name']):
+                # Old reference format detected - regenerate from patient's funding source
+                if quote_link.patient:
+                    from xero_integration.services import generate_smart_reference
+                    xero_reference = generate_smart_reference(quote_link.patient)
+                    logger.info(f"Regenerated reference from funding source: {xero_reference}")
+                else:
+                    # No patient link - just use the name
+                    xero_reference = patient_info['name']
             
             logger.info(f"Xero quote reference: {xero_reference}")
         

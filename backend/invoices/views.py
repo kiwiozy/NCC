@@ -208,13 +208,16 @@ def generate_xero_invoice_pdf(request, invoice_link_id):
                 if xero_invoice and hasattr(xero_invoice, 'reference'):
                     xero_reference = xero_invoice.reference
                     
-                    # Clean up old "Service for:" references
-                    if xero_reference and xero_reference.startswith('Service for:'):
-                        # Extract just the patient name (first line after "Service for:")
-                        lines = xero_reference.split('\n')
-                        if lines:
-                            # Remove "Service for: " prefix
-                            xero_reference = lines[0].replace('Service for: ', '').strip()
+                    # Clean up old "Service for:" references - regenerate from patient funding
+                    if xero_reference and (xero_reference.startswith('Service for:') or xero_reference == patient_info['name']):
+                        # Old reference format detected - regenerate from patient's funding source
+                        if invoice_link.patient:
+                            from xero_integration.services import generate_smart_reference
+                            xero_reference = generate_smart_reference(invoice_link.patient)
+                            logger.info(f"Regenerated reference from funding source: {xero_reference}")
+                        else:
+                            # No patient link - just use the name
+                            xero_reference = patient_info['name']
                     
                     logger.info(f"Xero invoice reference: {xero_reference}")
                 
