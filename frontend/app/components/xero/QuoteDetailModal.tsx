@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconDownload, IconFileInvoice } from '@tabler/icons-react';
+import { IconDownload, IconFileInvoice } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { getCsrfToken } from '../../utils/csrf';
@@ -102,10 +102,6 @@ export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalP
     } finally {
       setLoadingPdf(false);
     }
-  };
-
-  const getXeroQuoteUrl = (xeroQuoteId: string) => {
-    return `https://go.xero.com/Quotes/View.aspx?QuoteID=${xeroQuoteId}`;
   };
 
   const handleConvertToInvoice = async () => {
@@ -234,30 +230,6 @@ export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalP
                 onClick={handleDownloadPDF}
               >
                 Download PDF
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="light"
-                leftSection={<IconExternalLink size={16} />}
-                component="a"
-                href={getXeroQuoteUrl(quote.xero_quote_id)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open in Xero
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="light"
-                leftSection={<IconRefresh size={16} />}
-                onClick={() => {
-                  fetchQuoteDetails();
-                  generatePdfPreview();
-                }}
-              >
-                Refresh
               </Button>
               
               <Button size="sm" onClick={onClose}>

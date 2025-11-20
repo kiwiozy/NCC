@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Button, Loader, Center } from '@mantine/core';
-import { IconExternalLink, IconRefresh, IconDownload, IconCurrencyDollar } from '@tabler/icons-react';
+import { IconDownload, IconCurrencyDollar } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { PaymentModal } from './PaymentModal';
@@ -106,10 +106,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
     generatePdfPreview();
   };
 
-  const getXeroInvoiceUrl = (xeroInvoiceId: string) => {
-    return `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoiceId}`;
-  };
-
   const handleDownloadPDF = async () => {
     if (!invoice || !pdfUrl) return;
     
@@ -188,30 +184,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
                   onClick={handleDownloadPDF}
                 >
                   Download PDF
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="light"
-                  leftSection={<IconExternalLink size={16} />}
-                  component="a"
-                  href={getXeroInvoiceUrl(invoice.xero_invoice_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open in Xero
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="light"
-                  leftSection={<IconRefresh size={16} />}
-                  onClick={() => {
-                    fetchInvoiceDetails();
-                    generatePdfPreview();
-                  }}
-                >
-                  Refresh
                 </Button>
                 
                 <Button size="sm" onClick={onClose}>
