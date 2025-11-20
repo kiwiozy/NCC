@@ -545,6 +545,14 @@ export default function CompanySettings() {
                 <Button
                   size="xs"
                   variant="light"
+                  color="pink"
+                  onClick={() => insertAtCursor('Reference / PO#')}
+                >
+                  + "Reference / PO#" Label
+                </Button>
+                <Button
+                  size="xs"
+                  variant="light"
                   color="gray"
                   onClick={() => insertAtCursor('\n')}
                 >
@@ -588,21 +596,21 @@ export default function CompanySettings() {
                 <Button
                   size="xs"
                   variant="outline"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{patient_name}\n{name} # {reference_number}' })}
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: 'Reference / PO#\n{patient_name}\n{name} # {reference_number}' })}
                 >
                   Standard Format
                 </Button>
                 <Button
                   size="xs"
                   variant="outline"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{patient_name}\n{name} # {patient_health_number}\n\n{name} Registration # {reference_number}' })}
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: 'Reference / PO#\n{patient_name}\n{name} # {patient_health_number}\n\n{name} Registration # {reference_number}' })}
                 >
                   NDIS Format
                 </Button>
                 <Button
                   size="xs"
                   variant="outline"
-                  onClick={() => setFundingForm({ ...fundingForm, display_format: '{name} - {patient_name}' })}
+                  onClick={() => setFundingForm({ ...fundingForm, display_format: 'Reference / PO#\n{name} - {patient_name}' })}
                 >
                   Simple Format
                 </Button>

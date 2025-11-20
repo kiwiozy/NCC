@@ -401,15 +401,15 @@ class QuotePDFGenerator:
         patient_reference = self.quote_data.get('patient_reference')  # Separate reference for company billing
         
         if xero_reference:
-            # Use the smart reference from Xero (funding-based)
-            ref_info_text = f"<b>Reference / PO#</b><br/>{xero_reference}"
+            # Use the smart reference from Xero (funding-based) - NO hardcoded label
+            ref_info_text = f"{xero_reference}"
         elif patient_reference:
             # Company billing: Show just patient name (no prefixes, no NDIS#)
             ref_name = patient_reference['name']
-            ref_info_text = f"<b>Reference / PO#</b><br/>{ref_name}"
+            ref_info_text = f"{ref_name}"
         else:
             # Direct billing: Show just patient name (no prefixes, no NDIS#)
-            ref_info_text = f"<b>Reference / PO#</b><br/>{patient['name']}"
+            ref_info_text = f"{patient['name']}"
         
         # Add practitioner info to reference section
         if practitioner.get('name'):
