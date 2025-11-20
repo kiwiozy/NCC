@@ -69,34 +69,50 @@ def generate_smart_reference(patient, custom_reference=None):
     
     def clean_empty_lines(text):
         """
-        Remove lines that contain only empty placeholders or whitespace.
+        Remove lines where placeholders resulted in empty values.
         But preserve intentional blank lines (empty lines in the original format).
         
-        Example: "PO# {custom_po}" where custom_po is empty → line removed
-        But: intentional blank line → preserved
+        Logic:
+        - If a line was empty before formatting → keep it (intentional spacing)
+        - If a line has NO placeholders (just static text) → keep it
+        - If a line has placeholders that are ALL empty → remove entire line
+        - If a line has placeholders where SOME are filled → keep it
+        
+        Example: 
+        - "PO# {custom_po}" where custom_po is empty → entire line removed
+        - "PO# {custom_po}" where custom_po = "ABC123" → "PO# ABC123" kept
+        - "" (blank line) → kept for spacing
         """
         if not text:
             return text
         
-        # Split by <br/> but track which lines were originally empty
+        import re
+        
+        # First, we need to track lines BEFORE placeholder substitution
+        # Since we can't do that, we'll use a heuristic:
+        # If a line contains ONLY static text + empty space where placeholders were, remove it
+        
         lines = text.split('<br/>')
         cleaned_lines = []
         
         for line in lines:
-            # Check if this was an intentional blank line (empty before formatting)
+            # Check if this was an intentional blank line (empty before AND after formatting)
             if line.strip() == '':
                 # This is an intentional blank line - keep it
                 cleaned_lines.append('')
                 continue
             
-            # Strip HTML tags and whitespace to check if line has content
-            import re
+            # Strip HTML tags to get plain text
             text_only = re.sub(r'<[^>]+>', '', line).strip()
             
-            # Keep the line if it has any actual text content (not just whitespace/punctuation)
-            if text_only and not all(c in ' #-:/' for c in text_only):
+            # Check if line has meaningful content
+            # Remove common punctuation/formatting characters
+            content_check = text_only.replace('#', '').replace('-', '').replace(':', '').replace('/', '').replace('PO', '').strip()
+            
+            # If after removing formatting characters there's actual content, keep the line
+            if content_check and len(content_check) > 0:
                 cleaned_lines.append(line)
-            # else: Line has placeholders that resulted in empty content - remove it
+            # else: Line is just formatting characters with no actual data - remove it
         
         return '<br/>'.join(cleaned_lines)
     
