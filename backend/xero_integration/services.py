@@ -68,30 +68,51 @@ def generate_smart_reference(patient, custom_reference=None):
     # Check patient's funding source
     if hasattr(patient, 'funding_source') and patient.funding_source:
         
-        # Check hardcoded funding sources first
-        if patient.funding_source == 'NDIS' and patient.health_number:
+        # First, check if it's a custom funding source (NEW system - takes priority)
+        try:
+            custom_source = CustomFundingSource.objects.get(
+                name__iexact=patient.funding_source,  # Case-insensitive match
+                is_active=True
+            )
+            
+            # Use display format if provided
+            if custom_source.display_format:
+                formatted_ref = custom_source.display_format.format(
+                    name=custom_source.name,
+                    reference_number=custom_source.reference_number or '',
+                    reference_number_label=custom_source.reference_number_label or 'Number',
+                    patient_name=patient.get_full_name(),
+                    patient_health_number=patient.health_number or ''
+                )
+                return formatted_ref.strip()
+            
+            # No display format - use default
+            if custom_source.reference_number:
+                label = custom_source.reference_number_label or '#'
+                return f"{custom_source.name} {label} {custom_source.reference_number}"
+            else:
+                return f"{custom_source.name} - {patient.get_full_name()}"
+                
+        except CustomFundingSource.DoesNotExist:
+            # Not in custom funding - check hardcoded fallbacks
+            pass
+        
+        # Fallback: Check hardcoded funding sources (OLD system - legacy support)
+        if patient.funding_source.upper() == 'NDIS' and patient.health_number:
             return f"NDIS # {patient.health_number}"
         
-        elif patient.funding_source == 'DVA' and settings.dva_number:
+        elif patient.funding_source.upper() == 'DVA' and settings.dva_number:
             return f"DVA # {settings.dva_number}"
         
-        elif patient.funding_source == 'ENABLE' and settings.enable_number:
+        elif patient.funding_source.upper() == 'ENABLE' and settings.enable_number:
             return f"Enable Vendor # {settings.enable_number}"
         
-        elif patient.funding_source in ['BUPA', 'MEDIBANK', 'AHM']:
+        elif patient.funding_source.upper() in ['BUPA', 'MEDIBANK', 'AHM']:
             return f"{patient.funding_source} - {patient.get_full_name()}"
         
         else:
-            # Check if it's a custom funding source
-            try:
-                custom_source = CustomFundingSource.objects.get(
-                    name=patient.funding_source,
-                    is_active=True
-                )
-                return custom_source.get_formatted_reference(patient.get_full_name())
-            except CustomFundingSource.DoesNotExist:
-                # Not a custom source either - use default format
-                return f"{patient.funding_source} - {patient.get_full_name()}"
+            # Generic fallback - just patient name
+            return patient.get_full_name()
     
     # Default: just patient name (no prefix)
     return patient.get_full_name()
