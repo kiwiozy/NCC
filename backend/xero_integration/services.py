@@ -93,8 +93,8 @@ def generate_smart_reference(patient, custom_reference=None):
                 # Not a custom source either - use default format
                 return f"{patient.funding_source} - {patient.get_full_name()}"
     
-    # Default: patient name
-    return f"Invoice for {patient.get_full_name()}"
+    # Default: just patient name (no prefix)
+    return patient.get_full_name()
 
 
 class XeroService:
@@ -877,10 +877,12 @@ class XeroService:
                 # COMPANY AS PRIMARY CONTACT
                 primary_contact_link = self.sync_company_contact(company)
                 
-                # Patient details go in reference
+                # Patient details go in reference (just name, no "Service for:" prefix)
                 patient_name = f"{patient.first_name} {patient.last_name}"
-                reference = f"Service for: {patient_name}"
-                reference += f"\nMRN: {patient.mrn}"
+                reference = patient_name
+                # Add MRN and DOB as additional lines if available
+                if patient.mrn:
+                    reference += f"\nMRN: {patient.mrn}"
                 if patient.dob:
                     reference += f"\nDOB: {patient.dob.strftime('%d/%m/%Y')}"
                 
