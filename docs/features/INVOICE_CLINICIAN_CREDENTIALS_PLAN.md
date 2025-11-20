@@ -290,21 +290,56 @@ class CompanySettings(models.Model):
 
 **RECOMMENDATION:** Use Option B (CompanySettings model) - more organized and scalable.
 
-#### 1.2 Create `VendorNumber` Model (Link Vendor Numbers to Companies)
+#### 1.2 Add `funding_source` to Patient Model
 
-**Better approach:** Create a dedicated model for vendor numbers linked to companies!
+**Critical:** Patients have funding sources (NDIS, BUPA, etc.) - these are NOT companies!
+
+```python
+# backend/patients/models.py
+class Patient:
+    # ... existing fields ...
+    
+    funding_source = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        choices=[
+            ('NDIS', 'NDIS'),
+            ('BUPA', 'BUPA'),
+            ('MEDIBANK', 'Medibank'),
+            ('AHM', 'AHM'),
+            ('DVA', 'DVA'),
+            ('ENABLE', 'Enable'),
+            ('PRIVATE', 'Private/Self-Funded'),
+            ('OTHER', 'Other'),
+        ],
+        help_text="Patient's primary funding source/insurance type"
+    )
+```
+
+**Usage:**
+- When patient has NDIS funding → show `NDIS # {health_number}` on invoice
+- When patient has BUPA insurance → show `BUPA - {patient_name}` on invoice
+- This is **NOT** the same as the Company field (which is who you're billing)
+
+---
+
+#### 1.3 Create `VendorNumber` Model (Link Vendor Numbers to Companies)
+
+**For DVA and Enable companies only!**
 
 ```python
 # backend/companies/models.py
 class VendorNumber(models.Model):
     """
-    Vendor/account numbers for companies (Enable, DVA, BUPA, etc.)
-    Each company can have one or more vendor numbers for different billing contexts.
+    Vendor/account numbers for companies (DVA, Enable)
+    These are PAYERS (companies you bill), not patient insurance types.
     
     Examples:
     - Company: Enable → Vendor Type: "Enable" → Number: "508809"
     - Company: DVA → Vendor Type: "DVA" → Number: "682730"
-    - Company: BUPA → Vendor Type: "BUPA" → Number: "123456"
+    
+    NOTE: BUPA, Medibank, AHM are NOT companies - they are patient funding sources!
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
@@ -375,7 +410,7 @@ class VendorNumber(models.Model):
 
 **Example data:**
 ```python
-# Enable company
+# Enable company (actual payer)
 VendorNumber.objects.create(
     company=enable_company,
     vendor_type="Enable",
@@ -383,7 +418,7 @@ VendorNumber.objects.create(
     display_format="Enable Vendor #"
 )
 
-# DVA company
+# DVA company (actual payer)
 VendorNumber.objects.create(
     company=dva_company,
     vendor_type="DVA",
@@ -391,22 +426,19 @@ VendorNumber.objects.create(
     display_format="DVA #"
 )
 
-# BUPA company (multiple vendor numbers if needed)
-VendorNumber.objects.create(
-    company=bupa_company,
-    vendor_type="BUPA",
-    vendor_number="123456",
-    display_format="BUPA Account #"
-)
+# ❌ DO NOT create VendorNumbers for BUPA, Medibank, AHM
+# These are patient funding sources, not companies!
 ```
 
-#### 1.3 Migrations
+#### 1.4 Migrations
 ```bash
-python manage.py makemigrations
+python manage.py makemigrations patients  # For funding_source
+python manage.py makemigrations companies  # For VendorNumber
+python manage.py makemigrations invoices   # For CompanySettings (if created)
 python manage.py migrate
 ```
 
-#### 1.4 Create Sample Data Script
+#### 1.5 Create Sample Data Script
 
 **File:** `backend/companies/management/commands/setup_vendor_numbers.py`
 
@@ -418,7 +450,7 @@ class Command(BaseCommand):
     help = 'Setup initial vendor numbers for companies'
 
     def handle(self, *args, **options):
-        # Get or create companies
+        # Get or create DVA and Enable companies
         enable, _ = Company.objects.get_or_create(
             name="Enable",
             defaults={'abn': ''}
@@ -449,6 +481,7 @@ class Command(BaseCommand):
         )
         
         self.stdout.write(self.style.SUCCESS('✅ Vendor numbers setup complete!'))
+        self.stdout.write(self.style.WARNING('Note: BUPA, Medibank, AHM are patient funding sources, not companies!'))
 ```
 
 **Run:**
@@ -460,7 +493,7 @@ python manage.py setup_vendor_numbers
 
 ### Phase 2: Backend Updates
 
-#### 2.1 Smart Reference Generation
+#### 2.1 Smart Reference Generation (UPDATED LOGIC)
 
 **File:** `backend/xero_integration/services.py`
 
@@ -469,18 +502,24 @@ def generate_smart_reference(patient, company, selected_vendor_number_id=None, c
     """
     Generate smart reference/PO# for invoice
     
+    CRITICAL UNDERSTANDING:
+    - DVA and Enable are COMPANIES (payers) with vendor numbers
+    - BUPA, Medibank, AHM are PATIENT FUNDING SOURCES (not companies!)
+    - NDIS can be both a funding source AND a reference on patient invoices
+    
     Priority:
-    1. Custom reference (if user typed something)
-    2. Selected vendor number (if quick-select button clicked)
-    3. NDIS number (if patient has health_number)
-    4. Company name
-    5. Default: Patient name
+    1. Custom reference (user typed something)
+    2. Company vendor number (if billing DVA/Enable company)
+    3. NDIS patient (if patient.funding_source == 'NDIS')
+    4. Insurance patient (if patient has BUPA/Medibank/AHM)
+    5. Default (patient name or company name)
     """
     if custom_reference:
         return custom_reference
     
-    # Check if vendor number was selected
-    if selected_vendor_number_id:
+    # SCENARIO 1: Billing a company (DVA, Enable)
+    # Use the company's vendor number
+    if selected_vendor_number_id and company:
         from companies.models import VendorNumber
         try:
             vendor_num = VendorNumber.objects.get(id=selected_vendor_number_id, is_active=True)
@@ -489,20 +528,37 @@ def generate_smart_reference(patient, company, selected_vendor_number_id=None, c
         except VendorNumber.DoesNotExist:
             pass
     
-    # Check for NDIS number
-    if patient and patient.health_number:
-        return f"NDIS # {patient.health_number}"
+    # SCENARIO 2: Billing a patient with NDIS funding
+    # Show patient's NDIS number
+    if patient and hasattr(patient, 'funding_source') and patient.funding_source == 'NDIS':
+        if patient.health_number:
+            return f"NDIS # {patient.health_number}"
     
-    # Fallback to company name
+    # SCENARIO 3: Billing a patient with private insurance (BUPA, Medibank, AHM)
+    # Show insurance type + patient name
+    if patient and hasattr(patient, 'funding_source') and patient.funding_source in ['BUPA', 'MEDIBANK', 'AHM']:
+        return f"{patient.funding_source} - {patient.get_full_name()}"
+    
+    # SCENARIO 4: Fallback to company name (if billing a company)
     if company:
         return f"Invoice for {company.name}"
     
-    # Last resort: patient name
+    # SCENARIO 5: Last resort - patient name
     if patient:
         return f"Invoice for {patient.get_full_name()}"
     
     return "Invoice"
 ```
+
+**Examples:**
+
+| Scenario | patient | company | selected_vendor | Result |
+|----------|---------|---------|-----------------|--------|
+| Billing Enable company | John Smith | Enable | Enable vendor # | `"Enable Vendor # 508809"` |
+| Billing DVA company | Jane Doe | DVA | DVA vendor # | `"DVA # 682730"` |
+| NDIS patient (self-funded) | John Smith (NDIS) | None | None | `"NDIS # 3333222"` |
+| BUPA patient | Jane Doe (BUPA) | None | None | `"BUPA - Jane Doe"` |
+| Private patient | Bob Smith (Private) | None | None | `"Invoice for Bob Smith"` |
 
 #### 2.2 Add Vendor Numbers API Endpoints
 
@@ -1184,15 +1240,17 @@ const payload = {
 ### Phase 1: Database ✅
 - [ ] Create `CompanySettings` model (or add to `EmailGlobalSettings`)
 - [ ] Add `provider_registration_number` field to company settings
-- [ ] Create `VendorNumber` model (linked to Company)
+- [ ] **Add `funding_source` field to `Patient` model** (NDIS, BUPA, Medibank, AHM, etc.)
+- [ ] Create `VendorNumber` model (linked to Company - for DVA and Enable only)
 - [ ] Create and run migrations
-- [ ] Create setup script for sample data (Enable: 508809, DVA: 682730)
+- [ ] Create setup script for sample data (DVA: 682730, Enable: 508809)
 - [ ] Run setup script
 - [ ] Update Company Settings UI to include provider registration field
 
 ### Phase 2: Backend Logic
 - [ ] Create `VendorNumberSerializer`
-- [ ] Create `generate_smart_reference()` helper function (with vendor_number_id support)
+- [ ] **Update smart reference logic** (handle patient funding_source vs company vendor numbers)
+- [ ] Create `generate_smart_reference()` helper function (with patient funding awareness)
 - [ ] Add vendor number API endpoints:
   - [ ] `GET /api/companies/{id}/vendor-numbers/`
   - [ ] `POST /api/companies/{id}/vendor-numbers/`
@@ -1201,35 +1259,41 @@ const payload = {
 - [ ] Add URL routes for vendor number endpoints
 - [ ] Update `create_xero_invoice()` to accept `clinician_id` and `vendor_number_id`
 - [ ] Update `create_xero_invoice()` to auto-select logged-in user's clinician
-- [ ] Update `create_xero_invoice()` to generate smart reference
+- [ ] Update `create_xero_invoice()` to generate smart reference (with funding_source logic)
 - [ ] Add `GET /api/clinicians/me/` endpoint for current user's clinician
 - [ ] Update PDF generator to include practitioner credentials box (with company provider #)
 
 ### Phase 3: Frontend UI/UX
+- [ ] **Add `funding_source` field to Patient edit form** (dropdown with NDIS, BUPA, etc.)
 - [ ] Add clinician selector to `CreateInvoiceDialog.tsx`
 - [ ] Add clinician selector to `CreateInvoiceModal.tsx`
-- [ ] Add vendor number quick-select buttons (dynamic per company)
+- [ ] **Update reference field logic** (show patient funding vs company vendor buttons)
+- [ ] Add vendor number quick-select buttons (only when billing DVA/Enable companies)
 - [ ] Add custom reference field with auto-generation preview
 - [ ] Add vendor number management to Company Profile page
 - [ ] Fetch clinicians on modal open
-- [ ] Fetch vendor numbers when company is selected
+- [ ] Fetch vendor numbers when company is selected (DVA/Enable only)
 - [ ] Auto-select current user's clinician profile
 - [ ] Show credentials preview when clinician selected
 - [ ] Update submit payload to include `clinician_id`, `vendor_number_id`, and `reference`
 
 ### Phase 4: Testing
 - [ ] Test invoice creation with different clinicians
-- [ ] Test auto-generation of NDIS reference (patient with health_number)
-- [ ] Test vendor number quick-select buttons (Enable, DVA, BUPA)
+- [ ] **Test patient funding_source field (NDIS, BUPA, Medibank, AHM)**
+- [ ] **Test NDIS patient: auto-generates "NDIS # {health_number}"**
+- [ ] **Test BUPA patient: auto-generates "BUPA - {patient_name}"**
+- [ ] **Test DVA company billing: shows vendor number "DVA # 682730"**
+- [ ] **Test Enable company billing: shows vendor number "Enable Vendor # 508809"**
 - [ ] Test custom PO number override
 - [ ] Test PDF display of practitioner credentials (with company provider #)
-- [ ] Test with company billing (DVA, insurance)
 - [ ] Test quotes (same logic should apply)
-- [ ] Test vendor number management (add/edit/delete in Company Profile)
+- [ ] Test vendor number management (add/edit/delete for DVA and Enable)
 - [ ] Test unique constraint (company can't have duplicate vendor types)
 
 ### Phase 5: Documentation
 - [ ] Update `docs/architecture/DATABASE_SCHEMA.md` with new models
+- [ ] Document patient `funding_source` field
+- [ ] Document difference between company vendor numbers vs patient funding
 - [ ] Create user guide for practitioner selection
 - [ ] Document smart reference generation logic
 - [ ] Document vendor number management
@@ -1355,58 +1419,112 @@ const payload = {
 - Individual clinicians have their own **Pedorthic Registration #** (already stored in `Clinician.registration_number`)
 
 **Implementation:**
-- Add `provider_registration_number` to `EmailGlobalSettings` or create dedicated `CompanySettings` model
+- Add `provider_registration_number` to `CompanySettings` model
 - Display company's provider # on all invoices
 
-### 2. **Vendor Number Buttons (BUPA, Enable, DVA)** ✅
-**Decision:** Dynamic vendor numbers per company with quick-select buttons
+---
 
-**How it works:**
-- Each company (Enable, DVA, BUPA, etc.) can have multiple vendor/account numbers
-- Store in `Company.vendor_numbers` JSON field
-- Examples:
-  - Enable → `{"Enable": "508809"}`
-  - DVA → `{"DVA": "682730"}`
-  - BUPA → `{"BUPA": "123456"}`
+### 2. **DVA and Enable are COMPANIES** ✅
+**Critical Understanding:**
+- **DVA** and **Enable** are actual **companies** in the system
+- They are **payers** (who you bill)
+- They have **vendor numbers** that appear on invoices:
+  - DVA → Vendor # `682730`
+  - Enable → Vendor # `508809`
 
-**UI Flow:**
-1. User selects company (e.g., "Enable")
-2. System shows quick-select buttons for that company's vendor numbers
-3. Clicking button auto-fills reference: `"Enable Vendor # 508809"`
-4. User can override manually if needed
+**Implementation:**
+- Use existing `VendorNumber` model linked to `Company`
+- When billing DVA or Enable, select them as the **Company** on the invoice
+- Their vendor number auto-fills in Reference field
 
-**Reference Display on Invoice:**
+---
+
+### 3. **BUPA, Medibank, AHM are INSURANCE (Not Companies)** ✅
+**Critical Understanding:**
+- BUPA, Medibank, AHM are **NOT companies** you select on invoices
+- They are **patient funding sources/insurance types**
+- The **patient** is the primary contact, but they have insurance coverage
+
+**Implementation:**
+- Add `funding_source` field to `Patient` model
+- Choices: NDIS, BUPA, Medibank, AHM, DVA, Private, Other
+- Used for reference generation and reporting
+- **Not** used as the "Company" field on invoices
+
+---
+
+### 4. **NDIS Patients - Special Handling** ✅
+**Critical Understanding:**
+- If patient has `funding_source = 'NDIS'`:
+  - Show patient's NDIS # (`patient.health_number`)
+  - Show company's NDIS provider # (`company_settings.provider_registration_number`)
+
+**PDF Display:**
 ```
 Reference / PO#
 Mr. Craig Laird
-883t0
-Enable Vendor # 508809
+NDIS # 3333222                      ← Patient's NDIS number
+Provider Registration # 4050009706  ← Company's NDIS provider #
 ```
 
-### 3. **Reference Format** ✅
-**Confirmed formats:**
-- NDIS patients: `"NDIS # {health_number}"` (e.g., `"NDIS # 3333222"`)
-- Company vendor: `"{Type} Vendor # {number}"` (e.g., `"Enable Vendor # 508809"`)
-- DVA: `"DVA # {number}"` (e.g., `"DVA # 682730"`)
-- Custom: User can type anything
+---
 
-### 4. **PDF Layout** ✅
+### 5. **Reference Generation Logic** ✅
+
+**Priority (Updated):**
+
+1. **Custom reference** (user typed something)
+2. **Company vendor number** (if billing DVA/Enable company)
+3. **NDIS patient** (if `patient.funding_source == 'NDIS'`)
+4. **Insurance patient** (if patient has BUPA/Medibank/AHM)
+5. **Default** (patient name or company name)
+
+**Examples:**
+
+| Scenario | Reference |
+|----------|-----------|
+| Billing Enable company | `"Enable Vendor # 508809"` |
+| Billing DVA company | `"DVA # 682730"` |
+| Patient with NDIS funding | `"NDIS # 3333222"` |
+| Patient with BUPA insurance | `"BUPA - John Smith"` |
+| Private patient | `"Invoice for John Smith"` |
+
+---
+
+### 6. **PDF Layout** ✅
 **Confirmed:** Top right corner with practitioner credentials
+
+**When billing Enable (company):**
 ```
 Reference / PO#
 Craig Laird
-883t0
 Enable Vendor # 508809
-Provider Registration # 4050009706  ← Company's provider #
+Provider Registration # 4050009706
 
 Practitioner:
 Craig Laird
 C.Ped CM AU
-Pedorthic Registration # 3454       ← Clinician's personal registration
+Pedorthic Registration # 3454
 www.pedorthics.org.au
 ```
 
-### 5. **Clinician Selection** ✅
+**When billing NDIS patient:**
+```
+Reference / PO#
+Craig Laird
+NDIS # 3333222
+Provider Registration # 4050009706
+
+Practitioner:
+Craig Laird
+C.Ped CM AU
+Pedorthic Registration # 3454
+www.pedorthics.org.au
+```
+
+---
+
+### 7. **Clinician Selection** ✅
 **Decision:** Allow override for admin users
 - Smart default: Auto-select logged-in user's clinician profile
 - Admin can change if creating invoice on behalf of another clinician
