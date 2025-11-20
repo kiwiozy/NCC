@@ -1475,9 +1475,37 @@ export default function ContactsPage() {
                                     { value: 'OTHER', label: 'Other' },
                                   ]
                             }
-                            onChange={(value) => {
+                            onChange={async (value) => {
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, funding_source: value || '' });
+                                
+                                // Auto-save to backend immediately
+                                try {
+                                  const response = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'X-CSRFToken': getCsrfToken(),
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify({
+                                      funding_source: value || '',
+                                    }),
+                                  });
+                                  
+                                  if (!response.ok) {
+                                    throw new Error('Failed to save funding source');
+                                  }
+                                  
+                                  console.log('Funding source saved:', value);
+                                } catch (error) {
+                                  console.error('Error saving funding source:', error);
+                                  notifications.show({
+                                    title: 'Error',
+                                    message: 'Failed to save funding source',
+                                    color: 'red',
+                                  });
+                                }
                               }
                             }}
                             clearable
