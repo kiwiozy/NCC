@@ -608,45 +608,6 @@ export default function XeroInvoicesQuotesPage() {
                       </ActionIcon>
                     </Tooltip>
                     
-                    <Tooltip label="Download Debug PDF">
-                      <ActionIcon
-                        variant="subtle"
-                        color="orange"
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`, {
-                              credentials: 'include',
-                            });
-                            if (!response.ok) throw new Error('Failed to generate PDF');
-                            
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `Invoice_${(item as any).xero_invoice_number}_DEBUG.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                            
-                            notifications.show({
-                              title: 'Success',
-                              message: 'Debug PDF downloaded',
-                              color: 'green',
-                            });
-                          } catch (error) {
-                            notifications.show({
-                              title: 'Error',
-                              message: 'Failed to generate PDF',
-                              color: 'red',
-                            });
-                          }
-                        }}
-                      >
-                        <IconDownload size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    
                     {/* Receipt button - Only show when invoice is fully paid (amount_due = 0) */}
                     {parseFloat((item as any).amount_due || '0') === 0 && (
                       <Tooltip label="Download Receipt (PAID)">
@@ -718,45 +679,6 @@ export default function XeroInvoicesQuotesPage() {
                             notifications.show({
                               title: 'Success',
                               message: 'Quote PDF downloaded',
-                              color: 'green',
-                            });
-                          } catch (error) {
-                            notifications.show({
-                              title: 'Error',
-                              message: 'Failed to generate quote PDF',
-                              color: 'red',
-                            });
-                          }
-                        }}
-                      >
-                        <IconDownload size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    
-                    <Tooltip label="Download Debug PDF">
-                      <ActionIcon
-                        variant="subtle"
-                        color="orange"
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`, {
-                              credentials: 'include',
-                            });
-                            if (!response.ok) throw new Error('Failed to generate PDF');
-                            
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `Quote_${(item as any).xero_quote_number}_DEBUG.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                            
-                            notifications.show({
-                              title: 'Success',
-                              message: 'Debug quote PDF downloaded',
                               color: 'green',
                             });
                           } catch (error) {

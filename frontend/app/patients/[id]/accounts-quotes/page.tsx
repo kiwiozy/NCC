@@ -477,43 +477,6 @@ export default function PatientAccountsQuotesPage() {
     }
   };
 
-  const handleDownloadDebugPDF = async (item: CombinedItem) => {
-    try {
-      const endpoint = item.type === 'invoice' 
-        ? `https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`
-        : `https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`;
-      
-      const response = await fetch(endpoint, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) throw new Error('Failed to download debug PDF');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${item.number}_debug.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      notifications.show({
-        title: 'Success',
-        message: 'Debug PDF downloaded successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Error downloading debug PDF:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to download debug PDF',
-        color: 'red',
-      });
-    }
-  };
-
   const handleDownloadReceipt = async (item: CombinedItem) => {
     try {
       // Receipts only available for invoices (not quotes)
@@ -769,11 +732,6 @@ export default function PatientAccountsQuotesPage() {
                     )}
                     <Tooltip label="Download PDF">
                       <ActionIcon variant="subtle" color="green" onClick={() => handleDownloadPDF(item)}>
-                        <IconDownload size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Download Debug PDF">
-                      <ActionIcon variant="subtle" color="orange" onClick={() => handleDownloadDebugPDF(item)}>
                         <IconDownload size={16} />
                       </ActionIcon>
                     </Tooltip>
