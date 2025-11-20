@@ -79,8 +79,12 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
   const fetchPatientsAndCompanies = async () => {
     try {
       const [patientsRes, companiesRes] = await Promise.all([
-        fetch('https://localhost:8000/api/patients/'),
-        fetch('https://localhost:8000/api/companies/')
+        fetch('https://localhost:8000/api/patients/', {
+          credentials: 'include',
+        }),
+        fetch('https://localhost:8000/api/companies/', {
+          credentials: 'include',
+        })
       ]);
       
       if (patientsRes.ok) {
@@ -101,8 +105,12 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
     setLoading(true);
     try {
       const [invoicesRes, quotesRes] = await Promise.all([
-        fetch('https://localhost:8000/api/xero-invoice-links/'),
-        fetch('https://localhost:8000/api/xero-quote-links/')
+        fetch('https://localhost:8000/api/xero-invoice-links/', {
+          credentials: 'include',
+        }),
+        fetch('https://localhost:8000/api/xero-quote-links/', {
+          credentials: 'include',
+        })
       ]);
       
       if (!invoicesRes.ok || !quotesRes.ok) throw new Error('Failed to fetch data');
