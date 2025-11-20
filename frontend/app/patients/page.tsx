@@ -1452,15 +1452,13 @@ export default function ContactsPage() {
                             placeholder="Select funding source"
                             value={selectedContact.funding_source}
                             data={[
-                              { value: 'NDIS', label: 'NDIS' },
-                              { value: 'DVA', label: 'DVA' },
-                              { value: 'ENABLE', label: 'Enable' },
+                              // Hardcoded common options (not in custom funding sources)
                               { value: 'BUPA', label: 'BUPA' },
                               { value: 'MEDIBANK', label: 'Medibank' },
                               { value: 'AHM', label: 'AHM' },
                               { value: 'PRIVATE', label: 'Private/Self-Funded' },
                               { value: 'OTHER', label: 'Other' },
-                              // Add custom funding sources dynamically
+                              // Add custom funding sources dynamically (includes NDIS, DVA, Enable)
                               ...customFundingSources.map((source: any) => ({
                                 value: source.name,
                                 label: source.name,
