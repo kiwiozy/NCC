@@ -163,7 +163,9 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
     
     setDownloadingPDF(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/`);
+      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF');
@@ -206,7 +208,9 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId, onEdit, onDelet
     
     setDownloadingPDF(true);
     try {
-      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/?debug=true`);
+      const response = await fetch(`https://localhost:8000/api/invoices/xero/${invoiceId}/pdf/?debug=true`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error('Failed to generate PDF');

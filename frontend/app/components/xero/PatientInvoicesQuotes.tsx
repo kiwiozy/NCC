@@ -581,7 +581,9 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
                         color="green"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();
@@ -620,7 +622,9 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
                           color="violet"
                           onClick={async () => {
                             try {
-                              const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`);
+                              const response = await fetch(`https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`, {
+                                credentials: 'include',
+                              });
                               if (!response.ok) throw new Error('Failed to generate receipt');
                               
                               const blob = await response.blob();
@@ -663,7 +667,9 @@ export default function PatientInvoicesQuotes({ patientId, patientName }: Patien
                         color="green"
                         onClick={async () => {
                           try {
-                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`);
+                            const response = await fetch(`https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`, {
+                              credentials: 'include',
+                            });
                             if (!response.ok) throw new Error('Failed to generate PDF');
                             
                             const blob = await response.blob();

@@ -406,7 +406,9 @@ export default function PatientAccountsQuotesPage() {
         ? `https://localhost:8000/api/invoices/xero/${item.id}/pdf/`
         : `https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`;
       
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, {
+        credentials: 'include',
+      });
       
       if (!response.ok) throw new Error('Failed to download PDF');
       
@@ -441,7 +443,9 @@ export default function PatientAccountsQuotesPage() {
         ? `https://localhost:8000/api/invoices/xero/${item.id}/pdf/?debug=true`
         : `https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/?debug=true`;
       
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, {
+        credentials: 'include',
+      });
       
       if (!response.ok) throw new Error('Failed to download debug PDF');
       
@@ -484,7 +488,9 @@ export default function PatientAccountsQuotesPage() {
 
       const endpoint = `https://localhost:8000/api/invoices/xero/${item.id}/pdf/?receipt=true`;
       
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, {
+        credentials: 'include',
+      });
       
       if (!response.ok) throw new Error('Failed to download receipt');
       
