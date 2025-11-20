@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Button, Loader, Center } from '@mantine/core';
-import { IconDownload, IconFileInvoice } from '@tabler/icons-react';
+import { IconFileInvoice } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { getCsrfToken } from '../../utils/csrf';
@@ -153,43 +153,17 @@ export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalP
     return (status === 'SENT' || status === 'ACCEPTED') && status !== 'INVOICED';
   };
 
-  const handleDownloadPDF = async () => {
-    if (!quote || !pdfUrl) return;
-    
-    try {
-      const a = document.createElement('a');
-      a.href = pdfUrl;
-      a.download = `Quote_${quote.xero_quote_number}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      notifications.show({
-        title: 'Success',
-        message: 'Quote PDF downloaded successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to download PDF',
-        color: 'red',
-      });
-    }
-  };
-
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
+    <Modal 
+      opened={opened} 
+      onClose={onClose} 
       title={
         <Group gap="xs">
           <Text fw={700} size="xl">QUOTE</Text>
           {quote && (
             <Badge size="lg" color={STATUS_COLORS[normalizeStatus(quote.status)] || 'gray'}>
               {normalizeStatus(quote.status)}
-            </Badge>
+          </Badge>
           )}
         </Group>
       }
@@ -206,32 +180,19 @@ export function QuoteDetailModal({ opened, onClose, quoteId }: QuoteDetailModalP
       ) : quote ? (
         <Stack gap="md" style={{ height: '100%' }}>
           {/* Action Buttons at Top */}
-          <Group justify="space-between">
-            <Group>
-              {canConvertToInvoice() && (
-                <Button
-                  size="sm"
-                  variant="filled"
-                  color="green"
-                  leftSection={<IconFileInvoice size={16} />}
-                  onClick={handleConvertToInvoice}
-                  loading={converting}
-                >
-                  Convert to Invoice
-                </Button>
-              )}
-            </Group>
-            
-            <Group>
+          <Group justify="flex-start">
+            {canConvertToInvoice() && (
               <Button
                 size="sm"
-                variant="light"
-                leftSection={<IconDownload size={16} />}
-                onClick={handleDownloadPDF}
+                variant="filled"
+                color="green"
+                leftSection={<IconFileInvoice size={16} />}
+                onClick={handleConvertToInvoice}
+                loading={converting}
               >
-                Download PDF
+                Convert to Invoice
               </Button>
-            </Group>
+            )}
           </Group>
 
           {/* PDF Preview */}

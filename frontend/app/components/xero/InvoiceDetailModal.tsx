@@ -1,7 +1,7 @@
 'use client';
 
 import { Modal, Stack, Group, Text, Badge, Button, Loader, Center } from '@mantine/core';
-import { IconDownload, IconCurrencyDollar } from '@tabler/icons-react';
+import { IconCurrencyDollar } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { PaymentModal } from './PaymentModal';
@@ -106,32 +106,6 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
     generatePdfPreview();
   };
 
-  const handleDownloadPDF = async () => {
-    if (!invoice || !pdfUrl) return;
-    
-    try {
-      const a = document.createElement('a');
-      a.href = pdfUrl;
-      a.download = `Invoice_${invoice.xero_invoice_number}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      notifications.show({
-        title: 'Success',
-        message: 'Invoice PDF downloaded successfully',
-        color: 'green',
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to download PDF',
-        color: 'red',
-      });
-    }
-  };
-
   return (
     <>
       <Modal
@@ -160,32 +134,19 @@ export function InvoiceDetailModal({ opened, onClose, invoiceId }: InvoiceDetail
         ) : invoice ? (
           <Stack gap="md" style={{ height: '100%' }}>
             {/* Action Buttons at Top */}
-            <Group justify="space-between">
-              <Group>
-                {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
-                {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
-                  <Button
-                    size="sm"
-                    variant="filled"
-                    color="teal"
-                    leftSection={<IconCurrencyDollar size={16} />}
-                    onClick={() => setPaymentModalOpened(true)}
-                  >
-                    Record Payment
-                  </Button>
-                )}
-              </Group>
-              
-              <Group>
+            <Group justify="flex-start">
+              {/* Record Payment Button - Show for AUTHORISED or SUBMITTED invoices with amount due */}
+              {['AUTHORISED', 'SUBMITTED'].includes(invoice.status) && parseFloat(invoice.amount_due) > 0 && (
                 <Button
                   size="sm"
-                  variant="light"
-                  leftSection={<IconDownload size={16} />}
-                  onClick={handleDownloadPDF}
+                  variant="filled"
+                  color="teal"
+                  leftSection={<IconCurrencyDollar size={16} />}
+                  onClick={() => setPaymentModalOpened(true)}
                 >
-                  Download PDF
+                  Record Payment
                 </Button>
-              </Group>
+              )}
             </Group>
 
             {/* PDF Preview */}
