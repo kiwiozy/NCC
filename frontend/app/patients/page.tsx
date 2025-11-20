@@ -1522,7 +1522,7 @@ export default function ContactsPage() {
                                   });
                                 }
                               }
-                            }}}
+                            }}
                             clearable
                             searchable
                             styles={{ input: { fontWeight: 700, fontSize: rem(18), height: 'auto', minHeight: rem(36) } }}
