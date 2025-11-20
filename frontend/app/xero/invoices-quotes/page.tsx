@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Table, Badge, Button, Group, Stack, TextInput, Select, Loader, Center, ActionIcon, Tooltip, Tabs, rem, Modal } from '@mantine/core';
-import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconMail } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconFileInvoice, IconFileText, IconPlus, IconEye, IconTrash, IconDownload, IconPencil, IconSend, IconFileArrowRight, IconMail, IconPrinter } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import Navigation from '../../components/Navigation';
 import { InvoiceDetailModal } from '../../components/xero/InvoiceDetailModal';
@@ -12,6 +12,7 @@ import { CreateInvoiceModal } from '../../components/xero/CreateInvoiceModal';
 import { CreateQuoteModal } from '../../components/xero/CreateQuoteModal';
 import { EditInvoiceModal } from '../../components/xero/EditInvoiceModal';
 import EmailInvoiceModal from '../../components/xero/EmailInvoiceModal';
+import PrintInvoiceModal from '../../components/xero/PrintInvoiceModal';
 import { formatDateOnlyAU } from '../../utils/dateFormatting';
 import { getCsrfToken } from '../../utils/csrf';
 
@@ -61,6 +62,13 @@ export default function XeroInvoicesQuotesPage() {
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [selectedEmailItem, setSelectedEmailItem] = useState<any>(null);
   const [selectedEmailType, setSelectedEmailType] = useState<'invoice' | 'receipt' | 'quote'>('invoice');
+  
+  // Print modal
+  const [printModalOpened, setPrintModalOpened] = useState(false);
+  const [printPdfUrl, setPrintPdfUrl] = useState<string | null>(null);
+  const [printTitle, setPrintTitle] = useState('');
+  const [printType, setPrintType] = useState<'invoice' | 'quote'>('invoice');
+  
   const [preSelectedPatientId, setPreSelectedPatientId] = useState<string | undefined>();
   const [preSelectedCompanyId, setPreSelectedCompanyId] = useState<string | undefined>();
   const [patients, setPatients] = useState<any[]>([]);
@@ -474,6 +482,47 @@ export default function XeroInvoicesQuotesPage() {
                     }}
                   >
                     <IconMail size={16} />
+                  </ActionIcon>
+                </Tooltip>
+                
+                {/* Print button */}
+                <Tooltip label={`Print ${item.type === 'invoice' ? 'Invoice' : 'Quote'}`}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    onClick={async () => {
+                      try {
+                        const isInvoice = item.type === 'invoice';
+                        const itemNumber = isInvoice ? (item as any).xero_invoice_number : (item as any).xero_quote_number;
+                        
+                        const endpoint = isInvoice 
+                          ? `https://localhost:8000/api/invoices/xero/${item.id}/pdf/`
+                          : `https://localhost:8000/api/invoices/xero/quotes/${item.id}/pdf/`;
+                        
+                        const response = await fetch(endpoint, {
+                          credentials: 'include',
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to generate PDF');
+                        
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        
+                        setPrintPdfUrl(url);
+                        setPrintTitle(`${isInvoice ? 'Invoice' : 'Quote'} #${itemNumber}`);
+                        setPrintType(isInvoice ? 'invoice' : 'quote');
+                        setPrintModalOpened(true);
+                      } catch (error) {
+                        console.error('Error generating PDF for print:', error);
+                        notifications.show({
+                          title: 'Error',
+                          message: 'Failed to generate PDF for printing',
+                          color: 'red',
+                        });
+                      }
+                    }}
+                  >
+                    <IconPrinter size={16} />
                   </ActionIcon>
                 </Tooltip>
                 
@@ -1057,6 +1106,21 @@ export default function XeroInvoicesQuotesPage() {
         }}
         invoice={selectedEmailItem}
         type={selectedEmailType}
+      />
+
+      {/* Print Invoice/Quote Modal */}
+      <PrintInvoiceModal
+        opened={printModalOpened}
+        onClose={() => {
+          setPrintModalOpened(false);
+          if (printPdfUrl) {
+            URL.revokeObjectURL(printPdfUrl);
+            setPrintPdfUrl(null);
+          }
+        }}
+        pdfUrl={printPdfUrl}
+        title={printTitle}
+        type={printType}
       />
     </Navigation>
   );
