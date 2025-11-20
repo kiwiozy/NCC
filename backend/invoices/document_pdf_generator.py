@@ -469,9 +469,9 @@ class DocumentPDFGenerator:
         )
         
         # Reference info - priority order:
-        # 1. xero_reference (the smart reference from Xero, e.g., "NDIS # 3333222", "DVA # 682730")
-        # 2. patient_reference (for company billing)
-        # 3. patient info (default)
+        # 1. xero_reference (the smart reference from Xero, e.g., "Enable Vendor # 508809")
+        # 2. patient_reference (for company billing - just name)
+        # 3. patient info (default - just name)
         xero_reference = self.document_data.get('xero_reference')  # Smart reference from Xero
         patient_reference = self.document_data.get('patient_reference')  # Separate reference for company billing
         
@@ -479,19 +479,12 @@ class DocumentPDFGenerator:
             # Use the smart reference from Xero (funding-based)
             ref_info_text = f"<b>Reference / PO#</b><br/>{xero_reference}"
         elif patient_reference:
-            # Company billing: Show patient name in reference even though address is company
+            # Company billing: Show just patient name (no prefixes, no NDIS#)
             ref_name = patient_reference['name']
-            ref_ndis = patient_reference.get('ndis_number', '')
             ref_info_text = f"<b>Reference / PO#</b><br/>{ref_name}"
-            if ref_ndis:
-                ref_info_text += f"<br/>NDIS # {ref_ndis}"
         else:
-            # Direct billing: Use patient info
-            ref_name = patient['name']
-            ref_ndis = patient.get('ndis_number', '')
-            ref_info_text = f"<b>Reference / PO#</b><br/>{ref_name}"
-            if ref_ndis:
-                ref_info_text += f"<br/>NDIS # {ref_ndis}"
+            # Direct billing: Show just patient name (no prefixes, no NDIS#)
+            ref_info_text = f"<b>Reference / PO#</b><br/>{patient['name']}"
         
         ref_info_text += f"<br/><b>Provider Registration #</b> {self.PROVIDER_REGISTRATION}"
         
