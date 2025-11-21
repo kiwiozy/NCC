@@ -14,6 +14,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme } from '@mantine/core';
 import { IconMenu2 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
+import CreateAppointmentDialog from './dialogs/CreateAppointmentDialog';
 
 // Type definitions
 interface Clinic {
@@ -47,6 +49,18 @@ export default function ClinicCalendar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { colorScheme } = useMantineColorScheme();
 
+  // Appointment details dialog
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+
+  // Create appointment dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createInitialDate, setCreateInitialDate] = useState<Date | string | null>(null);
+
+  // Double-click detection for creating appointments
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [lastClickInfo, setLastClickInfo] = useState<any>(null);
+
   // Fetch appointments from backend
   useEffect(() => {
     fetchAppointments();
@@ -64,8 +78,10 @@ export default function ClinicCalendar() {
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      // Fetch data from Django API
-      const response = await fetch(`https://localhost:8000/api/appointments/calendar_data/`);
+      // Fetch data from Django API with credentials
+      const response = await fetch(`https://localhost:8000/api/appointments/calendar_data/`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch appointments');
@@ -125,9 +141,19 @@ export default function ClinicCalendar() {
   // Handle event drop (drag & reschedule)
   const handleEventDrop = async (info: any) => {
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
       const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           start_time: info.event.start?.toISOString(),
           end_time: info.event.end?.toISOString(),
@@ -156,9 +182,19 @@ export default function ClinicCalendar() {
   // Handle event resize
   const handleEventResize = async (info: any) => {
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
       const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           start_time: info.event.start?.toISOString(),
           end_time: info.event.end?.toISOString(),
@@ -184,31 +220,34 @@ export default function ClinicCalendar() {
     }
   };
 
-  // Handle event click
+  // Handle event click - open details dialog
   const handleEventClick = (info: any) => {
-    const event = info.event;
-    const props = event.extendedProps;
-    
-    alert(`
-      Patient: ${props.patientName}
-      Clinician: ${props.clinicianName}
-      Clinic: ${props.clinicName}
-      Status: ${props.status}
-      Time: ${event.start?.toLocaleTimeString()} - ${event.end?.toLocaleTimeString()}
-    `);
-    
-    // TODO: Open modal with appointment details
+    setSelectedAppointmentId(info.event.id);
+    setDetailsDialogOpen(true);
   };
 
-  // Handle date select (create new appointment)
+  // Handle date click - detect double-click for creating appointments
+  const handleDateClick = (info: any) => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTime;
+
+    // If clicked within 300ms, it's a double-click
+    if (timeSinceLastClick < 300 && lastClickInfo?.dateStr === info.dateStr) {
+      // Double-click detected - open create appointment dialog
+      setCreateInitialDate(info.date);
+      setCreateDialogOpen(true);
+      setLastClickTime(0); // Reset
+    } else {
+      // Single click - just remember it
+      setLastClickTime(now);
+      setLastClickInfo(info);
+    }
+  };
+
+  // Handle date select (create new appointment) - only on double-click
   const handleDateSelect = (selectInfo: any) => {
-    alert(`
-      Create new appointment:
-      Start: ${selectInfo.startStr}
-      End: ${selectInfo.endStr}
-    `);
-    
-    // TODO: Open modal to create appointment
+    // Disabled - using dateClick for double-click detection instead
+    selectInfo.view.calendar.unselect();
   };
 
   return (
@@ -279,7 +318,8 @@ export default function ClinicCalendar() {
             }}
             events={events}
             editable={true}
-            selectable={true}
+            selectable={false}
+            selectMirror={false}
             selectMirror={true}
             dayMaxEvents={true}
             weekends={true}
@@ -289,6 +329,7 @@ export default function ClinicCalendar() {
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventClick={handleEventClick}
+            dateClick={handleDateClick}
             select={handleDateSelect}
             height="100%"
             nowIndicator={true}
@@ -302,6 +343,28 @@ export default function ClinicCalendar() {
           />
         </div>
       </Paper>
+
+      {/* Appointment Details Dialog */}
+      <AppointmentDetailsDialog
+        opened={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedAppointmentId(null);
+        }}
+        appointmentId={selectedAppointmentId}
+        onUpdate={fetchAppointments} // Refresh calendar after edit/delete
+      />
+
+      {/* Create Appointment Dialog */}
+      <CreateAppointmentDialog
+        opened={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setCreateInitialDate(null);
+        }}
+        onSuccess={fetchAppointments} // Refresh calendar after create
+        initialDate={createInitialDate || undefined}
+      />
     </>
   );
 }

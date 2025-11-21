@@ -9,11 +9,12 @@ import Navigation from '../components/Navigation';
 import CompanySettings from '../components/settings/CompanySettings';
 import FundingSourcesSettings from '../components/settings/FundingSourcesSettings';
 import ClinicsSettings from '../components/settings/ClinicsSettings';
+import AppointmentTypesSettings from '../components/settings/AppointmentTypesSettings';
 import DataManagementSettings from '../components/settings/DataManagementSettings';
 import UserProfiles from '../components/settings/UserProfiles';
 import EmailTemplateManager from '../components/settings/EmailTemplateManager';
 
-type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management' | 'users' | 'email-templates';
+type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'appointment-types' | 'data-management' | 'users' | 'email-templates';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -32,6 +33,8 @@ export default function SettingsPage() {
         return <FundingSourcesSettings />;
       case 'clinics':
         return <ClinicsSettings />;
+      case 'appointment-types':
+        return <AppointmentTypesSettings />;
       case 'data-management':
         return <DataManagementSettings />;
       case 'users':

@@ -19,7 +19,7 @@ from django.urls import path, include
 from rest_framework import routers
 from patients.views import PatientViewSet
 from clinicians.views import ClinicViewSet, ClinicianViewSet
-from appointments.views import AppointmentViewSet, EncounterViewSet
+from appointments.views import AppointmentViewSet, EncounterViewSet, AppointmentTypeViewSet
 from reminders.views import ReminderViewSet
 from notes.views import NoteViewSet
 from companies.views import CompanyViewSet
@@ -41,6 +41,7 @@ router.register(r'patients', PatientViewSet, basename='patient')
 router.register(r'clinics', ClinicViewSet, basename='clinic')
 router.register(r'clinicians', ClinicianViewSet, basename='clinician')
 router.register(r'appointments', AppointmentViewSet, basename='appointment')
+router.register(r'appointment-types', AppointmentTypeViewSet, basename='appointment-type')
 router.register(r'encounters', EncounterViewSet, basename='encounter')
 router.register(r'reminders', ReminderViewSet, basename='reminder')
 router.register(r'notes', NoteViewSet, basename='note')

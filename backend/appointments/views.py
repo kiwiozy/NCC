@@ -6,12 +6,34 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.dateparse import parse_datetime
-from .models import Appointment, Encounter
+from .models import Appointment, Encounter, AppointmentType
 from .serializers import (
     AppointmentSerializer, 
     AppointmentCalendarSerializer,
-    EncounterSerializer
+    EncounterSerializer,
+    AppointmentTypeSerializer
 )
+
+
+class AppointmentTypeViewSet(viewsets.ModelViewSet):
+    """API endpoint for appointment types"""
+    
+    queryset = AppointmentType.objects.all().order_by('name')
+    serializer_class = AppointmentTypeSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['name', 'default_duration_minutes', 'created_at']
+    
+    def get_queryset(self):
+        """Filter by active status if requested"""
+        queryset = super().get_queryset()
+        
+        # By default, only show active types unless include_inactive is specified
+        include_inactive = self.request.query_params.get('include_inactive', 'false').lower()
+        if include_inactive != 'true':
+            queryset = queryset.filter(is_active=True)
+        
+        return queryset
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
