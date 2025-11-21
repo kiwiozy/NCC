@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default to dark mode colors to prevent white flash on load */
 :root {
+  --background: #1A1B1E;
+  --foreground: #C1C2C5;
+}
+
+/* Light mode override (if ever needed) */
+[data-mantine-color-scheme='light'] {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -16,12 +23,26 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
+  background-color: var(--background) !important;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--background) !important;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Force Mantine components to respect dark mode immediately */
+body > div {
+  background-color: var(--background) !important;
+}
+
+#__next {
+  background-color: var(--background) !important;
+}
+
+main {
+  background-color: var(--background) !important;
 }
 
 /* FullCalendar Light Mode (Default) */
