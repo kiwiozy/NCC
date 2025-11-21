@@ -8,7 +8,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 import uuid
+import sys
 from .models import Appointment, Encounter, AppointmentType
+from clinicians.models import Clinic, Clinician
+from patients.models import Patient
 from .serializers import (
     AppointmentSerializer, 
     AppointmentCalendarSerializer,
@@ -205,8 +208,10 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         """
         Override partial_update (PATCH) to handle converting an existing event to recurring.
         """
-        print(f"🟢 PARTIAL_UPDATE METHOD CALLED")
-        print(f"🟢 request.data: {request.data}")
+        print(f"🟢 PARTIAL_UPDATE METHOD CALLED", flush=True)
+        sys.stdout.flush()
+        print(f"🟢 request.data: {request.data}", flush=True)
+        sys.stdout.flush()
         
         # Call the common update logic
         kwargs['partial'] = True
@@ -217,8 +222,10 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         Override update to handle converting an existing event to recurring.
         If is_recurring changes from False to True, generate additional recurring events.
         """
-        print(f"🟢 UPDATE METHOD CALLED")
-        print(f"🟢 request.data: {request.data}")
+        print(f"🟢 UPDATE METHOD CALLED", flush=True)
+        sys.stdout.flush()
+        print(f"🟢 request.data: {request.data}", flush=True)
+        sys.stdout.flush()
         
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -227,7 +234,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         was_recurring = instance.is_recurring
         is_now_recurring = request.data.get('is_recurring', False)
         
-        print(f"🔵 UPDATE APPOINTMENT - was_recurring: {was_recurring}, is_now_recurring: {is_now_recurring}")
+        print(f"🔵 UPDATE APPOINTMENT - was_recurring: {was_recurring}, is_now_recurring: {is_now_recurring}", flush=True)
+        sys.stdout.flush()
         
         if not was_recurring and is_now_recurring:
             # Converting to recurring - generate additional events

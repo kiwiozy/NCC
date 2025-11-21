@@ -183,6 +183,12 @@ export default function CreateAllDayAppointmentDialog({
   };
 
   const handleSubmit = async () => {
+    console.log('🟢 [CREATE ALL-DAY] handleSubmit called');
+    console.log('🟢 [CREATE ALL-DAY] isRecurring:', isRecurring);
+    console.log('🟢 [CREATE ALL-DAY] recurrencePattern:', recurrencePattern);
+    console.log('🟢 [CREATE ALL-DAY] clinicId:', clinicId);
+    console.log('🟢 [CREATE ALL-DAY] notes:', notes);
+    
     if (!clinicId || !selectedDate || !notes) {
       setError('Please fill in all required fields (Date, Event Title, Clinic).');
       return;
@@ -236,6 +242,8 @@ export default function CreateAllDayAppointmentDialog({
         }
       }
 
+      console.log('🟢 [CREATE ALL-DAY] Sending POST with payload:', payload);
+
       const response = await fetch('https://localhost:8000/api/appointments/', {
         method: 'POST',
         headers: {
@@ -246,12 +254,16 @@ export default function CreateAllDayAppointmentDialog({
         credentials: 'include',
       });
 
+      console.log('🟢 [CREATE ALL-DAY] Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('🟢 [CREATE ALL-DAY] Error response:', errorData);
         throw new Error(errorData.detail || 'Failed to create all-day event');
       }
 
       const responseData = await response.json();
+      console.log('🟢 [CREATE ALL-DAY] Success response:', responseData);
 
       notifications.show({
         title: 'Success',
