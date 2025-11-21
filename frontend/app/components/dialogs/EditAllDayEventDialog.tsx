@@ -177,17 +177,12 @@ export default function EditAllDayEventDialog({
   };
 
   const loadDropdownOptions = async () => {
-    console.log('🔄 Loading dropdown options...');
     try {
       const [cliniciansData, clinicsData, typesData] = await Promise.all([
         fetchAllPages('https://localhost:8000/api/clinicians/?page_size=100'),
         fetchAllPages('https://localhost:8000/api/clinics/?page_size=100'),
         fetchAllPages('https://localhost:8000/api/appointment-types/?page_size=100'),
       ]);
-      
-      console.log('✅ Loaded clinics:', clinicsData.length, clinicsData);
-      console.log('✅ Loaded clinicians:', cliniciansData.length, cliniciansData);
-      console.log('✅ Loaded appointment types:', typesData.length, typesData);
       
       setClinicians(cliniciansData);
       setClinics(clinicsData);
@@ -235,6 +230,12 @@ export default function EditAllDayEventDialog({
           clinician: editClinicianId,
           appointment_type: editAppointmentTypeId,
           notes: editNotes,
+          // Recurring fields
+          is_recurring: editIsRecurring,
+          recurrence_pattern: editIsRecurring ? editRecurrencePattern : null,
+          recurrence_end_date: editIsRecurring && editRecurrenceEndType === 'date' && editRecurrenceEndDate 
+            ? dayjs(editRecurrenceEndDate).endOf('day').toISOString() 
+            : null,
         }),
         credentials: 'include',
       });
@@ -493,15 +494,9 @@ export default function EditAllDayEventDialog({
             </Group>
             {editMode ? (
               <Select
-                data={clinics.map(c => {
-                  console.log('Mapping clinic:', c);
-                  return { value: c.id, label: c.name };
-                })}
+                data={clinics.map(c => ({ value: c.id, label: c.name }))}
                 value={editClinicId}
-                onChange={(value) => {
-                  console.log('Clinic changed to:', value);
-                  setEditClinicId(value);
-                }}
+                onChange={setEditClinicId}
                 searchable
                 required
                 placeholder="Select clinic"
@@ -520,15 +515,9 @@ export default function EditAllDayEventDialog({
             </Group>
             {editMode ? (
               <Select
-                data={clinicians.map(c => {
-                  console.log('Mapping clinician:', c);
-                  return { value: c.id, label: c.full_name };
-                })}
+                data={clinicians.map(c => ({ value: c.id, label: c.full_name }))}
                 value={editClinicianId}
-                onChange={(value) => {
-                  console.log('Clinician changed to:', value);
-                  setEditClinicianId(value);
-                }}
+                onChange={setEditClinicianId}
                 searchable
                 clearable
                 placeholder="Select clinician (optional)"
