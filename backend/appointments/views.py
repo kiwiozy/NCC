@@ -201,6 +201,123 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    def update(self, request, *args, **kwargs):
+        """
+        Override update to handle converting an existing event to recurring.
+        If is_recurring changes from False to True, generate additional recurring events.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Check if we're converting a non-recurring event to recurring
+        was_recurring = instance.is_recurring
+        is_now_recurring = request.data.get('is_recurring', False)
+        
+        print(f"🔵 UPDATE APPOINTMENT - was_recurring: {was_recurring}, is_now_recurring: {is_now_recurring}")
+        
+        if not was_recurring and is_now_recurring:
+            # Converting to recurring - generate additional events
+            print(f"🔵 Converting existing event to recurring")
+            
+            recurrence_pattern = request.data.get('recurrence_pattern')
+            recurrence_end_date = request.data.get('recurrence_end_date')
+            number_of_occurrences = request.data.get('number_of_occurrences', 4)
+            
+            if not recurrence_pattern:
+                return Response(
+                    {'error': 'recurrence_pattern is required for recurring appointments'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Generate recurrence group ID
+            recurrence_group_id = uuid.uuid4()
+            
+            # Update the current appointment to be part of the recurring series
+            instance.is_recurring = True
+            instance.recurrence_group_id = recurrence_group_id
+            instance.recurrence_pattern = recurrence_pattern
+            if recurrence_end_date:
+                instance.recurrence_end_date = parse_datetime(recurrence_end_date)
+            
+            # Get the other fields for copying
+            start_time = instance.start_time
+            end_time = instance.end_time
+            duration = end_time - start_time
+            
+            # Determine increment based on pattern
+            if recurrence_pattern == 'daily':
+                increment = timedelta(days=1)
+            elif recurrence_pattern == 'weekly':
+                increment = timedelta(weeks=1)
+            elif recurrence_pattern == 'biweekly':
+                increment = timedelta(weeks=2)
+            elif recurrence_pattern == 'monthly':
+                increment = timedelta(days=30)
+            else:
+                return Response(
+                    {'error': f'Invalid recurrence_pattern: {recurrence_pattern}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Fetch related objects
+            patient = instance.patient
+            clinic = Clinic.objects.get(id=instance.clinic_id) if instance.clinic_id else None
+            clinician = Clinician.objects.get(id=instance.clinician_id) if instance.clinician_id else None
+            appointment_type = AppointmentType.objects.get(id=instance.appointment_type_id) if instance.appointment_type_id else None
+            
+            # Save the first appointment (the one being edited)
+            instance.save()
+            
+            # Generate additional recurring appointments (starting from the second occurrence)
+            appointments_created = []
+            current_start = start_time
+            
+            # Determine how many to create
+            if recurrence_end_date:
+                end_date = parse_datetime(recurrence_end_date)
+                occurrences_to_create = 0
+                temp_start = current_start + increment
+                while temp_start <= end_date:
+                    occurrences_to_create += 1
+                    temp_start += increment
+            else:
+                occurrences_to_create = number_of_occurrences - 1  # -1 because we already have the first one
+            
+            print(f"🔵 Creating {occurrences_to_create} additional recurring events")
+            
+            for i in range(occurrences_to_create):
+                current_start += increment
+                current_end = current_start + duration
+                
+                new_appointment = Appointment.objects.create(
+                    patient=patient,
+                    clinic=clinic,
+                    clinician=clinician,
+                    appointment_type=appointment_type,
+                    start_time=current_start,
+                    end_time=current_end,
+                    status=instance.status,
+                    notes=instance.notes,
+                    is_recurring=True,
+                    recurrence_group_id=recurrence_group_id,
+                    recurrence_pattern=recurrence_pattern,
+                    recurrence_end_date=instance.recurrence_end_date,
+                )
+                appointments_created.append(new_appointment.id)
+            
+            print(f"🔵 Created {len(appointments_created)} additional events")
+            
+            # Return success response with info about created appointments
+            serializer = self.get_serializer(instance)
+            return Response({
+                'message': f'Updated appointment and created {len(appointments_created)} recurring events',
+                'appointment': serializer.data,
+                'additional_appointments_created': len(appointments_created)
+            }, status=status.HTTP_200_OK)
+        
+        # Normal update (not converting to recurring)
+        return super().update(request, *args, **kwargs)
+    
     def destroy(self, request, *args, **kwargs):
         """
         Override destroy to handle recurring appointment deletion.
