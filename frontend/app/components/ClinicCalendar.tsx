@@ -356,6 +356,54 @@ export default function ClinicCalendar() {
           </Group>
         </Group>
 
+        <style dangerouslySetInnerHTML={{__html: `
+          /* Add vertical lines between days in week view */
+          .fc-timeGridWeek-view .fc-col-header-cell {
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-col {
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-slot {
+            border-top-color: #2D3748 !important;
+          }
+          
+          /* Make vertical lines show on top of horizontal slot lines */
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day {
+            position: relative;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day::after {
+            content: '';
+            position: absolute;
+            right: -0.5px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #3A4048;
+            z-index: 2;
+            pointer-events: none;
+          }
+          
+          /* Remove double border on last column */
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day:last-child::after {
+            display: none;
+          }
+          
+          /* Style the day headers */
+          .fc-col-header-cell {
+            background-color: #25262B !important;
+            font-weight: 600;
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          /* Today column highlight */
+          .fc-day-today {
+            background-color: rgba(51, 154, 240, 0.08) !important;
+          }
+        `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
             ref={calendarRef}
