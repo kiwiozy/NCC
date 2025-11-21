@@ -124,8 +124,15 @@ export default function EditAllDayEventDialog({
       const response = await fetch(nextUrl, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to load data');
       const data = await response.json();
-      results = results.concat(data.results);
-      nextUrl = data.next;
+      
+      // Handle both array and paginated responses
+      if (Array.isArray(data.results)) {
+        results = results.concat(data.results);
+      } else if (Array.isArray(data)) {
+        results = results.concat(data);
+      }
+      
+      nextUrl = data.next || null;
     }
     return results;
   };
@@ -170,17 +177,28 @@ export default function EditAllDayEventDialog({
   };
 
   const loadDropdownOptions = async () => {
+    console.log('🔄 Loading dropdown options...');
     try {
       const [cliniciansData, clinicsData, typesData] = await Promise.all([
-        fetchAllPages('https://localhost:8000/api/clinicians/'),
-        fetchAllPages('https://localhost:8000/api/clinics/'),
-        fetchAllPages('https://localhost:8000/api/appointment-types/'),
+        fetchAllPages('https://localhost:8000/api/clinicians/?page_size=100'),
+        fetchAllPages('https://localhost:8000/api/clinics/?page_size=100'),
+        fetchAllPages('https://localhost:8000/api/appointment-types/?page_size=100'),
       ]);
+      
+      console.log('✅ Loaded clinics:', clinicsData.length, clinicsData);
+      console.log('✅ Loaded clinicians:', cliniciansData.length, cliniciansData);
+      console.log('✅ Loaded appointment types:', typesData.length, typesData);
+      
       setClinicians(cliniciansData);
       setClinics(clinicsData);
       setAppointmentTypes(typesData);
     } catch (error) {
-      console.error('Error loading options:', error);
+      console.error('❌ Error loading options:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to load dropdown options',
+        color: 'red',
+      });
     }
   };
 
@@ -475,10 +493,18 @@ export default function EditAllDayEventDialog({
             </Group>
             {editMode ? (
               <Select
-                data={clinics.map(c => ({ value: c.id, label: c.name }))}
+                data={clinics.map(c => {
+                  console.log('Mapping clinic:', c);
+                  return { value: c.id, label: c.name };
+                })}
                 value={editClinicId}
-                onChange={setEditClinicId}
+                onChange={(value) => {
+                  console.log('Clinic changed to:', value);
+                  setEditClinicId(value);
+                }}
+                searchable
                 required
+                placeholder="Select clinic"
               />
             ) : (
               <Text size="sm">{event.clinic_name}</Text>
@@ -494,11 +520,18 @@ export default function EditAllDayEventDialog({
             </Group>
             {editMode ? (
               <Select
-                data={clinicians.map(c => ({ value: c.id, label: c.full_name }))}
+                data={clinicians.map(c => {
+                  console.log('Mapping clinician:', c);
+                  return { value: c.id, label: c.full_name };
+                })}
                 value={editClinicianId}
-                onChange={setEditClinicianId}
+                onChange={(value) => {
+                  console.log('Clinician changed to:', value);
+                  setEditClinicianId(value);
+                }}
+                searchable
                 clearable
-                placeholder="None"
+                placeholder="Select clinician (optional)"
               />
             ) : (
               <Text size="sm">{event.clinician_name || 'None'}</Text>
