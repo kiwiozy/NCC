@@ -85,6 +85,7 @@ export default function ContactHeader({
   const [filterOpened, setFilterOpened] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
   const [accountsQuotesOpened, setAccountsQuotesOpened] = useState(false);
+  const [mounted, setMounted] = useState(false); // Prevent SSR/client mismatch
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [notesCount, setNotesCount] = useState<number>(0);
   const [documentsCount, setDocumentsCount] = useState<number>(0);
@@ -106,6 +107,11 @@ export default function ContactHeader({
     status: '',
     archived: showArchived || false, // Include archived in filters
   });
+
+  // Set mounted on client side only
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -848,8 +854,8 @@ export default function ContactHeader({
       </Group>
     </Group>
 
-      {/* ⭐ Active Filter Chips Row */}
-      {onFilterRemove && (activeFilters.clinic || activeFilters.funding || activeFilters.status) && (
+      {/* ⭐ Active Filter Chips Row - Only render on client to prevent hydration mismatch */}
+      {mounted && onFilterRemove && (activeFilters.clinic || activeFilters.funding || activeFilters.status) && (
         <Group
           gap="sm"
           wrap="wrap"
