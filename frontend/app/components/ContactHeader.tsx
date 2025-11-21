@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge } from '@mantine/core';
+import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge, MultiSelect } from '@mantine/core';
 import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash, IconRefresh } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import AccountsQuotesDialog from './dialogs/AccountsQuotesDialog';
@@ -17,6 +17,7 @@ interface ContactHeaderProps {
   onAppointmentsClick?: () => void;
   onLettersClick?: () => void;
   onSmsClick?: () => void;
+  onRefresh?: () => void;
   patientId?: string; // For getting note and document counts
   selectedPatientName?: string; // Name of selected patient to display
   selectedPatientAddress?: {
@@ -38,6 +39,11 @@ interface ContactHeaderProps {
   achievedCount?: number; // Number of archived/achieved records
   showArchived?: boolean; // Current archive filter state
   archiveEnabled?: boolean; // Whether archive button should be enabled
+  // ⭐ New props for sorting and active filters
+  sortBy?: string;
+  onSortChange?: (sortBy: string) => void;
+  activeFilters?: Record<string, string | boolean | string[]>;
+  onFilterRemove?: (key: string, newValue?: any) => void;
 }
 
 export default function ContactHeader({ 
@@ -51,6 +57,7 @@ export default function ContactHeader({
   onAppointmentsClick,
   onLettersClick,
   onSmsClick,
+  onRefresh,
   patientId,
   selectedPatientName,
   selectedPatientAddress,
@@ -66,6 +73,11 @@ export default function ContactHeader({
   achievedCount,
   showArchived = false,
   archiveEnabled = true,
+  // ⭐ New props
+  sortBy = 'name-asc',
+  onSortChange,
+  activeFilters = {},
+  onFilterRemove,
 }: ContactHeaderProps) {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
@@ -83,9 +95,14 @@ export default function ContactHeader({
   const [smsUnreadCount, setSmsUnreadCount] = useState<number>(0);
   const [invoicesCount, setInvoicesCount] = useState<number>(0);
   const [activeQuotesCount, setActiveQuotesCount] = useState<number>(0);
-  const [filters, setFilters] = useState({
-    funding: '',
-    clinic: '',
+  const [filters, setFilters] = useState<{
+    funding: string | string[];
+    clinic: string | string[];
+    status: string | string[];
+    archived: boolean;
+  }>({
+    funding: [], // ⭐ Now an array for multiple funding sources
+    clinic: [], // ⭐ Array for multiple clinics
     status: '',
     archived: showArchived || false, // Include archived in filters
   });
@@ -603,9 +620,10 @@ export default function ContactHeader({
   };
 
   const handleFilterClear = () => {
-    const clearedFilters = { funding: '', clinic: '', status: '', archived: false };
+    const clearedFilters = { funding: [], clinic: [], status: '', archived: false }; // ⭐ funding & clinic are arrays
     setFilters(clearedFilters);
     onFilterApply?.(clearedFilters);
+    setFilterOpened(false); // Close popover after clearing
   };
 
   const menuItems = [
@@ -647,9 +665,10 @@ export default function ContactHeader({
             onChange={setFilterOpened}
             position="bottom-start"
             shadow="md"
-            width={350}
-            closeOnClickOutside={true}
+            width={400}
+            closeOnClickOutside={false}
             closeOnEscape={true}
+            withinPortal={false}
           >
             <Popover.Target>
               <ActionIcon
@@ -667,24 +686,28 @@ export default function ContactHeader({
                 <Title order={4} style={{ marginBottom: rem(8) }}>Filters</Title>
                 
                 {filterOptions.funding && (
-                  <Select
+                  <MultiSelect
                     label="Funding"
-                    placeholder="Select funding type"
+                    placeholder="Select funding types (multiple)"
                     data={filterOptions.funding}
-                    value={filters.funding}
-                    onChange={(value) => setFilters(prev => ({ ...prev, funding: value || '' }))}
+                    value={Array.isArray(filters.funding) ? filters.funding : (filters.funding ? [filters.funding] : [])}
+                    onChange={(value) => setFilters(prev => ({ ...prev, funding: value }))}
                     clearable
+                    searchable
+                    maxDropdownHeight={200}
                   />
                 )}
                 
                 {filterOptions.clinic && (
-                  <Select
+                  <MultiSelect
                     label="Clinic"
-                    placeholder="Select clinic"
+                    placeholder="Select clinics (multiple)"
                     data={filterOptions.clinic}
-                    value={filters.clinic}
-                    onChange={(value) => setFilters(prev => ({ ...prev, clinic: value || '' }))}
+                    value={Array.isArray(filters.clinic) ? filters.clinic : (filters.clinic ? [filters.clinic] : [])}
+                    onChange={(value) => setFilters(prev => ({ ...prev, clinic: value }))}
                     clearable
+                    searchable
+                    maxDropdownHeight={200}
                   />
                 )}
                 
@@ -710,6 +733,27 @@ export default function ContactHeader({
               </Stack>
             </Popover.Dropdown>
           </Popover>
+        )}
+        
+        {/* ⭐ Sort Dropdown */}
+        {onSortChange && (
+          <Select
+            value={sortBy}
+            onChange={(value) => onSortChange(value || 'name-asc')}
+            data={[
+              { value: 'name-desc', label: 'Name (A-Z)' },
+              { value: 'name-asc', label: 'Name (Z-A)' },
+              { value: 'clinic-desc', label: 'Clinic (A-Z)' },
+              { value: 'clinic-asc', label: 'Clinic (Z-A)' },
+              { value: 'funding-desc', label: 'Funding (A-Z)' },
+              { value: 'funding-asc', label: 'Funding (Z-A)' },
+              { value: 'age-desc', label: 'Age (Youngest)' },
+              { value: 'age-asc', label: 'Age (Oldest)' },
+            ]}
+            style={{ width: rem(180) }}
+            size="sm"
+            placeholder="Sort by..."
+          />
         )}
         
         <TextInput
@@ -803,6 +847,113 @@ export default function ContactHeader({
         )}
       </Group>
     </Group>
+
+      {/* ⭐ Active Filter Chips Row */}
+      {onFilterRemove && (activeFilters.clinic || activeFilters.funding || activeFilters.status) && (
+        <Group
+          gap="sm"
+          wrap="wrap"
+          align="center"
+          style={{
+            backgroundColor: isDark ? '#25262b' : '#ffffff',
+            padding: `${rem(8)} ${rem(24)}`,
+            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+          }}
+        >
+          <Text size="sm" c="dimmed" fw={500}>Active filters:</Text>
+          
+          {/* ⭐ Clinic chips - Show multiple if array */}
+          {activeFilters.clinic && (Array.isArray(activeFilters.clinic) ? activeFilters.clinic.length > 0 : activeFilters.clinic) && (
+            <>
+              {(Array.isArray(activeFilters.clinic) ? activeFilters.clinic : [activeFilters.clinic]).map((clinic) => (
+                <Badge
+                  key={clinic}
+                  size="lg"
+                  variant="light"
+                  color="blue"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    // Remove this specific clinic from the array
+                    if (Array.isArray(activeFilters.clinic)) {
+                      const remaining = activeFilters.clinic.filter(c => c !== clinic);
+                      onFilterRemove && onFilterRemove('clinic', remaining.length > 0 ? remaining : undefined);
+                    } else {
+                      onFilterRemove && onFilterRemove('clinic');
+                    }
+                  }}
+                  rightSection={
+                    <ActionIcon size="xs" color="blue" radius="xl" variant="transparent">
+                      ×
+                    </ActionIcon>
+                  }
+                >
+                  {clinic}
+                </Badge>
+              ))}
+            </>
+          )}
+          
+          {/* ⭐ Funding chips - Show multiple if array */}
+          {activeFilters.funding && (Array.isArray(activeFilters.funding) ? activeFilters.funding.length > 0 : activeFilters.funding) && (
+            <>
+              {(Array.isArray(activeFilters.funding) ? activeFilters.funding : [activeFilters.funding]).map((funding) => (
+                <Badge
+                  key={funding}
+                  size="lg"
+                  variant="light"
+                  color="green"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    // Remove this specific funding from the array
+                    if (Array.isArray(activeFilters.funding)) {
+                      const remaining = activeFilters.funding.filter(f => f !== funding);
+                      onFilterRemove && onFilterRemove('funding', remaining.length > 0 ? remaining : undefined);
+                    } else {
+                      onFilterRemove && onFilterRemove('funding');
+                    }
+                  }}
+                  rightSection={
+                    <ActionIcon size="xs" color="green" radius="xl" variant="transparent">
+                      ×
+                    </ActionIcon>
+                  }
+                >
+                  {funding}
+                </Badge>
+              ))}
+            </>
+          )}
+          
+          {activeFilters.status && (
+            <Badge
+              size="lg"
+              variant="light"
+              color="orange"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onFilterRemove('status')}
+              rightSection={
+                <ActionIcon size="xs" color="orange" radius="xl" variant="transparent">
+                  ×
+                </ActionIcon>
+              }
+            >
+              Status: {activeFilters.status}
+            </Badge>
+          )}
+          
+          <Button
+            size="xs"
+            variant="subtle"
+            onClick={() => {
+              if (activeFilters.clinic) onFilterRemove('clinic');
+              if (activeFilters.funding) onFilterRemove('funding');
+              if (activeFilters.status) onFilterRemove('status');
+            }}
+          >
+            Clear all
+          </Button>
+        </Group>
+      )}
 
       {/* Second Row: Count and Hamburger Menu */}
       <Group

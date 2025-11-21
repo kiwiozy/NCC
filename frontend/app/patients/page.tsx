@@ -437,7 +437,39 @@ export default function ContactsPage() {
   const [activeType, setActiveType] = useState<ContactType>('patients');
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean>>({ archived: false });
+  
+  // ⭐ Sort state with localStorage persistence
+  const [sortBy, setSortBy] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('patientSort');
+        if (saved) {
+          console.log('📋 Loaded saved sort from localStorage:', saved);
+          return saved;
+        }
+      } catch (error) {
+        console.error('Failed to load saved sort:', error);
+      }
+    }
+    return 'name-desc'; // Default: Name A-Z
+  });
+  
+  const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean | string[]>>(() => {
+    // Load saved filters from localStorage on mount
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('patientFilters');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log('📋 Loaded saved filters from localStorage:', parsed);
+          return parsed;
+        }
+      } catch (error) {
+        console.error('Failed to load saved filters:', error);
+      }
+    }
+    return { archived: false };
+  });
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -602,7 +634,7 @@ export default function ContactsPage() {
   };
   
   // Apply filters to contacts (archived filter is handled at API level, not here)
-  const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string | boolean>) => {
+  const applyFilters = (contactList: Contact[], query: string, filters: Record<string, string | boolean | string[]>) => {
     let filtered = [...contactList];
 
     // Filter by search query
@@ -615,17 +647,63 @@ export default function ContactsPage() {
       );
     }
 
-    // Filter by clinic
-    if (filters.clinic && typeof filters.clinic === 'string') {
-      filtered = filtered.filter(contact => contact.clinic === filters.clinic);
+    // ⭐ Filter by clinic (supports multiple clinics - case-insensitive)
+    if (filters.clinic) {
+      if (Array.isArray(filters.clinic) && filters.clinic.length > 0) {
+        // Multiple clinics selected
+        const clinicsLower = filters.clinic.map(c => c.toLowerCase());
+        filtered = filtered.filter(contact => 
+          clinicsLower.includes(contact.clinic.toLowerCase())
+        );
+      } else if (typeof filters.clinic === 'string' && filters.clinic) {
+        // Single clinic (backward compatibility)
+        filtered = filtered.filter(contact => 
+          contact.clinic.toLowerCase() === filters.clinic.toLowerCase()
+        );
+      }
     }
 
-    // Filter by funding
-    if (filters.funding && typeof filters.funding === 'string') {
-      filtered = filtered.filter(contact => contact.funding === filters.funding);
+    // Filter by funding (case-insensitive)
+    if (filters.funding) {
+      if (Array.isArray(filters.funding) && filters.funding.length > 0) {
+        // Multiple funding sources selected
+        const fundingLower = filters.funding.map(f => f.toLowerCase());
+        filtered = filtered.filter(contact => 
+          fundingLower.includes(contact.funding.toLowerCase())
+        );
+      } else if (typeof filters.funding === 'string' && filters.funding) {
+        // Single funding (backward compatibility)
+        filtered = filtered.filter(contact => 
+          contact.funding.toLowerCase() === filters.funding.toLowerCase()
+        );
+      }
     }
 
     // Note: archived filter is handled at API level, not in client-side filtering
+
+    // ⭐ SORTING - Apply based on sortBy state
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return (a.lastName?.toLowerCase() || '').localeCompare(b.lastName?.toLowerCase() || '');
+        case 'name-desc':
+          return (b.lastName?.toLowerCase() || '').localeCompare(a.lastName?.toLowerCase() || '');
+        case 'clinic-asc':
+          return (a.clinic?.toLowerCase() || '').localeCompare(b.clinic?.toLowerCase() || '');
+        case 'clinic-desc':
+          return (b.clinic?.toLowerCase() || '').localeCompare(a.clinic?.toLowerCase() || '');
+        case 'funding-asc':
+          return (a.funding?.toLowerCase() || '').localeCompare(b.funding?.toLowerCase() || '');
+        case 'funding-desc':
+          return (b.funding?.toLowerCase() || '').localeCompare(a.funding?.toLowerCase() || '');
+        case 'age-asc':
+          return (a.age || 0) - (b.age || 0);
+        case 'age-desc':
+          return (b.age || 0) - (a.age || 0);
+        default:
+          return (a.lastName?.toLowerCase() || '').localeCompare(b.lastName?.toLowerCase() || '');
+      }
+    });
 
     setContacts(filtered);
     
@@ -688,7 +766,20 @@ export default function ContactsPage() {
         };
         
         // Check if we're navigating to a specific patient
-        const patientId = searchParams?.get('id');
+        let patientId = searchParams?.get('id');
+        
+        // ⭐ If no URL patient ID, check localStorage for last viewed patient
+        if (!patientId && typeof window !== 'undefined') {
+          try {
+            const savedPatientId = localStorage.getItem('lastViewedPatientId');
+            if (savedPatientId) {
+              patientId = savedPatientId;
+              console.log('📋 Restoring last viewed patient from localStorage:', patientId);
+            }
+          } catch (error) {
+            console.error('Failed to load last viewed patient:', error);
+          }
+        }
         
         // ⚡ FAST: Load ONLY the lightweight list (500KB vs 2-5MB!)
         const { listItems, fromCache, loadTime } = await loadPatientList(filters);
@@ -941,8 +1032,35 @@ export default function ContactsPage() {
     }
   };
 
-  const handleFilterApply = (filters: Record<string, string | boolean>) => {
+  // ⭐ Handle sort change
+  const handleSortChange = (newSort: string) => {
+    setSortBy(newSort);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('patientSort', newSort);
+      console.log('💾 Saved sort preference:', newSort);
+    } catch (error) {
+      console.error('Failed to save sort preference:', error);
+    }
+    
+    // Re-apply filters with new sort
+    if (allContacts.length > 0) {
+      applyFilters(allContacts, searchQuery, activeFilters);
+    }
+  };
+
+  const handleFilterApply = (filters: Record<string, string | boolean | string[]>) => {
     setActiveFilters(filters);
+    
+    // ⭐ Save filters to localStorage for persistence
+    try {
+      localStorage.setItem('patientFilters', JSON.stringify(filters));
+      console.log('💾 Saved filters to localStorage:', filters);
+    } catch (error) {
+      console.error('Failed to save filters:', error);
+    }
+    
     // When archive filter changes, we need to reload from API
     // Other filters can be applied client-side to existing data
     const archivedChanged = activeFilters.archived !== filters.archived;
@@ -953,6 +1071,20 @@ export default function ContactsPage() {
     // Apply filters immediately to existing data (only for non-archive filters)
     if (allContacts.length > 0) {
       applyFilters(allContacts, searchQuery, filters);
+    }
+  };
+
+  // ⭐ Handle refresh (clear cache and reload)
+  const handleRefresh = () => {
+    try {
+      // Clear IndexedDB cache
+      indexedDB.deleteDatabase('nexus_cache_v2');
+      console.log('🗑️ Cleared cache database');
+      
+      // Reload page
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
     }
   };
 
@@ -1175,6 +1307,7 @@ export default function ContactsPage() {
         onSearch={handleSearch}
         onAddNew={handleAddNew}
         onArchive={handleArchive}
+        onRefresh={handleRefresh}
         onNotesClick={() => setNotesDialogOpened(true)}
         onDocumentsClick={() => setDocumentsDialogOpened(true)}
         onImagesClick={() => setImagesDialogOpened(true)}
@@ -1187,14 +1320,30 @@ export default function ContactsPage() {
         onFilterApply={handleFilterApply}
         showFilters={true}
         filterOptions={{
-          funding: fundingSources,
-          clinic: clinics,
+          funding: fundingSources, // Array of strings: ['NDIS', 'DVA', etc.]
+          clinic: clinics.map(c => c.label), // Extract clinic names: ['Newcastle', 'Tamworth', etc.]
           status: ['Active', 'Inactive', 'Archived'],
         }}
         showArchived={activeFilters.archived === true || activeFilters.archived === 'true'}
         contactCount={allContacts.length}
         filteredCount={contacts.length !== allContacts.length ? contacts.length : undefined}
         achievedCount={archivedCount}
+        // ⭐ New props for sorting and filter chips
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
+        activeFilters={activeFilters}
+        onFilterRemove={(key, newValue) => {
+          const newFilters = { ...activeFilters };
+          if (newValue !== undefined) {
+            // Partial removal (e.g., remove one clinic from array)
+            newFilters[key] = newValue;
+          } else {
+            // Full removal
+            delete newFilters[key];
+          }
+          setActiveFilters(newFilters);
+          handleFilterApply(newFilters);
+        }}
       />
       
       <Grid gutter={0} style={{ height: 'calc(100vh - 240px)', display: 'flex', overflow: 'hidden' }}>
@@ -1229,6 +1378,18 @@ export default function ContactsPage() {
                   onClick={async () => {
                     // ⚡ FAST: Load full patient details on-demand when clicked
                     console.log(`⚡ Loading full details for patient ${contact.id}...`);
+                    
+                    // ⭐ SAVE STATE: Remember this patient for when user returns
+                    try {
+                      localStorage.setItem('lastViewedPatientId', contact.id);
+                      // Also update URL so browser back button works
+                      const newUrl = `${window.location.pathname}?type=patients&id=${contact.id}`;
+                      window.history.pushState({}, '', newUrl);
+                      console.log('💾 Saved patient state:', contact.id);
+                    } catch (error) {
+                      console.error('Failed to save patient state:', error);
+                    }
+                    
                     try {
                       const fullPatient = await loadPatientDetail(contact.id);
                       const fullContact = transformPatientToContact(fullPatient);
