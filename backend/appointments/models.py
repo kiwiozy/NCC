@@ -95,7 +95,9 @@ class Appointment(models.Model):
         Patient,
         on_delete=models.PROTECT,
         related_name='appointments',
-        help_text="Patient for this appointment"
+        null=True,
+        blank=True,
+        help_text="Patient for this appointment (optional for all-day clinic events)"
     )
     
     clinician = models.ForeignKey(

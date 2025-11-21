@@ -62,21 +62,43 @@ class AppointmentCalendarSerializer(serializers.ModelSerializer):
     start = serializers.DateTimeField(source='start_time')
     end = serializers.DateTimeField(source='end_time')
     color = serializers.SerializerMethodField()
+    allDay = serializers.SerializerMethodField()
     
     # Extended properties for the calendar
     extendedProps = serializers.SerializerMethodField()
     
     class Meta:
         model = Appointment
-        fields = ['id', 'title', 'start', 'end', 'color', 'extendedProps']
+        fields = ['id', 'title', 'start', 'end', 'color', 'allDay', 'extendedProps']
     
     def get_title(self, obj):
-        """Generate event title - patient name and clinician"""
-        patient_name = obj.patient.get_full_name() if obj.patient else "Unknown"
-        clinician_name = obj.clinician.full_name if obj.clinician else ""
-        if clinician_name:
-            return f"{patient_name} - {clinician_name}"
-        return f"{patient_name}"
+        """Generate event title - patient name or event description"""
+        if obj.patient:
+            # Regular appointment with patient
+            patient_name = obj.patient.get_full_name()
+            clinician_name = obj.clinician.full_name if obj.clinician else ""
+            if clinician_name:
+                return f"{patient_name} - {clinician_name}"
+            return f"{patient_name}"
+        else:
+            # All-day event without patient (holiday, closure, etc.)
+            # Format: "Clinic Name - Event Notes"
+            clinic_name = obj.clinic.name if obj.clinic else "Unknown"
+            event_notes = obj.notes or "All-Day Event"
+            return f"{clinic_name} - {event_notes}"
+    
+    def get_allDay(self, obj):
+        """Determine if this is an all-day event"""
+        # If no patient, it's an all-day clinic event
+        if not obj.patient:
+            return True
+        
+        # Check if appointment spans entire day (00:00 to 23:59)
+        duration = obj.get_duration_minutes()
+        if duration >= 1439:  # 23 hours 59 minutes or more
+            return True
+        
+        return False
     
     def get_color(self, obj):
         """Get color based on status"""

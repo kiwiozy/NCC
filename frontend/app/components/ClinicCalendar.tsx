@@ -17,6 +17,7 @@ import { IconMenu2 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
 import CreateAppointmentDialog from './dialogs/CreateAppointmentDialog';
+import CreateAllDayAppointmentDialog from './dialogs/CreateAllDayAppointmentDialog';
 
 // Type definitions
 interface Clinic {
@@ -58,6 +59,7 @@ export default function ClinicCalendar() {
 
   // Create appointment dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createAllDayDialogOpen, setCreateAllDayDialogOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState<Date | string | null>(null);
   const [followupData, setFollowupData] = useState<any>(null);
 
@@ -280,11 +282,23 @@ export default function ClinicCalendar() {
     const now = Date.now();
     const timeSinceLastClick = now - lastClickTime;
 
+    // Check if this is an all-day click
+    const isAllDay = info.allDay || false;
+
     // If clicked within 300ms, it's a double-click
     if (timeSinceLastClick < 300 && lastClickInfo?.dateStr === info.dateStr) {
-      // Double-click detected - open create appointment dialog
-      setCreateInitialDate(info.date);
-      setCreateDialogOpen(true);
+      // Double-click detected
+      
+      if (isAllDay) {
+        // All-day appointment - open dedicated all-day dialog
+        setCreateInitialDate(info.date);
+        setCreateAllDayDialogOpen(true);
+      } else {
+        // Regular time slot appointment
+        setCreateInitialDate(info.date);
+        setCreateDialogOpen(true);
+      }
+      
       setLastClickTime(0); // Reset
     } else {
       // Single click - just remember it
@@ -429,6 +443,7 @@ export default function ClinicCalendar() {
             eventClick={handleEventClick}
             dateClick={handleDateClick}
             select={handleDateSelect}
+            allDaySlot={true}
             height="100%"
             nowIndicator={true}
             businessHours={{
@@ -464,6 +479,17 @@ export default function ClinicCalendar() {
         onSuccess={fetchAppointments} // Refresh calendar after create
         initialDate={createInitialDate || undefined}
         followupData={followupData}
+      />
+
+      {/* Create All-Day Appointment Dialog */}
+      <CreateAllDayAppointmentDialog
+        opened={createAllDayDialogOpen}
+        onClose={() => {
+          setCreateAllDayDialogOpen(false);
+          setCreateInitialDate(null);
+        }}
+        onSuccess={fetchAppointments} // Refresh calendar after create
+        initialDate={createInitialDate || undefined}
       />
     </>
   );
