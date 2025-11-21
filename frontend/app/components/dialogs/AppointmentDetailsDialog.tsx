@@ -242,54 +242,116 @@ export default function AppointmentDetailsDialog({
   };
 
   const handleDelete = () => {
-    modals.openConfirmModal({
-      title: 'Delete Appointment',
-      children: (
-        <Text size="sm">
-          Are you sure you want to delete this appointment? This action cannot be undone.
-        </Text>
-      ),
-      labels: { confirm: 'Delete', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
-      onConfirm: async () => {
-        if (!appointment) return;
+    if (!appointment) return;
 
-        try {
-          // Get CSRF token
-          const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
-            credentials: 'include',
-          });
-          const csrfData = await csrfResponse.json();
+    // If it's a recurring event, show options
+    if (appointment.is_recurring && appointment.recurrence_group_id) {
+      modals.open({
+        title: 'Delete Recurring Event',
+        children: (
+          <Stack gap="md">
+            <Text size="sm">
+              This is a recurring event. How would you like to delete it?
+            </Text>
+            <Button
+              variant="light"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteAppointment('this');
+              }}
+            >
+              Delete This Event Only
+            </Button>
+            <Button
+              variant="filled"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteAppointment('future');
+              }}
+            >
+              Delete This and Future Events
+            </Button>
+            <Button
+              variant="light"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteAppointment('all');
+              }}
+            >
+              Delete All Events in Series
+            </Button>
+            <Button variant="default" fullWidth onClick={() => modals.closeAll()}>
+              Cancel
+            </Button>
+          </Stack>
+        ),
+      });
+    } else {
+      // Non-recurring event - show simple confirmation
+      modals.openConfirmModal({
+        title: 'Delete Appointment',
+        children: (
+          <Text size="sm">
+            Are you sure you want to delete this appointment? This action cannot be undone.
+          </Text>
+        ),
+        labels: { confirm: 'Delete', cancel: 'Cancel' },
+        confirmProps: { color: 'red' },
+        onConfirm: () => deleteAppointment('this'),
+      });
+    }
+  };
 
-          const response = await fetch(`https://localhost:8000/api/appointments/${appointment.id}/`, {
-            method: 'DELETE',
-            headers: {
-              'X-CSRFToken': csrfData.csrfToken,
-            },
-            credentials: 'include',
-          });
+  const deleteAppointment = async (deleteType: 'this' | 'future' | 'all') => {
+    if (!appointment) return;
 
-          if (response.ok) {
-            notifications.show({
-              title: 'Success',
-              message: 'Appointment deleted successfully',
-              color: 'green',
-            });
-            if (onUpdate) onUpdate();
-            onClose();
-          } else {
-            throw new Error('Failed to delete appointment');
-          }
-        } catch (error) {
-          console.error('Error deleting appointment:', error);
-          notifications.show({
-            title: 'Error',
-            message: 'Failed to delete appointment',
-            color: 'red',
-          });
-        }
-      },
-    });
+    try {
+      // Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
+      const response = await fetch(`https://localhost:8000/api/appointments/${appointment.id}/`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': csrfData.csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          delete_type: deleteType,
+          recurrence_group_id: appointment.recurrence_group_id,
+          start_time: appointment.start_time,
+        }),
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        notifications.show({
+          title: 'Success',
+          message: data.message || 'Appointment deleted successfully',
+          color: 'green',
+        });
+        if (onUpdate) onUpdate();
+        onClose();
+      } else {
+        throw new Error('Failed to delete appointment');
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete appointment',
+        color: 'red',
+      });
+    }
   };
 
   const handleViewPatient = () => {

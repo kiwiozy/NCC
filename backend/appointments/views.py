@@ -198,6 +198,54 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    def destroy(self, request, *args, **kwargs):
+        """
+        Override destroy to handle recurring appointment deletion.
+        Supports deleting 'this', 'future', or 'all' events in a series.
+        """
+        appointment = self.get_object()
+        delete_type = request.data.get('delete_type', 'this')
+        
+        if not appointment.is_recurring or delete_type == 'this':
+            # Normal single appointment deletion
+            appointment.delete()
+            return Response(
+                {'message': 'Appointment deleted successfully'},
+                status=status.HTTP_200_OK
+            )
+        
+        # Recurring appointment deletion
+        recurrence_group_id = appointment.recurrence_group_id
+        start_time = parse_datetime(request.data.get('start_time', appointment.start_time.isoformat()))
+        
+        if delete_type == 'all':
+            # Delete all appointments in the series
+            deleted_count = Appointment.objects.filter(
+                recurrence_group_id=recurrence_group_id
+            ).delete()[0]
+            return Response(
+                {'message': f'Deleted {deleted_count} recurring appointments'},
+                status=status.HTTP_200_OK
+            )
+        
+        elif delete_type == 'future':
+            # Delete this and all future appointments in the series
+            deleted_count = Appointment.objects.filter(
+                recurrence_group_id=recurrence_group_id,
+                start_time__gte=start_time
+            ).delete()[0]
+            return Response(
+                {'message': f'Deleted {deleted_count} future appointments'},
+                status=status.HTTP_200_OK
+            )
+        
+        # Default to single deletion
+        appointment.delete()
+        return Response(
+            {'message': 'Appointment deleted successfully'},
+            status=status.HTTP_200_OK
+        )
+    
     @action(detail=False, methods=['get'])
     def calendar_data(self, request):
         """

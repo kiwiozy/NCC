@@ -244,48 +244,113 @@ export default function EditAllDayEventDialog({
   };
 
   const handleDelete = () => {
-    modals.openConfirmModal({
-      title: 'Delete All-Day Event',
-      children: (
-        <Text size="sm">
-          Are you sure you want to delete this all-day event? This action cannot be undone.
-        </Text>
-      ),
-      labels: { confirm: 'Delete', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
-      onConfirm: async () => {
-        if (!event) return;
-        try {
-          const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
-            credentials: 'include',
-          });
-          const csrfData = await csrfResponse.json();
+    if (!event) return;
 
-          const response = await fetch(`https://localhost:8000/api/appointments/${event.id}/`, {
-            method: 'DELETE',
-            headers: { 'X-CSRFToken': csrfData.csrfToken },
-            credentials: 'include',
-          });
+    // If it's a recurring event, show options
+    if (event.is_recurring && event.recurrence_group_id) {
+      modals.open({
+        title: 'Delete Recurring Event',
+        children: (
+          <Stack gap="md">
+            <Text size="sm">
+              This is a recurring event. How would you like to delete it?
+            </Text>
+            <Button
+              variant="light"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteEvent('this');
+              }}
+            >
+              Delete This Event Only
+            </Button>
+            <Button
+              variant="filled"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteEvent('future');
+              }}
+            >
+              Delete This and Future Events
+            </Button>
+            <Button
+              variant="light"
+              color="red"
+              fullWidth
+              onClick={() => {
+                modals.closeAll();
+                deleteEvent('all');
+              }}
+            >
+              Delete All Events in Series
+            </Button>
+            <Button variant="default" fullWidth onClick={() => modals.closeAll()}>
+              Cancel
+            </Button>
+          </Stack>
+        ),
+      });
+    } else {
+      // Non-recurring event - show simple confirmation
+      modals.openConfirmModal({
+        title: 'Delete All-Day Event',
+        children: (
+          <Text size="sm">
+            Are you sure you want to delete this all-day event? This action cannot be undone.
+          </Text>
+        ),
+        labels: { confirm: 'Delete', cancel: 'Cancel' },
+        confirmProps: { color: 'red' },
+        onConfirm: () => deleteEvent('this'),
+      });
+    }
+  };
 
-          if (!response.ok) throw new Error('Failed to delete');
+  const deleteEvent = async (deleteType: 'this' | 'future' | 'all') => {
+    if (!event) return;
+    
+    try {
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
 
-          notifications.show({
-            title: 'Success',
-            message: 'Event deleted successfully',
-            color: 'green',
-          });
+      const response = await fetch(`https://localhost:8000/api/appointments/${event.id}/`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': csrfData.csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          delete_type: deleteType,
+          recurrence_group_id: event.recurrence_group_id,
+          start_time: event.start_time,
+        }),
+        credentials: 'include',
+      });
 
-          onUpdate?.();
-          onClose();
-        } catch (error) {
-          notifications.show({
-            title: 'Error',
-            message: 'Failed to delete event',
-            color: 'red',
-          });
-        }
-      },
-    });
+      if (!response.ok) throw new Error('Failed to delete');
+
+      const data = await response.json();
+      notifications.show({
+        title: 'Success',
+        message: data.message || 'Event deleted successfully',
+        color: 'green',
+      });
+
+      onUpdate?.();
+      onClose();
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete event',
+        color: 'red',
+      });
+    }
   };
 
   const handleCancel = () => {
