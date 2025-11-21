@@ -779,7 +779,7 @@ export default function ContactHeader({
               }}
               size="md"
             />
-            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
+            <Text component="span" size="xs" c="dimmed" style={{ textAlign: 'center', display: 'block' }}>
               Archive
             </Text>
           </Stack>
@@ -860,7 +860,7 @@ export default function ContactHeader({
             borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
           }}
         >
-          <Text size="sm" c="dimmed" fw={500}>Active filters:</Text>
+          <Text component="span" size="sm" c="dimmed" fw={500}>Active filters:</Text>
           
           {/* ⭐ Clinic chips - Show multiple if array */}
           {activeFilters.clinic && (Array.isArray(activeFilters.clinic) ? activeFilters.clinic.length > 0 : activeFilters.clinic) && (
@@ -968,11 +968,11 @@ export default function ContactHeader({
       >
         {/* Left: Count Display - Stacked and centered */}
         <Stack gap={4} align="center" style={{ flex: '0 0 auto' }}>
-          <Text size="md" c="blue" fw={600} style={{ textAlign: 'center' }}>
+          <Text component="span" size="md" c="blue" fw={600} style={{ textAlign: 'center', display: 'block' }}>
             {displayCount} of {contactCount} found
           </Text>
           {achievedCount !== undefined && achievedCount > 0 && (
-            <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
+            <Text component="span" size="xs" c="dimmed" style={{ textAlign: 'center', display: 'block' }}>
               {achievedCount} records achieved
             </Text>
           )}
