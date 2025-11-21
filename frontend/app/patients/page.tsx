@@ -16,7 +16,8 @@ import AppointmentsDialog from '../components/dialogs/AppointmentsDialog';
 import PatientLettersDialog from '../components/dialogs/PatientLettersDialog';
 import SMSDialog from '../components/dialogs/SMSDialog';
 import { formatDateOnlyAU } from '../utils/dateFormatting';
-import { PatientCacheIDB as PatientCache } from '../utils/patientCacheIDB';
+import { loadPatientList, loadPatientDetail, updatePatientListItem, clearListCache } from '../utils/patientLoader';
+import { PatientListItem } from '../utils/patientListCache';
 import { getCsrfToken } from '../utils/csrf';
 import dayjs from 'dayjs';
 
@@ -26,6 +27,7 @@ interface Contact {
   id: string;
   name: string;
   clinic: string;
+  clinicId?: string; // Clinic UUID for backend saves
   clinicColor?: string; // Add clinic color
   funding: string;
   funding_source?: string; // New: NDIS, DVA, Enable, BUPA, Medibank, AHM, Private, Other
@@ -243,14 +245,17 @@ const transformPatientToContact = (patient: any): Contact => {
     'Brother': 'Brother',
     'Sister': 'Sister',
   };
-  title = patient.title ? (titleMap[patient.title] || patient.title) : '';
+  // Store the raw title value (e.g., 'Mrs') for dropdown matching
+  // The titleDisplay will have the formatted version (e.g., 'Mrs.')
+  title = patient.title || '';
+  const titleDisplay = title ? (titleMap[title] || title) : '';
   
   if (patient.full_name) {
     // Using list serializer - use full_name but ADD title if available
     const nameParts = patient.full_name.split(' ');
     firstName = patient.first_name || nameParts[0] || '';
     lastName = patient.last_name || nameParts[nameParts.length - 1] || '';
-    displayName = title ? `${title} ${patient.full_name}` : patient.full_name;
+    displayName = titleDisplay ? `${titleDisplay} ${patient.full_name}` : patient.full_name;
   } else {
     // Using full serializer - build from parts
     firstName = patient.first_name || '';
@@ -260,11 +265,12 @@ const transformPatientToContact = (patient: any): Contact => {
     if (middleName) nameParts.push(middleName);
     nameParts.push(lastName);
     const fullName = nameParts.join(' ');
-    displayName = title ? `${title} ${fullName}` : fullName;
+    displayName = titleDisplay ? `${titleDisplay} ${fullName}` : fullName;
   }
 
   // Extract clinic and funding names (may not be in list serializer)
   const clinicName = patient.clinic?.name || '';
+  const clinicId = patient.clinic?.id || undefined; // Extract clinic UUID
   const clinicColor = patient.clinic?.color || undefined;
   const fundingName = patient.funding_source || patient.funding_type?.name || '';
 
@@ -379,6 +385,7 @@ const transformPatientToContact = (patient: any): Contact => {
     id: patient.id,
     name: displayName,
     clinic: clinicName,
+    clinicId: clinicId, // Clinic UUID for backend saves
     clinicColor: clinicColor,
     funding: fundingName,
     title: title || '',
@@ -562,26 +569,35 @@ export default function ContactsPage() {
   // Load clinics and funding sources from API for filter dropdown
   const [clinics, setClinics] = useState<Array<{value: string, label: string}>>([]);
   const [fundingSources, setFundingSources] = useState<string[]>(['NDIS', 'Private', 'DVA', 'Workers Comp', 'Medicare']);
-  const [customFundingSources, setCustomFundingSources] = useState<any[]>([]); // Custom funding sources from API
+  const [fundingSourcesDropdown, setFundingSourcesDropdown] = useState<Array<{value: string, label: string}>>([]); // For patient funding dropdown
 
-  // Load custom funding sources from API
-  const loadCustomFundingSources = async () => {
+  // Load funding sources from API
+  const loadFundingSources = async () => {
     try {
       const response = await fetch('https://localhost:8000/api/invoices/custom-funding-sources/?is_active=true', {
         credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
-        setCustomFundingSources(data.results || data);
+        // Handle paginated or direct array response
+        const sources = data.results || data;
+        // Map to dropdown format: { value: name, label: name }
+        // Store the name exactly as it is (e.g., 'Enable', 'NDIS', 'Medibank')
+        const dropdownData = sources.map((fs: any) => ({
+          value: fs.name, // Store exact name from Custom Funding Sources
+          label: fs.name, // Display name (e.g., 'Enable')
+        }));
+        setFundingSourcesDropdown(dropdownData);
+        console.log('✅ Loaded funding sources for dropdown:', dropdownData);
       } else {
-        console.warn('Failed to load custom funding sources:', response.status);
-        // Set default empty array so patient loading isn't blocked
-        setCustomFundingSources([]);
+        console.warn('Failed to load funding sources:', response.status);
+        // Fallback to empty array if API fails - no hardcoded values
+        setFundingSourcesDropdown([]);
       }
     } catch (error) {
-      console.error('Failed to load custom funding sources:', error);
-      // Set default empty array so patient loading isn't blocked
-      setCustomFundingSources([]);
+      console.error('Failed to load funding sources:', error);
+      // Fallback to empty array on error - no hardcoded values
+      setFundingSourcesDropdown([]);
     }
   };
   
@@ -640,15 +656,15 @@ export default function ContactsPage() {
     };
     
     loadArchivedCount();
-    loadCustomFundingSources(); // Load custom funding sources
+    loadFundingSources(); // Load funding sources from Settings
   }, [activeType]);
 
-  // Load patients from API
+  // ⚡ FAST: Load patients using lightweight list cache
   useEffect(() => {
     // Only load on client side to prevent hydration mismatch
     if (typeof window === 'undefined') return;
     
-    const loadPatients = async () => {
+    const loadPatientsOptimized = async () => {
       if (activeType !== 'patients') return; // Only load for patients type
       
       // Prevent duplicate concurrent loads
@@ -661,146 +677,66 @@ export default function ContactsPage() {
       setLoading(true);
       
       try {
-        // Build filter object for cache
+        const startTime = Date.now();
+        console.log('⚡ FAST LOAD: Starting optimized patient load...');
+        
+        // Build filter object
         const archivedValue = activeFilters.archived === true || activeFilters.archived === 'true';
-        const cacheFilters = {
+        const filters = {
           archived: archivedValue,
           search: searchQuery || undefined,
         };
         
-        console.log('🔍 Loading patients with filters:', cacheFilters);
-        
-        // Check if we're navigating to a specific patient (e.g., from referrer page)
+        // Check if we're navigating to a specific patient
         const patientId = searchParams?.get('id');
         
-        // Try to load from cache first
-        const cachedData = await PatientCache.get(cacheFilters);
+        // ⚡ FAST: Load ONLY the lightweight list (500KB vs 2-5MB!)
+        const { listItems, fromCache, loadTime } = await loadPatientList(filters);
+        console.log(`⚡ Loaded ${listItems.length} patients in ${loadTime}ms (${fromCache ? 'CACHE HIT' : 'API'})`);
         
-        if (cachedData && patientId) {
-          // We have cache AND a specific patient ID - use cache, skip API call entirely!
-          console.log(`⚡ Using cached data to select patient ${patientId}`);
-          const transformed = cachedData.map((patient: any) => transformPatientToContact(patient));
-          setAllContacts(transformed);
-          applyFilters(transformed, searchQuery, activeFilters);
-          
-          // Find and select the specific patient
-          const targetPatient = transformed.find((p: Contact) => p.id === patientId);
-          if (targetPatient) {
-            setSelectedContact(targetPatient);
-            console.log(`✅ Selected patient: ${targetPatient.name}`);
-          } else {
-            // Patient not in cache (maybe archived?) - fetch just that one patient
-            console.log(`⚠️ Patient ${patientId} not in cache, fetching individually...`);
-            const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`, {
-              credentials: 'include',
-            });
-            if (response.ok) {
-              const patient = await response.json();
-              const transformedPatient = transformPatientToContact(patient);
-              setSelectedContact(transformedPatient);
-              console.log(`✅ Fetched and selected patient: ${transformedPatient.name}`);
-            }
-          }
-          
-          setLoading(false);
-          isLoadingRef.current = false;
-          return; // Early return - no need to load all patients
-        }
+        // Transform lightweight list items to Contact objects
+        const transformed = listItems.map((item: PatientListItem) => ({
+          id: item.id,
+          name: `${item.first_name} ${item.last_name}`,
+          clinic: item.clinic,
+          clinicId: undefined, // Will be loaded with details
+          clinicColor: item.clinic_color,
+          funding: item.funding_source,
+          funding_source: item.funding_source,
+          title: item.title,
+          firstName: item.first_name,
+          lastName: item.last_name,
+          dob: item.dob || '',
+          age: item.age || 0,
+          healthNumber: item.health_number || '',
+          archived: item.archived,
+          // Detail fields will be loaded on-demand when patient is clicked
+        }));
         
-        // Try to load from cache first (no specific patient ID)
-        const cachedDataGeneral = await PatientCache.get(cacheFilters);
-        
-        if (cachedDataGeneral) {
-          // Cache hit! Use cached data immediately
-          const transformed = cachedDataGeneral.map((patient: any) => transformPatientToContact(patient));
-          setAllContacts(transformed);
-          applyFilters(transformed, searchQuery, activeFilters);
-          
-          if (transformed.length > 0) {
-            setSelectedContact(transformed[0]);
-          }
-          
-          setLoading(false);
-          isLoadingRef.current = false;
-          
-          // Trigger background refresh to update cache
-          PatientCache.backgroundRefresh(cacheFilters, (freshData) => {
-            console.log('🔄 Background refresh completed, updating UI...');
-            const freshTransformed = freshData.map((patient: any) => transformPatientToContact(patient));
-            setAllContacts(freshTransformed);
-            applyFilters(freshTransformed, searchQuery, activeFilters);
-          });
-          
-          return; // Early return - using cache
-        }
-        
-        // Cache miss - load from API
-        console.log('💾 Cache miss - loading from API...');
-        
-        // Clear ALL state first to prevent any stale data
-        setAllContacts([]);
-        setContacts([]);
-        setSelectedContact(null);
-        
-        // Build query parameters
-        const params = new URLSearchParams();
-        if (searchQuery) {
-          params.append('search', searchQuery);
-        }
-        params.append('archived', String(archivedValue));
-
-        // Fetch ALL patients by paginating through all pages
-        let allPatients: any[] = [];
-        let nextUrl: string | null = `https://localhost:8000/api/patients/?${params.toString()}`;
-        
-        console.log('📥 Loading all patients (paginated)... This may take 10-15 seconds...');
-        
-        let pageCount = 0;
-        while (nextUrl) {
-          pageCount++;
-          const response = await fetch(nextUrl, {
-            credentials: 'include',
-          });
-          if (response.ok) {
-            const data = await response.json();
-            const patients = data.results || data;
-            allPatients = allPatients.concat(patients);
-            nextUrl = data.next; // Next page URL or null if last page
-            
-            // Log progress every 5 pages to avoid console spam
-            if (pageCount % 5 === 0) {
-              console.log(`   Loaded ${allPatients.length} patients (page ${pageCount})...`);
-            }
-          } else {
-            console.error('Failed to load patients:', response.statusText);
-            break;
-          }
-        }
-        
-        console.log(`✅ Loaded ${allPatients.length} total patients in ${pageCount} pages`);
-        
-        // Cache the raw API data before transformation
-        await PatientCache.set(allPatients, cacheFilters);
-        
-        // Transform fresh from API - always use ISO dates from API
-        const transformed = allPatients.map((patient: any) => {
-          // Ensure we're working with fresh ISO date from API (not cached formatted date)
-          // Force dob to be ISO format - if it's not, skip formatting silently (DOBs are null from OData import)
-          const isoDob = patient.dob;
-          // Silently skip DOB validation - we know they're null from OData import
-          // Create fresh patient object with ISO dob
-          const freshPatient = { ...patient, dob: isoDob };
-          return transformPatientToContact(freshPatient);
-        });
         setAllContacts(transformed);
-        
-        // Apply client-side filtering
         applyFilters(transformed, searchQuery, activeFilters);
         
-        // Select first contact
-        if (transformed.length > 0) {
-          setSelectedContact(transformed[0]);
+        // If specific patient ID requested, load full details
+        if (patientId) {
+          const targetPatient = transformed.find((p: Contact) => p.id === patientId);
+          if (targetPatient) {
+            console.log(`⚡ Loading full details for patient ${patientId}...`);
+            const fullPatient = await loadPatientDetail(patientId);
+            const fullContact = transformPatientToContact(fullPatient);
+            setSelectedContact(fullContact);
+            console.log(`✅ Loaded patient: ${fullContact.name}`);
+          }
+        } else if (transformed.length > 0) {
+          // Load full details for first patient
+          console.log(`⚡ Loading details for first patient...`);
+          const fullPatient = await loadPatientDetail(transformed[0].id);
+          const fullContact = transformPatientToContact(fullPatient);
+          setSelectedContact(fullContact);
         }
+        
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ FAST LOAD COMPLETE: ${totalTime}ms total`);
+        
       } catch (error) {
         console.error('Error loading patients:', error);
         setAllContacts([]);
@@ -812,10 +748,10 @@ export default function ContactsPage() {
 
     // Only load if we're on the client side
     if (typeof window !== 'undefined') {
-      loadPatients();
+      loadPatientsOptimized();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes (loadPatients is stable)
+  }, [activeType, activeFilters.archived, searchQuery]); // Reload when type, archive filter, or search changes
 
   useEffect(() => {
     // Only load on client side
@@ -831,10 +767,11 @@ export default function ContactsPage() {
           const data = await response.json();
           // Handle paginated response or direct array
           const clinicsList = Array.isArray(data) ? data : (data.results || []);
-          // Transform clinics to value/label format with IDs
+          // Transform clinics to value/label format with IDs and colors
           const clinicsData = clinicsList.map((clinic: any) => ({
             value: clinic.id, // Use clinic ID (UUID)
             label: clinic.name,
+            color: clinic.color, // Include color for cache updates
           }));
           if (clinicsData.length > 0) {
             setClinics(clinicsData);
@@ -1289,7 +1226,20 @@ export default function ContactsPage() {
               {contacts.map((contact) => (
                 <UnstyledButton
                   key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
+                  onClick={async () => {
+                    // ⚡ FAST: Load full patient details on-demand when clicked
+                    console.log(`⚡ Loading full details for patient ${contact.id}...`);
+                    try {
+                      const fullPatient = await loadPatientDetail(contact.id);
+                      const fullContact = transformPatientToContact(fullPatient);
+                      setSelectedContact(fullContact);
+                      console.log(`✅ Loaded patient: ${fullContact.name}`);
+                    } catch (error) {
+                      console.error('Error loading patient details:', error);
+                      // Fallback to lightweight contact if detail load fails
+                      setSelectedContact(contact);
+                    }
+                  }}
                   style={{
                     padding: rem(16),
                     backgroundColor: selectedContact?.id === contact.id 
@@ -1314,7 +1264,7 @@ export default function ContactsPage() {
                       {contact.name}
                     </Text>
                     <Group gap="xs">
-                      <Text size="xs" c={contact.clinicColor || 'blue'} fw={600}>
+                      <Text size="xs" style={{ color: contact.clinicColor || '#3b82f6' }} fw={600}>
                         {contact.clinic}
                       </Text>
                       {contact.funding && (
@@ -1393,12 +1343,26 @@ export default function ContactsPage() {
                                       message: 'Title saved',
                                       color: 'green',
                                     });
+                                    
+                                    // ⚡ FAST: Update list cache (surgical update, not full clear!)
+                                    const archivedValue = selectedContact.archived || false;
+                                    await updatePatientListItem(
+                                      selectedContact.id,
+                                      { title: value || '' },
+                                      { archived: archivedValue }
+                                    );
+                                    console.log('  ✅ List cache updated (no reload needed!)');
+                                    
+                                    // Update the allContacts state to reflect the change in the left sidebar
+                                    setAllContacts(prevContacts => prevContacts.map(contact =>
+                                      contact.id === selectedContact.id ? { ...contact, title: value || '' } : contact
+                                    ));
                                   } else {
                                     const errorText = await response.text();
                                     console.error('❌ Save failed:', { status: response.status, error: errorText });
                                     throw new Error(`Failed to save title (${response.status}): ${errorText}`);
                                   }
-                                } catch (error) {
+                                } catch (error: any) {
                                   console.error('Error saving title:', error);
                                   notifications.show({
                                     title: 'Error',
@@ -1672,18 +1636,30 @@ export default function ContactsPage() {
                         <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Clinic</Text>
                           <Select
-                            value={selectedContact.clinic}
-                            data={clinics}
+                            value={selectedContact.clinicId} // Use clinicId (UUID) to match dropdown values
+                            data={clinics} // clinics = [{value: UUID, label: name}, ...]
                             onChange={async (value) => {
                               if (selectedContact) {
-                                setSelectedContact({ ...selectedContact, clinic: value || '' });
+                                // Find the clinic name from the UUID
+                                const selectedClinic = clinics.find((c: any) => c.value === value);
+                                const clinicName = selectedClinic?.label || '';
+                                
+                                // Update both clinic name and clinicId in local state
+                                setSelectedContact({ 
+                                  ...selectedContact, 
+                                  clinic: clinicName, 
+                                  clinicId: value || undefined 
+                                });
                                 
                                 // Auto-save to backend
                                 try {
                                   const csrfToken = await getCsrfToken();
-                                  console.log('🔄 Saving clinic:', { value, patientId: selectedContact.id });
+                                  console.log('🔄 Saving clinic:', { 
+                                    clinicId: value, 
+                                    clinicName, 
+                                    patientId: selectedContact.id 
+                                  });
                                   
-                                  // The value from Select is already the clinic ID (UUID)
                                   if (!value) {
                                     throw new Error('No clinic selected');
                                   }
@@ -1695,7 +1671,7 @@ export default function ContactsPage() {
                                       'X-CSRFToken': csrfToken,
                                     },
                                     credentials: 'include',
-                                    body: JSON.stringify({ clinic: value }),
+                                    body: JSON.stringify({ clinic: value }), // Send clinic UUID
                                   });
                                   
                                   console.log('📥 Clinic response:', { status: response.status, statusText: response.statusText });
@@ -1706,12 +1682,35 @@ export default function ContactsPage() {
                                       message: 'Clinic saved',
                                       color: 'green',
                                     });
+                                    
+                                    // Get the clinic color from the clinics dropdown
+                                    const selectedClinic = clinics.find(c => c.value === value);
+                                    const clinicColor = selectedClinic?.color || undefined;
+                                    
+                                    // ⚡ FAST: Update list cache (surgical update with color!)
+                                    const archivedValue = selectedContact.archived || false;
+                                    await updatePatientListItem(
+                                      selectedContact.id,
+                                      { clinic: clinicName, clinic_color: clinicColor },
+                                      { archived: archivedValue }
+                                    );
+                                    console.log('  ✅ List cache updated with clinic color!');
+                                    
+                                    // Update the allContacts state to reflect the change in the left sidebar
+                                    setAllContacts(prevContacts => prevContacts.map(contact =>
+                                      contact.id === selectedContact.id ? { 
+                                        ...contact, 
+                                        clinic: clinicName, 
+                                        clinicId: value || undefined,
+                                        clinicColor: clinicColor 
+                                      } : contact
+                                    ));
                                   } else {
                                     const errorText = await response.text();
                                     console.error('❌ Save failed:', { status: response.status, error: errorText });
                                     throw new Error(`Failed to save clinic (${response.status}): ${errorText}`);
                                   }
-                                } catch (error) {
+                                } catch (error: any) {
                                   console.error('Error saving clinic:', error);
                                   notifications.show({
                                     title: 'Error',
@@ -1728,41 +1727,23 @@ export default function ContactsPage() {
                         <Box style={{ width: '100%' }}>
                           <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb="xs">Funding</Text>
                           <Select
-                            value={selectedContact.funding}
-                            data={
-                              customFundingSources.length > 0
-                                ? customFundingSources.map((source: any) => ({
-                                    value: source.name,
-                                    label: source.name,
-                                  }))
-                                : [
-                                    // Fallback if API fails to load
-                                    { value: 'NDIS', label: 'NDIS' },
-                                    { value: 'DVA', label: 'DVA' },
-                                    { value: 'ENABLE', label: 'Enable' },
-                                    { value: 'BUPA', label: 'BUPA' },
-                                    { value: 'MEDIBANK', label: 'Medibank' },
-                                    { value: 'AHM', label: 'AHM' },
-                                    { value: 'PRIVATE', label: 'Private/Self-Funded' },
-                                    { value: 'OTHER', label: 'Other' },
-                                  ]
-                            }
+                            value={selectedContact.funding_source}
+                            data={fundingSourcesDropdown} // Loaded from Custom Funding Sources API
+                            placeholder={fundingSourcesDropdown.length === 0 ? "Loading funding sources..." : "Select funding source"}
                             onChange={async (value) => {
-                              console.log('🔄 FUNDING DROPDOWN CHANGED (old field)');
+                              console.log('🔄 FUNDING DROPDOWN CHANGED');
                               console.log('  New value:', value);
-                              console.log('  Old value:', selectedContact?.funding);
+                              console.log('  Old value:', selectedContact?.funding_source);
                               console.log('  Patient ID:', selectedContact?.id);
-                              console.log('  Patient Name:', selectedContact?.name);
                               
                               if (selectedContact) {
                                 setSelectedContact({ ...selectedContact, funding: value || '', funding_source: value || '' });
-                                console.log('  ✅ Updated selectedContact state (both funding and funding_source)');
+                                console.log('  ✅ Updated selectedContact state');
                                 
                                 // Auto-save to backend immediately
                                 try {
                                   console.log('  📤 Sending PATCH request to backend...');
                                   const csrfToken = await getCsrfToken();
-                                  console.log('  CSRF Token:', csrfToken ? 'Present' : 'MISSING');
                                   
                                   const requestBody = {
                                     funding_source: value || '',
@@ -1791,25 +1772,31 @@ export default function ContactsPage() {
                                   console.log('  ✅ Save successful, response data:', responseData);
                                   console.log('  Funding source saved:', value);
                                   
-                                  // CRITICAL: Invalidate cache to force fresh load
-                                  await PatientCache.clear();
-                                  console.log('  🗑️ Cache cleared - next load will fetch fresh data');
+                                  // ⚡ FAST: Update lightweight list cache (surgical update, not full clear!)
+                                  const archivedValue = selectedContact.archived || false;
+                                  await updatePatientListItem(
+                                    selectedContact.id,
+                                    { funding_source: value || '' },
+                                    { archived: archivedValue }
+                                  );
+                                  console.log('  ✅ List cache updated (no reload needed!)');
                                   
-                                  // Immediately reload this patient from API to show updated value
-                                  console.log('  🔄 Reloading patient from API...');
-                                  const freshResponse = await fetch(`https://localhost:8000/api/patients/${selectedContact.id}/`, {
-                                    credentials: 'include',
-                                  });
-                                  console.log('  📥 Fresh patient response status:', freshResponse.status);
+                                  // ✅ Update the patient list on the left (allContacts state)
+                                  setAllContacts(prevContacts => 
+                                    prevContacts.map(contact => 
+                                      contact.id === selectedContact.id 
+                                        ? { ...contact, funding: value, funding_source: value }
+                                        : contact
+                                    )
+                                  );
+                                  console.log('  ✅ Updated patient list (left sidebar)');
                                   
-                                  if (freshResponse.ok) {
-                                    const freshPatient = await freshResponse.json();
-                                    console.log('  📄 Fresh patient data:', freshPatient);
-                                    const freshContact = transformPatientToContact(freshPatient);
-                                    console.log('  📄 Transformed contact:', freshContact);
-                                    setSelectedContact(freshContact);
-                                    console.log('  ✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
-                                  }
+                                  // ⚡ Reload full details from API (fresh data)
+                                  console.log('  🔄 Reloading patient details from API...');
+                                  const freshPatient = await loadPatientDetail(selectedContact.id);
+                                  const freshContact = transformPatientToContact(freshPatient);
+                                  setSelectedContact(freshContact);
+                                  console.log('  ✅ Reloaded patient with fresh funding_source:', freshContact.funding_source);
                                 } catch (error) {
                                   console.error('  ❌ Error saving funding source:', error);
                                   notifications.show({

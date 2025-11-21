@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Group, TextInput, Title, ActionIcon, rem, useMantineColorScheme, Popover, Stack, Button, Select, Text, Box, Switch, Grid, Badge } from '@mantine/core';
-import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconArchive, IconFilter, IconMenu2, IconNote, IconFiles, IconPhoto, IconCalendar, IconReceipt, IconList, IconShoe, IconFileText, IconMessageCircle, IconFileTypePdf, IconBrandNuxt, IconTool, IconTrash, IconRefresh } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import AccountsQuotesDialog from './dialogs/AccountsQuotesDialog';
 
@@ -768,6 +768,26 @@ export default function ContactHeader({
             <IconPlus size={20} stroke={1.5} />
           </ActionIcon>
         )}
+        
+        {/* Refresh Button - Clears cache and reloads */}
+        <ActionIcon
+          variant="default"
+          size="lg"
+          onClick={() => {
+            try {
+              indexedDB.deleteDatabase('nexus_cache_v2');
+              setTimeout(() => {
+                window.location.reload();
+              }, 100);
+            } catch (error) {
+              console.error('Error clearing cache:', error);
+              window.location.reload();
+            }
+          }}
+          title="Refresh (Clear Cache)"
+        >
+          <IconRefresh size={20} stroke={1.5} />
+        </ActionIcon>
         
         {onArchive && (
           <ActionIcon

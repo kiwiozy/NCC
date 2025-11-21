@@ -1,0 +1,728 @@
+{
+  "backend_models": {
+    "patients": {
+      "sex": [
+        [
+          "M",
+          "Male"
+        ],
+        [
+          "F",
+          "Female"
+        ],
+        [
+          "O",
+          "Other"
+        ],
+        [
+          "U",
+          "Unknown"
+        ]
+      ],
+      "title": [
+        [
+          "Mr",
+          "Mr."
+        ],
+        [
+          "Mrs",
+          "Mrs."
+        ],
+        [
+          "Ms",
+          "Ms."
+        ],
+        [
+          "Miss",
+          "Miss"
+        ],
+        [
+          "Dr",
+          "Dr."
+        ],
+        [
+          "Prof",
+          "Prof."
+        ]
+      ],
+      "funding_source": [
+        [
+          "NDIS",
+          "NDIS"
+        ],
+        [
+          "DVA",
+          "DVA"
+        ],
+        [
+          "ENABLE",
+          "Enable"
+        ],
+        [
+          "BUPA",
+          "BUPA"
+        ],
+        [
+          "MEDIBANK",
+          "Medibank"
+        ],
+        [
+          "AHM",
+          "AHM"
+        ],
+        [
+          "PRIVATE",
+          "Private/Self-Funded"
+        ],
+        [
+          "OTHER",
+          "Other"
+        ]
+      ]
+    },
+    "appointments": {
+      "invoice_contact_type": [
+        [
+          "patient",
+          "Patient as Primary Contact"
+        ],
+        [
+          "company",
+          "Company as Primary Contact"
+        ]
+      ],
+      "type": [
+        [
+          "ASSESSMENT",
+          "Initial Assessment"
+        ],
+        [
+          "FITTING",
+          "Fitting"
+        ],
+        [
+          "REVIEW",
+          "Review"
+        ],
+        [
+          "FOLLOW_UP",
+          "Follow-up"
+        ],
+        [
+          "OTHER",
+          "Other"
+        ]
+      ]
+    },
+    "xero_integration": {
+      "status": [
+        [
+          "AUTHORISED",
+          "Authorised"
+        ],
+        [
+          "DELETED",
+          "Deleted"
+        ]
+      ]
+    },
+    "clinicians": {
+      "role": [
+        [
+          "PEDORTHIST",
+          "Pedorthist"
+        ],
+        [
+          "ADMIN",
+          "Administrator"
+        ],
+        [
+          "RECEPTION",
+          "Reception"
+        ],
+        [
+          "MANAGER",
+          "Manager"
+        ],
+        [
+          "OTHER",
+          "Other"
+        ]
+      ]
+    }
+  },
+  "frontend_issues": [
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/patients/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/referrers/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/referrers/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/coordinators/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/coordinators/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/companies/page.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/DocumentsDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/DocumentsDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/DocumentsDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/DocumentsDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/SMSDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/SMSDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/SMSDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/SMSDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/NotesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/NotesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/NotesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/NotesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/NotesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "POTENTIAL_MISMATCH",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "value": "patients.patient",
+      "issue": "Sending \"patients.patient\" - check if backend expects without period",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/ImagesDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/dialogs/PatientLettersDialog.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/FundingSourcesSettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/FundingSourcesSettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/GmailIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/GmailIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/GmailIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/GmailIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/GmailIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/S3Integration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ImageUploadTest.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ImageUploadTest.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/UserProfiles.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/UserProfiles.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ATReport.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ATReport.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ATReport.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ATReport.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ATReport.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/DataManagementSettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/CompanySettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/CompanySettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/SMSIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/SMSIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/XeroIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/XeroIntegration.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/EmailTemplateManager.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/EmailTemplateManager.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/EmailTemplateManager.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/ClinicsSettings.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    },
+    {
+      "type": "MISSING_ERROR_HANDLING",
+      "file": "/Users/craig/Documents/nexus-core-clinic/frontend/app/components/settings/NotesTest.tsx",
+      "issue": "API call without try/catch block",
+      "severity": "MEDIUM"
+    }
+  ],
+  "summary": {
+    "total_models_scanned": 4,
+    "total_choice_fields": 7,
+    "total_frontend_issues": 94,
+    "high_priority_issues": 0,
+    "medium_priority_issues": 94
+  }
+}

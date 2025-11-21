@@ -95,21 +95,12 @@ class Patient(models.Model):
     )
     
     # Funding Source (for invoice reference generation)
+    # Dynamic - accepts any value from Company Settings → Funding Sources
     funding_source = models.CharField(
         max_length=50,
         null=True,
         blank=True,
-        choices=[
-            ('NDIS', 'NDIS'),
-            ('DVA', 'DVA'),
-            ('ENABLE', 'Enable'),
-            ('BUPA', 'BUPA'),
-            ('MEDIBANK', 'Medibank'),
-            ('AHM', 'AHM'),
-            ('PRIVATE', 'Private/Self-Funded'),
-            ('OTHER', 'Other'),
-        ],
-        help_text="Patient's primary funding source for billing/invoicing"
+        help_text="Patient's primary funding source for billing/invoicing (e.g., 'NDIS', 'ENABLE', 'BUPA')"
     )
     
     # Funding Source (ForeignKey to FundingSource)

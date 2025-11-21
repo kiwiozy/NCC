@@ -10,11 +10,11 @@
  * Fields cached: id, title, name, clinic, funding, dob, health_number, archived
  */
 
-const DB_NAME = 'nexus_cache';
+const DB_NAME = 'nexus_cache_v2'; // New database to avoid conflicts with old cache
 const DB_VERSION = 1;
 const STORE_NAME = 'patient_list';
 const CACHE_KEY = 'list_data';
-const CACHE_VERSION = '1.0';
+const CACHE_VERSION = '2.0'; // Bumped: Implementing proper two-tier caching system
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes (longer TTL - list changes rarely)
 
 /**
@@ -29,6 +29,7 @@ export interface PatientListItem {
   first_name: string;
   last_name: string;
   clinic: string;          // "Narrabri", "Tamworth", etc.
+  clinic_color?: string;   // Hex color for clinic badge
   funding_source: string;  // "NDIS", "Private", etc.
   
   // Optional display
@@ -42,6 +43,8 @@ export interface PatientListItem {
   
   // Metadata
   updated_at?: number;     // Track when patient was last updated
+  stale?: boolean;         // If true, non-list fields changed, needs refresh when viewed
+  last_updated?: number;   // Timestamp of last update
 }
 
 interface CacheEntry {
@@ -298,6 +301,80 @@ export class PatientListCache {
   }
 
   /**
+   * Mark a patient as stale (needs refresh) without clearing cache
+   * Use this when non-list fields change (address, phone, notes, etc.)
+   */
+  static async markAsStale(patientId: string, isArchived: boolean = false): Promise<boolean> {
+    const filters = { archived: isArchived };
+    const cached = await this.get(filters);
+    
+    if (!cached) {
+      console.log('⚠️ List Cache: No cache to mark stale');
+      return false;
+    }
+    
+    const index = cached.findIndex(p => p.id === patientId);
+    
+    if (index === -1) {
+      console.log('⚠️ List Cache: Patient not found:', patientId);
+      return false;
+    }
+    
+    // Mark as stale
+    cached[index] = { 
+      ...cached[index], 
+      stale: true,
+      last_updated: Date.now()
+    };
+    
+    const success = await this.set(cached, filters);
+    
+    if (success) {
+      console.log(`🔄 List Cache: Marked patient ${patientId} as stale`);
+    }
+    
+    return success;
+  }
+
+  /**
+   * Check if patient is stale and needs refresh
+   */
+  static isStale(patient: PatientListItem): boolean {
+    return patient.stale === true;
+  }
+
+  /**
+   * Refresh a stale patient from API
+   */
+  static async refreshPatient(patientId: string, isArchived: boolean = false): Promise<any | null> {
+    try {
+      console.log(`🔄 Refreshing stale patient ${patientId} from API...`);
+      
+      const response = await fetch(`https://localhost:8000/api/patients/${patientId}/`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Failed to refresh patient');
+        return null;
+      }
+      
+      const freshData = await response.json();
+      
+      // Update list cache with fresh data (mark as not stale)
+      const listItem = this.transformToListItem(freshData);
+      await this.updatePatient(patientId, { ...listItem, stale: false }, isArchived);
+      
+      console.log(`✅ Refreshed patient ${patientId}`);
+      return freshData;
+      
+    } catch (error) {
+      console.error('❌ Error refreshing patient:', error);
+      return null;
+    }
+  }
+
+  /**
    * Transform full patient object to lightweight list item
    */
   static transformToListItem(patient: any): PatientListItem {
@@ -314,6 +391,8 @@ export class PatientListCache {
       mrn: patient.mrn,
       archived: patient.archived || false,
       updated_at: Date.now(),
+      stale: false,
+      last_updated: Date.now(),
     };
   }
 }
