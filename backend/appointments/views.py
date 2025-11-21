@@ -85,6 +85,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         data = request.data
         is_recurring = data.get('is_recurring', False)
         
+        print(f"🔵 CREATE APPOINTMENT - is_recurring: {is_recurring}")
+        print(f"🔵 CREATE APPOINTMENT - data: {data}")
+        
         if not is_recurring:
             # Normal single appointment creation
             return super().create(request, *args, **kwargs)
