@@ -435,7 +435,7 @@ const transformPatientToContact = (patient: any): Contact => {
 export default function ContactsPage() {
   const searchParams = useSearchParams();
   const [activeType, setActiveType] = useState<ContactType>('patients');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true to prevent flash
   const [searchQuery, setSearchQuery] = useState('');
   
   // ⭐ Sort state with localStorage persistence
@@ -1301,7 +1301,13 @@ export default function ContactsPage() {
 
   return (
     <Navigation>
-      <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ 
+        height: '100vh', 
+        overflow: 'hidden', 
+        display: 'flex', 
+        flexDirection: 'column',
+        backgroundColor: '#1A1B1E' // Match dark theme to prevent white flash
+      }}>
       <ContactHeader
         title={getPageTitle()}
         onSearch={handleSearch}
