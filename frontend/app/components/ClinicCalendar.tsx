@@ -6,7 +6,8 @@
  * Based on: Calendar_Spec_FullCalendar.md
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -14,6 +15,10 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme } from '@mantine/core';
 import { IconMenu2 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
+import CreateAppointmentDialog from './dialogs/CreateAppointmentDialog';
+import CreateAllDayAppointmentDialog from './dialogs/CreateAllDayAppointmentDialog';
+import EditAllDayEventDialog from './dialogs/EditAllDayEventDialog';
 
 // Type definitions
 interface Clinic {
@@ -40,12 +45,77 @@ interface CalendarEvent {
 }
 
 export default function ClinicCalendar() {
+  const searchParams = useSearchParams();
+  const calendarRef = useRef<any>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { colorScheme } = useMantineColorScheme();
+
+  // Appointment details dialog
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  
+  // Edit all-day event dialog
+  const [editAllDayDialogOpen, setEditAllDayDialogOpen] = useState(false);
+  const [selectedAllDayEventId, setSelectedAllDayEventId] = useState<string | null>(null);
+
+  // Create appointment dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createAllDayDialogOpen, setCreateAllDayDialogOpen] = useState(false);
+  const [createInitialDate, setCreateInitialDate] = useState<Date | string | null>(null);
+  const [followupData, setFollowupData] = useState<any>(null);
+
+  // Double-click detection for creating appointments
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [lastClickInfo, setLastClickInfo] = useState<any>(null);
+
+  // Check for pending follow-up on mount
+  useEffect(() => {
+    const pendingFollowup = sessionStorage.getItem('pendingFollowup');
+    if (pendingFollowup) {
+      try {
+        const data = JSON.parse(pendingFollowup);
+        setFollowupData(data);
+        setCreateInitialDate(data.startTime || data.targetDate);
+        // Wait a moment for calendar to load, then open dialog
+        setTimeout(() => {
+          setCreateDialogOpen(true);
+        }, 1000);
+        sessionStorage.removeItem('pendingFollowup'); // Clear after reading
+      } catch (error) {
+        console.error('Error parsing pending follow-up:', error);
+        sessionStorage.removeItem('pendingFollowup');
+      }
+    }
+  }, []);
+
+  // Handle URL parameters for date and view navigation
+  useEffect(() => {
+    const date = searchParams.get('date');
+    const view = searchParams.get('view');
+    
+    // Only navigate if we have events loaded and a date parameter
+    if (calendarRef.current && date && events.length > 0) {
+      // Wait a bit for calendar to fully render
+      setTimeout(() => {
+        const calendarApi = calendarRef.current?.getApi();
+        if (calendarApi) {
+          calendarApi.gotoDate(date);
+          
+          if (view === 'week') {
+            calendarApi.changeView('timeGridWeek');
+          } else if (view === 'day') {
+            calendarApi.changeView('timeGridDay');
+          } else if (view === 'month') {
+            calendarApi.changeView('dayGridMonth');
+          }
+        }
+      }, 300); // Give calendar time to initialize
+    }
+  }, [searchParams, events]); // Also trigger when events change
 
   // Fetch appointments from backend
   useEffect(() => {
@@ -64,8 +134,10 @@ export default function ClinicCalendar() {
   const fetchAppointments = async () => {
     setLoading(true);
     try {
-      // Fetch data from Django API
-      const response = await fetch(`https://localhost:8000/api/appointments/calendar_data/`);
+      // Fetch data from Django API with credentials
+      const response = await fetch(`https://localhost:8000/api/appointments/calendar_data/`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch appointments');
@@ -125,9 +197,19 @@ export default function ClinicCalendar() {
   // Handle event drop (drag & reschedule)
   const handleEventDrop = async (info: any) => {
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
       const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           start_time: info.event.start?.toISOString(),
           end_time: info.event.end?.toISOString(),
@@ -156,9 +238,19 @@ export default function ClinicCalendar() {
   // Handle event resize
   const handleEventResize = async (info: any) => {
     try {
+      // Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
       const response = await fetch(`https://localhost:8000/api/appointments/${info.event.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           start_time: info.event.start?.toISOString(),
           end_time: info.event.end?.toISOString(),
@@ -184,31 +276,55 @@ export default function ClinicCalendar() {
     }
   };
 
-  // Handle event click
+  // Handle event click - open details dialog
   const handleEventClick = (info: any) => {
-    const event = info.event;
-    const props = event.extendedProps;
+    const isAllDay = info.event.allDay || false;
     
-    alert(`
-      Patient: ${props.patientName}
-      Clinician: ${props.clinicianName}
-      Clinic: ${props.clinicName}
-      Status: ${props.status}
-      Time: ${event.start?.toLocaleTimeString()} - ${event.end?.toLocaleTimeString()}
-    `);
-    
-    // TODO: Open modal with appointment details
+    if (isAllDay) {
+      // Open the all-day event edit dialog
+      setSelectedAllDayEventId(info.event.id);
+      setEditAllDayDialogOpen(true);
+    } else {
+      // Open the regular appointment details dialog
+      setSelectedAppointmentId(info.event.id);
+      setDetailsDialogOpen(true);
+    }
   };
 
-  // Handle date select (create new appointment)
+  // Handle date click - detect double-click for creating appointments
+  const handleDateClick = (info: any) => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTime;
+
+    // Check if this is an all-day click
+    const isAllDay = info.allDay || false;
+
+    // If clicked within 300ms, it's a double-click
+    if (timeSinceLastClick < 300 && lastClickInfo?.dateStr === info.dateStr) {
+      // Double-click detected
+      
+      if (isAllDay) {
+        // All-day appointment - open dedicated all-day dialog
+        setCreateInitialDate(info.date);
+        setCreateAllDayDialogOpen(true);
+      } else {
+        // Regular time slot appointment
+        setCreateInitialDate(info.date);
+        setCreateDialogOpen(true);
+      }
+      
+      setLastClickTime(0); // Reset
+    } else {
+      // Single click - just remember it
+      setLastClickTime(now);
+      setLastClickInfo(info);
+    }
+  };
+
+  // Handle date select (create new appointment) - only on double-click
   const handleDateSelect = (selectInfo: any) => {
-    alert(`
-      Create new appointment:
-      Start: ${selectInfo.startStr}
-      End: ${selectInfo.endStr}
-    `);
-    
-    // TODO: Open modal to create appointment
+    // Disabled - using dateClick for double-click detection instead
+    selectInfo.view.calendar.unselect();
   };
 
   return (
@@ -268,8 +384,57 @@ export default function ClinicCalendar() {
           </Group>
         </Group>
 
+        <style dangerouslySetInnerHTML={{__html: `
+          /* Add vertical lines between days in week view */
+          .fc-timeGridWeek-view .fc-col-header-cell {
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-col {
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-slot {
+            border-top-color: #2D3748 !important;
+          }
+          
+          /* Make vertical lines show on top of horizontal slot lines */
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day {
+            position: relative;
+          }
+          
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day::after {
+            content: '';
+            position: absolute;
+            right: -0.5px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #3A4048;
+            z-index: 2;
+            pointer-events: none;
+          }
+          
+          /* Remove double border on last column */
+          .fc-timeGridWeek-view .fc-timegrid-col.fc-day:last-child::after {
+            display: none;
+          }
+          
+          /* Style the day headers */
+          .fc-col-header-cell {
+            background-color: #25262B !important;
+            font-weight: 600;
+            border-right: 1px solid #3A4048 !important;
+          }
+          
+          /* Today column highlight */
+          .fc-day-today {
+            background-color: rgba(51, 154, 240, 0.08) !important;
+          }
+        `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
+            ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
             headerToolbar={{
@@ -279,7 +444,8 @@ export default function ClinicCalendar() {
             }}
             events={events}
             editable={true}
-            selectable={true}
+            selectable={false}
+            selectMirror={false}
             selectMirror={true}
             dayMaxEvents={true}
             weekends={true}
@@ -289,7 +455,9 @@ export default function ClinicCalendar() {
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
             eventClick={handleEventClick}
+            dateClick={handleDateClick}
             select={handleDateSelect}
+            allDaySlot={true}
             height="100%"
             nowIndicator={true}
             businessHours={{
@@ -302,6 +470,52 @@ export default function ClinicCalendar() {
           />
         </div>
       </Paper>
+
+      {/* Appointment Details Dialog */}
+      <AppointmentDetailsDialog
+        opened={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedAppointmentId(null);
+        }}
+        appointmentId={selectedAppointmentId}
+        onUpdate={fetchAppointments} // Refresh calendar after edit/delete
+      />
+
+      {/* Create Appointment Dialog */}
+      <CreateAppointmentDialog
+        opened={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setCreateInitialDate(null);
+          setFollowupData(null);
+        }}
+        onSuccess={fetchAppointments} // Refresh calendar after create
+        initialDate={createInitialDate || undefined}
+        followupData={followupData}
+      />
+
+      {/* Create All-Day Appointment Dialog */}
+      <CreateAllDayAppointmentDialog
+        opened={createAllDayDialogOpen}
+        onClose={() => {
+          setCreateAllDayDialogOpen(false);
+          setCreateInitialDate(null);
+        }}
+        onSuccess={fetchAppointments} // Refresh calendar after create
+        initialDate={createInitialDate || undefined}
+      />
+
+      {/* Edit All-Day Event Dialog */}
+      <EditAllDayEventDialog
+        opened={editAllDayDialogOpen}
+        onClose={() => {
+          setEditAllDayDialogOpen(false);
+          setSelectedAllDayEventId(null);
+        }}
+        eventId={selectedAllDayEventId}
+        onUpdate={fetchAppointments} // Refresh calendar after edit/delete
+      />
     </>
   );
 }
