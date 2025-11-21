@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.dateparse import parse_datetime
+from datetime import timedelta
+import uuid
 from .models import Appointment, Encounter, AppointmentType
 from .serializers import (
     AppointmentSerializer, 
@@ -74,6 +76,127 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(start_time__lte=end_dt)
         
         return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to handle recurring appointments.
+        If is_recurring is True, generate multiple appointments.
+        """
+        data = request.data
+        is_recurring = data.get('is_recurring', False)
+        
+        if not is_recurring:
+            # Normal single appointment creation
+            return super().create(request, *args, **kwargs)
+        
+        # Recurring appointment logic
+        recurrence_pattern = data.get('recurrence_pattern')
+        recurrence_end_date = data.get('recurrence_end_date')
+        number_of_occurrences = data.get('number_of_occurrences', 4)
+        
+        if not recurrence_pattern:
+            return Response(
+                {'error': 'recurrence_pattern is required for recurring appointments'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate recurrence group ID
+        recurrence_group_id = uuid.uuid4()
+        
+        # Parse start time
+        start_time = parse_datetime(data['start_time'])
+        end_time = parse_datetime(data['end_time'])
+        
+        if not start_time or not end_time:
+            return Response(
+                {'error': 'Invalid start_time or end_time format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Calculate duration
+        duration = end_time - start_time
+        
+        # Determine increment based on pattern
+        if recurrence_pattern == 'daily':
+            increment = timedelta(days=1)
+        elif recurrence_pattern == 'weekly':
+            increment = timedelta(weeks=1)
+        elif recurrence_pattern == 'biweekly':
+            increment = timedelta(weeks=2)
+        elif recurrence_pattern == 'monthly':
+            increment = timedelta(days=30)  # Approximate month
+        else:
+            return Response(
+                {'error': f'Invalid recurrence_pattern: {recurrence_pattern}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create appointments
+        created_appointments = []
+        current_start = start_time
+        
+        # Fetch related objects once
+        from clinicians.models import Clinic, Clinician
+        
+        clinic = Clinic.objects.get(id=data['clinic'])
+        clinician = Clinician.objects.get(id=data['clinician']) if data.get('clinician') else None
+        patient_obj = None
+        if data.get('patient'):
+            from patients.models import Patient
+            patient_obj = Patient.objects.get(id=data['patient'])
+        appointment_type_obj = None
+        if data.get('appointment_type'):
+            appointment_type_obj = AppointmentType.objects.get(id=data['appointment_type'])
+        
+        # Determine when to stop
+        if recurrence_end_date:
+            end_date = parse_datetime(recurrence_end_date)
+            max_occurrences = 365  # Safety limit
+        else:
+            end_date = None
+            max_occurrences = int(number_of_occurrences)
+        
+        occurrence_count = 0
+        while occurrence_count < max_occurrences:
+            # Check if we've passed the end date
+            if end_date and current_start > end_date:
+                break
+            
+            current_end = current_start + duration
+            
+            # Create appointment data with object instances
+            appointment_data = {
+                'clinic': clinic,
+                'patient': patient_obj,
+                'clinician': clinician,
+                'appointment_type': appointment_type_obj,
+                'start_time': current_start,
+                'end_time': current_end,
+                'status': data.get('status', 'scheduled'),
+                'notes': data.get('notes', ''),
+                'is_recurring': True,
+                'recurrence_pattern': recurrence_pattern,
+                'recurrence_group_id': recurrence_group_id,
+                'recurrence_end_date': recurrence_end_date,
+            }
+            
+            # Create appointment
+            appointment = Appointment.objects.create(**appointment_data)
+            created_appointments.append(appointment)
+            
+            # Move to next occurrence
+            current_start += increment
+            occurrence_count += 1
+        
+        # Serialize and return all created appointments
+        serializer = self.get_serializer(created_appointments, many=True)
+        return Response(
+            {
+                'message': f'Created {len(created_appointments)} recurring appointments',
+                'appointments': serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
     
     @action(detail=False, methods=['get'])
     def calendar_data(self, request):

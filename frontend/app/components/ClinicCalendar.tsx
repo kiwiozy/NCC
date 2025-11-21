@@ -18,6 +18,7 @@ import { notifications } from '@mantine/notifications';
 import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
 import CreateAppointmentDialog from './dialogs/CreateAppointmentDialog';
 import CreateAllDayAppointmentDialog from './dialogs/CreateAllDayAppointmentDialog';
+import EditAllDayEventDialog from './dialogs/EditAllDayEventDialog';
 
 // Type definitions
 interface Clinic {
@@ -56,6 +57,10 @@ export default function ClinicCalendar() {
   // Appointment details dialog
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  
+  // Edit all-day event dialog
+  const [editAllDayDialogOpen, setEditAllDayDialogOpen] = useState(false);
+  const [selectedAllDayEventId, setSelectedAllDayEventId] = useState<string | null>(null);
 
   // Create appointment dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -273,8 +278,17 @@ export default function ClinicCalendar() {
 
   // Handle event click - open details dialog
   const handleEventClick = (info: any) => {
-    setSelectedAppointmentId(info.event.id);
-    setDetailsDialogOpen(true);
+    const isAllDay = info.event.allDay || false;
+    
+    if (isAllDay) {
+      // Open the all-day event edit dialog
+      setSelectedAllDayEventId(info.event.id);
+      setEditAllDayDialogOpen(true);
+    } else {
+      // Open the regular appointment details dialog
+      setSelectedAppointmentId(info.event.id);
+      setDetailsDialogOpen(true);
+    }
   };
 
   // Handle date click - detect double-click for creating appointments
@@ -490,6 +504,17 @@ export default function ClinicCalendar() {
         }}
         onSuccess={fetchAppointments} // Refresh calendar after create
         initialDate={createInitialDate || undefined}
+      />
+
+      {/* Edit All-Day Event Dialog */}
+      <EditAllDayEventDialog
+        opened={editAllDayDialogOpen}
+        onClose={() => {
+          setEditAllDayDialogOpen(false);
+          setSelectedAllDayEventId(null);
+        }}
+        eventId={selectedAllDayEventId}
+        onUpdate={fetchAppointments} // Refresh calendar after edit/delete
       />
     </>
   );

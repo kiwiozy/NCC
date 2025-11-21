@@ -50,8 +50,8 @@ interface AppointmentDetailsDialogProps {
 
 interface AppointmentDetails {
   id: string;
-  patient: string; // UUID
-  patient_name: string;
+  patient: string | null; // UUID (null for all-day events)
+  patient_name: string | null;
   clinic: string; // UUID
   clinic_name: string;
   clinician: string | null; // UUID
@@ -67,6 +67,11 @@ interface AppointmentDetails {
   parent_appointment: string | null; // UUID
   needs_followup_reminder: boolean;
   followup_scheduled: boolean;
+  // Recurring fields
+  is_recurring: boolean;
+  recurrence_pattern: string | null;
+  recurrence_group_id: string | null;
+  recurrence_end_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -440,23 +445,43 @@ export default function AppointmentDetailsDialog({
 
             <Divider />
 
-            {/* Patient */}
-            <Paper p="md" withBorder>
-              <Group gap="sm" mb="xs">
-                <IconUser size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
-                <Text fw={600} size="sm" c="dimmed">
-                  Patient
-                </Text>
-              </Group>
-              <Group justify="space-between">
+            {/* Patient - Only show for regular appointments */}
+            {appointment.patient && (
+              <Paper p="md" withBorder>
+                <Group gap="sm" mb="xs">
+                  <IconUser size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
+                  <Text fw={600} size="sm" c="dimmed">
+                    Patient
+                  </Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="lg" fw={500}>
+                    {appointment.patient_name}
+                  </Text>
+                  <Button variant="light" size="xs" onClick={handleViewPatient}>
+                    View Patient
+                  </Button>
+                </Group>
+              </Paper>
+            )}
+
+            {/* All-Day Event Title - Only show for all-day events (no patient) */}
+            {!appointment.patient && (
+              <Paper p="md" withBorder>
+                <Group gap="sm" mb="xs">
+                  <IconCalendarPlus size={20} style={{ color: 'var(--mantine-color-violet-6)' }} />
+                  <Text fw={600} size="sm" c="dimmed">
+                    Event
+                  </Text>
+                </Group>
                 <Text size="lg" fw={500}>
-                  {appointment.patient_name}
+                  All-Day Event
                 </Text>
-                <Button variant="light" size="xs" onClick={handleViewPatient}>
-                  View Patient
-                </Button>
-              </Group>
-            </Paper>
+                <Text size="sm" c="dimmed" mt="xs">
+                  This is a clinic-wide event with no patient attached.
+                </Text>
+              </Paper>
+            )}
 
             {/* Clinic & Clinician */}
             <Group grow>
@@ -495,6 +520,19 @@ export default function AppointmentDetailsDialog({
                   Duration: {formatDuration(appointment.duration_minutes)}
                 </Text>
               </Stack>
+              
+              {/* Recurring Badge */}
+              {appointment.is_recurring && (
+                <Badge color="blue" variant="light" mt="sm" leftSection={<IconRepeat size={14} />}>
+                  Recurring: {
+                    appointment.recurrence_pattern === 'daily' ? 'Daily' :
+                    appointment.recurrence_pattern === 'weekly' ? 'Weekly' :
+                    appointment.recurrence_pattern === 'biweekly' ? 'Every 2 Weeks' :
+                    appointment.recurrence_pattern === 'monthly' ? 'Monthly' :
+                    'Unknown'
+                  }
+                </Badge>
+              )}
             </Paper>
 
             {/* Appointment Type */}
@@ -587,8 +625,8 @@ export default function AppointmentDetailsDialog({
 
             <Divider />
 
-            {/* Schedule Follow-up Button */}
-            {!editMode && (
+            {/* Schedule Follow-up Button - Only for patient appointments */}
+            {!editMode && appointment.patient && (
               <Menu shadow="md" width={200}>
                 <Menu.Target>
                   <Button

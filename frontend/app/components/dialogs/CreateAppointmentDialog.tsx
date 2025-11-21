@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import {
   Modal, TextInput, Textarea, Select, Button, Stack, Group, NumberInput,
-  LoadingOverlay, Alert, Paper, Text, Divider, Badge
+  LoadingOverlay, Alert, Paper, Text, Divider, Badge, Checkbox, Radio
 } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
+import { DateTimePicker, DatePickerInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle, IconCalendar, IconUser, IconBuildingHospital,
-  IconStethoscope, IconClock, IconNotes, IconCheck, IconX
+  IconStethoscope, IconClock, IconNotes, IconCheck, IconX, IconRepeat
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -71,12 +71,21 @@ export default function CreateAppointmentDialog({
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
+  const [eventTitle, setEventTitle] = useState<string>(''); // For non-patient events
+  const [isEvent, setIsEvent] = useState(false); // Toggle between patient appointment and event
   const [clinicianId, setClinicianId] = useState<string | null>(null);
   const [clinicId, setClinicId] = useState<string | null>(null);
   const [appointmentTypeId, setAppointmentTypeId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('scheduled');
   const [notes, setNotes] = useState<string>('');
   const [durationMinutes, setDurationMinutes] = useState<number>(30);
+
+  // Recurring appointment fields
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] = useState<string | null>(null);
+  const [recurrenceEndType, setRecurrenceEndType] = useState<'occurrences' | 'date'>('occurrences');
+  const [numberOfOccurrences, setNumberOfOccurrences] = useState<number>(4);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
 
   // Dropdown options
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -233,7 +242,11 @@ export default function CreateAppointmentDialog({
 
   const handleSubmit = async () => {
     // Validation
-    if (!patientId) {
+    if (isEvent && !eventTitle.trim()) {
+      setError('Please enter an event title');
+      return;
+    }
+    if (!isEvent && !patientId) {
       setError('Please select a patient');
       return;
     }
@@ -268,15 +281,20 @@ export default function CreateAppointmentDialog({
           'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify({
-          patient: patientId,
+          patient: isEvent ? null : patientId, // Null for events, patient ID for appointments
           clinician: clinicianId,
           clinic: clinicId,
           appointment_type: appointmentTypeId,
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status,
-          notes,
+          notes: isEvent ? eventTitle : notes, // Use eventTitle as notes for events
           parent_appointment: followupData?.parentAppointmentId || null,
+          // Recurring fields
+          is_recurring: isRecurring,
+          recurrence_pattern: isRecurring ? recurrencePattern : null,
+          number_of_occurrences: isRecurring && recurrenceEndType === 'occurrences' ? numberOfOccurrences : null,
+          recurrence_end_date: isRecurring && recurrenceEndType === 'date' && recurrenceEndDate ? dayjs(recurrenceEndDate).endOf('day').toISOString() : null,
         }),
         credentials: 'include',
       });
@@ -365,25 +383,62 @@ export default function CreateAppointmentDialog({
         <Stack gap="md">
           <Divider />
 
-          {/* Patient Search */}
+          {/* Patient or Event Toggle */}
           <Paper p="md" withBorder>
-            <Group gap="sm" mb="xs">
-              <IconUser size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
-              <Text fw={600} size="sm" c="dimmed">
-                Patient
-              </Text>
-            </Group>
-            <Select
-              placeholder="Search and select patient"
-              data={patients.map(p => ({ value: p.id, label: p.full_name }))}
-              value={patientId}
-              onChange={setPatientId}
-              searchable
-              required
-              withAsterisk
-              size="md"
+            <Checkbox
+              label="This is an event (not a patient appointment)"
+              checked={isEvent}
+              onChange={(e) => {
+                setIsEvent(e.currentTarget.checked);
+                if (e.currentTarget.checked) {
+                  setPatientId(null); // Clear patient when switching to event
+                } else {
+                  setEventTitle(''); // Clear event title when switching to patient
+                }
+              }}
             />
           </Paper>
+
+          {/* Patient Search - Only show for patient appointments */}
+          {!isEvent && (
+            <Paper p="md" withBorder>
+              <Group gap="sm" mb="xs">
+                <IconUser size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
+                <Text fw={600} size="sm" c="dimmed">
+                  Patient
+                </Text>
+              </Group>
+              <Select
+                placeholder="Search and select patient"
+                data={patients.map(p => ({ value: p.id, label: p.full_name }))}
+                value={patientId}
+                onChange={setPatientId}
+                searchable
+                clearable
+                required
+                size="md"
+              />
+            </Paper>
+          )}
+
+          {/* Event Title - Only show for events */}
+          {isEvent && (
+            <Paper p="md" withBorder>
+              <Group gap="sm" mb="xs">
+                <IconCalendar size={20} style={{ color: 'var(--mantine-color-violet-6)' }} />
+                <Text fw={600} size="sm" c="dimmed">
+                  Event Title
+                </Text>
+              </Group>
+              <TextInput
+                placeholder="e.g., Staff Meeting, Training Session, Break"
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.currentTarget.value)}
+                required
+                size="md"
+              />
+            </Paper>
+          )}
 
           {/* Clinic & Clinician Side by Side */}
           <Group grow>
@@ -502,6 +557,82 @@ export default function CreateAppointmentDialog({
               minRows={2}
             />
           </div>
+
+          {/* Recurring Appointment */}
+          <Paper p="md" withBorder>
+            <Checkbox
+              label={
+                <Group gap="xs">
+                  <IconRepeat size={16} />
+                  <Text fw={600} size="sm">
+                    Recurring Appointment
+                  </Text>
+                </Group>
+              }
+              checked={isRecurring}
+              onChange={(e) => setIsRecurring(e.currentTarget.checked)}
+              mb={isRecurring ? "md" : 0}
+            />
+
+            {isRecurring && (
+              <Stack gap="sm" mt="md">
+                <Select
+                  label="Repeat"
+                  placeholder="Select frequency"
+                  data={[
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'weekly', label: 'Weekly' },
+                    { value: 'biweekly', label: 'Every 2 Weeks' },
+                    { value: 'monthly', label: 'Monthly' },
+                  ]}
+                  value={recurrencePattern}
+                  onChange={setRecurrencePattern}
+                  required
+                />
+
+                <Radio.Group
+                  label="End after"
+                  value={recurrenceEndType}
+                  onChange={(value) => setRecurrenceEndType(value as 'occurrences' | 'date')}
+                >
+                  <Stack gap="xs" mt="xs">
+                    <Radio value="occurrences" label="Number of occurrences" />
+                    <Radio value="date" label="Specific end date" />
+                  </Stack>
+                </Radio.Group>
+
+                {recurrenceEndType === 'occurrences' && (
+                  <NumberInput
+                    label="Number of occurrences"
+                    placeholder="4"
+                    value={numberOfOccurrences}
+                    onChange={(val) => setNumberOfOccurrences(Number(val) || 1)}
+                    min={1}
+                    max={52}
+                    required
+                  />
+                )}
+
+                {recurrenceEndType === 'date' && (
+                  <DatePickerInput
+                    label="End date"
+                    placeholder="Select end date"
+                    value={recurrenceEndDate}
+                    onChange={setRecurrenceEndDate}
+                    minDate={startTime || undefined}
+                    required
+                    clearable
+                  />
+                )}
+
+                <Alert color="blue" variant="light">
+                  <Text size="xs">
+                    This will create {recurrenceEndType === 'occurrences' ? numberOfOccurrences : 'multiple'} appointments with the same details.
+                  </Text>
+                </Alert>
+              </Stack>
+            )}
+          </Paper>
 
           {/* Status */}
           <Paper p="md" withBorder>

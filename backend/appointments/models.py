@@ -171,6 +171,42 @@ class Appointment(models.Model):
     )
     
     # ═══════════════════════════════════════════════════════════════════
+    # RECURRING APPOINTMENT FIELDS (Added Nov 2025)
+    # ═══════════════════════════════════════════════════════════════════
+    
+    recurrence_group_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Links recurring appointments together (same ID for all in series)"
+    )
+    
+    is_recurring = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Is this appointment part of a recurring series?"
+    )
+    
+    recurrence_pattern = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('biweekly', 'Every 2 Weeks'),
+            ('monthly', 'Monthly'),
+        ],
+        help_text="How often does this appointment repeat?"
+    )
+    
+    recurrence_end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Last date for recurring appointments (inclusive)"
+    )
+    
+    # ═══════════════════════════════════════════════════════════════════
     # XERO BILLING FIELDS (Added Nov 2025)
     # ═══════════════════════════════════════════════════════════════════
     

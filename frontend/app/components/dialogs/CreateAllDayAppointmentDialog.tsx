@@ -12,6 +12,9 @@ import {
   Paper,
   LoadingOverlay,
   Alert,
+  Checkbox,
+  Radio,
+  NumberInput,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
@@ -25,6 +28,7 @@ import {
   IconStethoscope,
   IconNotes,
   IconAlertCircle,
+  IconRepeat,
 } from '@tabler/icons-react';
 
 dayjs.extend(utc);
@@ -73,6 +77,13 @@ export default function CreateAllDayAppointmentDialog({
   const [clinicId, setClinicId] = useState<string | null>(null);
   const [appointmentTypeId, setAppointmentTypeId] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>('');
+
+  // Recurring event fields
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] = useState<string | null>(null);
+  const [recurrenceEndType, setRecurrenceEndType] = useState<'occurrences' | 'date'>('occurrences');
+  const [numberOfOccurrences, setNumberOfOccurrences] = useState<number>(4);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null);
 
   // Dropdown options
   const [clinicians, setClinicians] = useState<Clinician[]>([]);
@@ -177,6 +188,17 @@ export default function CreateAllDayAppointmentDialog({
       return;
     }
 
+    // Validate recurring fields if recurring is enabled
+    if (isRecurring && !recurrencePattern) {
+      setError('Please select a repeat frequency for recurring events.');
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Please select a repeat frequency for recurring events.',
+        color: 'red',
+      });
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -200,7 +222,19 @@ export default function CreateAllDayAppointmentDialog({
         end_time: endOfDay.toISOString(),
         status: 'scheduled', // Default status for all-day events
         notes: notes,
+        // Recurring fields
+        is_recurring: isRecurring,
+        recurrence_pattern: isRecurring ? recurrencePattern : null,
       };
+
+      // Add recurrence end conditions
+      if (isRecurring) {
+        if (recurrenceEndType === 'occurrences') {
+          payload.number_of_occurrences = numberOfOccurrences;
+        } else if (recurrenceEndType === 'date' && recurrenceEndDate) {
+          payload.recurrence_end_date = dayjs(recurrenceEndDate).endOf('day').toISOString();
+        }
+      }
 
       const response = await fetch('https://localhost:8000/api/appointments/', {
         method: 'POST',
@@ -217,9 +251,11 @@ export default function CreateAllDayAppointmentDialog({
         throw new Error(errorData.detail || 'Failed to create all-day event');
       }
 
+      const responseData = await response.json();
+
       notifications.show({
         title: 'Success',
-        message: 'All-day event created successfully',
+        message: responseData.message || 'All-day event created successfully',
         color: 'green',
       });
 
@@ -378,12 +414,91 @@ export default function CreateAllDayAppointmentDialog({
           </Paper>
         )}
 
+        {/* Recurring Event */}
+        <Paper p="md" withBorder>
+          <Checkbox
+            label={
+              <Group gap="xs">
+                <IconRepeat size={16} />
+                <Text fw={600} size="sm">
+                  Recurring Event
+                </Text>
+              </Group>
+            }
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.currentTarget.checked)}
+            mb={isRecurring ? "md" : 0}
+          />
+
+          {isRecurring && (
+            <Stack gap="sm" mt="md">
+              <Select
+                label="Repeat"
+                placeholder="Select frequency"
+                data={[
+                  { value: 'daily', label: 'Daily' },
+                  { value: 'weekly', label: 'Weekly' },
+                  { value: 'biweekly', label: 'Every 2 Weeks' },
+                  { value: 'monthly', label: 'Monthly' },
+                ]}
+                value={recurrencePattern}
+                onChange={setRecurrencePattern}
+                required
+              />
+
+              <Radio.Group
+                label="End after"
+                value={recurrenceEndType}
+                onChange={(value) => setRecurrenceEndType(value as 'occurrences' | 'date')}
+              >
+                <Stack gap="xs" mt="xs">
+                  <Radio value="occurrences" label="Number of occurrences" />
+                  <Radio value="date" label="Specific end date" />
+                </Stack>
+              </Radio.Group>
+
+              {recurrenceEndType === 'occurrences' && (
+                <NumberInput
+                  label="Number of occurrences"
+                  placeholder="4"
+                  value={numberOfOccurrences}
+                  onChange={(val) => setNumberOfOccurrences(Number(val) || 1)}
+                  min={1}
+                  max={52}
+                  required
+                />
+              )}
+
+              {recurrenceEndType === 'date' && (
+                <DatePickerInput
+                  label="End date"
+                  placeholder="Select end date"
+                  value={recurrenceEndDate}
+                  onChange={setRecurrenceEndDate}
+                  minDate={selectedDate || undefined}
+                  required
+                  clearable
+                />
+              )}
+
+              <Alert color="blue" variant="light">
+                <Text size="xs">
+                  This will create {recurrenceEndType === 'occurrences' ? numberOfOccurrences : 'multiple'} all-day events with the same details.
+                </Text>
+              </Alert>
+            </Stack>
+          )}
+        </Paper>
+
         {/* Action Buttons */}
         <Group justify="flex-end" mt="md">
           <Button variant="default" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} loading={loading}>
+          <Button 
+            onClick={handleSubmit} 
+            loading={loading}
+          >
             Create All-Day Event
           </Button>
         </Group>
