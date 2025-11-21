@@ -15,6 +15,8 @@ import {
   Divider,
   Paper,
   LoadingOverlay,
+  Checkbox,
+  Menu,
   rem,
 } from '@mantine/core';
 import {
@@ -28,6 +30,7 @@ import {
   IconX,
   IconCheck,
   IconNotes,
+  IconCalendarPlus,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
@@ -61,6 +64,9 @@ interface AppointmentDetails {
   reason: string;
   notes: string;
   duration_minutes: number;
+  parent_appointment: string | null; // UUID
+  needs_followup_reminder: boolean;
+  followup_scheduled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -106,6 +112,7 @@ export default function AppointmentDetailsDialog({
   const [editStatus, setEditStatus] = useState('');
   const [editAppointmentType, setEditAppointmentType] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+  const [editNeedsFollowup, setEditNeedsFollowup] = useState(false);
 
   // Appointment types for dropdown
   const [appointmentTypes, setAppointmentTypes] = useState<Array<{ id: string; name: string }>>([]);
@@ -158,6 +165,7 @@ export default function AppointmentDetailsDialog({
         setEditStatus(data.status);
         setEditAppointmentType(data.appointment_type);
         setEditNotes(data.notes || '');
+        setEditNeedsFollowup(data.needs_followup_reminder || false);
       } else {
         notifications.show({
           title: 'Error',
@@ -199,6 +207,7 @@ export default function AppointmentDetailsDialog({
           status: editStatus,
           appointment_type: editAppointmentType,
           notes: editNotes,
+          needs_followup_reminder: editNeedsFollowup,
         }),
       });
 
@@ -284,12 +293,97 @@ export default function AppointmentDetailsDialog({
     }
   };
 
+  const handleScheduleFollowup = async (interval: string) => {
+    if (!appointment) return;
+
+    // Calculate target date based on interval
+    let targetDate = dayjs(appointment.start_time);
+    
+    switch (interval) {
+      case '1w':
+        targetDate = targetDate.add(1, 'week');
+        break;
+      case '2w':
+        targetDate = targetDate.add(2, 'weeks');
+        break;
+      case '3w':
+        targetDate = targetDate.add(3, 'weeks');
+        break;
+      case '4w':
+        targetDate = targetDate.add(4, 'weeks');
+        break;
+      case '8w':
+        targetDate = targetDate.add(8, 'weeks');
+        break;
+      case '3m':
+        targetDate = targetDate.add(3, 'months');
+        break;
+      case '6m':
+        targetDate = targetDate.add(6, 'months');
+        break;
+      default:
+        return;
+    }
+
+    try {
+      // Mark current appointment as having follow-up scheduled
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
+      await fetch(`https://localhost:8000/api/appointments/${appointment.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        body: JSON.stringify({
+          followup_scheduled: true,
+          needs_followup_reminder: false, // Clear reminder flag
+        }),
+        credentials: 'include',
+      });
+
+      // Store follow-up data in sessionStorage (not localStorage)
+      const followupData = {
+        patientId: appointment.patient,
+        patientName: appointment.patient_name,
+        clinicId: appointment.clinic,
+        clinicianId: appointment.clinician,
+        appointmentTypeId: appointment.appointment_type,
+        parentAppointmentId: appointment.id,
+        parentAppointmentDate: formatDateTime(appointment.start_time),
+        targetDate: targetDate.format('YYYY-MM-DD'),
+        startTime: targetDate.format('YYYY-MM-DDTHH:mm:ss'),
+        notes: `Follow-up from: ${formatDateTime(appointment.start_time)} (${appointment.patient_name})`,
+      };
+      
+      sessionStorage.setItem('pendingFollowup', JSON.stringify(followupData));
+
+      // Close this dialog first
+      onClose();
+
+      // Reload the current page with a flag to trigger follow-up dialog
+      window.location.href = `/calendar?followup=true&date=${targetDate.format('YYYY-MM-DD')}&view=week`;
+
+    } catch (error) {
+      console.error('Error scheduling follow-up:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to prepare follow-up appointment',
+        color: 'red',
+      });
+    }
+  };
+
   const handleCancel = () => {
     // Reset form to original values
     if (appointment) {
       setEditStatus(appointment.status);
       setEditAppointmentType(appointment.appointment_type);
       setEditNotes(appointment.notes || '');
+      setEditNeedsFollowup(appointment.needs_followup_reminder || false);
     }
     setEditMode(false);
   };
@@ -455,19 +549,70 @@ export default function AppointmentDetailsDialog({
                   Status
                 </Text>
               </Group>
-              {editMode ? (
-                <Select
-                  data={STATUS_OPTIONS}
-                  value={editStatus}
-                  onChange={(value) => setEditStatus(value || 'scheduled')}
-                  placeholder="Select status"
-                />
-              ) : (
-                <Badge color={getStatusColor(appointment.status)} variant="light" size="lg">
-                  {STATUS_OPTIONS.find((s) => s.value === appointment.status)?.label || appointment.status}
-                </Badge>
-              )}
+              <Stack gap="sm">
+                {editMode ? (
+                  <>
+                    <Select
+                      data={STATUS_OPTIONS}
+                      value={editStatus}
+                      onChange={(value) => setEditStatus(value || 'scheduled')}
+                      placeholder="Select status"
+                    />
+                    <Checkbox
+                      label="Needs follow-up reminder"
+                      checked={editNeedsFollowup}
+                      onChange={(e) => setEditNeedsFollowup(e.currentTarget.checked)}
+                      description="Mark this appointment for follow-up scheduling reminder"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Badge color={getStatusColor(appointment.status)} variant="light" size="lg">
+                      {STATUS_OPTIONS.find((s) => s.value === appointment.status)?.label || appointment.status}
+                    </Badge>
+                    {appointment.needs_followup_reminder && (
+                      <Badge color="yellow" variant="light" size="sm">
+                        ⏰ Needs Follow-up
+                      </Badge>
+                    )}
+                    {appointment.followup_scheduled && (
+                      <Badge color="green" variant="light" size="sm">
+                        ✅ Follow-up Scheduled
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </Stack>
             </Paper>
+
+            <Divider />
+
+            {/* Schedule Follow-up Button */}
+            {!editMode && (
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <Button
+                    leftSection={<IconCalendarPlus size={16} />}
+                    variant="light"
+                    fullWidth
+                  >
+                    Schedule Follow-up
+                  </Button>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>Select follow-up interval</Menu.Label>
+                  <Menu.Item onClick={() => handleScheduleFollowup('1w')}>1 week</Menu.Item>
+                  <Menu.Item onClick={() => handleScheduleFollowup('2w')}>2 weeks</Menu.Item>
+                  <Menu.Item onClick={() => handleScheduleFollowup('3w')}>3 weeks</Menu.Item>
+                  <Menu.Item onClick={() => handleScheduleFollowup('4w')}>4 weeks</Menu.Item>
+                  <Menu.Item onClick={() => handleScheduleFollowup('8w')}>8 weeks</Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item onClick={() => handleScheduleFollowup('3m')}>3 months</Menu.Item>
+                  <Menu.Item onClick={() => handleScheduleFollowup('6m')}>6 months</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
 
             <Divider />
 

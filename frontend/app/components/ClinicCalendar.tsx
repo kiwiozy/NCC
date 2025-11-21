@@ -6,7 +6,8 @@
  * Based on: Calendar_Spec_FullCalendar.md
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -42,6 +43,8 @@ interface CalendarEvent {
 }
 
 export default function ClinicCalendar() {
+  const searchParams = useSearchParams();
+  const calendarRef = useRef<any>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -56,10 +59,56 @@ export default function ClinicCalendar() {
   // Create appointment dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState<Date | string | null>(null);
+  const [followupData, setFollowupData] = useState<any>(null);
 
   // Double-click detection for creating appointments
   const [lastClickTime, setLastClickTime] = useState(0);
   const [lastClickInfo, setLastClickInfo] = useState<any>(null);
+
+  // Check for pending follow-up on mount
+  useEffect(() => {
+    const pendingFollowup = sessionStorage.getItem('pendingFollowup');
+    if (pendingFollowup) {
+      try {
+        const data = JSON.parse(pendingFollowup);
+        setFollowupData(data);
+        setCreateInitialDate(data.startTime || data.targetDate);
+        // Wait a moment for calendar to load, then open dialog
+        setTimeout(() => {
+          setCreateDialogOpen(true);
+        }, 1000);
+        sessionStorage.removeItem('pendingFollowup'); // Clear after reading
+      } catch (error) {
+        console.error('Error parsing pending follow-up:', error);
+        sessionStorage.removeItem('pendingFollowup');
+      }
+    }
+  }, []);
+
+  // Handle URL parameters for date and view navigation
+  useEffect(() => {
+    const date = searchParams.get('date');
+    const view = searchParams.get('view');
+    
+    // Only navigate if we have events loaded and a date parameter
+    if (calendarRef.current && date && events.length > 0) {
+      // Wait a bit for calendar to fully render
+      setTimeout(() => {
+        const calendarApi = calendarRef.current?.getApi();
+        if (calendarApi) {
+          calendarApi.gotoDate(date);
+          
+          if (view === 'week') {
+            calendarApi.changeView('timeGridWeek');
+          } else if (view === 'day') {
+            calendarApi.changeView('timeGridDay');
+          } else if (view === 'month') {
+            calendarApi.changeView('dayGridMonth');
+          }
+        }
+      }, 300); // Give calendar time to initialize
+    }
+  }, [searchParams, events]); // Also trigger when events change
 
   // Fetch appointments from backend
   useEffect(() => {
@@ -309,6 +358,7 @@ export default function ClinicCalendar() {
 
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
+            ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
             headerToolbar={{
@@ -361,9 +411,11 @@ export default function ClinicCalendar() {
         onClose={() => {
           setCreateDialogOpen(false);
           setCreateInitialDate(null);
+          setFollowupData(null);
         }}
         onSuccess={fetchAppointments} // Refresh calendar after create
         initialDate={createInitialDate || undefined}
+        followupData={followupData}
       />
     </>
   );

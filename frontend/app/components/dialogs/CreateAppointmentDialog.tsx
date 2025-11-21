@@ -23,6 +23,17 @@ interface CreateAppointmentDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   initialDate?: Date | string;
+  followupData?: {
+    patientId: string;
+    patientName: string;
+    clinicId: string;
+    clinicianId: string | null;
+    appointmentTypeId: string | null;
+    parentAppointmentId: string;
+    parentAppointmentDate: string;
+    targetDate: string;
+    notes: string;
+  } | null;
 }
 
 interface Patient {
@@ -51,6 +62,7 @@ export default function CreateAppointmentDialog({
   onClose,
   onSuccess,
   initialDate,
+  followupData,
 }: CreateAppointmentDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +96,20 @@ export default function CreateAppointmentDialog({
       setEndTime(end);
     }
   }, [opened, initialDate]);
+
+  // Pre-populate fields when followupData is provided
+  useEffect(() => {
+    if (opened && followupData) {
+      setPatientId(followupData.patientId);
+      setClinicId(followupData.clinicId);
+      setClinicianId(followupData.clinicianId);
+      setAppointmentTypeId(followupData.appointmentTypeId);
+      setNotes(followupData.notes);
+      
+      // Set parent appointment in the body (will be sent when creating)
+      // This will link the appointments together
+    }
+  }, [opened, followupData]);
 
   // Auto-calculate end time when start time or duration changes
   useEffect(() => {
@@ -250,6 +276,7 @@ export default function CreateAppointmentDialog({
           end_time: endTime.toISOString(),
           status,
           notes,
+          parent_appointment: followupData?.parentAppointmentId || null,
         }),
         credentials: 'include',
       });

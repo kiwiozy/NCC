@@ -34,6 +34,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'id', 'clinic', 'clinic_name', 'patient', 'patient_name',
             'clinician', 'clinician_name', 'appointment_type', 'appointment_type_name',
             'start_time', 'end_time', 'status', 'reason', 'notes', 'duration_minutes',
+            'parent_appointment', 'needs_followup_reminder', 'followup_scheduled',
             'created_at', 'updated_at',
             # Xero billing fields (added Nov 2025)
             'invoice_contact_type', 'billing_company', 'billing_notes',

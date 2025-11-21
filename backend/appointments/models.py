@@ -146,6 +146,29 @@ class Appointment(models.Model):
     )
     
     # ═══════════════════════════════════════════════════════════════════
+    # FOLLOW-UP TRACKING FIELDS (Added Nov 2025)
+    # ═══════════════════════════════════════════════════════════════════
+    
+    parent_appointment = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='followup_appointments',
+        help_text="If this is a follow-up, link to the original appointment"
+    )
+    
+    needs_followup_reminder = models.BooleanField(
+        default=False,
+        help_text="Flag to indicate this appointment needs a follow-up scheduled"
+    )
+    
+    followup_scheduled = models.BooleanField(
+        default=False,
+        help_text="Flag to indicate a follow-up has been scheduled for this appointment"
+    )
+    
+    # ═══════════════════════════════════════════════════════════════════
     # XERO BILLING FIELDS (Added Nov 2025)
     # ═══════════════════════════════════════════════════════════════════
     
