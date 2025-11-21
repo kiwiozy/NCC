@@ -201,11 +201,25 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Override partial_update (PATCH) to handle converting an existing event to recurring.
+        """
+        print(f"🟢 PARTIAL_UPDATE METHOD CALLED")
+        print(f"🟢 request.data: {request.data}")
+        
+        # Call the common update logic
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+    
     def update(self, request, *args, **kwargs):
         """
         Override update to handle converting an existing event to recurring.
         If is_recurring changes from False to True, generate additional recurring events.
         """
+        print(f"🟢 UPDATE METHOD CALLED")
+        print(f"🟢 request.data: {request.data}")
+        
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
