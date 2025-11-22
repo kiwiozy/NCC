@@ -12,7 +12,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme } from '@mantine/core';
+import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme, Popover, Text } from '@mantine/core';
 import { IconMenu2 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
@@ -247,6 +247,67 @@ export default function ClinicCalendar() {
       }
     };
   }, [events, moveAllDayEvents]);
+
+  // Convert "+X more" click to hover behavior
+  useEffect(() => {
+    const attachHoverToMoreLinks = () => {
+      const moreLinks = document.querySelectorAll('.fc-more-link');
+      
+      moreLinks.forEach((link) => {
+        // Remove existing listeners
+        const newLink = link.cloneNode(true);
+        link.parentNode?.replaceChild(newLink, link);
+        
+        // Add hover listener
+        newLink.addEventListener('mouseenter', (e) => {
+          // Trigger click to open popover
+          (e.target as HTMLElement).click();
+        });
+        
+        // Close popover when mouse leaves both link and popover
+        let leaveTimeout: NodeJS.Timeout;
+        newLink.addEventListener('mouseleave', () => {
+          leaveTimeout = setTimeout(() => {
+            const popover = document.querySelector('.fc-popover');
+            if (popover && !popover.matches(':hover')) {
+              const closeBtn = popover.querySelector('.fc-popover-close') as HTMLElement;
+              if (closeBtn) closeBtn.click();
+            }
+          }, 200);
+        });
+        
+        // Keep popover open when hovering over it
+        setTimeout(() => {
+          const popover = document.querySelector('.fc-popover');
+          if (popover) {
+            popover.addEventListener('mouseenter', () => {
+              clearTimeout(leaveTimeout);
+            });
+            
+            popover.addEventListener('mouseleave', () => {
+              const closeBtn = popover.querySelector('.fc-popover-close') as HTMLElement;
+              if (closeBtn) closeBtn.click();
+            });
+          }
+        }, 100);
+      });
+    };
+    
+    // Run on initial render and after events change
+    setTimeout(attachHoverToMoreLinks, 100);
+    setTimeout(attachHoverToMoreLinks, 500);
+    
+    // Also watch for DOM changes
+    const observer = new MutationObserver(attachHoverToMoreLinks);
+    const calendarEl = document.querySelector('.fc-daygrid-body');
+    if (calendarEl) {
+      observer.observe(calendarEl, { childList: true, subtree: true });
+    }
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [events]);
 
 
   const fetchAppointments = async () => {
@@ -640,6 +701,49 @@ export default function ClinicCalendar() {
             position: relative !important;
             margin-top: 0 !important;
           }
+          
+          /* Show popover on hover for "+X more" link */
+          .fc-more-link {
+            cursor: pointer;
+            color: var(--mantine-color-blue-6) !important;
+            font-size: 11px !important;
+            padding: 2px 4px !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+            transition: background-color 0.2s;
+          }
+          
+          .fc-more-link:hover {
+            background-color: rgba(51, 154, 240, 0.1) !important;
+            border-radius: 3px;
+          }
+          
+          /* Style the popover that appears on hover/click */
+          .fc-popover {
+            background-color: var(--mantine-color-dark-7) !important;
+            border: 1px solid var(--mantine-color-dark-4) !important;
+            border-radius: 6px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            z-index: 9999 !important;
+          }
+          
+          .fc-popover-header {
+            background-color: var(--mantine-color-dark-6) !important;
+            border-bottom: 1px solid var(--mantine-color-dark-4) !important;
+            padding: 8px 12px !important;
+            font-weight: 600 !important;
+          }
+          
+          .fc-popover-body {
+            padding: 8px !important;
+          }
+          
+          .fc-popover .fc-event {
+            margin-bottom: 4px !important;
+            padding: 4px 6px !important;
+            border-radius: 3px !important;
+            font-size: 11px !important;
+          }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
@@ -658,6 +762,8 @@ export default function ClinicCalendar() {
             selectMirror={false}
             selectMirror={true}
             dayMaxEvents={4}
+            moreLinkClick="popover"
+            moreLinkClassNames="fc-more-link-custom"
             weekends={true}
             slotMinTime="07:00:00"
             slotMaxTime="18:00:00"
