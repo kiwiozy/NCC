@@ -496,10 +496,28 @@ export default function ClinicCalendar() {
           .fc-dayGridMonth-view .fc-daygrid-day {
             cursor: pointer;
             transition: background-color 0.2s;
+            position: relative;
           }
           
           .fc-dayGridMonth-view .fc-daygrid-day:hover {
             background-color: rgba(255, 255, 255, 0.05) !important;
+          }
+          
+          /* Position date number over the all-day events */
+          .fc-dayGridMonth-view .fc-daygrid-day-top {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+          }
+          
+          .fc-dayGridMonth-view .fc-daygrid-day-number {
+            font-size: 18px;
+            color: #ffffff;
           }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
