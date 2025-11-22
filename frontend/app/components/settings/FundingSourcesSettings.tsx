@@ -82,12 +82,55 @@ export default function FundingSourcesSettings() {
       const data = await response.json();
       // Handle paginated response
       const sources = data.results || data;
-      setFundingSources(sources.sort((a: FundingSource, b: FundingSource) => a.order - b.order));
+      const sortedSources = sources.sort((a: FundingSource, b: FundingSource) => a.order - b.order);
+      
+      // Check if order numbers are sequential, if not, fix them
+      const needsReordering = sortedSources.some((source: FundingSource, index: number) => source.order !== index);
+      if (needsReordering) {
+        await fixOrderNumbers(sortedSources);
+      } else {
+        setFundingSources(sortedSources);
+      }
     } catch (err: any) {
       console.error('Error loading funding sources:', err);
       setError('Failed to load funding sources: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fixOrderNumbers = async (sources: FundingSource[]) => {
+    try {
+      const csrfToken = await getCsrfToken();
+      
+      // Update each source with its correct sequential order
+      const updatePromises = sources.map((source, index) => 
+        fetch(`https://localhost:8000/api/settings/funding-sources/${source.id}/`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({ order: index }),
+        })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      // Reload the corrected data
+      const response = await fetch('https://localhost:8000/api/settings/funding-sources/', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const sources = data.results || data;
+        setFundingSources(sources.sort((a: FundingSource, b: FundingSource) => a.order - b.order));
+      }
+    } catch (err: any) {
+      console.error('Error fixing order numbers:', err);
+      // Still set the sources even if fix failed
+      setFundingSources(sources);
     }
   };
 
@@ -207,11 +250,15 @@ export default function FundingSourcesSettings() {
     if (newIndex < 0 || newIndex >= fundingSources.length) return;
 
     const targetSource = fundingSources[newIndex];
-    const newOrder = targetSource.order;
+    
+    // Use the current index as the new order value to ensure proper sequencing
+    const currentOrder = source.order;
+    const targetOrder = targetSource.order;
 
     try {
       const csrfToken = await getCsrfToken();
-      // Swap orders
+      
+      // Update the source item to the target's order
       const response1 = await fetch(`https://localhost:8000/api/settings/funding-sources/${source.id}/`, {
         method: 'PATCH',
         credentials: 'include',
@@ -219,9 +266,10 @@ export default function FundingSourcesSettings() {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
-        body: JSON.stringify({ order: newOrder }),
+        body: JSON.stringify({ order: targetOrder }),
       });
 
+      // Update the target item to the source's order
       const response2 = await fetch(`https://localhost:8000/api/settings/funding-sources/${targetSource.id}/`, {
         method: 'PATCH',
         credentials: 'include',
@@ -229,7 +277,7 @@ export default function FundingSourcesSettings() {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
-        body: JSON.stringify({ order: source.order }),
+        body: JSON.stringify({ order: currentOrder }),
       });
 
       if (response1.ok && response2.ok) {
