@@ -521,7 +521,7 @@ export default function SMSTemplateManager() {
               No templates found. Click "Add Template" to create one.
             </Text>
           ) : (
-            <Table>
+            <Table style={{ tableLayout: 'fixed', width: '100%' }}>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th style={{ width: '30%' }}>Template</Table.Th>
