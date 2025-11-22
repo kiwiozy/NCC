@@ -360,6 +360,17 @@ def patient_send_sms(request, patient_id):
     if appointment_id:
         try:
             appointment = Appointment.objects.select_related('clinic', 'clinician', 'appointment_type').get(id=appointment_id)
+            
+            # CHECK: Don't send reminders for appointments that patient already cancelled via SMS
+            if appointment.sms_cancelled:
+                return Response(
+                    {
+                        'error': 'Patient already cancelled this appointment via SMS',
+                        'cancelled_at': appointment.sms_cancelled_at.isoformat() if appointment.sms_cancelled_at else None,
+                        'cancellation_message': appointment.sms_cancellation_message
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         except Appointment.DoesNotExist:
             pass  # Continue without appointment data
     

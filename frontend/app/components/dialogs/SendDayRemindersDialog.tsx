@@ -62,6 +62,7 @@ interface PatientAppointment {
   status: string;
   has_phone: boolean;
   phone_number: string | null;
+  sms_cancelled: boolean;
 }
 
 interface SMSTemplate {
@@ -122,7 +123,8 @@ export default function SendDayRemindersDialog({
           .filter((apt: PatientAppointment) => 
             apt.patient_id && 
             apt.has_phone && 
-            apt.status === 'scheduled'
+            apt.status === 'scheduled' &&
+            !apt.sms_cancelled // Don't auto-select appointments patient already cancelled
           )
           .map((apt: PatientAppointment) => apt.id)
       );
@@ -199,7 +201,7 @@ export default function SendDayRemindersDialog({
 
   const handleSelectAll = () => {
     const selectableAppointments = appointments
-      .filter((apt) => apt.patient_id && apt.has_phone && apt.status === 'scheduled')
+      .filter((apt) => apt.patient_id && apt.has_phone && apt.status === 'scheduled' && !apt.sms_cancelled)
       .map((apt) => apt.id);
     setSelectedAppointments(new Set(selectableAppointments));
   };
@@ -434,7 +436,7 @@ export default function SendDayRemindersDialog({
 
               {appointments.map((apt) => {
                 const isSelected = selectedAppointments.has(apt.id);
-                const canSelect = apt.patient_id && apt.has_phone && apt.status === 'scheduled';
+                const canSelect = apt.patient_id && apt.has_phone && apt.status === 'scheduled' && !apt.sms_cancelled;
 
                 return (
                   <Paper
@@ -474,7 +476,13 @@ export default function SendDayRemindersDialog({
                           )}
                         </Group>
                         
-                        {!apt.has_phone && apt.patient_id && (
+                        {apt.sms_cancelled && (
+                          <Alert icon={<IconX size={14} />} color="red" p={8}>
+                            <Text size="xs">Patient cancelled via SMS - Don't send reminder</Text>
+                          </Alert>
+                        )}
+                        
+                        {!apt.has_phone && apt.patient_id && !apt.sms_cancelled && (
                           <Alert icon={<IconX size={14} />} color="orange" p={8}>
                             <Text size="xs">No phone number on file</Text>
                           </Alert>

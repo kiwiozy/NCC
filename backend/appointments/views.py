@@ -500,6 +500,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 'status': appointment.status,
                 'has_phone': has_phone,
                 'phone_number': phone_number,
+                'sms_cancelled': appointment.sms_cancelled,  # Include SMS cancellation status
             })
         
         return Response(result)

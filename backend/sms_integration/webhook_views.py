@@ -247,57 +247,36 @@ def sms_inbound(request):
             sms_inbound.notes = 'Auto-detected: Confirmation'
             sms_inbound.save()
             
-            # Try to link to specific appointment via the original SMS message
+            # STRICT MATCHING: Only confirm the appointment that sent the original reminder
+            # We do NOT use fallback matching to prevent confirming wrong appointments
             appointment_to_confirm = None
             
-            # OPTION A: If this is a reply to a specific SMS (best method)
+            # ONLY METHOD: Find appointment via linked message ref
             if linked_message and linked_message.appointment:
                 appointment_to_confirm = linked_message.appointment
                 logger.info(f"[SMS Webhook] ✓ Found appointment via linked message: {appointment_to_confirm.id}")
+            else:
+                logger.warning(f"[SMS Webhook] ✗ No linked message/appointment found for confirmation. Reply saved but not auto-confirmed.")
             
-            # OPTION B: Fallback - find appointment with recent reminder sent (within last 7 days)
-            elif patient:
-                from appointments.models import Appointment
-                from datetime import timedelta
-                
-                # Find appointments that had reminders sent recently
-                recent_reminder_cutoff = timezone.now() - timedelta(days=7)
-                
-                appointment_to_confirm = Appointment.objects.filter(
-                    patient=patient,
-                    start_time__gte=timezone.now(),  # Future appointments only
-                    sms_reminder_sent_at__gte=recent_reminder_cutoff,  # Had reminder sent in last 7 days
-                    sms_confirmed=False,  # Not already confirmed
-                    status='scheduled'
-                ).order_by('start_time').first()  # Earliest upcoming
-                
-                if appointment_to_confirm:
-                    logger.info(f"[SMS Webhook] ✓ Found appointment via recent reminder: {appointment_to_confirm.id}")
-            
-            # OPTION C: Last fallback - find earliest upcoming appointment
-            if not appointment_to_confirm and patient:
-                from appointments.models import Appointment
-                from datetime import timedelta
-                
-                appointment_to_confirm = Appointment.objects.filter(
-                    patient=patient,
-                    start_time__gte=timezone.now(),
-                    start_time__lte=timezone.now() + timedelta(days=30),
-                    sms_confirmed=False,
-                    status='scheduled'
-                ).order_by('start_time').first()
-                
-                if appointment_to_confirm:
-                    logger.info(f"[SMS Webhook] ✓ Found appointment via earliest upcoming: {appointment_to_confirm.id}")
-            
-            # Mark appointment as confirmed
+            # Mark appointment as confirmed (overwrite cancellation if exists)
             if appointment_to_confirm:
                 appointment_to_confirm.sms_confirmed = True
                 appointment_to_confirm.sms_confirmed_at = timezone.now()
                 appointment_to_confirm.sms_confirmation_message = message_text
-                appointment_to_confirm.save(update_fields=['sms_confirmed', 'sms_confirmed_at', 'sms_confirmation_message'])
+                # Clear cancellation status (last reply wins)
+                appointment_to_confirm.sms_cancelled = False
+                appointment_to_confirm.sms_cancelled_at = None
+                appointment_to_confirm.sms_cancellation_message = None
+                appointment_to_confirm.save(update_fields=[
+                    'sms_confirmed', 
+                    'sms_confirmed_at', 
+                    'sms_confirmation_message',
+                    'sms_cancelled',
+                    'sms_cancelled_at',
+                    'sms_cancellation_message'
+                ])
                 
-                logger.info(f"[SMS Webhook] ✓ Appointment confirmed: {appointment_to_confirm.id} for {patient.get_full_name()}")
+                logger.info(f"[SMS Webhook] ✓ Appointment confirmed: {appointment_to_confirm.id} for {patient.get_full_name() if patient else 'Unknown'}")
                 sms_inbound.notes += f" - Linked to appointment {appointment_to_confirm.id}"
                 sms_inbound.save()
         
@@ -330,61 +309,36 @@ def sms_inbound(request):
             sms_inbound.notes = 'Auto-detected: Cancellation/Reschedule request'
             sms_inbound.save()
             
-            # Try to link to specific appointment and mark as cancelled
+            # STRICT MATCHING: Only cancel the appointment that sent the original reminder
+            # We do NOT use fallback matching to prevent cancelling wrong appointments
             appointment_to_cancel = None
             
-            # OPTION A: If this is a reply to a specific SMS (best method)
+            # ONLY METHOD: Find appointment via linked message ref
             if linked_message and linked_message.appointment:
                 appointment_to_cancel = linked_message.appointment
                 logger.info(f"[SMS Webhook] ✓ Found appointment to cancel via linked message: {appointment_to_cancel.id}")
+            else:
+                logger.warning(f"[SMS Webhook] ✗ No linked message/appointment found for cancellation. Reply saved but not auto-cancelled.")
             
-            # OPTION B: Fallback - find appointment with recent reminder sent (within last 7 days)
-            elif patient:
-                from appointments.models import Appointment
-                from datetime import timedelta
-                
-                recent_reminder_cutoff = timezone.now() - timedelta(days=7)
-                
-                appointment_to_cancel = Appointment.objects.filter(
-                    patient=patient,
-                    start_time__gte=timezone.now(),
-                    sms_reminder_sent_at__gte=recent_reminder_cutoff,
-                    status='scheduled'
-                ).order_by('start_time').first()
-                
-                if appointment_to_cancel:
-                    logger.info(f"[SMS Webhook] ✓ Found appointment to cancel via recent reminder: {appointment_to_cancel.id}")
-            
-            # OPTION C: Last fallback - find earliest upcoming appointment
-            if not appointment_to_cancel and patient:
-                from appointments.models import Appointment
-                from datetime import timedelta
-                
-                appointment_to_cancel = Appointment.objects.filter(
-                    patient=patient,
-                    start_time__gte=timezone.now(),
-                    start_time__lte=timezone.now() + timedelta(days=30),
-                    status='scheduled'
-                ).order_by('start_time').first()
-                
-                if appointment_to_cancel:
-                    logger.info(f"[SMS Webhook] ✓ Found appointment to cancel via earliest upcoming: {appointment_to_cancel.id}")
-            
-            # Mark appointment as cancelled via SMS
+            # Mark appointment as cancelled (overwrite confirmation if exists)
             if appointment_to_cancel:
                 appointment_to_cancel.sms_cancelled = True
                 appointment_to_cancel.sms_cancelled_at = timezone.now()
                 appointment_to_cancel.sms_cancellation_message = message_text
-                # Also clear confirmation if it was previously confirmed
+                # Clear confirmation status (last reply wins)
                 appointment_to_cancel.sms_confirmed = False
+                appointment_to_cancel.sms_confirmed_at = None
+                appointment_to_cancel.sms_confirmation_message = None
                 appointment_to_cancel.save(update_fields=[
                     'sms_cancelled', 
                     'sms_cancelled_at', 
                     'sms_cancellation_message',
-                    'sms_confirmed'
+                    'sms_confirmed',
+                    'sms_confirmed_at',
+                    'sms_confirmation_message'
                 ])
                 
-                logger.info(f"[SMS Webhook] ✓ Appointment marked as cancelled via SMS: {appointment_to_cancel.id} for {patient.get_full_name()}")
+                logger.info(f"[SMS Webhook] ✓ Appointment marked as cancelled via SMS: {appointment_to_cancel.id} for {patient.get_full_name() if patient else 'Unknown'}")
                 sms_inbound.notes += f" - Linked to appointment {appointment_to_cancel.id}"
                 sms_inbound.save()
         
