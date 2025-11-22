@@ -634,6 +634,15 @@ export default function ClinicCalendar() {
         </Group>
 
         <style dangerouslySetInnerHTML={{__html: `
+          /* Add spacing between events in day and week views */
+          .fc-timegrid-event-harness {
+            padding: 2.5px !important;
+          }
+          
+          .fc-timegrid-event {
+            border-radius: 4px !important;
+          }
+          
           /* Add vertical lines between days in week view */
           .fc-timeGridWeek-view .fc-col-header-cell {
             border-right: 1px solid #3A4048 !important;
