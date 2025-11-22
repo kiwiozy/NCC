@@ -922,7 +922,7 @@ export default function ClinicCalendar() {
                       }}>{eventInfo.event.title}</span>
                       {isSmsConfirmed && (
                         <span style={{ 
-                          color: '#4ade80', 
+                          color: '#ffffff', 
                           fontSize: '14px', 
                           fontWeight: 'bold',
                           lineHeight: '1',
