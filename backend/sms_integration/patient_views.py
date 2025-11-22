@@ -603,7 +603,7 @@ def conversation_list(request):
                     last_message_time = outbound_time
                     phone_number = last_outbound_msg.phone_number
                 else:
-                    last_message = last_inbound_msg.message_body
+                    last_message = last_inbound_msg.message
                     last_message_time = inbound_time
                     phone_number = last_inbound_msg.from_number
             elif last_outbound_msg:
@@ -611,7 +611,7 @@ def conversation_list(request):
                 last_message_time = last_outbound_msg.created_at
                 phone_number = last_outbound_msg.phone_number
             elif last_inbound_msg:
-                last_message = last_inbound_msg.message_body
+                last_message = last_inbound_msg.message
                 last_message_time = last_inbound_msg.received_at
                 phone_number = last_inbound_msg.from_number
             
