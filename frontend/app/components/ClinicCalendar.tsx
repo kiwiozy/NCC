@@ -912,6 +912,7 @@ export default function ClinicCalendar() {
             slotEventOverlap={false}
             eventContent={(eventInfo) => {
               const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
+              const isSmsCancelled = eventInfo.event.extendedProps?.smsCancelled;
               const currentView = calendarRef.current?.getApi().view.type;
               const isAllDay = eventInfo.event.allDay;
               
@@ -936,7 +937,17 @@ export default function ClinicCalendar() {
                         whiteSpace: 'nowrap',
                         flexGrow: 1
                       }}>{eventInfo.event.title}</span>
-                      {isSmsConfirmed && (
+                      {isSmsCancelled && (
+                        <span style={{ 
+                          color: '#ff4444', 
+                          fontSize: '14px', 
+                          fontWeight: 'bold',
+                          lineHeight: '1',
+                          flexShrink: 0,
+                          paddingRight: '15px',
+                        }} title="Patient cancelled via SMS">❌</span>
+                      )}
+                      {isSmsConfirmed && !isSmsCancelled && (
                         <span style={{ 
                           color: '#ffffff', 
                           fontSize: '14px', 
@@ -975,7 +986,18 @@ export default function ClinicCalendar() {
                         flexGrow: 1,
                         color: 'var(--mantine-color-text)'
                       }}>{eventInfo.event.title}</span>
-                      {isSmsConfirmed && (
+                      {isSmsCancelled && (
+                        <span style={{ 
+                          color: '#ff4444', 
+                          fontSize: '14px', 
+                          fontWeight: 'bold',
+                          lineHeight: '1',
+                          display: 'inline-block',
+                          flexShrink: 0,
+                          paddingRight: '15px',
+                        }} title="Patient cancelled via SMS">❌</span>
+                      )}
+                      {isSmsConfirmed && !isSmsCancelled && (
                         <span style={{ 
                           color: '#ffffff', 
                           fontSize: '14px', 
@@ -1012,7 +1034,21 @@ export default function ClinicCalendar() {
                     flexGrow: 1,
                     fontWeight: 'bold'
                   }}>{eventInfo.event.title}</span>
-                  {isSmsConfirmed && (
+                  {isSmsCancelled && (
+                    <span style={{ 
+                      color: '#ff4444', 
+                      fontSize: '16px', 
+                      fontWeight: 'bold',
+                      lineHeight: '1',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                      zIndex: 20,
+                      textShadow: '0 0 3px rgba(0,0,0,0.8)',
+                      marginLeft: 'auto',
+                      paddingRight: '15px',
+                    }} title="Patient cancelled via SMS">❌</span>
+                  )}
+                  {isSmsConfirmed && !isSmsCancelled && (
                     <span style={{ 
                       color: '#ffffff', 
                       fontSize: '16px', 

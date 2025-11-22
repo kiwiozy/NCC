@@ -262,6 +262,24 @@ class Appointment(models.Model):
         help_text="The actual SMS reply message from patient (e.g., 'YES', 'CONFIRM')"
     )
     
+    sms_cancelled = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Has patient cancelled appointment via SMS reply?"
+    )
+    
+    sms_cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When did patient cancel via SMS?"
+    )
+    
+    sms_cancellation_message = models.TextField(
+        null=True,
+        blank=True,
+        help_text="The actual SMS cancellation message from patient (e.g., 'CANT MAKE IT')"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

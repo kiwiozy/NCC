@@ -130,6 +130,10 @@ class AppointmentCalendarSerializer(serializers.ModelSerializer):
             'smsConfirmed': obj.sms_confirmed,
             'smsConfirmedAt': obj.sms_confirmed_at.isoformat() if obj.sms_confirmed_at else None,
             'smsConfirmationMessage': obj.sms_confirmation_message,
+            # SMS Cancellation fields
+            'smsCancelled': obj.sms_cancelled,
+            'smsCancelledAt': obj.sms_cancelled_at.isoformat() if obj.sms_cancelled_at else None,
+            'smsCancellationMessage': obj.sms_cancellation_message,
         }
 
 
