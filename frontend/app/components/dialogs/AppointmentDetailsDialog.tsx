@@ -31,12 +31,15 @@ import {
   IconCheck,
   IconNotes,
   IconCalendarPlus,
+  IconMessage,
+  IconBell,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { SMSDialog } from './SMSDialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -112,6 +115,10 @@ export default function AppointmentDetailsDialog({
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // SMS Dialog state
+  const [smsDialogOpened, setSmsDialogOpened] = useState(false);
+  const [smsType, setSmsType] = useState<'reminder' | 'confirmation'>('reminder');
 
   // Edit form state
   const [editStatus, setEditStatus] = useState('');
@@ -492,17 +499,50 @@ export default function AppointmentDetailsDialog({
         {appointment && (
           <Stack gap="md">
             {/* Action Buttons */}
-            <Group justify="flex-end" gap="xs">
-              {!editMode && (
-                <>
-                  <ActionIcon variant="subtle" color="blue" onClick={() => setEditMode(true)} title="Edit">
-                    <IconEdit size={18} />
-                  </ActionIcon>
-                  <ActionIcon variant="subtle" color="red" onClick={handleDelete} title="Delete">
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </>
+            <Group justify="space-between" gap="xs">
+              {/* SMS Buttons - Only show for appointments with patients */}
+              {!editMode && appointment.patient && (
+                <Group gap="xs">
+                  <Button
+                    variant="light"
+                    color="blue"
+                    size="xs"
+                    leftSection={<IconBell size={16} />}
+                    onClick={() => {
+                      setSmsType('reminder');
+                      setSmsDialogOpened(true);
+                    }}
+                  >
+                    Send Reminder
+                  </Button>
+                  <Button
+                    variant="light"
+                    color="green"
+                    size="xs"
+                    leftSection={<IconMessage size={16} />}
+                    onClick={() => {
+                      setSmsType('confirmation');
+                      setSmsDialogOpened(true);
+                    }}
+                  >
+                    Send Confirmation
+                  </Button>
+                </Group>
               )}
+
+              {/* Edit/Delete Buttons */}
+              <Group gap="xs" ml="auto">
+                {!editMode && (
+                  <>
+                    <ActionIcon variant="subtle" color="blue" onClick={() => setEditMode(true)} title="Edit">
+                      <IconEdit size={18} />
+                    </ActionIcon>
+                    <ActionIcon variant="subtle" color="red" onClick={handleDelete} title="Delete">
+                      <IconTrash size={18} />
+                    </ActionIcon>
+                  </>
+                )}
+              </Group>
             </Group>
 
             <Divider />
@@ -736,6 +776,16 @@ export default function AppointmentDetailsDialog({
           </Stack>
         )}
       </div>
+
+      {/* SMS Dialog - Only render if patient exists */}
+      {appointment && appointment.patient && (
+        <SMSDialog
+          opened={smsDialogOpened}
+          onClose={() => setSmsDialogOpened(false)}
+          patientId={appointment.patient}
+          patientName={appointment.patient_name || ''}
+        />
+      )}
     </Modal>
   );
 }
