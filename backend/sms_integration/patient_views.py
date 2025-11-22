@@ -667,73 +667,103 @@ def sms_history(request):
     from appointments.models import Appointment
     from clinics.models import Clinic
     from clinicians.models import Clinician
+    import logging
     
+    logger = logging.getLogger(__name__)
     history = []
     
-    # Get all outbound messages
-    outbound_messages = SMSMessage.objects.select_related(
-        'patient', 'appointment', 'appointment__clinic', 'appointment__clinician'
-    ).order_by('-created_at')
-    
-    for msg in outbound_messages:
-        patient_name = "Unknown"
-        if msg.patient:
-            patient_name = msg.patient.get_full_name() or f"{msg.patient.first_name} {msg.patient.last_name}"
+    try:
+        # Get all outbound messages
+        outbound_messages = SMSMessage.objects.select_related(
+            'patient', 'appointment', 'appointment__clinic', 'appointment__clinician'
+        ).order_by('-created_at')
         
-        clinic_name = None
-        clinician_name = None
-        if msg.appointment:
-            if msg.appointment.clinic:
-                clinic_name = msg.appointment.clinic.name
-            if msg.appointment.clinician:
-                clinician_name = msg.appointment.clinician.full_name
+        for msg in outbound_messages:
+            try:
+                patient_name = "Unknown"
+                patient_id = None
+                if msg.patient:
+                    try:
+                        patient_name = msg.patient.get_full_name() if hasattr(msg.patient, 'get_full_name') else f"{msg.patient.first_name or ''} {msg.patient.last_name or ''}".strip()
+                        patient_id = str(msg.patient.id)
+                    except Exception as e:
+                        logger.error(f"Error getting patient name for message {msg.id}: {e}")
+                        patient_name = "Unknown"
+                
+                clinic_name = None
+                clinician_name = None
+                if msg.appointment:
+                    try:
+                        if msg.appointment.clinic:
+                            clinic_name = msg.appointment.clinic.name
+                        if msg.appointment.clinician:
+                            clinician_name = msg.appointment.clinician.full_name
+                    except Exception as e:
+                        logger.error(f"Error getting appointment details for message {msg.id}: {e}")
+                
+                history.append({
+                    'id': str(msg.id),
+                    'patient_id': patient_id,
+                    'patient_name': patient_name or "Unknown",
+                    'phone_number': msg.phone_number or '',
+                    'message': msg.message or '',
+                    'direction': 'outbound',
+                    'status': msg.delivery_status or 'sent',
+                    'sent_at': msg.created_at.isoformat(),
+                    'clinic_name': clinic_name,
+                    'clinician_name': clinician_name,
+                    'appointment_id': str(msg.appointment.id) if msg.appointment else None,
+                    'template_name': None,
+                    'character_count': len(msg.message or ''),
+                    'segment_count': (len(msg.message or '') // 160) + 1,
+                })
+            except Exception as e:
+                logger.error(f"Error processing outbound message {msg.id}: {e}")
+                continue
         
-        history.append({
-            'id': str(msg.id),
-            'patient_id': str(msg.patient.id) if msg.patient else None,
-            'patient_name': patient_name,
-            'phone_number': msg.phone_number or '',
-            'message': msg.message,
-            'direction': 'outbound',
-            'status': msg.delivery_status or 'sent',
-            'sent_at': msg.created_at.isoformat(),
-            'clinic_name': clinic_name,
-            'clinician_name': clinician_name,
-            'appointment_id': str(msg.appointment.id) if msg.appointment else None,
-            'template_name': None,  # TODO: Add template tracking if needed
-            'character_count': len(msg.message),
-            'segment_count': (len(msg.message) // 160) + 1,
-        })
-    
-    # Get all inbound messages
-    inbound_messages = SMSInbound.objects.select_related('patient').order_by('-received_at')
-    
-    for msg in inbound_messages:
-        patient_name = "Unknown"
-        if msg.patient:
-            patient_name = msg.patient.get_full_name() or f"{msg.patient.first_name} {msg.patient.last_name}"
+        # Get all inbound messages
+        inbound_messages = SMSInbound.objects.select_related('patient').order_by('-received_at')
         
-        history.append({
-            'id': str(msg.id),
-            'patient_id': str(msg.patient.id) if msg.patient else None,
-            'patient_name': patient_name,
-            'phone_number': msg.from_number or '',
-            'message': msg.message,
-            'direction': 'inbound',
-            'status': 'received',
-            'sent_at': msg.received_at.isoformat(),
-            'clinic_name': None,
-            'clinician_name': None,
-            'appointment_id': None,
-            'template_name': None,
-            'character_count': len(msg.message),
-            'segment_count': (len(msg.message) // 160) + 1,
-        })
+        for msg in inbound_messages:
+            try:
+                patient_name = "Unknown"
+                patient_id = None
+                if msg.patient:
+                    try:
+                        patient_name = msg.patient.get_full_name() if hasattr(msg.patient, 'get_full_name') else f"{msg.patient.first_name or ''} {msg.patient.last_name or ''}".strip()
+                        patient_id = str(msg.patient.id)
+                    except Exception as e:
+                        logger.error(f"Error getting patient name for inbound message {msg.id}: {e}")
+                        patient_name = "Unknown"
+                
+                history.append({
+                    'id': str(msg.id),
+                    'patient_id': patient_id,
+                    'patient_name': patient_name or "Unknown",
+                    'phone_number': msg.from_number or '',
+                    'message': msg.message or '',
+                    'direction': 'inbound',
+                    'status': 'received',
+                    'sent_at': msg.received_at.isoformat(),
+                    'clinic_name': None,
+                    'clinician_name': None,
+                    'appointment_id': None,
+                    'template_name': None,
+                    'character_count': len(msg.message or ''),
+                    'segment_count': (len(msg.message or '') // 160) + 1,
+                })
+            except Exception as e:
+                logger.error(f"Error processing inbound message {msg.id}: {e}")
+                continue
+        
+        # Sort all messages by time (most recent first)
+        history.sort(key=lambda x: x['sent_at'], reverse=True)
+        
+        return Response(history, status=status.HTTP_200_OK)
     
-    # Sort all messages by time (most recent first)
-    history.sort(key=lambda x: x['sent_at'], reverse=True)
-    
-    return Response(history, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error in sms_history: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['DELETE'])
