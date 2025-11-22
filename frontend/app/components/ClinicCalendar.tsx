@@ -13,12 +13,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Paper, Title, Group, Button, Badge, Checkbox, Stack, Box, Drawer, ActionIcon, useMantineColorScheme, Popover, Text } from '@mantine/core';
-import { IconMenu2 } from '@tabler/icons-react';
+import { IconMenu2, IconMailFilled } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import AppointmentDetailsDialog from './dialogs/AppointmentDetailsDialog';
 import CreateAppointmentDialog from './dialogs/CreateAppointmentDialog';
 import CreateAllDayAppointmentDialog from './dialogs/CreateAllDayAppointmentDialog';
 import EditAllDayEventDialog from './dialogs/EditAllDayEventDialog';
+import SendDayRemindersDialog from './dialogs/SendDayRemindersDialog';
 
 // Type definitions
 interface Clinic {
@@ -67,6 +68,10 @@ export default function ClinicCalendar() {
   const [createAllDayDialogOpen, setCreateAllDayDialogOpen] = useState(false);
   const [createInitialDate, setCreateInitialDate] = useState<Date | string | null>(null);
   const [followupData, setFollowupData] = useState<any>(null);
+  
+  // Send day reminders dialog
+  const [sendRemindersDialogOpen, setSendRemindersDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Double-click detection for creating appointments
   const [lastClickTime, setLastClickTime] = useState(0);
@@ -575,6 +580,35 @@ export default function ClinicCalendar() {
     // Disabled - using dateClick for double-click detection instead
     selectInfo.view.calendar.unselect();
   };
+  
+  // Handle send reminders button click
+  const handleSendRemindersClick = () => {
+    // Get current date from calendar
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      const currentDate = calendarApi.getDate();
+      setSelectedDate(currentDate.toISOString().split('T')[0]); // Format: YYYY-MM-DD
+      setSendRemindersDialogOpen(true);
+    }
+  };
+  
+  // Get current view to show/hide send reminders button
+  const [currentView, setCurrentView] = useState('timeGridDay');
+  
+  useEffect(() => {
+    // Update current view state when calendar view changes
+    const interval = setInterval(() => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        const viewType = calendarApi.view.type;
+        if (viewType !== currentView) {
+          setCurrentView(viewType);
+        }
+      }
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, [currentView]);
 
   return (
     <>
@@ -627,6 +661,17 @@ export default function ClinicCalendar() {
             <Title order={2}>Clinic Schedule</Title>
           </Group>
           <Group>
+            {/* Show Send Reminders button only in day view */}
+            {currentView === 'timeGridDay' && (
+              <Button
+                leftSection={<IconMailFilled size={16} />}
+                variant="light"
+                color="blue"
+                onClick={handleSendRemindersClick}
+              >
+                Send Reminders
+              </Button>
+            )}
             <Button variant="light" onClick={fetchAppointments}>
               Refresh
             </Button>
@@ -1032,6 +1077,17 @@ export default function ClinicCalendar() {
         }}
         eventId={selectedAllDayEventId}
         onUpdate={fetchAppointments} // Refresh calendar after edit/delete
+      />
+      
+      {/* Send Day Reminders Dialog */}
+      <SendDayRemindersDialog
+        opened={sendRemindersDialogOpen}
+        onClose={() => {
+          setSendRemindersDialogOpen(false);
+          setSelectedDate(null);
+        }}
+        date={selectedDate}
+        onSuccess={fetchAppointments} // Refresh calendar after sending
       />
     </>
   );

@@ -404,6 +404,105 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             'resources': resources,
             'events': events_serializer.data
         })
+    
+    @action(detail=False, methods=['get'], url_path='day/(?P<date>[^/.]+)')
+    def day_appointments(self, request, date=None):
+        """
+        Get all appointments for a specific day with patient phone information.
+        Used for sending bulk SMS reminders.
+        
+        URL: /api/appointments/day/2025-11-22/
+        Returns: List of appointments with phone availability flag
+        """
+        from datetime import datetime, timedelta
+        import json
+        
+        if not date:
+            return Response(
+                {'error': 'Date parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Parse date (format: YYYY-MM-DD)
+            target_date = datetime.strptime(date, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {'error': 'Invalid date format. Use YYYY-MM-DD'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get appointments for this day
+        start_datetime = datetime.combine(target_date, datetime.min.time())
+        end_datetime = datetime.combine(target_date, datetime.max.time())
+        
+        appointments = Appointment.objects.filter(
+            start_time__gte=start_datetime,
+            start_time__lte=end_datetime
+        ).select_related('patient', 'clinic', 'clinician', 'appointment_type').order_by('start_time')
+        
+        # Build response with phone availability
+        result = []
+        for appointment in appointments:
+            # Get patient phone numbers from contact_json
+            has_phone = False
+            phone_number = None
+            
+            if appointment.patient and appointment.patient.contact_json:
+                try:
+                    contact_json = appointment.patient.contact_json
+                    if isinstance(contact_json, str):
+                        contact_json = json.loads(contact_json)
+                    
+                    # Check for phones array (new format)
+                    phones = contact_json.get('phones', [])
+                    if phones and isinstance(phones, list) and len(phones) > 0:
+                        # Find default phone or first mobile
+                        default_phone = None
+                        first_mobile = None
+                        
+                        for phone in phones:
+                            if isinstance(phone, dict):
+                                phone_value = phone.get('phone', '').strip()
+                                phone_type = phone.get('type', '')
+                                is_default = phone.get('is_default', phone.get('default', False))
+                                
+                                if phone_value:
+                                    if is_default:
+                                        default_phone = phone_value
+                                        break
+                                    if phone_type == 'mobile' and not first_mobile:
+                                        first_mobile = phone_value
+                        
+                        phone_number = default_phone or first_mobile or phones[0].get('phone', '')
+                        has_phone = bool(phone_number)
+                    
+                    # Fallback to old format
+                    if not has_phone:
+                        mobile = contact_json.get('mobile', {})
+                        if isinstance(mobile, dict):
+                            phone_number = mobile.get('phone', '').strip()
+                            has_phone = bool(phone_number)
+                
+                except (json.JSONDecodeError, AttributeError, TypeError) as e:
+                    has_phone = False
+            
+            result.append({
+                'id': str(appointment.id),
+                'patient_id': str(appointment.patient.id) if appointment.patient else None,
+                'patient_name': appointment.patient.get_full_name() if appointment.patient else None,
+                'clinic_id': str(appointment.clinic.id),
+                'clinic_name': appointment.clinic.name,
+                'clinician_name': appointment.clinician.full_name if appointment.clinician else None,
+                'appointment_type_name': appointment.appointment_type.name if appointment.appointment_type else None,
+                'start_time': appointment.start_time.isoformat(),
+                'end_time': appointment.end_time.isoformat(),
+                'status': appointment.status,
+                'has_phone': has_phone,
+                'phone_number': phone_number,
+            })
+        
+        return Response(result)
 
 
 class EncounterViewSet(viewsets.ModelViewSet):
