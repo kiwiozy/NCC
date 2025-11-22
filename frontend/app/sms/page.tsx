@@ -6,6 +6,7 @@ import { IconSend, IconMessages, IconHistory } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
 import SendSMSTab from '../components/sms/SendSMSTab';
 import ConversationsTab from '../components/sms/ConversationsTab';
+import HistoryTab from '../components/sms/HistoryTab';
 
 export default function SMSCenterPage() {
   const iconStyle = { width: rem(16), height: rem(16) };
@@ -37,8 +38,7 @@ export default function SMSCenterPage() {
               </Tabs.Panel>
 
               <Tabs.Panel value="history" pt="xl">
-                {/* TODO: Build SMS history table */}
-                Coming soon: All SMS history
+                <HistoryTab />
               </Tabs.Panel>
             </ScrollArea>
           </Tabs>

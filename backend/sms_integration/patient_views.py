@@ -655,3 +655,111 @@ def conversation_list(request):
         'conversations': conversations,
         'total_count': len(conversations)
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def sms_history(request):
+    """
+    Get full SMS history with filtering options
+    Returns all SMS messages (sent and received) with patient, clinic, and status info
+    """
+    from appointments.models import Appointment
+    from clinics.models import Clinic
+    from clinicians.models import Clinician
+    
+    history = []
+    
+    # Get all outbound messages
+    outbound_messages = SMSMessage.objects.select_related(
+        'patient', 'appointment', 'appointment__clinic', 'appointment__clinician'
+    ).order_by('-created_at')
+    
+    for msg in outbound_messages:
+        patient_name = "Unknown"
+        if msg.patient:
+            patient_name = msg.patient.get_full_name() or f"{msg.patient.first_name} {msg.patient.last_name}"
+        
+        clinic_name = None
+        clinician_name = None
+        if msg.appointment:
+            if msg.appointment.clinic:
+                clinic_name = msg.appointment.clinic.name
+            if msg.appointment.clinician:
+                clinician_name = msg.appointment.clinician.full_name
+        
+        history.append({
+            'id': str(msg.id),
+            'patient_id': str(msg.patient.id) if msg.patient else None,
+            'patient_name': patient_name,
+            'phone_number': msg.phone_number or '',
+            'message': msg.message,
+            'direction': 'outbound',
+            'status': msg.delivery_status or 'sent',
+            'sent_at': msg.created_at.isoformat(),
+            'clinic_name': clinic_name,
+            'clinician_name': clinician_name,
+            'appointment_id': str(msg.appointment.id) if msg.appointment else None,
+            'template_name': None,  # TODO: Add template tracking if needed
+            'character_count': len(msg.message),
+            'segment_count': (len(msg.message) // 160) + 1,
+        })
+    
+    # Get all inbound messages
+    inbound_messages = SMSInbound.objects.select_related('patient').order_by('-received_at')
+    
+    for msg in inbound_messages:
+        patient_name = "Unknown"
+        if msg.patient:
+            patient_name = msg.patient.get_full_name() or f"{msg.patient.first_name} {msg.patient.last_name}"
+        
+        history.append({
+            'id': str(msg.id),
+            'patient_id': str(msg.patient.id) if msg.patient else None,
+            'patient_name': patient_name,
+            'phone_number': msg.from_number or '',
+            'message': msg.message,
+            'direction': 'inbound',
+            'status': 'received',
+            'sent_at': msg.received_at.isoformat(),
+            'clinic_name': None,
+            'clinician_name': None,
+            'appointment_id': None,
+            'template_name': None,
+            'character_count': len(msg.message),
+            'segment_count': (len(msg.message) // 160) + 1,
+        })
+    
+    # Sort all messages by time (most recent first)
+    history.sort(key=lambda x: x['sent_at'], reverse=True)
+    
+    return Response(history, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_sms_message(request, message_id):
+    """
+    Delete an SMS message (soft delete by marking as deleted)
+    """
+    try:
+        # Try to find in outbound messages
+        try:
+            msg = SMSMessage.objects.get(id=message_id)
+            msg.delete()
+            return Response({'message': 'Message deleted successfully'}, status=status.HTTP_200_OK)
+        except SMSMessage.DoesNotExist:
+            pass
+        
+        # Try to find in inbound messages
+        try:
+            msg = SMSInbound.objects.get(id=message_id)
+            msg.delete()
+            return Response({'message': 'Message deleted successfully'}, status=status.HTTP_200_OK)
+        except SMSInbound.DoesNotExist:
+            pass
+        
+        return Response({'error': 'Message not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
