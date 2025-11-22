@@ -74,13 +74,14 @@ class AppointmentCalendarSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'start', 'end', 'color', 'allDay', 'extendedProps']
     
     def get_title(self, obj):
-        """Generate event title - patient name or event description"""
+        """Generate event title - patient name | appointment type"""
         if obj.patient:
             # Regular appointment with patient
             patient_name = obj.patient.get_full_name()
-            clinician_name = obj.clinician.full_name if obj.clinician else ""
-            if clinician_name:
-                return f"{patient_name} - {clinician_name}"
+            appointment_type = obj.appointment_type.name if obj.appointment_type else None
+            
+            if appointment_type:
+                return f"{patient_name} | {appointment_type}"
             return f"{patient_name}"
         else:
             # All-day event without patient (holiday, closure, etc.)
