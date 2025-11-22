@@ -213,17 +213,38 @@ export default function ClinicCalendar() {
 
   // Move all-day events to the day-top section in month view
   useEffect(() => {
+    // Run immediately
+    moveAllDayEvents();
+    
     // Run multiple times to catch all events at different render stages
     const timer1 = setTimeout(moveAllDayEvents, 50);
     const timer2 = setTimeout(moveAllDayEvents, 150);
     const timer3 = setTimeout(moveAllDayEvents, 300);
     const timer4 = setTimeout(moveAllDayEvents, 600);
     
+    // Set up MutationObserver to watch for DOM changes
+    const calendarEl = document.querySelector('.fc-daygrid-body');
+    let observer: MutationObserver | null = null;
+    
+    if (calendarEl) {
+      observer = new MutationObserver(() => {
+        moveAllDayEvents();
+      });
+      
+      observer.observe(calendarEl, {
+        childList: true,
+        subtree: true,
+      });
+    }
+    
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
       clearTimeout(timer4);
+      if (observer) {
+        observer.disconnect();
+      }
     };
   }, [events, moveAllDayEvents]);
 
