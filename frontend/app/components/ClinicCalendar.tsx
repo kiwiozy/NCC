@@ -168,6 +168,69 @@ export default function ClinicCalendar() {
     };
   }, []);
 
+  // Move all-day events to the day-top section in month view
+  useEffect(() => {
+    const moveAllDayEvents = () => {
+      if (!calendarRef.current) return;
+      
+      const calendarApi = calendarRef.current.getApi();
+      const currentView = calendarApi.view.type;
+      
+      // Only apply in month view
+      if (currentView !== 'dayGridMonth') return;
+      
+      console.log('[MONTH VIEW] Moving all-day events to top...');
+      
+      // Find all day cells
+      const dayCells = document.querySelectorAll('.fc-daygrid-day');
+      
+      dayCells.forEach((dayCell) => {
+        const dayTop = dayCell.querySelector('.fc-daygrid-day-top');
+        const dayEvents = dayCell.querySelector('.fc-daygrid-day-events');
+        
+        if (!dayTop || !dayEvents) return;
+        
+        // Find ALL block events (all-day events) in this cell
+        const allBlockEvents = dayCell.querySelectorAll('.fc-daygrid-block-event');
+        
+        console.log(`[DAY CELL] Found ${allBlockEvents.length} block events total`);
+        
+        allBlockEvents.forEach((blockEvent, index) => {
+          const harness = blockEvent.closest('.fc-daygrid-event-harness');
+          
+          if (!harness) return;
+          
+          // Check if already in day-top
+          if (dayTop.contains(harness)) {
+            console.log(`[BLOCK EVENT ${index}] Already in day-top`);
+            return;
+          }
+          
+          console.log(`[BLOCK EVENT ${index}] Moving to day-top`);
+          
+          // Move before the date number
+          const dateNumber = dayTop.querySelector('.fc-daygrid-day-number');
+          if (dateNumber) {
+            dayTop.insertBefore(harness, dateNumber);
+          } else {
+            dayTop.appendChild(harness);
+          }
+        });
+      });
+    };
+    
+    // Run multiple times to catch all events
+    const timer1 = setTimeout(moveAllDayEvents, 100);
+    const timer2 = setTimeout(moveAllDayEvents, 300);
+    const timer3 = setTimeout(moveAllDayEvents, 500);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [events]);
+
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -496,28 +559,53 @@ export default function ClinicCalendar() {
           .fc-dayGridMonth-view .fc-daygrid-day {
             cursor: pointer;
             transition: background-color 0.2s;
-            position: relative;
           }
           
           .fc-dayGridMonth-view .fc-daygrid-day:hover {
             background-color: rgba(255, 255, 255, 0.05) !important;
           }
           
-          /* Position date number over the all-day events */
+          /* Month view: day-top should contain block events horizontally with date on right */
           .fc-dayGridMonth-view .fc-daygrid-day-top {
-            position: absolute;
-            top: 4px;
-            right: 8px;
-            z-index: 10;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            position: relative !important;
+            min-height: 30px !important;
+            padding: 4px !important;
+            gap: 4px !important;
           }
           
+          /* Date number on the right in day-top */
           .fc-dayGridMonth-view .fc-daygrid-day-number {
-            font-size: 18px;
-            color: #ffffff;
+            margin-left: auto !important;
+            order: 999 !important;
+            padding: 4px 8px !important;
+            font-size: 18px !important;
+            font-weight: 600 !important;
+            flex-shrink: 0 !important;
+          }
+          
+          /* All-day block events in day-top share space equally */
+          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+          }
+          
+          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-block-event {
+            width: 100% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          
+          /* Regular appointments stay in day-events section (below day-top) */
+          .fc-dayGridMonth-view .fc-daygrid-day-events {
+            display: block !important;
+            position: relative !important;
+            margin-top: 0 !important;
           }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
