@@ -819,26 +819,6 @@ export default function ContactHeader({
           </ActionIcon>
         )}
         
-        {/* Refresh Button - Clears cache and reloads */}
-        <ActionIcon
-          variant="default"
-          size="lg"
-          onClick={() => {
-            try {
-              indexedDB.deleteDatabase('nexus_cache_v2');
-              setTimeout(() => {
-                window.location.reload();
-              }, 100);
-            } catch (error) {
-              console.error('Error clearing cache:', error);
-              window.location.reload();
-            }
-          }}
-          title="Refresh (Clear Cache)"
-        >
-          <IconRefresh size={20} stroke={1.5} />
-        </ActionIcon>
-        
         {onArchive && (
           <ActionIcon
             variant="default"
@@ -961,66 +941,80 @@ export default function ContactHeader({
         </Group>
       )}
 
-      {/* Second Row: Count and Hamburger Menu */}
-      <Group
-        justify="space-between"
-        wrap="nowrap"
-        align="center"
+      {/* Second Row: Count, Patient Name, and Actions */}
+      <Grid
+        gutter={0}
         style={{
           backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
-          padding: `${rem(12)} ${rem(24)}`,
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
+          margin: 0,
         }}
       >
-        {/* Left: Count Display */}
-        <Text component="span" size="md" c="blue" fw={600}>
-          {displayCount} of {contactCount} found
-        </Text>
+        {/* Left Panel Area - Count and Refresh (25% width to match patient list) */}
+        <Grid.Col span={3} style={{ padding: `${rem(12)} ${rem(24)}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text component="span" size="md" c="blue" fw={600}>
+            {displayCount} of {contactCount} found
+          </Text>
+          
+          {/* Refresh Button */}
+          {onRefresh && (
+            <ActionIcon
+              variant="default"
+              size="lg"
+              onClick={onRefresh}
+              title="Refresh (Clear Cache)"
+            >
+              <IconRefresh size={20} stroke={1.5} />
+            </ActionIcon>
+          )}
+        </Grid.Col>
         
-        {/* Center: Selected Patient Name */}
-        {selectedPatientName && (
-          <Title 
-            order={3} 
-            style={{ 
-              flex: 1, 
-              textAlign: 'center', 
-              fontSize: rem(20), 
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'color 0.2s ease',
-            }}
-            onClick={handleNameClick}
-            onDoubleClick={handleNameDoubleClick}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#228BE6'; // Blue on hover
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = ''; // Reset to default
-            }}
-            title={selectedPatientAddress ? "Click to copy name | Double-click to copy name + address" : "Click to copy name"}
-          >
-            {selectedPatientName}
-          </Title>
-        )}
+        {/* Right Panel Area - Patient Name and Menu (75% width) */}
+        <Grid.Col span={9} style={{ padding: `${rem(12)} ${rem(24)}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Center: Selected Patient Name */}
+          {selectedPatientName && (
+            <Title 
+              order={3} 
+              style={{ 
+                flex: 1, 
+                textAlign: 'center', 
+                fontSize: rem(20), 
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'color 0.2s ease',
+              }}
+              onClick={handleNameClick}
+              onDoubleClick={handleNameDoubleClick}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#228BE6'; // Blue on hover
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = ''; // Reset to default
+              }}
+              title={selectedPatientAddress ? "Click to copy name | Double-click to copy name + address" : "Click to copy name"}
+            >
+              {selectedPatientName}
+            </Title>
+          )}
 
-        {/* Right: Hamburger Menu */}
-        <Popover
-            opened={menuOpened}
-            onChange={setMenuOpened}
-            position="bottom-end"
-            shadow="md"
-            width={250}
-          >
-            <Popover.Target>
-              <ActionIcon
-                variant="default"
-                size="lg"
-                onClick={() => setMenuOpened((o) => !o)}
-                title="Menu"
-              >
-                <IconMenu2 size={20} stroke={1.5} />
-              </ActionIcon>
-            </Popover.Target>
+          {/* Right: Hamburger Menu */}
+          <Popover
+              opened={menuOpened}
+              onChange={setMenuOpened}
+              position="bottom-end"
+              shadow="md"
+              width={250}
+            >
+              <Popover.Target>
+                <ActionIcon
+                  variant="default"
+                  size="lg"
+                  onClick={() => setMenuOpened((o) => !o)}
+                  title="Menu"
+                >
+                  <IconMenu2 size={20} stroke={1.5} />
+                </ActionIcon>
+              </Popover.Target>
             <Popover.Dropdown p={0}>
               <Stack gap={0}>
                 {menuItems.map((item, index) => (
@@ -1189,7 +1183,8 @@ export default function ContactHeader({
             </Stack>
           </Popover.Dropdown>
         </Popover>
-      </Group>
+        </Grid.Col>
+      </Grid>
 
       {/* Accounts Dialog */}
       <AccountsQuotesDialog
