@@ -39,7 +39,7 @@ import { modals } from '@mantine/modals';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { SMSDialog } from './SMSDialog';
+import SMSDialog from './SMSDialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
