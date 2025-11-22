@@ -451,7 +451,7 @@ export default function ContactsPage() {
         console.error('Failed to load saved sort:', error);
       }
     }
-    return 'name-desc'; // Default: Name A-Z
+    return 'name-asc'; // Default: Name A-Z (ascending)
   });
   
   const [activeFilters, setActiveFilters] = useState<Record<string, string | boolean | string[]>>(() => {
