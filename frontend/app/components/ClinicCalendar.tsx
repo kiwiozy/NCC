@@ -564,12 +564,12 @@ export default function ClinicCalendar() {
           .fc-dayGridMonth-view .fc-daygrid-day-top {
             display: flex !important;
             flex-direction: row !important;
-            align-items: center !important;
-            flex-wrap: nowrap !important;
+            align-items: flex-start !important;
+            flex-wrap: wrap !important;
             position: relative !important;
             min-height: 30px !important;
             padding: 4px !important;
-            gap: 4px !important;
+            gap: 3px !important;
           }
           
           /* Date number on the right in day-top */
@@ -580,13 +580,23 @@ export default function ClinicCalendar() {
             font-size: 18px !important;
             font-weight: 600 !important;
             flex-shrink: 0 !important;
+            align-self: flex-start !important;
           }
           
           /* All-day block events in day-top share space equally */
           .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness {
-            flex: 1 1 0 !important;
-            min-width: 0 !important;
+            flex: 1 1 calc(33.333% - 8px) !important; /* 3 per row by default */
+            min-width: 80px !important; /* Minimum width before wrapping */
+            max-width: calc(50% - 8px) !important; /* Max 2 per row if space is tight */
             margin: 0 !important;
+          }
+          
+          /* When there's only 1 or 2 events, let them take more space */
+          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:only-child,
+          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:first-child:nth-last-child(2),
+          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:first-child:nth-last-child(2) ~ .fc-daygrid-event-harness {
+            flex: 1 1 auto !important;
+            max-width: calc(50% - 8px) !important;
           }
           
           .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-block-event {
@@ -594,6 +604,8 @@ export default function ClinicCalendar() {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
+            font-size: 11px !important;
+            padding: 3px 6px !important;
           }
           
           /* Regular appointments stay in day-events section (below day-top) */
