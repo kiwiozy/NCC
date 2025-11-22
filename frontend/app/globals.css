@@ -23,13 +23,27 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
-  background-color: #1A1B1E;
+  background-color: #1A1B1E !important;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Force all Mantine components to dark background before hydration */
+#__next,
+[data-mantine-color-scheme] {
+  background-color: #1A1B1E;
+}
+
+/* Prevent white flash on Paper, Container, and other components */
+[data-mantine-color-scheme='dark'] .mantine-Paper-root,
+[data-mantine-color-scheme='dark'] .mantine-Container-root,
+[data-mantine-color-scheme='dark'] .mantine-AppShell-root,
+[data-mantine-color-scheme='dark'] .mantine-AppShell-main {
+  background-color: #1A1B1E;
 }
 
 /* FullCalendar Light Mode (Default) */

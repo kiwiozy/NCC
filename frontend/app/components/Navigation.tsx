@@ -722,7 +722,7 @@ export default function Navigation({ children }: NavigationProps) {
 
       <AppShell.Main
         style={{
-          backgroundColor: mounted ? (isDark ? '#1A1B1E' : '#f5f5f5') : '#f5f5f5',
+          backgroundColor: mounted ? (isDark ? '#1A1B1E' : '#f5f5f5') : '#1A1B1E',
           padding: 0,
           // Ensure content is scrollable and doesn't conflict with sticky header
           height: '100vh',
