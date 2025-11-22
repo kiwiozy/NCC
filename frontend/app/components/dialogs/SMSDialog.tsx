@@ -745,9 +745,7 @@ function MessageBubble({
           padding: `${rem(10)} ${rem(14)}`,
           borderRadius: rem(18),
           backgroundColor: isOutbound
-            ? isDark
-              ? '#228BE6'
-              : '#228BE6'
+            ? '#34C759' // Green for outbound (iMessage style) 🍏
             : isDark
             ? '#373A40'
             : '#E9ECEF',
