@@ -251,54 +251,104 @@ export default function ClinicCalendar() {
   // Convert "+X more" click to hover behavior
   useEffect(() => {
     const attachHoverToMoreLinks = () => {
-      const moreLinks = document.querySelectorAll('.fc-more-link');
+      const moreLinks = document.querySelectorAll('.fc-daygrid-more-link');
       
       moreLinks.forEach((link) => {
-        // Remove existing listeners
-        const newLink = link.cloneNode(true);
-        link.parentNode?.replaceChild(newLink, link);
+        // Check if we already added hover listener
+        if (link.getAttribute('data-hover-attached')) return;
+        link.setAttribute('data-hover-attached', 'true');
         
-        // Add hover listener
-        newLink.addEventListener('mouseenter', (e) => {
-          // Trigger click to open popover
-          (e.target as HTMLElement).click();
+        let hoverTimeout: NodeJS.Timeout;
+        let popoverTimeout: NodeJS.Timeout;
+        
+        // Open popover on hover
+        link.addEventListener('mouseenter', (e) => {
+          clearTimeout(hoverTimeout);
+          hoverTimeout = setTimeout(() => {
+            (e.target as HTMLElement).click();
+            
+            // After popover opens, handle positioning and all-day events
+            setTimeout(() => {
+              const popover = document.querySelector('.fc-popover') as HTMLElement;
+              if (popover) {
+                // Check if popover is going off screen
+                const popoverRect = popover.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                
+                // If popover is cut off at bottom, reposition it above the link
+                if (popoverRect.bottom > viewportHeight - 20) {
+                  const linkRect = (e.target as HTMLElement).getBoundingClientRect();
+                  const popoverHeight = popoverRect.height;
+                  
+                  // Position above the link
+                  popover.style.top = `${linkRect.top - popoverHeight - 5}px`;
+                  popover.style.bottom = 'auto';
+                }
+                
+                // Find all events (both block and regular)
+                const allEvents = popover.querySelectorAll('.fc-daygrid-event-harness');
+                const blockEvents = popover.querySelectorAll('.fc-daygrid-block-event');
+                const regularEvents = Array.from(allEvents).filter(harness => 
+                  !harness.querySelector('.fc-daygrid-block-event')
+                );
+                
+                // If there are NO regular appointments, show all-day events
+                // Otherwise hide all-day events (default behavior)
+                if (regularEvents.length === 0 && blockEvents.length > 0) {
+                  // Show all-day events because there are no regular appointments
+                  blockEvents.forEach(event => {
+                    const harness = event.closest('.fc-daygrid-event-harness');
+                    if (harness) {
+                      (harness as HTMLElement).style.display = 'block';
+                    }
+                  });
+                } else {
+                  // Hide all-day events (we have regular appointments to show)
+                  blockEvents.forEach(event => {
+                    const harness = event.closest('.fc-daygrid-event-harness');
+                    if (harness) {
+                      (harness as HTMLElement).style.display = 'none';
+                    }
+                  });
+                }
+                
+                // Keep popover open when hovering over it
+                popover.addEventListener('mouseenter', () => {
+                  clearTimeout(popoverTimeout);
+                });
+                
+                popover.addEventListener('mouseleave', () => {
+                  const closeBtn = popover.querySelector('.fc-popover-close') as HTMLElement;
+                  if (closeBtn) closeBtn.click();
+                });
+              }
+            }, 50);
+          }, 100);
         });
         
-        // Close popover when mouse leaves both link and popover
-        let leaveTimeout: NodeJS.Timeout;
-        newLink.addEventListener('mouseleave', () => {
-          leaveTimeout = setTimeout(() => {
+        // Close popover when mouse leaves the link
+        link.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimeout);
+          popoverTimeout = setTimeout(() => {
             const popover = document.querySelector('.fc-popover');
             if (popover && !popover.matches(':hover')) {
               const closeBtn = popover.querySelector('.fc-popover-close') as HTMLElement;
               if (closeBtn) closeBtn.click();
             }
-          }, 200);
+          }, 300);
         });
-        
-        // Keep popover open when hovering over it
-        setTimeout(() => {
-          const popover = document.querySelector('.fc-popover');
-          if (popover) {
-            popover.addEventListener('mouseenter', () => {
-              clearTimeout(leaveTimeout);
-            });
-            
-            popover.addEventListener('mouseleave', () => {
-              const closeBtn = popover.querySelector('.fc-popover-close') as HTMLElement;
-              if (closeBtn) closeBtn.click();
-            });
-          }
-        }, 100);
       });
     };
     
-    // Run on initial render and after events change
+    // Run multiple times to catch dynamically added links
     setTimeout(attachHoverToMoreLinks, 100);
     setTimeout(attachHoverToMoreLinks, 500);
+    setTimeout(attachHoverToMoreLinks, 1000);
     
-    // Also watch for DOM changes
-    const observer = new MutationObserver(attachHoverToMoreLinks);
+    // Watch for DOM changes
+    const observer = new MutationObserver(() => {
+      setTimeout(attachHoverToMoreLinks, 50);
+    });
     const calendarEl = document.querySelector('.fc-daygrid-body');
     if (calendarEl) {
       observer.observe(calendarEl, { childList: true, subtree: true });
@@ -703,8 +753,8 @@ export default function ClinicCalendar() {
           }
           
           /* Show popover on hover for "+X more" link */
-          .fc-more-link {
-            cursor: pointer;
+          .fc-daygrid-more-link {
+            cursor: pointer !important;
             color: var(--mantine-color-blue-6) !important;
             font-size: 11px !important;
             padding: 2px 4px !important;
@@ -713,7 +763,7 @@ export default function ClinicCalendar() {
             transition: background-color 0.2s;
           }
           
-          .fc-more-link:hover {
+          .fc-daygrid-more-link:hover {
             background-color: rgba(51, 154, 240, 0.1) !important;
             border-radius: 3px;
           }
@@ -725,6 +775,9 @@ export default function ClinicCalendar() {
             border-radius: 6px !important;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
             z-index: 9999 !important;
+            max-height: 500px !important; /* Allow taller popover */
+            display: flex !important;
+            flex-direction: column !important;
           }
           
           .fc-popover-header {
@@ -732,10 +785,14 @@ export default function ClinicCalendar() {
             border-bottom: 1px solid var(--mantine-color-dark-4) !important;
             padding: 8px 12px !important;
             font-weight: 600 !important;
+            flex-shrink: 0 !important; /* Keep header fixed */
           }
           
           .fc-popover-body {
             padding: 8px !important;
+            overflow-y: auto !important; /* Add scroll for many events */
+            max-height: 450px !important; /* Allow scrolling within body */
+            flex: 1 1 auto !important;
           }
           
           .fc-popover .fc-event {
@@ -743,6 +800,15 @@ export default function ClinicCalendar() {
             padding: 4px 6px !important;
             border-radius: 3px !important;
             font-size: 11px !important;
+          }
+          
+          /* Hide all-day/block events from popover */
+          .fc-popover .fc-daygrid-block-event {
+            display: none !important;
+          }
+          
+          .fc-popover .fc-event[style*="cursor: default"] {
+            display: none !important;
           }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
@@ -762,8 +828,14 @@ export default function ClinicCalendar() {
             selectMirror={false}
             selectMirror={true}
             dayMaxEvents={4}
-            moreLinkClick="popover"
-            moreLinkClassNames="fc-more-link-custom"
+            moreLinkClick={(info) => {
+              // Just show popover - we'll filter with CSS
+              return 'popover';
+            }}
+            moreLinkDidMount={(info) => {
+              // This fires when the "+X more" link is created
+              // We can't easily filter the count here, so we'll just use CSS to hide all-day events
+            }}
             weekends={true}
             slotMinTime="07:00:00"
             slotMaxTime="18:00:00"
