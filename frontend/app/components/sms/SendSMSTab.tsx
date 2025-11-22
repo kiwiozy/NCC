@@ -32,6 +32,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
+import { getCsrfToken } from '@/app/utils/csrf';
 
 interface Patient {
   id: string;
@@ -202,12 +203,64 @@ export default function SendSMSTab() {
       return;
     }
 
-    // TODO: Implement actual sending logic
-    notifications.show({
-      title: 'Coming Soon',
-      message: 'Bulk SMS sending will be implemented next!',
-      color: 'blue',
-    });
+    setSending(true);
+
+    try {
+      // For now, only handle individual patient sending
+      if (recipientType === 'individual' && selectedPatient) {
+        const patient = patients.find(p => p.id === selectedPatient);
+        if (!patient) {
+          throw new Error('Patient not found');
+        }
+
+        // Use the existing patient-specific SMS endpoint
+        const csrfToken = await getCsrfToken();
+        const response = await fetch(`https://localhost:8000/api/sms/patient/${selectedPatient}/send/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({
+            message: message.trim(),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || errorData.message || 'Failed to send SMS');
+        }
+
+        notifications.show({
+          title: 'Success',
+          message: `SMS sent to ${patient.full_name || patient.first_name + ' ' + patient.last_name}`,
+          color: 'green',
+          icon: <IconCheck />,
+        });
+
+        // Clear the message
+        setMessage('');
+        setSelectedTemplate(null);
+      } else {
+        // Bulk sending not implemented yet
+        notifications.show({
+          title: 'Coming Soon',
+          message: 'Bulk SMS sending will be implemented next!',
+          color: 'blue',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sending SMS:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to send SMS',
+        color: 'red',
+        icon: <IconAlertCircle />,
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const charCount = message.length;
