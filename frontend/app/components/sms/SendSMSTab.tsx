@@ -225,6 +225,29 @@ export default function SendSMSTab() {
           throw new Error('Patient not found');
         }
 
+        // Fetch patient's phone numbers
+        console.log('📞 [SMS SEND] Fetching patient phone numbers...');
+        const phoneResponse = await fetch(`https://localhost:8000/api/sms/patient/${selectedPatient}/phones/`, {
+          credentials: 'include',
+        });
+
+        if (!phoneResponse.ok) {
+          throw new Error('Failed to fetch patient phone numbers');
+        }
+
+        const phoneData = await phoneResponse.json();
+        console.log('📞 [SMS SEND] Phone data:', phoneData);
+
+        const availablePhones = phoneData.available_phones || [];
+        
+        if (availablePhones.length === 0) {
+          throw new Error('Patient has no phone number on file');
+        }
+
+        // Get the default phone or first available
+        const defaultPhone = availablePhones.find((p: any) => p.is_default) || availablePhones[0];
+        console.log('📞 [SMS SEND] Using phone:', defaultPhone);
+
         // Use the existing patient-specific SMS endpoint
         console.log('🔑 [SMS SEND] Fetching CSRF token...');
         const csrfToken = await getCsrfToken();
@@ -232,7 +255,9 @@ export default function SendSMSTab() {
 
         const url = `https://localhost:8000/api/sms/patient/${selectedPatient}/send/`;
         const payload = {
+          phone_number: defaultPhone.value,
           message: message.trim(),
+          phone_label: defaultPhone.label,
         };
         
         console.log('📡 [SMS SEND] Making API call...');
@@ -255,7 +280,7 @@ export default function SendSMSTab() {
         if (!response.ok) {
           const errorData = await response.json();
           console.error('❌ [SMS SEND] API Error:', errorData);
-          throw new Error(errorData.detail || errorData.message || 'Failed to send SMS');
+          throw new Error(errorData.error || errorData.detail || errorData.message || 'Failed to send SMS');
         }
 
         const responseData = await response.json();
@@ -263,7 +288,7 @@ export default function SendSMSTab() {
 
         notifications.show({
           title: 'Success',
-          message: `SMS sent to ${patient.full_name || patient.first_name + ' ' + patient.last_name}`,
+          message: `SMS sent to ${patient.full_name || patient.first_name + ' ' + patient.last_name} (${defaultPhone.label})`,
           color: 'green',
           icon: <IconCheck />,
         });
