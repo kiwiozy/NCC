@@ -567,19 +567,19 @@ export default function ClinicCalendar() {
             align-items: center !important;
             flex-wrap: nowrap !important; /* No wrapping - all events stay on one line */
             position: relative !important;
-            min-height: 30px !important;
-            padding: 4px 50px 4px 4px !important; /* Reserve space for date on right */
-            gap: 3px !important;
+            min-height: 24px !important; /* Reduced from 30px */
+            padding: 2px 50px 2px 2px !important; /* Reduced padding */
+            gap: 2px !important; /* Reduced gap between events */
             overflow: hidden !important; /* Hide overflow if too many events */
           }
           
           /* Date number FIXED in top-right corner */
           .fc-dayGridMonth-view .fc-daygrid-day-number {
             position: absolute !important;
-            top: 4px !important;
+            top: 2px !important; /* Adjusted for smaller padding */
             right: 4px !important;
-            padding: 4px 8px !important;
-            font-size: 18px !important;
+            padding: 2px 6px !important; /* Reduced padding */
+            font-size: 16px !important; /* Slightly smaller */
             font-weight: 600 !important;
             z-index: 10 !important;
             pointer-events: none !important;
@@ -599,8 +599,9 @@ export default function ClinicCalendar() {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             font-size: 10px !important;
-            padding: 3px 5px !important;
+            padding: 2px 4px !important; /* Reduced from 3px 5px */
             border-radius: 3px !important;
+            line-height: 1.2 !important; /* Tighter line height */
           }
           
           /* Regular appointments stay in day-events section (below day-top) */
