@@ -639,7 +639,52 @@ export default function ClinicCalendar() {
             slotEventOverlap={false}
             eventContent={(eventInfo) => {
               const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
+              const currentView = calendarRef.current?.getApi().view.type;
               
+              // In month view, use default rendering for regular appointments (shows colored dots)
+              // Only customize all-day events and add SMS checkmark where needed
+              if (currentView === 'dayGridMonth' && !eventInfo.event.allDay) {
+                // For regular appointments in month view, return default rendering with SMS checkmark if needed
+                return (
+                  <div style={{ 
+                    overflow: 'hidden', 
+                    fontSize: '11px', 
+                    padding: '2px 4px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px',
+                    width: '100%',
+                  }}>
+                    {/* Color dot indicator */}
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: eventInfo.event.backgroundColor || '#3788d8',
+                      flexShrink: 0
+                    }} />
+                    <span style={{ 
+                      overflow: 'hidden', 
+                      textOverflow: 'ellipsis', 
+                      whiteSpace: 'nowrap',
+                      flexGrow: 1,
+                      color: 'var(--mantine-color-text)'
+                    }}>{eventInfo.event.title}</span>
+                    {isSmsConfirmed && (
+                      <span style={{ 
+                        color: '#4ade80', 
+                        fontSize: '14px', 
+                        fontWeight: 'bold',
+                        lineHeight: '1',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }} title="Patient confirmed via SMS">✓</span>
+                    )}
+                  </div>
+                );
+              }
+              
+              // For week/day views and all-day events, show full colored background
               return (
                 <div style={{ 
                   overflow: 'hidden', 
