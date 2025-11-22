@@ -805,8 +805,13 @@ export default function ContactHeader({
         {title}
       </Title>
 
-      {/* Right: Action Buttons */}
-      <Group gap="xs" wrap="nowrap">
+      {/* Right: Count and Action Buttons */}
+      <Group gap="xs" wrap="nowrap" align="center">
+        {/* Count Display */}
+        <Text component="span" size="md" c="blue" fw={600}>
+          {displayCount} of {contactCount} found
+        </Text>
+        
         {onAddNew && (
           <ActionIcon
             variant="filled"
@@ -972,18 +977,6 @@ export default function ContactHeader({
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
         }}
       >
-        {/* Left: Count Display - Stacked and centered */}
-        <Stack gap={4} align="center" style={{ flex: '0 0 auto' }}>
-          <Text component="span" size="md" c="blue" fw={600} style={{ textAlign: 'center', display: 'block' }}>
-            {displayCount} of {contactCount} found
-          </Text>
-          {achievedCount !== undefined && achievedCount > 0 && (
-            <Text component="span" size="xs" c="dimmed" style={{ textAlign: 'center', display: 'block' }}>
-              {achievedCount} records achieved
-            </Text>
-          )}
-        </Stack>
-
         {/* Center: Selected Patient Name */}
         {selectedPatientName && (
           <Title 
