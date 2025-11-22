@@ -258,6 +258,7 @@ export default function SendSMSTab() {
           phone_number: defaultPhone.value,
           message: message.trim(),
           phone_label: defaultPhone.label,
+          template_id: selectedTemplate || undefined, // Send template_id if selected
         };
         
         console.log('📡 [SMS SEND] Making API call...');

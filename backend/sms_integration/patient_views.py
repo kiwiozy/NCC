@@ -324,8 +324,8 @@ def patient_send_sms(request, patient_id):
     Body: {
         "phone_number": "+61412345678",
         "phone_label": "Default Mobile",  // optional, for display
-        "message": "Your message here",
-        "template_id": "uuid"  // optional
+        "message": "Your message here",   // optional if template_id provided
+        "template_id": "uuid"             // optional, will render template with patient data
     }
     """
     try:
@@ -347,39 +347,70 @@ def patient_send_sms(request, patient_id):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if not message:
-        return Response(
-            {'error': 'message is required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Import SMS service (assuming it exists in views.py)
-    from . import views
-    
-    # Use existing send SMS logic
-    # Create a request-like object with the data
-    send_data = {
-        'phone_number': phone_number,
-        'message': message,
-        'patient_id': str(patient.id),
-        'template_id': template_id
-    }
-    
     # Import models
     from .models import SMSMessage, SMSTemplate
     
     template = None
+    rendered_message = message
+    
+    # If template_id provided, render template with patient data
     if template_id:
         try:
             template = SMSTemplate.objects.get(id=template_id)
+            
+            # Build context data for template rendering
+            context = {
+                # Patient data
+                'patient_name': patient.get_full_name() or f"{patient.first_name} {patient.last_name}",
+                'patient_first_name': patient.first_name or '',
+                'patient_last_name': patient.last_name or '',
+                'patient_title': patient.title or '',
+                'patient_full_name': f"{patient.title or ''} {patient.get_full_name() or ''}".strip(),
+                'patient_mobile': phone_number,
+                'patient_health_number': patient.health_number or '',
+                
+                # Clinic data
+                'clinic_name': patient.clinic.name if patient.clinic else '',
+                'clinic_phone': '',  # TODO: Add clinic phone to model
+                'clinic_address': '',  # TODO: Add clinic address to model
+                
+                # Company data (TODO: Make this configurable)
+                'company_name': 'WalkEasy Pedorthics',
+                'company_phone': '02 6766 3153',
+                'company_email': 'info@walkeasy.com.au',
+                'company_website': 'https://www.walkeasy.com.au',
+                
+                # Placeholder for appointment data (will be empty for manual SMS)
+                'appointment_date': '',
+                'appointment_time': '',
+                'appointment_date_short': '',
+                'appointment_duration': '',
+                'appointment_type': '',
+                'clinician_name': '',
+                'clinician_first_name': '',
+                'clinician_title': '',
+            }
+            
+            # Render template with context
+            rendered_message = template.render(context)
+            
         except SMSTemplate.DoesNotExist:
-            pass
+            return Response(
+                {'error': 'Template not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    if not rendered_message:
+        return Response(
+            {'error': 'message or template_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     
     # Create SMS message
     sms_message = SMSMessage.objects.create(
         patient=patient,
         phone_number=phone_number,
-        message=message,
+        message=rendered_message,  # Store the rendered message
         template=template,
         status='pending'
     )
@@ -390,7 +421,7 @@ def patient_send_sms(request, patient_id):
         sms_service = SMSService()
         result = sms_service.send_sms(
             phone_number=phone_number,
-            message=message
+            message=rendered_message
         )
         
         # Ensure result is a dict (SMSService might return a model instance)
