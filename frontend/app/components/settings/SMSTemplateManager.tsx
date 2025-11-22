@@ -616,7 +616,7 @@ export default function SMSTemplateManager() {
                     </Button>
                   </Menu.Target>
 
-                  <Menu.Dropdown>
+                  <Menu.Dropdown style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {TEMPLATE_VARIABLES.map((group) => (
                       <div key={group.group}>
                         <Menu.Label>{group.group}</Menu.Label>
