@@ -805,13 +805,8 @@ export default function ContactHeader({
         {title}
       </Title>
 
-      {/* Right: Count and Action Buttons */}
+      {/* Right: Action Buttons */}
       <Group gap="xs" wrap="nowrap" align="center">
-        {/* Count Display */}
-        <Text component="span" size="md" c="blue" fw={600}>
-          {displayCount} of {contactCount} found
-        </Text>
-        
         {onAddNew && (
           <ActionIcon
             variant="filled"
