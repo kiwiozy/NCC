@@ -56,6 +56,7 @@ interface SMSTemplate {
   description: string;
   message_template: string;
   is_active: boolean;
+  category?: string; // e.g., 'reminder', 'confirmation', 'followup', 'custom'
 }
 
 interface SMSDialogProps {
@@ -63,6 +64,14 @@ interface SMSDialogProps {
   onClose: () => void;
   patientId: string;
   patientName: string;
+  suggestedTemplateCategory?: 'reminder' | 'confirmation' | null; // Optional: auto-select template type
+  appointmentContext?: {
+    appointmentId: string;
+    date: string;
+    time: string;
+    clinicName: string;
+    clinicianName: string | null;
+  } | null;
 }
 
 // Calculate SMS segments (160 chars = 1 SMS, then 153 per segment)
@@ -107,7 +116,14 @@ function formatMessageTime(timestamp: string): string {
   });
 }
 
-export default function SMSDialog({ opened, onClose, patientId, patientName }: SMSDialogProps) {
+export default function SMSDialog({ 
+  opened, 
+  onClose, 
+  patientId, 
+  patientName,
+  suggestedTemplateCategory = null,
+  appointmentContext = null,
+}: SMSDialogProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   
@@ -343,11 +359,25 @@ export default function SMSDialog({ opened, onClose, patientId, patientName }: S
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/sms/templates/?is_active=true');
+      const response = await fetch('https://localhost:8000/api/sms/templates/?is_active=true', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         const templateList = Array.isArray(data) ? data : (data.results || []);
-        setTemplates(templateList.filter((t: SMSTemplate) => t.is_active));
+        const activeTemplates = templateList.filter((t: SMSTemplate) => t.is_active);
+        setTemplates(activeTemplates);
+        
+        // Auto-select template based on suggested category
+        if (suggestedTemplateCategory && activeTemplates.length > 0) {
+          const matchingTemplate = activeTemplates.find(
+            (t: SMSTemplate) => t.category?.toLowerCase() === suggestedTemplateCategory.toLowerCase()
+          );
+          if (matchingTemplate) {
+            setSelectedTemplate(matchingTemplate.id);
+            setMessageText(matchingTemplate.message_template);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading templates:', error);

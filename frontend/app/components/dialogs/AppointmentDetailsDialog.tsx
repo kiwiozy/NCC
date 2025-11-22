@@ -784,6 +784,14 @@ export default function AppointmentDetailsDialog({
           onClose={() => setSmsDialogOpened(false)}
           patientId={appointment.patient}
           patientName={appointment.patient_name || ''}
+          suggestedTemplateCategory={smsType}
+          appointmentContext={{
+            appointmentId: appointment.id,
+            date: dayjs(appointment.start_time).format('DD MMM YYYY'),
+            time: dayjs(appointment.start_time).format('h:mm A'),
+            clinicName: appointment.clinic_name,
+            clinicianName: appointment.clinician_name,
+          }}
         />
       )}
     </Modal>
