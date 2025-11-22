@@ -127,7 +127,8 @@ export default function SendSMSTab() {
       });
       if (response.ok) {
         const data = await response.json();
-        setTemplates(data);
+        // Handle both paginated and non-paginated responses
+        setTemplates(Array.isArray(data) ? data : (data.results || []));
       }
     } catch (error) {
       console.error('Error loading templates:', error);
