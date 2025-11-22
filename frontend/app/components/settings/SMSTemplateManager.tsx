@@ -623,6 +623,8 @@ export default function SMSTemplateManager() {
                 value={formMessage}
                 onChange={(e) => setFormMessage(e.target.value)}
                 minRows={5}
+                maxRows={15}
+                autosize
                 required
               />
               
