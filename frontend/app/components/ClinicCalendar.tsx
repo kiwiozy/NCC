@@ -501,6 +501,30 @@ export default function ClinicCalendar() {
           .fc-dayGridMonth-view .fc-daygrid-day:hover {
             background-color: rgba(255, 255, 255, 0.05) !important;
           }
+          
+          /* Reorder month view to show date at top, then all-day events */
+          .fc-dayGridMonth-view .fc-daygrid-day-frame {
+            display: flex;
+            flex-direction: column;
+          }
+          
+          /* Move date number to the top */
+          .fc-dayGridMonth-view .fc-daygrid-day-top {
+            order: 1;
+            z-index: 2;
+            margin-bottom: 2px;
+          }
+          
+          /* All-day events below date */
+          .fc-dayGridMonth-view .fc-daygrid-day-events {
+            order: 2;
+            z-index: 1;
+          }
+          
+          /* Regular events at bottom */
+          .fc-dayGridMonth-view .fc-daygrid-day-bg {
+            order: 3;
+          }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
           <FullCalendar
