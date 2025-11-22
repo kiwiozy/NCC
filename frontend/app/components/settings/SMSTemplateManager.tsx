@@ -23,6 +23,7 @@ import {
   Box,
   Divider,
   Code,
+  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconPlus,
@@ -149,6 +150,9 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function SMSTemplateManager() {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   const [templates, setTemplates] = useState<SMSTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -574,7 +578,11 @@ export default function SMSTemplateManager() {
             {previewMessage && (
               <Box>
                 <Text fw={500} size="sm" mb="xs">📋 Live Preview</Text>
-                <Paper p="md" withBorder style={{ backgroundColor: '#f8f9fa' }}>
+                <Paper 
+                  p="md" 
+                  withBorder
+                  bg={isDark ? 'dark.6' : 'gray.0'}
+                >
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
                     {previewMessage}
                   </Text>
