@@ -182,13 +182,36 @@ export default function AppointmentDetailsDialog({
 
       console.log('✅ Selected template:', matchingTemplate.name);
 
-      // 3. Get CSRF token
+      // 3. Get patient's phone numbers
+      const phonesResponse = await fetch(`https://localhost:8000/api/sms/patient/${appointment.patient}/phones/`, {
+        credentials: 'include',
+      });
+      
+      if (!phonesResponse.ok) throw new Error('Failed to fetch patient phone numbers');
+      
+      const phonesData = await phonesResponse.json();
+      const phones = phonesData.phones || [];
+      
+      if (phones.length === 0) {
+        notifications.show({
+          title: 'No Phone Number',
+          message: `${appointment.patient_name} has no phone number on file.`,
+          color: 'orange',
+        });
+        return;
+      }
+      
+      // Get the default phone or first mobile
+      const defaultPhone = phones.find((p: any) => p.is_default) || phones.find((p: any) => p.type === 'mobile') || phones[0];
+      console.log('📱 Using phone:', defaultPhone.value);
+
+      // 4. Get CSRF token
       const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
         credentials: 'include',
       });
       const csrfData = await csrfResponse.json();
 
-      // 4. Send SMS with template_id (backend will render template)
+      // 5. Send SMS with template_id and phone_number
       const sendResponse = await fetch(`https://localhost:8000/api/sms/patient/${appointment.patient}/send/`, {
         method: 'POST',
         headers: {
@@ -198,6 +221,7 @@ export default function AppointmentDetailsDialog({
         credentials: 'include',
         body: JSON.stringify({
           template_id: matchingTemplate.id,
+          phone_number: defaultPhone.value,
         }),
       });
 
@@ -206,7 +230,7 @@ export default function AppointmentDetailsDialog({
         throw new Error(errorData.error || 'Failed to send SMS');
       }
 
-      // 5. Success!
+      // 6. Success!
       notifications.show({
         title: 'SMS Sent',
         message: `${type === 'reminder' ? 'Reminder' : 'Confirmation'} sent to ${appointment.patient_name}`,
