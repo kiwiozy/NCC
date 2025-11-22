@@ -587,6 +587,7 @@ The scheduling is for the *automation system*, not for staff to manually schedul
 - ✅ SMS Center (Send Tab) - DONE
 - ✅ Conversations Tab (2-way SMS) - DONE
 - ✅ iMessage-style UI - DONE
+- ✅ **Calendar Integration (Quick Send)** - DONE ⭐
 - ⏳ History Tab - TODO
 - ⏳ Bulk SMS Sending - TODO
 - ⏳ SMS Automation - TODO (Future Phase)
@@ -652,7 +653,56 @@ Main navigation item with three tabs:
 - Currently shows "Coming soon" placeholder
 - Plan: Full SMS history table with filters
 
-#### 3. Backend Enhancements
+#### 4. Calendar Integration - Quick Send ✅ DONE ⭐
+
+**One-Click SMS from Appointments:**
+- Added "Send Reminder" and "Send Confirmation" buttons to `AppointmentDetailsDialog`
+- Buttons appear at the top of appointment details (only for patient appointments)
+- **Instant SMS sending** - no manual editing required!
+
+**How It Works:**
+1. Staff clicks appointment → Clicks "Send Reminder" button
+2. System automatically:
+   - Finds clinic-specific template (e.g., "Newcastle - Appointment Reminder")
+   - Matches by category (`appointment_reminder`) + clinic name
+   - Fetches patient's default phone number (or first mobile)
+   - Sends appointment ID to backend for template rendering
+   - Backend renders template with full appointment data:
+     - `{patient_first_name}`, `{patient_name}`
+     - `{appointment_date}`, `{appointment_time}` (formatted: "10:00 AM")
+     - `{appointment_duration}`, `{appointment_type}`
+     - `{clinician_name}` (from appointment, e.g., "Craig Laird")
+     - `{clinician_title}` (professional credentials, e.g., "C.Ped CM Au")
+     - `{clinic_name}` (from appointment, e.g., "Newcastle")
+   - Sends SMS instantly via `/api/sms/patient/<id>/send/`
+   - Links SMS to appointment for tracking
+3. Shows success notification: "Reminder sent to Craig Laird" ✓
+
+**Benefits:**
+- ⚡ **Ultra-fast**: Just 2 clicks (appointment → send) = SMS sent!
+- 🎯 **Accurate**: Uses actual appointment data (no manual typing)
+- 🏥 **Clinic-aware**: Auto-selects correct clinic template
+- 📝 **Tracked**: SMS linked to appointment record
+- 💚 **Staff-friendly**: Perfect for busy reception staff
+
+**Example Message:**
+```
+Hi Craig, this is a reminder about your appointment tomorrow at 9:00 AM 
+with Craig Laird, C.Ped CM Au at our Newcastle clinic.
+
+43 Harrison Street Cardiff NSW 2285.
+
+Please reply YES to confirm or call 02 6766 3153
+```
+
+**Technical Implementation:**
+- Frontend: `AppointmentDetailsDialog.tsx` - `handleQuickSendSMS()` function
+- Backend: `patient_views.py` - Updated `patient_send_sms()` to accept `appointment_id`
+- Backend renders template with appointment context before sending
+- Template matching: `appointment_reminder` or `appointment_confirmation` category
+- Fallback logic: clinic-specific → global → category-only
+
+#### 5. Backend Enhancements
 
 **SMS Template System:**
 - Model fields: `category`, `character_count`, `sms_segment_count`, `created_by`, `clinic` (optional)
@@ -662,11 +712,15 @@ Main navigation item with three tabs:
 **SMS Sending:**
 - Individual patient sending: `POST /api/sms/patient/<uuid:patient_id>/send/`
   - Accepts `template_id` (optional) - backend renders template
+  - Accepts `appointment_id` (optional) - includes appointment data in template rendering ⭐ NEW
   - Accepts `message` (optional) - sends plain text
+  - Accepts `phone_number` (required) - target phone number
   - Fetches patient's phone numbers (supports new `phones` array format)
   - Respects user-set default phone number
   - Falls back to first mobile if no default set
+  - **Template rendering with appointment context**: If appointment_id provided, fetches appointment and renders all appointment variables
 - Proper error handling and validation
+- Links sent SMS to appointment record if appointment_id provided
 
 **Conversations API:**
 - `GET /api/sms/conversations/` - Lists all patients with SMS history
