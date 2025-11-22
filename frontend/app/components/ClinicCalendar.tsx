@@ -131,6 +131,44 @@ export default function ClinicCalendar() {
     setEvents(filtered);
   }, [clinics, allEvents]);
 
+  // Add click handlers to date headers in week view to switch to day view
+  useEffect(() => {
+    const handleDateHeaderClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const dateCell = target.closest('.fc-col-header-cell');
+      
+      if (dateCell && calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        const currentView = calendarApi.view.type;
+        
+        // Only handle clicks in week view
+        if (currentView === 'timeGridWeek') {
+          // Get the date from the data-date attribute
+          const dateAttr = dateCell.getAttribute('data-date');
+          
+          if (dateAttr) {
+            // Navigate to day view for this date
+            calendarApi.changeView('timeGridDay', dateAttr);
+          }
+        }
+      }
+    };
+
+    // Attach event listener
+    const calendarEl = document.querySelector('.fc');
+    if (calendarEl) {
+      calendarEl.addEventListener('click', handleDateHeaderClick);
+    }
+
+    // Cleanup
+    return () => {
+      if (calendarEl) {
+        calendarEl.removeEventListener('click', handleDateHeaderClick);
+      }
+    };
+  }, []);
+
+
   const fetchAppointments = async () => {
     setLoading(true);
     try {
@@ -425,6 +463,16 @@ export default function ClinicCalendar() {
             background-color: #25262B !important;
             font-weight: 600;
             border-right: 1px solid #3A4048 !important;
+          }
+          
+          /* Make day headers clickable in week view */
+          .fc-timeGridWeek-view .fc-col-header-cell {
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          
+          .fc-timeGridWeek-view .fc-col-header-cell:hover {
+            background-color: #2D3748 !important;
           }
           
           /* Today column highlight */
