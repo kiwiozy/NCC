@@ -418,13 +418,13 @@ export default function SMSTemplateManager() {
           {template.message_template}
         </Text>
       </Table.Td>
-      <Table.Td>
+      <Table.Td style={{ whiteSpace: 'nowrap' }}>
         <Badge color={template.is_active ? 'green' : 'gray'} variant="light">
           {template.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </Table.Td>
-      <Table.Td>
-        <Group gap="xs">
+      <Table.Td style={{ whiteSpace: 'nowrap' }}>
+        <Group gap="xs" wrap="nowrap">
           <ActionIcon
             variant="subtle"
             color="blue"
@@ -480,10 +480,10 @@ export default function SMSTemplateManager() {
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Template</Table.Th>
-                  <Table.Th>Message Preview</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Actions</Table.Th>
+                  <Table.Th style={{ width: '25%' }}>Template</Table.Th>
+                  <Table.Th style={{ width: '45%' }}>Message Preview</Table.Th>
+                  <Table.Th style={{ width: '12%' }}>Status</Table.Th>
+                  <Table.Th style={{ width: '18%' }}>Actions</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
