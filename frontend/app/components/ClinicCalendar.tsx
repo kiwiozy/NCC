@@ -564,12 +564,13 @@ export default function ClinicCalendar() {
           .fc-dayGridMonth-view .fc-daygrid-day-top {
             display: flex !important;
             flex-direction: row !important;
-            align-items: flex-start !important;
-            flex-wrap: wrap !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important; /* No wrapping - all events stay on one line */
             position: relative !important;
             min-height: 30px !important;
-            padding: 4px !important;
+            padding: 4px 50px 4px 4px !important; /* Reserve space for date on right */
             gap: 3px !important;
+            overflow: hidden !important; /* Hide overflow if too many events */
           }
           
           /* Date number FIXED in top-right corner */
@@ -584,15 +585,10 @@ export default function ClinicCalendar() {
             pointer-events: none !important;
           }
           
-          /* Container for all-day events - takes remaining space left of date */
-          .fc-dayGridMonth-view .fc-daygrid-day-top {
-            padding-right: 50px !important; /* Reserve space for the date number */
-          }
-          
-          /* All-day block events wrap in remaining space */
+          /* All-day events share space equally and shrink to fit */
           .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness {
-            flex: 0 1 auto !important; /* Don't grow, shrink if needed, auto width */
-            min-width: 60px !important; /* Minimum width before wrapping */
+            flex: 1 1 0 !important; /* All events share space equally */
+            min-width: 0 !important; /* Allow shrinking below content size */
             max-width: 100% !important;
             margin: 0 !important;
           }
@@ -603,7 +599,7 @@ export default function ClinicCalendar() {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             font-size: 10px !important;
-            padding: 2px 4px !important;
+            padding: 3px 5px !important;
             border-radius: 3px !important;
           }
           
