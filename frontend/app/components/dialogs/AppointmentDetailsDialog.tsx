@@ -137,19 +137,38 @@ export default function AppointmentDetailsDialog({
       const templatesData = await templatesResponse.json();
       const templates = Array.isArray(templatesData) ? templatesData : (templatesData.results || []);
       
+      console.log('📋 All templates:', templates);
+      console.log('🔍 Looking for:', {
+        category: type,
+        clinic: appointment.clinic_name,
+      });
+      
       // 2. Find matching template (by category + clinic)
       let matchingTemplate = templates.find(
-        (t: any) => 
-          t.category?.toLowerCase() === type &&
-          t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase()
+        (t: any) => {
+          console.log('Checking template:', {
+            name: t.name,
+            category: t.category,
+            clinic_name: t.clinic_name,
+            matches_category: t.category?.toLowerCase() === type,
+            matches_clinic: t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase(),
+          });
+          return t.category?.toLowerCase() === type &&
+                 t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase();
+        }
       );
       
       // Fallback: match by category only
       if (!matchingTemplate) {
-        matchingTemplate = templates.find((t: any) => t.category?.toLowerCase() === type);
+        console.log('❌ No clinic-specific match, trying category only...');
+        matchingTemplate = templates.find((t: any) => {
+          console.log('Fallback check:', t.name, t.category);
+          return t.category?.toLowerCase() === type;
+        });
       }
       
       if (!matchingTemplate) {
+        console.error('❌ No template found!');
         notifications.show({
           title: 'No Template Found',
           message: `No ${type} template found for ${appointment.clinic_name} clinic.`,
@@ -157,6 +176,8 @@ export default function AppointmentDetailsDialog({
         });
         return;
       }
+
+      console.log('✅ Selected template:', matchingTemplate.name);
 
       // 3. Get CSRF token
       const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
