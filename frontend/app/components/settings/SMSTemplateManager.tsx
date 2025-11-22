@@ -426,48 +426,32 @@ export default function SMSTemplateManager() {
 
   const rows = templates.map((template) => (
     <Table.Tr key={template.id}>
-      <Table.Td style={{ width: '25%' }}>
-        <Stack gap={4}>
+      <Table.Td style={{ width: '25%', verticalAlign: 'middle' }}>
+        <Stack gap={6}>
+          <Text fw={500} size="sm">{template.name}</Text>
           <Group gap="xs">
-            <Text fw={500}>{template.name}</Text>
-            <Badge
-              size="sm"
-              variant="light"
-              color={getCategoryBadgeColor(template.category)}
-            >
+            <Badge size="xs" variant="dot" color={getCategoryBadgeColor(template.category)}>
               {template.category_display}
             </Badge>
-            {template.clinic_name && (
-              <Badge
-                size="sm"
-                variant="dot"
-                color="blue"
-              >
+            {template.clinic_name && template.clinic_name !== 'All Clinics' && (
+              <Badge size="xs" variant="outline" color="blue">
                 {template.clinic_name}
               </Badge>
             )}
           </Group>
-          {template.description && (
-            <Text size="xs" c="dimmed">
-              {template.description}
-            </Text>
-          )}
-          <Text size="xs" c="dimmed">
-            {template.character_count} chars ({template.sms_segment_count} SMS)
-          </Text>
         </Stack>
       </Table.Td>
-      <Table.Td style={{ width: '50%' }}>
-        <Text size="sm" lineClamp={3} style={{ whiteSpace: 'pre-wrap' }}>
+      <Table.Td style={{ width: '50%', verticalAlign: 'middle' }}>
+        <Text size="sm" lineClamp={2} c="dimmed">
           {template.message_template}
         </Text>
       </Table.Td>
-      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap' }}>
-        <Badge color={template.is_active ? 'green' : 'gray'} variant="light">
+      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+        <Badge size="sm" color={template.is_active ? 'green' : 'gray'} variant="light">
           {template.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </Table.Td>
-      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap' }}>
+      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
         <Group gap="xs" wrap="nowrap">
           <ActionIcon
             variant="subtle"
