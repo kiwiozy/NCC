@@ -5,6 +5,7 @@ import { Container, Tabs, Paper, rem, ScrollArea } from '@mantine/core';
 import { IconSend, IconMessages, IconHistory } from '@tabler/icons-react';
 import Navigation from '../components/Navigation';
 import SendSMSTab from '../components/sms/SendSMSTab';
+import ConversationsTab from '../components/sms/ConversationsTab';
 
 export default function SMSCenterPage() {
   const iconStyle = { width: rem(16), height: rem(16) };
@@ -32,8 +33,7 @@ export default function SMSCenterPage() {
               </Tabs.Panel>
 
               <Tabs.Panel value="conversations" pt="xl">
-                {/* TODO: Embed existing 2-way SMS conversation list */}
-                Coming soon: View all patient SMS conversations
+                <ConversationsTab />
               </Tabs.Panel>
 
               <Tabs.Panel value="history" pt="xl">
