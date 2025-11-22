@@ -119,6 +119,88 @@ export default function AppointmentDetailsDialog({
   // SMS Dialog state
   const [smsDialogOpened, setSmsDialogOpened] = useState(false);
   const [smsType, setSmsType] = useState<'reminder' | 'confirmation'>('reminder');
+  const [sendingSMS, setSendingSMS] = useState(false);
+
+  // Quick-send SMS function (auto-select template and send immediately)
+  const handleQuickSendSMS = async (type: 'reminder' | 'confirmation') => {
+    if (!appointment || !appointment.patient) return;
+
+    setSendingSMS(true);
+    try {
+      // 1. Fetch active templates
+      const templatesResponse = await fetch('https://localhost:8000/api/sms/templates/?is_active=true', {
+        credentials: 'include',
+      });
+      
+      if (!templatesResponse.ok) throw new Error('Failed to fetch templates');
+      
+      const templatesData = await templatesResponse.json();
+      const templates = Array.isArray(templatesData) ? templatesData : (templatesData.results || []);
+      
+      // 2. Find matching template (by category + clinic)
+      let matchingTemplate = templates.find(
+        (t: any) => 
+          t.category?.toLowerCase() === type &&
+          t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase()
+      );
+      
+      // Fallback: match by category only
+      if (!matchingTemplate) {
+        matchingTemplate = templates.find((t: any) => t.category?.toLowerCase() === type);
+      }
+      
+      if (!matchingTemplate) {
+        notifications.show({
+          title: 'No Template Found',
+          message: `No ${type} template found for ${appointment.clinic_name} clinic.`,
+          color: 'orange',
+        });
+        return;
+      }
+
+      // 3. Get CSRF token
+      const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+        credentials: 'include',
+      });
+      const csrfData = await csrfResponse.json();
+
+      // 4. Send SMS with template_id (backend will render template)
+      const sendResponse = await fetch(`https://localhost:8000/api/sms/patient/${appointment.patient}/send/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfData.csrfToken,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          template_id: matchingTemplate.id,
+        }),
+      });
+
+      if (!sendResponse.ok) {
+        const errorData = await sendResponse.json();
+        throw new Error(errorData.error || 'Failed to send SMS');
+      }
+
+      // 5. Success!
+      notifications.show({
+        title: 'SMS Sent',
+        message: `${type === 'reminder' ? 'Reminder' : 'Confirmation'} sent to ${appointment.patient_name}`,
+        color: 'green',
+        icon: '✓',
+      });
+
+    } catch (error) {
+      console.error('Error sending quick SMS:', error);
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to send SMS',
+        color: 'red',
+      });
+    } finally {
+      setSendingSMS(false);
+    }
+  };
 
   // Edit form state
   const [editStatus, setEditStatus] = useState('');
@@ -508,10 +590,8 @@ export default function AppointmentDetailsDialog({
                     color="blue"
                     size="xs"
                     leftSection={<IconBell size={16} />}
-                    onClick={() => {
-                      setSmsType('reminder');
-                      setSmsDialogOpened(true);
-                    }}
+                    onClick={() => handleQuickSendSMS('reminder')}
+                    loading={sendingSMS}
                   >
                     Send Reminder
                   </Button>
@@ -520,10 +600,8 @@ export default function AppointmentDetailsDialog({
                     color="green"
                     size="xs"
                     leftSection={<IconMessage size={16} />}
-                    onClick={() => {
-                      setSmsType('confirmation');
-                      setSmsDialogOpened(true);
-                    }}
+                    onClick={() => handleQuickSendSMS('confirmation')}
+                    loading={sendingSMS}
                   >
                     Send Confirmation
                   </Button>
