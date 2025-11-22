@@ -2,6 +2,7 @@
 API Views for Settings models
 """
 from rest_framework import viewsets, filters
+from rest_framework.permissions import IsAuthenticated
 from .models import FundingSource
 from .serializers import FundingSourceSerializer
 
@@ -11,6 +12,7 @@ class FundingSourceViewSet(viewsets.ModelViewSet):
     
     queryset = FundingSource.objects.all().order_by('order', 'name')
     serializer_class = FundingSourceSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code']
     ordering_fields = ['order', 'name', 'created_at']
