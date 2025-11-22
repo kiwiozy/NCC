@@ -589,7 +589,7 @@ The scheduling is for the *automation system*, not for staff to manually schedul
 - ✅ iMessage-style UI - DONE
 - ✅ **Calendar Integration (Quick Send)** - DONE ⭐
 - ✅ **History Tab** - DONE ⭐
-- ⏳ Bulk SMS Sending - TODO
+- ✅ **Bulk SMS Sending** - DONE ⭐
 - ⏳ SMS Automation - TODO (Future Phase)
 
 ---
@@ -747,7 +747,115 @@ Please reply YES to confirm or call 02 6766 3153
 - Template matching: `appointment_reminder` or `appointment_confirmation` category
 - Fallback logic: clinic-specific → global → category-only
 
-#### 6. Backend Enhancements
+#### 6. Bulk SMS Sending ✅ DONE ⭐
+
+**Send SMS to multiple patients simultaneously based on filters:**
+
+**Recipient Types:**
+1. 🏥 **By Clinic** - Send to all active patients at a specific clinic
+2. 📅 **By Appointments** - Send to all patients with appointments on a specific date
+3. 👥 **All Patients** - Send to all active patients (with confirmation prompt)
+
+**Features:**
+- 📊 **Real-time recipient counting**:
+  - Counts unique patients before sending
+  - Updates automatically when filters change
+  - Shows "X recipients" badge
+- ⚠️ **Safety confirmation**:
+  - Prompts confirmation for >10 recipients
+  - Shows exact count in confirmation dialog
+  - Prevents accidental mass sending
+- 📝 **Template support**:
+  - Works with all SMS templates
+  - Renders variables per patient (e.g., {patient_first_name})
+  - Consistent with individual sending
+- 📈 **Detailed reporting**:
+  - Shows sent_count and failed_count
+  - Lists failed recipients with reasons
+  - Color-coded notifications:
+    - 🟢 Green = All success
+    - 🟡 Yellow = Partial success (some failed)
+    - 🔴 Red = Complete failure
+- 🔧 **Robust error handling**:
+  - Gracefully skips patients without phone numbers
+  - Logs each failure reason
+  - Continues sending even if some fail
+  - Uses patient's default phone or first mobile
+
+**UI Flow:**
+1. Staff selects recipient type (Individual/Clinic/Appointments/All)
+2. For bulk:
+   - **Clinic**: Select clinic from dropdown
+   - **Appointments**: Select date from calendar
+   - **All**: No additional selection needed
+3. System counts recipients and displays: "X recipients"
+4. Staff selects template or types message
+5. Clicks "Send SMS"
+6. If >10 recipients: Confirmation prompt appears
+7. System sends to all recipients with progress
+8. Shows final results: "Sent to 45 patients. 3 failed."
+
+**Backend API:**
+- `POST /api/sms/bulk/send/`
+  - Accepts:
+    - `recipient_type` (required): 'clinic' | 'appointments' | 'all'
+    - `message` (required): SMS content
+    - `template_id` (optional): Auto-renders per patient
+    - `clinic_id` (required if type='clinic'): UUID of clinic
+    - `appointment_date` (required if type='appointments'): ISO date string
+  - Returns:
+    ```json
+    {
+      "success": true,
+      "sent_count": 45,
+      "failed_count": 3,
+      "total_recipients": 48,
+      "failed_recipients": [
+        {
+          "patient_id": "uuid",
+          "patient_name": "John Doe",
+          "reason": "No phone number"
+        }
+      ]
+    }
+    ```
+  - Process:
+    1. Builds recipient list based on filters
+    2. For each patient:
+       - Extracts phone numbers from contact_json
+       - Selects default or first mobile
+       - Renders template with patient data
+       - Sends via existing send_sms service
+       - Creates SMSMessage record
+       - Logs success/failure
+    3. Returns aggregated results
+
+**Technical Implementation:**
+- Frontend: `frontend/app/components/sms/SendSMSTab.tsx`
+  - `updateRecipientCount()` - Fetches real counts from API
+  - `handleSend()` - Handles both individual and bulk
+  - Confirmation dialog for bulk sends
+- Backend: `backend/sms_integration/patient_views.py`
+  - `bulk_send_sms()` - Main bulk sending function
+  - Uses existing `send_sms()` service for consistency
+  - Robust per-recipient error handling
+- Routes: `backend/sms_integration/urls.py`
+  - Added: `path('bulk/send/', patient_views.bulk_send_sms)`
+
+**Safety Features:**
+- Filters only active patients (`is_active=True`)
+- Removes duplicate patients (e.g., multiple appointments same day)
+- Confirmation prompt for large sends (>10)
+- Detailed failure reporting (no silent failures)
+- Uses existing SMS service (same reliability as individual)
+
+**Use Cases:**
+- 🏥 **Clinic closure**: "Newcastle clinic closed tomorrow due to public holiday"
+- 📅 **Appointment reminders**: "Your appointment is tomorrow at our clinic"
+- 🎉 **Announcements**: "We're moving to a new location next month!"
+- ⚠️ **Urgent alerts**: "Clinic closing early today due to emergency"
+
+#### 7. Backend Enhancements
 
 **SMS Template System:**
 - Model fields: `category`, `character_count`, `sms_segment_count`, `created_by`, `clinic` (optional)
@@ -764,6 +872,15 @@ Please reply YES to confirm or call 02 6766 3153
   - Respects user-set default phone number
   - Falls back to first mobile if no default set
   - **Template rendering with appointment context**: If appointment_id provided, fetches appointment and renders all appointment variables
+- **Bulk SMS sending**: `POST /api/sms/bulk/send/` ⭐ NEW
+  - Accepts `recipient_type` ('clinic', 'appointments', 'all')
+  - Accepts `clinic_id` (for clinic type) or `appointment_date` (for appointments type)
+  - Accepts `template_id` (optional) - renders per patient
+  - Accepts `message` (required)
+  - Builds recipient list based on filters
+  - Sends to each recipient with robust error handling
+  - Returns detailed results (sent_count, failed_count, failed_recipients)
+  - Uses existing send_sms service for consistency
 - Proper error handling and validation
 - Links sent SMS to appointment record if appointment_id provided
 
