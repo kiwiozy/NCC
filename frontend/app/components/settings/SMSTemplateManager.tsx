@@ -84,6 +84,7 @@ const TEMPLATE_VARIABLES: TemplateVariable[] = [
       { name: '{patient_full_name}', description: 'Title + Full name' },
       { name: '{patient_mobile}', description: 'Mobile phone number' },
       { name: '{patient_health_number}', description: 'Health number' },
+      { name: '{health_fund}', description: 'Patient health fund' },
     ],
   },
   {
@@ -94,6 +95,9 @@ const TEMPLATE_VARIABLES: TemplateVariable[] = [
       { name: '{appointment_date_short}', description: 'Short date (e.g., "20 Nov 2025")' },
       { name: '{appointment_duration}', description: 'Duration (e.g., "30 minutes")' },
       { name: '{appointment_type}', description: 'Type (e.g., "Initial Assessment")' },
+      { name: '{booking_link}', description: 'Link to online booking' },
+      { name: '{cancellation_link}', description: 'Link to cancel/reschedule' },
+      { name: '{google_maps_link}', description: 'Google Maps link to clinic' },
     ],
   },
   {
@@ -102,6 +106,7 @@ const TEMPLATE_VARIABLES: TemplateVariable[] = [
       { name: '{clinic_name}', description: 'Clinic name (e.g., "Tamworth")' },
       { name: '{clinic_phone}', description: 'Clinic phone number' },
       { name: '{clinic_address}', description: 'Clinic address' },
+      { name: '{clinic_hours}', description: 'Clinic opening hours' },
     ],
   },
   {
@@ -118,6 +123,20 @@ const TEMPLATE_VARIABLES: TemplateVariable[] = [
       { name: '{company_name}', description: 'Company name' },
       { name: '{company_phone}', description: 'Company phone' },
       { name: '{company_email}', description: 'Company email' },
+      { name: '{company_website}', description: 'Company website URL' },
+    ],
+  },
+  {
+    group: '💰 Payment',
+    variables: [
+      { name: '{invoice_amount}', description: 'Outstanding invoice amount' },
+      { name: '{payment_link}', description: 'Link to pay online' },
+    ],
+  },
+  {
+    group: '✏️ Custom',
+    variables: [
+      { name: '{custom_note}', description: 'Custom note (added when sending)' },
     ],
   },
 ];
@@ -131,20 +150,29 @@ const SAMPLE_CONTEXT = {
   patient_full_name: 'Mr John Smith',
   patient_mobile: '0412 345 678',
   patient_health_number: 'ABC123456',
+  health_fund: 'Medibank Private',
   appointment_date: 'Monday, November 20',
   appointment_time: '10:00 AM',
   appointment_date_short: '20 Nov 2025',
   appointment_duration: '30 minutes',
   appointment_type: 'Initial Assessment',
+  booking_link: 'https://walkeasy.com.au/book',
+  cancellation_link: 'https://walkeasy.com.au/cancel/abc123',
+  google_maps_link: 'https://maps.google.com/?q=43+Harrison+St+Cardiff',
   clinic_name: 'Tamworth',
   clinic_phone: '02 6766 3153',
-  clinic_address: '43 Harrison St, Cardiff',
+  clinic_address: '43 Harrison St, Cardiff NSW 2285',
+  clinic_hours: 'Mon-Fri 9am-5pm',
   clinician_name: 'Dr. Sarah Smith',
   clinician_first_name: 'Sarah',
   clinician_title: 'Podiatrist',
   company_name: 'WalkEasy Pedorthics',
   company_phone: '02 6766 3153',
   company_email: 'info@walkeasy.com.au',
+  company_website: 'www.walkeasy.com.au',
+  invoice_amount: '$150.00',
+  payment_link: 'https://walkeasy.com.au/pay/inv123',
+  custom_note: 'Please bring your referral',
 };
 
 const CATEGORY_OPTIONS = [

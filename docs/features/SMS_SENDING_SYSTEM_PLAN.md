@@ -382,7 +382,10 @@ if settings.SMS_DRY_RUN_MODE:
 - B) Start with SMS Center (bulk sending first)
 - C) Start with calendar integration
 
-**Recommendation**: Option A - Patient page is the foundation
+**DECISION**: ✅ **Option A** - Start with patient page
+- Build "Send SMS" button in patient details
+- Add SMS dialog/modal for template selection and sending
+- Foundation for all other SMS features
 
 ---
 
@@ -395,7 +398,13 @@ if settings.SMS_DRY_RUN_MODE:
 - C) Under a new "Communications" section
 - D) Don't create SMS Center, only patient-level sending
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Option B (Modified)** - Consolidate under single "SMS" navigation item
+- Keep existing "SMS" in main navigation
+- Expand it to include:
+  - Send SMS (new bulk/individual sending)
+  - Conversations (existing patient-level 2-way SMS)
+  - History (all sent/received messages)
+  - Analytics/Reports (optional)
 
 ---
 
@@ -409,7 +418,10 @@ if settings.SMS_DRY_RUN_MODE:
 - D) Configurable per clinic
 - E) No restriction (send anytime)
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Option C** - 9am - 5pm (conservative hours)
+- Safe, respectful hours for patients
+- Avoids early morning or evening sends
+- Can be made configurable later if needed
 
 ---
 
@@ -423,7 +435,20 @@ if settings.SMS_DRY_RUN_MODE:
 - B) No, only immediate sending (keep it simple)
 - C) Add in later sprint (not initial release)
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Option B** - Only immediate sending for manual SMS
+- Click send = sends immediately
+- Simpler to build and use
+- **Note**: Automatic SMS will have schedules (see below)
+
+**Important Clarification**:
+- **Manual SMS** = immediate only
+- **Automatic SMS** = scheduled based on rules:
+  - Week before appointment (7 days prior)
+  - Day before appointment (24 hours prior)
+  - Immediate on booking confirmation
+  - Etc.
+
+The scheduling is for the *automation system*, not for staff to manually schedule individual messages.
 
 ---
 
@@ -436,12 +461,11 @@ if settings.SMS_DRY_RUN_MODE:
 - C) Track internally but don't show to staff
 - D) Don't track costs
 
-**Considerations**:
-- SMS Broadcast charges per message
-- Useful for budget management
-- May complicate UI
-
-**Recommendation**: TBD
+**DECISION**: ✅ **Option C** - Track internally but don't show to staff
+- Backend tracks costs for admin/reporting
+- Don't clutter UI with cost information
+- Can add cost display later if needed
+- Store cost data in database for future analysis
 
 ---
 
@@ -454,7 +478,10 @@ if settings.SMS_DRY_RUN_MODE:
 - C) Both locations
 - D) Separate "SMS Reports" page
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Option C** - Both locations
+- **Patient page**: Shows that patient's SMS conversation history
+- **SMS Center page**: Shows all SMS from all patients (searchable/filterable)
+- Best of both worlds - context-specific and global views
 
 ---
 
@@ -467,7 +494,12 @@ if settings.SMS_DRY_RUN_MODE:
 - C) Both A and B
 - D) Handle later
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Option C** - Both manual and automatic
+- **Manual**: Add "SMS consent" checkbox to patient communication details
+- **Automatic**: System processes inbound "STOP" messages and marks patient as opted-out
+- **Compliance**: Meets SMS marketing regulations
+- **Flexibility**: Staff can manually opt patients in/out as needed
+- **Safety**: System blocks sending to opted-out patients
 
 ---
 
@@ -486,7 +518,28 @@ if settings.SMS_DRY_RUN_MODE:
 - Booking links
 - Payment information
 
-**Recommendation**: TBD
+**DECISION**: ✅ **Add all additional variables (A, B, C, D)**
+
+**New variables to add:**
+
+**A) Company/Branding:**
+- `{company_name}` - "Walk Easy Pedorthics"
+- `{company_phone}` - Main phone number
+- `{company_website}` - Website URL
+
+**B) Appointment Actions:**
+- `{booking_link}` - Link to online booking
+- `{cancellation_link}` - Link to cancel/reschedule
+- `{google_maps_link}` - Link to clinic location
+
+**C) Payment/Admin:**
+- `{invoice_amount}` - Outstanding invoice amount
+- `{payment_link}` - Link to pay online
+- `{health_fund}` - Patient's health fund
+
+**D) Custom/Flexible:**
+- `{custom_note}` - Staff can add custom text when sending
+- `{clinic_hours}` - Clinic opening hours
 
 ---
 
