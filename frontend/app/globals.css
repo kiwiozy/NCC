@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default to dark mode to prevent white flash */
 :root {
+  --background: #1A1B1E;
+  --foreground: #C1C2C5;
+}
+
+/* Override for light mode if ever needed */
+[data-mantine-color-scheme='light'] {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -16,6 +23,7 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
+  background-color: #1A1B1E;
 }
 
 body {

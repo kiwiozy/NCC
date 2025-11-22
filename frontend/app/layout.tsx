@@ -51,6 +51,21 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultValue="dark" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#1A1B1E" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  document.documentElement.setAttribute('data-mantine-color-scheme', 'dark');
+                  document.documentElement.style.backgroundColor = '#1A1B1E';
+                  document.documentElement.style.colorScheme = 'dark';
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
