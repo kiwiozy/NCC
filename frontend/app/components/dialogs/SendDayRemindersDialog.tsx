@@ -141,27 +141,44 @@ export default function SendDayRemindersDialog({
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/sms/templates/', {
-        credentials: 'include',
-      });
+      // Fetch all templates (paginated)
+      let allTemplates: SMSTemplate[] = [];
+      let nextUrl = 'https://localhost:8000/api/sms/templates/';
+      
+      while (nextUrl) {
+        const response = await fetch(nextUrl, {
+          credentials: 'include',
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch templates');
+        if (!response.ok) {
+          throw new Error('Failed to fetch templates');
+        }
+
+        const data = await response.json();
+        
+        if (data.results) {
+          // Paginated response
+          allTemplates = [...allTemplates, ...data.results];
+          nextUrl = data.next;
+        } else {
+          // Non-paginated response
+          allTemplates = data;
+          nextUrl = '';
+        }
       }
-
-      const data = await response.json();
-      const templateList = data.results || data;
       
       // Filter to only appointment reminder templates
-      const reminderTemplates = templateList.filter(
+      const reminderTemplates = allTemplates.filter(
         (t: SMSTemplate) => t.category === 'appointment_reminder'
       );
       
       setTemplates(reminderTemplates);
       
-      // Auto-select first template
+      // Auto-select first template (or a generic one if available)
       if (reminderTemplates.length > 0) {
-        setSelectedTemplate(reminderTemplates[0].id);
+        // Prefer generic template (no clinic assigned) as default
+        const genericTemplate = reminderTemplates.find((t) => !t.clinic || t.clinic === null);
+        setSelectedTemplate((genericTemplate?.id || reminderTemplates[0].id));
       }
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -201,15 +218,6 @@ export default function SendDayRemindersDialog({
       return;
     }
 
-    if (!selectedTemplate) {
-      notifications.show({
-        title: 'No Template Selected',
-        message: 'Please select an SMS template',
-        color: 'yellow',
-      });
-      return;
-    }
-
     setSending(true);
     setSendProgress(0);
     setSendTotal(selectedAppointments.size);
@@ -230,6 +238,25 @@ export default function SendDayRemindersDialog({
         if (!appointment || !appointment.patient_id) continue;
 
         try {
+          // Find clinic-specific template for this appointment
+          // Priority: 1) Clinic-specific template, 2) Generic template (no clinic), 3) Any template
+          let templateToUse = selectedTemplate;
+          
+          if (templates.length > 0) {
+            // First try to find a template for this appointment's clinic
+            const clinicTemplate = templates.find(
+              (t) => t.clinic === appointment.clinic_id
+            );
+            
+            // If no clinic-specific template, use generic template (no clinic assigned)
+            const genericTemplate = templates.find(
+              (t) => !t.clinic || t.clinic === null
+            );
+            
+            // Use clinic-specific if available, otherwise generic, otherwise selected template
+            templateToUse = (clinicTemplate?.id || genericTemplate?.id || selectedTemplate)!;
+          }
+
           const response = await fetch(
             `https://localhost:8000/api/sms/patient/${appointment.patient_id}/send/`,
             {
@@ -240,7 +267,7 @@ export default function SendDayRemindersDialog({
               },
               credentials: 'include',
               body: JSON.stringify({
-                template_id: selectedTemplate,
+                template_id: templateToUse,
                 phone_number: appointment.phone_number,
                 appointment_id: appointmentId,
               }),
@@ -343,23 +370,40 @@ export default function SendDayRemindersDialog({
 
         {/* Template Selection */}
         <Stack gap="xs">
-          <Text size="sm" fw={600}>SMS Template</Text>
-          <Select
-            placeholder="Select template"
-            data={templates.map((t) => ({
-              value: t.id,
-              label: `${t.name}${t.clinic_name ? ` (${t.clinic_name})` : ''}`,
-            }))}
-            value={selectedTemplate}
-            onChange={setSelectedTemplate}
-            searchable
-          />
-          {selectedTemplateObj && (
-            <Paper p="sm" withBorder style={{ backgroundColor: 'var(--mantine-color-dark-6)' }}>
-              <Text size="xs" c="dimmed" mb={4}>Preview:</Text>
-              <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-                {selectedTemplateObj.message}
-              </Text>
+          <Text size="sm" fw={600}>SMS Template Strategy</Text>
+          <Alert icon={<IconAlertCircle size={16} />} color="blue">
+            <Text size="xs">
+              <strong>Smart Clinic Matching:</strong> Each patient will receive the template for their clinic. 
+              If no clinic-specific template exists, a generic template will be used.
+            </Text>
+          </Alert>
+          
+          {/* Show which clinics have templates */}
+          {appointments.length > 0 && (
+            <Paper p="sm" withBorder>
+              <Text size="xs" c="dimmed" mb={4}>Templates Available:</Text>
+              <Stack gap={4}>
+                {Array.from(new Set(appointments.map((apt) => apt.clinic_name))).map((clinicName) => {
+                  const clinicAppointment = appointments.find((apt) => apt.clinic_name === clinicName);
+                  const clinicId = clinicAppointment?.clinic_id;
+                  const clinicTemplate = templates.find((t) => t.clinic === clinicId);
+                  const genericTemplate = templates.find((t) => !t.clinic || t.clinic === null);
+                  const templateToUse = clinicTemplate || genericTemplate;
+                  
+                  return (
+                    <Group key={clinicName} justify="space-between">
+                      <Text size="xs">{clinicName}</Text>
+                      <Badge 
+                        size="xs" 
+                        variant="light" 
+                        color={clinicTemplate ? 'green' : 'blue'}
+                      >
+                        {clinicTemplate ? clinicTemplate.name : (genericTemplate ? `${genericTemplate.name} (generic)` : 'No template')}
+                      </Badge>
+                    </Group>
+                  );
+                })}
+              </Stack>
             </Paper>
           )}
         </Stack>
@@ -465,7 +509,7 @@ export default function SendDayRemindersDialog({
           <Button
             leftSection={<IconMailFilled size={16} />}
             onClick={handleSend}
-            disabled={selectedCount === 0 || !selectedTemplate || sending}
+            disabled={selectedCount === 0 || sending}
             loading={sending}
           >
             Send to {selectedCount} {selectedCount === 1 ? 'patient' : 'patients'}
