@@ -572,31 +572,29 @@ export default function ClinicCalendar() {
             gap: 3px !important;
           }
           
-          /* Date number on the right in day-top */
+          /* Date number FIXED in top-right corner */
           .fc-dayGridMonth-view .fc-daygrid-day-number {
-            margin-left: auto !important;
-            order: 999 !important;
+            position: absolute !important;
+            top: 4px !important;
+            right: 4px !important;
             padding: 4px 8px !important;
             font-size: 18px !important;
             font-weight: 600 !important;
-            flex-shrink: 0 !important;
-            align-self: flex-start !important;
+            z-index: 10 !important;
+            pointer-events: none !important;
           }
           
-          /* All-day block events in day-top share space equally */
+          /* Container for all-day events - takes remaining space left of date */
+          .fc-dayGridMonth-view .fc-daygrid-day-top {
+            padding-right: 50px !important; /* Reserve space for the date number */
+          }
+          
+          /* All-day block events wrap in remaining space */
           .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness {
-            flex: 1 1 calc(33.333% - 8px) !important; /* 3 per row by default */
-            min-width: 80px !important; /* Minimum width before wrapping */
-            max-width: calc(50% - 8px) !important; /* Max 2 per row if space is tight */
+            flex: 0 1 auto !important; /* Don't grow, shrink if needed, auto width */
+            min-width: 60px !important; /* Minimum width before wrapping */
+            max-width: 100% !important;
             margin: 0 !important;
-          }
-          
-          /* When there's only 1 or 2 events, let them take more space */
-          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:only-child,
-          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:first-child:nth-last-child(2),
-          .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness:first-child:nth-last-child(2) ~ .fc-daygrid-event-harness {
-            flex: 1 1 auto !important;
-            max-width: calc(50% - 8px) !important;
           }
           
           .fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-block-event {
@@ -604,8 +602,9 @@ export default function ClinicCalendar() {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            font-size: 11px !important;
-            padding: 3px 6px !important;
+            font-size: 10px !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
           }
           
           /* Regular appointments stay in day-events section (below day-top) */
