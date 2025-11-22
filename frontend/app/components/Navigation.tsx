@@ -186,6 +186,7 @@ export default function Navigation({ children }: NavigationProps) {
     { icon: <IconLayoutDashboard size={iconSize} stroke={1.5} />, label: 'Dashboard', href: '/', unreadBadge: unreadCount > 0 ? unreadCount : undefined },
     { icon: <IconUsers size={iconSize} stroke={1.5} />, label: 'Contacts', href: '/patients', hasSubmenu: true, submenuType: 'contacts' },
     { icon: <IconCalendar size={iconSize} stroke={1.5} />, label: 'Calendar', href: '/calendar' },
+    { icon: <IconMessage size={iconSize} stroke={1.5} />, label: 'SMS', href: '/sms', unreadBadge: unreadCount > 0 ? unreadCount : undefined },
     { icon: <IconReceipt2 size={iconSize} stroke={1.5} />, label: 'Accounts', href: '/xero', hasSubmenu: true, submenuType: 'accounts' },
     { icon: <IconCheckupList size={iconSize} stroke={1.5} />, label: 'Orders', href: '/orders' },
     { icon: <IconFileText size={iconSize} stroke={1.5} />, label: 'Inventory', href: '/inventory' },
