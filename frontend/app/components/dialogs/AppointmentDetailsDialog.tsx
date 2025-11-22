@@ -190,7 +190,10 @@ export default function AppointmentDetailsDialog({
       if (!phonesResponse.ok) throw new Error('Failed to fetch patient phone numbers');
       
       const phonesData = await phonesResponse.json();
+      console.log('📱 Phone API response:', phonesData);
+      
       const phones = phonesData.phones || [];
+      console.log('📱 Phones array:', phones);
       
       if (phones.length === 0) {
         notifications.show({
