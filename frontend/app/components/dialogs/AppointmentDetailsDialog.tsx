@@ -192,7 +192,8 @@ export default function AppointmentDetailsDialog({
       const phonesData = await phonesResponse.json();
       console.log('📱 Phone API response:', phonesData);
       
-      const phones = phonesData.phones || [];
+      // API returns 'available_phones', not 'phones'
+      const phones = phonesData.available_phones || phonesData.phones || [];
       console.log('📱 Phones array:', phones);
       
       if (phones.length === 0) {
