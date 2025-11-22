@@ -888,6 +888,7 @@ export default function ClinicCalendar() {
                           fontWeight: 'bold',
                           lineHeight: '1',
                           flexShrink: 0,
+                          paddingRight: '5px',
                         }} title="Patient confirmed via SMS">✓</span>
                       )}
                     </div>
@@ -927,6 +928,7 @@ export default function ClinicCalendar() {
                           lineHeight: '1',
                           display: 'inline-block',
                           flexShrink: 0,
+                          paddingRight: '5px',
                         }} title="Patient confirmed via SMS">✓</span>
                       )}
                     </div>
@@ -964,7 +966,8 @@ export default function ClinicCalendar() {
                       flexShrink: 0,
                       zIndex: 20,
                       textShadow: '0 0 3px rgba(0,0,0,0.8)',
-                      marginLeft: 'auto'
+                      marginLeft: 'auto',
+                      paddingRight: '5px',
                     }} title="Patient confirmed via SMS">✓</span>
                   )}
                 </div>
