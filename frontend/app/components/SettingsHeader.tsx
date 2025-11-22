@@ -1,7 +1,7 @@
 'use client';
 
 import { Group, UnstyledButton, rem, useMantineColorScheme, Stack, Text } from '@mantine/core';
-import { IconSettings as IconSettingsIcon, IconCurrencyDollar, IconBuildingHospital, IconDatabase, IconMail } from '@tabler/icons-react';
+import { IconSettings as IconSettingsIcon, IconCurrencyDollar, IconBuildingHospital, IconDatabase, IconMail, IconMessage } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SettingsHeaderProps {
@@ -22,6 +22,7 @@ export default function SettingsHeader({
     { icon: <IconSettingsIcon size={24} />, label: 'General', value: 'general' },
     { icon: <IconCurrencyDollar size={24} />, label: 'Funding Sources', value: 'funding-sources' },
     { icon: <IconBuildingHospital size={24} />, label: 'Clinics', value: 'clinics' },
+    { icon: <IconMessage size={24} />, label: 'SMS Templates', value: 'sms-templates' },
     { icon: <IconMail size={24} />, label: 'Email Templates', value: 'email-templates' },
     { icon: <IconDatabase size={24} />, label: 'Data Management', value: 'data-management' },
   ];

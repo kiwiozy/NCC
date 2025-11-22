@@ -26,7 +26,43 @@ class SMSTemplateViewSet(viewsets.ModelViewSet):
     queryset = SMSTemplate.objects.all()
     serializer_class = SMSTemplateSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_active']
+    filterset_fields = ['is_active', 'category']
+    
+    @action(detail=True, methods=['post'])
+    def preview(self, request, pk=None):
+        """
+        Preview template with sample data
+        POST /api/sms/templates/{id}/preview/
+        Body: {
+            "patient_name": "John Smith",
+            "appointment_date": "Monday, November 20",
+            ...
+        }
+        """
+        template = self.get_object()
+        context = request.data
+        
+        try:
+            rendered_message = template.render(context)
+            character_count = len(rendered_message)
+            
+            # Calculate SMS segments
+            if character_count <= 160:
+                sms_segments = 1
+            else:
+                sms_segments = 1 + ((character_count - 160) // 153) + (1 if (character_count - 160) % 153 > 0 else 0)
+            
+            return Response({
+                'rendered_message': rendered_message,
+                'character_count': character_count,
+                'sms_segment_count': sms_segments,
+                'variables_used': template.get_variables(),
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class SMSMessageViewSet(viewsets.ModelViewSet):

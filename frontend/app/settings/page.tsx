@@ -12,8 +12,9 @@ import ClinicsSettings from '../components/settings/ClinicsSettings';
 import DataManagementSettings from '../components/settings/DataManagementSettings';
 import UserProfiles from '../components/settings/UserProfiles';
 import EmailTemplateManager from '../components/settings/EmailTemplateManager';
+import SMSTemplateManager from '../components/settings/SMSTemplateManager';
 
-type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management' | 'users' | 'email-templates';
+type SettingsTab = 'general' | 'funding-sources' | 'clinics' | 'data-management' | 'users' | 'email-templates' | 'sms-templates';
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -38,6 +39,8 @@ export default function SettingsPage() {
         return <UserProfiles />;
       case 'email-templates':
         return <EmailTemplateManager />;
+      case 'sms-templates':
+        return <SMSTemplateManager />;
       case 'general':
       default:
         return <CompanySettings />;

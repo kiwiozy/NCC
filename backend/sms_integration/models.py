@@ -11,24 +11,72 @@ class SMSTemplate(models.Model):
     """
     Reusable SMS message templates
     """
+    CATEGORY_CHOICES = [
+        ('appointment_reminder', 'Appointment Reminder'),
+        ('appointment_confirmation', 'Appointment Confirmation'),
+        ('followup_reminder', 'Follow-up Reminder'),
+        ('cancellation', 'Cancellation Notice'),
+        ('rescheduling', 'Rescheduling'),
+        ('general', 'General Communication'),
+        ('special', 'Birthday/Special'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True, help_text="Template name (e.g., 'appointment_reminder')")
     description = models.TextField(blank=True, help_text="What this template is used for")
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='general',
+        help_text="Template category for organization"
+    )
     message_template = models.TextField(
-        help_text="Template text. Use {patient_name}, {appointment_date}, {appointment_time}, {clinic_name}, {clinician_name}"
+        help_text="Template text. Variables: {patient_name}, {appointment_date}, {appointment_time}, {clinic_name}, {clinician_name}, etc."
     )
     is_active = models.BooleanField(default=True)
+    
+    # Metadata
+    character_count = models.IntegerField(
+        default=0,
+        help_text="Approximate character count (calculated on save)"
+    )
+    sms_segment_count = models.IntegerField(
+        default=1,
+        help_text="Estimated SMS segments (160 chars = 1, then 153 per segment)"
+    )
     
     # Audit fields
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.CharField(max_length=100, blank=True)
     
     class Meta:
         db_table = 'sms_templates'
-        ordering = ['name']
+        ordering = ['category', 'name']
     
     def __str__(self):
         return f"{self.name}"
+    
+    def calculate_character_count(self, sample_context: dict = None) -> int:
+        """Calculate approximate character count with sample data"""
+        if sample_context:
+            rendered = self.render(sample_context)
+            return len(rendered)
+        # Return template length as approximation
+        return len(self.message_template)
+    
+    def calculate_sms_segments(self) -> int:
+        """Calculate number of SMS segments needed"""
+        length = self.character_count or len(self.message_template)
+        if length <= 160:
+            return 1
+        return 1 + ((length - 160) // 153) + (1 if (length - 160) % 153 > 0 else 0)
+    
+    def save(self, *args, **kwargs):
+        """Auto-calculate character count and segments on save"""
+        self.character_count = len(self.message_template)
+        self.sms_segment_count = self.calculate_sms_segments()
+        super().save(*args, **kwargs)
     
     def render(self, context: dict) -> str:
         """Render template with provided context variables"""
@@ -37,6 +85,12 @@ class SMSTemplate(models.Model):
             placeholder = '{' + key + '}'
             message = message.replace(placeholder, str(value))
         return message
+    
+    def get_variables(self) -> list:
+        """Extract variable names from template"""
+        import re
+        pattern = r'\{(\w+)\}'
+        return re.findall(pattern, self.message_template)
 
 
 class SMSMessage(models.Model):

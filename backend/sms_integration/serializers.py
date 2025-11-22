@@ -7,18 +7,38 @@ from patients.serializers import PatientSerializer
 
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    variables = serializers.SerializerMethodField()
+    
     class Meta:
         model = SMSTemplate
         fields = [
             'id',
             'name',
             'description',
+            'category',
+            'category_display',
             'message_template',
             'is_active',
+            'character_count',
+            'sms_segment_count',
+            'variables',
+            'created_at',
+            'updated_at',
+            'created_by',
+        ]
+        read_only_fields = [
+            'id',
+            'character_count',
+            'sms_segment_count',
+            'variables',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_variables(self, obj):
+        """Get list of variables used in template"""
+        return obj.get_variables()
 
 
 class SMSMessageSerializer(serializers.ModelSerializer):
