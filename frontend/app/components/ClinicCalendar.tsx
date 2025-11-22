@@ -168,50 +168,51 @@ export default function ClinicCalendar() {
     };
   }, []);
 
+  // Function to move all-day events to the day-top section in month view
+  const moveAllDayEvents = useCallback(() => {
+    if (!calendarRef.current) return;
+    
+    const calendarApi = calendarRef.current.getApi();
+    const currentView = calendarApi.view.type;
+    
+    // Only apply in month view
+    if (currentView !== 'dayGridMonth') return;
+    
+    // Find all day cells
+    const dayCells = document.querySelectorAll('.fc-daygrid-day');
+    
+    dayCells.forEach((dayCell) => {
+      const dayTop = dayCell.querySelector('.fc-daygrid-day-top');
+      const dayEvents = dayCell.querySelector('.fc-daygrid-day-events');
+      
+      if (!dayTop || !dayEvents) return;
+      
+      // Find ALL block events (all-day events) in this cell
+      const allBlockEvents = dayCell.querySelectorAll('.fc-daygrid-block-event');
+      
+      allBlockEvents.forEach((blockEvent) => {
+        const harness = blockEvent.closest('.fc-daygrid-event-harness');
+        
+        if (!harness) return;
+        
+        // Check if already in day-top
+        if (dayTop.contains(harness)) {
+          return;
+        }
+        
+        // Move before the date number
+        const dateNumber = dayTop.querySelector('.fc-daygrid-day-number');
+        if (dateNumber) {
+          dayTop.insertBefore(harness, dateNumber);
+        } else {
+          dayTop.appendChild(harness);
+        }
+      });
+    });
+  }, []);
+
   // Move all-day events to the day-top section in month view
   useEffect(() => {
-    const moveAllDayEvents = () => {
-      if (!calendarRef.current) return;
-      
-      const calendarApi = calendarRef.current.getApi();
-      const currentView = calendarApi.view.type;
-      
-      // Only apply in month view
-      if (currentView !== 'dayGridMonth') return;
-      
-      // Find all day cells
-      const dayCells = document.querySelectorAll('.fc-daygrid-day');
-      
-      dayCells.forEach((dayCell) => {
-        const dayTop = dayCell.querySelector('.fc-daygrid-day-top');
-        const dayEvents = dayCell.querySelector('.fc-daygrid-day-events');
-        
-        if (!dayTop || !dayEvents) return;
-        
-        // Find ALL block events (all-day events) in this cell
-        const allBlockEvents = dayCell.querySelectorAll('.fc-daygrid-block-event');
-        
-        allBlockEvents.forEach((blockEvent) => {
-          const harness = blockEvent.closest('.fc-daygrid-event-harness');
-          
-          if (!harness) return;
-          
-          // Check if already in day-top
-          if (dayTop.contains(harness)) {
-            return;
-          }
-          
-          // Move before the date number
-          const dateNumber = dayTop.querySelector('.fc-daygrid-day-number');
-          if (dateNumber) {
-            dayTop.insertBefore(harness, dateNumber);
-          } else {
-            dayTop.appendChild(harness);
-          }
-        });
-      });
-    };
-    
     // Run multiple times to catch all events at different render stages
     const timer1 = setTimeout(moveAllDayEvents, 50);
     const timer2 = setTimeout(moveAllDayEvents, 150);
@@ -224,7 +225,7 @@ export default function ClinicCalendar() {
       clearTimeout(timer3);
       clearTimeout(timer4);
     };
-  }, [events]);
+  }, [events, moveAllDayEvents]);
 
 
   const fetchAppointments = async () => {
@@ -321,6 +322,10 @@ export default function ClinicCalendar() {
         message: 'Appointment rescheduled successfully',
         color: 'green',
       });
+      
+      // Re-run the move logic to ensure all-day events stay at the top
+      setTimeout(moveAllDayEvents, 50);
+      setTimeout(moveAllDayEvents, 150);
     } catch (error) {
       info.revert();
       notifications.show({
@@ -362,6 +367,10 @@ export default function ClinicCalendar() {
         message: 'Appointment duration changed',
         color: 'green',
       });
+      
+      // Re-run the move logic to ensure all-day events stay at the top
+      setTimeout(moveAllDayEvents, 50);
+      setTimeout(moveAllDayEvents, 150);
     } catch (error) {
       info.revert();
       notifications.show({
