@@ -30,6 +30,17 @@ class SMSTemplate(models.Model):
         default='general',
         help_text="Template category for organization"
     )
+    
+    # Clinic relationship (optional - null means template is available to all clinics)
+    clinic = models.ForeignKey(
+        'clinicians.Clinic',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='sms_templates',
+        help_text="Specific clinic this template belongs to (blank = available to all clinics)"
+    )
+    
     message_template = models.TextField(
         help_text="Template text. Variables: {patient_name}, {appointment_date}, {appointment_time}, {clinic_name}, {clinician_name}, etc."
     )
@@ -52,10 +63,10 @@ class SMSTemplate(models.Model):
     
     class Meta:
         db_table = 'sms_templates'
-        ordering = ['category', 'name']
+        ordering = ['clinic', 'category', 'name']
     
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.name}" + (f" ({self.clinic.name})" if self.clinic else " (All Clinics)")
     
     def calculate_character_count(self, sample_context: dict = None) -> int:
         """Calculate approximate character count with sample data"""

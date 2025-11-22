@@ -26,7 +26,7 @@ class SMSTemplateViewSet(viewsets.ModelViewSet):
     queryset = SMSTemplate.objects.all()
     serializer_class = SMSTemplateSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_active', 'category']
+    filterset_fields = ['is_active', 'category', 'clinic']
     
     @action(detail=True, methods=['post'])
     def preview(self, request, pk=None):

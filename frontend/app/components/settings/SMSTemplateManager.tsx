@@ -41,6 +41,8 @@ interface SMSTemplate {
   description: string;
   category: string;
   category_display: string;
+  clinic: string | null;
+  clinic_name: string;
   message_template: string;
   is_active: boolean;
   character_count: number;
@@ -48,6 +50,11 @@ interface SMSTemplate {
   variables: string[];
   created_at: string;
   updated_at: string;
+}
+
+interface Clinic {
+  id: string;
+  name: string;
 }
 
 interface TemplateVariable {
@@ -154,6 +161,7 @@ export default function SMSTemplateManager() {
   const isDark = colorScheme === 'dark';
   
   const [templates, setTemplates] = useState<SMSTemplate[]>([]);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -165,6 +173,7 @@ export default function SMSTemplateManager() {
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('general');
+  const [formClinic, setFormClinic] = useState<string | null>(null);
   const [formMessage, setFormMessage] = useState('');
   const [formActive, setFormActive] = useState(true);
   
@@ -178,12 +187,29 @@ export default function SMSTemplateManager() {
 
   useEffect(() => {
     fetchTemplates();
+    fetchClinics();
   }, []);
 
   // Update preview when message changes
   useEffect(() => {
     updatePreview();
   }, [formMessage]);
+
+  const fetchClinics = async () => {
+    try {
+      const response = await fetch('https://localhost:8000/api/clinics/', {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to load clinics');
+      }
+      const data = await response.json();
+      setClinics(data);
+    } catch (error) {
+      console.error('Error loading clinics:', error);
+      // Don't show error for clinics, just log it
+    }
+  };
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -226,6 +252,7 @@ export default function SMSTemplateManager() {
     setFormName('');
     setFormDescription('');
     setFormCategory('general');
+    setFormClinic(null);
     setFormMessage('');
     setFormActive(true);
     setPreviewMessage('');
@@ -239,6 +266,7 @@ export default function SMSTemplateManager() {
     setFormName(template.name);
     setFormDescription(template.description);
     setFormCategory(template.category);
+    setFormClinic(template.clinic);
     setFormMessage(template.message_template);
     setFormActive(template.is_active);
     setModalOpen(true);
@@ -275,6 +303,7 @@ export default function SMSTemplateManager() {
         name: formName.trim(),
         description: formDescription.trim(),
         category: formCategory,
+        clinic: formClinic,
         message_template: formMessage.trim(),
         is_active: formActive,
       };
@@ -406,6 +435,15 @@ export default function SMSTemplateManager() {
             >
               {template.category_display}
             </Badge>
+            {template.clinic_name && (
+              <Badge
+                size="sm"
+                variant="dot"
+                color="blue"
+              >
+                {template.clinic_name}
+              </Badge>
+            )}
           </Group>
           {template.description && (
             <Text size="xs" c="dimmed">
@@ -526,6 +564,23 @@ export default function SMSTemplateManager() {
               value={formCategory}
               onChange={(value) => setFormCategory(value || 'general')}
               required
+            />
+            
+            <Select
+              label="Clinic"
+              placeholder="All Clinics (available to everyone)"
+              description="Leave blank to make this template available to all clinics"
+              data={[
+                { value: '', label: 'All Clinics' },
+                ...clinics.map((clinic) => ({
+                  value: clinic.id,
+                  label: clinic.name,
+                })),
+              ]}
+              value={formClinic || ''}
+              onChange={(value) => setFormClinic(value || null)}
+              clearable
+              searchable
             />
 
             <Box>

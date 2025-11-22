@@ -9,6 +9,7 @@ from patients.serializers import PatientSerializer
 class SMSTemplateSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     variables = serializers.SerializerMethodField()
+    clinic_name = serializers.SerializerMethodField()
     
     class Meta:
         model = SMSTemplate
@@ -18,6 +19,8 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
             'description',
             'category',
             'category_display',
+            'clinic',
+            'clinic_name',
             'message_template',
             'is_active',
             'character_count',
@@ -39,6 +42,10 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
     def get_variables(self, obj):
         """Get list of variables used in template"""
         return obj.get_variables()
+    
+    def get_clinic_name(self, obj):
+        """Get clinic name if assigned"""
+        return obj.clinic.name if obj.clinic else 'All Clinics'
 
 
 class SMSMessageSerializer(serializers.ModelSerializer):
