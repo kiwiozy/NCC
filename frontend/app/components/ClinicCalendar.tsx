@@ -657,7 +657,7 @@ export default function ClinicCalendar() {
             selectable={false}
             selectMirror={false}
             selectMirror={true}
-            dayMaxEvents={true}
+            dayMaxEvents={4}
             weekends={true}
             slotMinTime="07:00:00"
             slotMaxTime="18:00:00"
