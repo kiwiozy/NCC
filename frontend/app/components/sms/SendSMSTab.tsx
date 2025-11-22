@@ -18,6 +18,7 @@ import {
   Box,
   ScrollArea,
   ActionIcon,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import {
@@ -55,6 +56,9 @@ interface Clinic {
 }
 
 export default function SendSMSTab() {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   const [recipientType, setRecipientType] = useState<string>('individual');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
@@ -333,7 +337,7 @@ export default function SendSMSTab() {
         {message && (
           <Box mt="md">
             <Text size="sm" fw={500} mb="xs">Preview</Text>
-            <Paper p="md" withBorder bg="gray.0" style={{ whiteSpace: 'pre-wrap' }}>
+            <Paper p="md" withBorder bg={isDark ? 'dark.6' : 'gray.0'} style={{ whiteSpace: 'pre-wrap' }}>
               <Text size="sm">{message}</Text>
             </Paper>
             {recipientType !== 'individual' && (
