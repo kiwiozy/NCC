@@ -747,14 +747,14 @@ export default function ContactHeader({
             value={sortBy}
             onChange={(value) => onSortChange(value || 'name-asc')}
             data={[
-              { value: 'name-desc', label: 'Name (A-Z)' },
-              { value: 'name-asc', label: 'Name (Z-A)' },
-              { value: 'clinic-desc', label: 'Clinic (A-Z)' },
-              { value: 'clinic-asc', label: 'Clinic (Z-A)' },
-              { value: 'funding-desc', label: 'Funding (A-Z)' },
-              { value: 'funding-asc', label: 'Funding (Z-A)' },
-              { value: 'age-desc', label: 'Age (Youngest)' },
-              { value: 'age-asc', label: 'Age (Oldest)' },
+              { value: 'name-asc', label: 'Name (A-Z)' },
+              { value: 'name-desc', label: 'Name (Z-A)' },
+              { value: 'clinic-asc', label: 'Clinic (A-Z)' },
+              { value: 'clinic-desc', label: 'Clinic (Z-A)' },
+              { value: 'funding-asc', label: 'Funding (A-Z)' },
+              { value: 'funding-desc', label: 'Funding (Z-A)' },
+              { value: 'age-asc', label: 'Age (Youngest)' },
+              { value: 'age-desc', label: 'Age (Oldest)' },
             ]}
             style={{ width: rem(180) }}
             size="sm"
