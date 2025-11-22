@@ -212,15 +212,17 @@ export default function ClinicCalendar() {
       });
     };
     
-    // Run multiple times to catch all events
-    const timer1 = setTimeout(moveAllDayEvents, 100);
-    const timer2 = setTimeout(moveAllDayEvents, 300);
-    const timer3 = setTimeout(moveAllDayEvents, 500);
+    // Run multiple times to catch all events at different render stages
+    const timer1 = setTimeout(moveAllDayEvents, 50);
+    const timer2 = setTimeout(moveAllDayEvents, 150);
+    const timer3 = setTimeout(moveAllDayEvents, 300);
+    const timer4 = setTimeout(moveAllDayEvents, 600);
     
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
+      clearTimeout(timer4);
     };
   }, [events]);
 
@@ -640,51 +642,83 @@ export default function ClinicCalendar() {
             eventContent={(eventInfo) => {
               const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
               const currentView = calendarRef.current?.getApi().view.type;
+              const isAllDay = eventInfo.event.allDay;
               
-              // In month view, use default rendering for regular appointments (shows colored dots)
-              // Only customize all-day events and add SMS checkmark where needed
-              if (currentView === 'dayGridMonth' && !eventInfo.event.allDay) {
-                // For regular appointments in month view, return default rendering with SMS checkmark if needed
-                return (
-                  <div style={{ 
-                    overflow: 'hidden', 
-                    fontSize: '11px', 
-                    padding: '2px 4px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '4px',
-                    width: '100%',
-                  }}>
-                    {/* Color dot indicator */}
-                    <span style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: eventInfo.event.backgroundColor || '#3788d8',
-                      flexShrink: 0
-                    }} />
-                    <span style={{ 
+              // In month view, differentiate between all-day events and regular appointments
+              if (currentView === 'dayGridMonth') {
+                if (isAllDay) {
+                  // All-day events: full colored bar (keep default FullCalendar styling)
+                  return (
+                    <div style={{ 
                       overflow: 'hidden', 
-                      textOverflow: 'ellipsis', 
-                      whiteSpace: 'nowrap',
-                      flexGrow: 1,
-                      color: 'var(--mantine-color-text)'
-                    }}>{eventInfo.event.title}</span>
-                    {isSmsConfirmed && (
+                      fontSize: '12px', 
+                      padding: '2px 6px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      width: '100%',
+                      height: '100%'
+                    }}>
                       <span style={{ 
-                        color: '#4ade80', 
-                        fontSize: '14px', 
-                        fontWeight: 'bold',
-                        lineHeight: '1',
-                        display: 'inline-block',
-                        flexShrink: 0,
-                      }} title="Patient confirmed via SMS">✓</span>
-                    )}
-                  </div>
-                );
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap',
+                        flexGrow: 1
+                      }}>{eventInfo.event.title}</span>
+                      {isSmsConfirmed && (
+                        <span style={{ 
+                          color: '#ffffff', 
+                          fontSize: '14px', 
+                          fontWeight: 'bold',
+                          lineHeight: '1',
+                          flexShrink: 0,
+                        }} title="Patient confirmed via SMS">✓</span>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // Regular appointments: colored dot + patient name
+                  return (
+                    <div style={{ 
+                      overflow: 'hidden', 
+                      fontSize: '11px', 
+                      padding: '2px 4px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px',
+                      width: '100%',
+                    }}>
+                      {/* Color dot indicator */}
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: eventInfo.event.backgroundColor || '#3788d8',
+                        flexShrink: 0
+                      }} />
+                      <span style={{ 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap',
+                        flexGrow: 1,
+                        color: 'var(--mantine-color-text)'
+                      }}>{eventInfo.event.title}</span>
+                      {isSmsConfirmed && (
+                        <span style={{ 
+                          color: '#4ade80', 
+                          fontSize: '14px', 
+                          fontWeight: 'bold',
+                          lineHeight: '1',
+                          display: 'inline-block',
+                          flexShrink: 0,
+                        }} title="Patient confirmed via SMS">✓</span>
+                      )}
+                    </div>
+                  );
+                }
               }
               
-              // For week/day views and all-day events, show full colored background
+              // For week/day views, show full colored background
               return (
                 <div style={{ 
                   overflow: 'hidden', 
