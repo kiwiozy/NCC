@@ -94,13 +94,27 @@ export default function SendSMSTab() {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/patients/', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPatients(data.results || data);
+      let allPatients: Patient[] = [];
+      let url = 'https://localhost:8000/api/patients/';
+      
+      // Fetch all pages
+      while (url) {
+        const response = await fetch(url, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const patients = data.results || data;
+          if (Array.isArray(patients)) {
+            allPatients = [...allPatients, ...patients];
+          }
+          url = data.next || null; // Get next page URL
+        } else {
+          break;
+        }
       }
+      
+      setPatients(allPatients);
     } catch (error) {
       console.error('Error loading patients:', error);
     }
@@ -108,13 +122,27 @@ export default function SendSMSTab() {
 
   const fetchClinics = async () => {
     try {
-      const response = await fetch('https://localhost:8000/api/clinics/', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setClinics(data.results || data);
+      let allClinics: Clinic[] = [];
+      let url = 'https://localhost:8000/api/clinics/';
+      
+      // Fetch all pages
+      while (url) {
+        const response = await fetch(url, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const clinics = data.results || data;
+          if (Array.isArray(clinics)) {
+            allClinics = [...allClinics, ...clinics];
+          }
+          url = data.next || null; // Get next page URL
+        } else {
+          break;
+        }
       }
+      
+      setClinics(allClinics);
     } catch (error) {
       console.error('Error loading clinics:', error);
     }
