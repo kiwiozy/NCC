@@ -14,14 +14,7 @@ import {
   Center,
 } from '@mantine/core';
 import { IconSearch, IconMessage } from '@tabler/icons-react';
-import { useSMS } from '../../contexts/SMSContext';
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-}
+import SMSDialog from '../dialogs/SMSDialog';
 
 interface ConversationItem {
   patient_id: string;
@@ -55,9 +48,9 @@ export default function ConversationsTab() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  
-  const { openSMSDialog } = useSMS();
+  const [smsDialogOpened, setSmsDialogOpened] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [selectedPatientName, setSelectedPatientName] = useState<string>('');
 
   useEffect(() => {
     fetchConversations();
@@ -122,7 +115,9 @@ export default function ConversationsTab() {
                 withBorder
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
-                  openSMSDialog(conv.patient_id, conv.patient_name);
+                  setSelectedPatientId(conv.patient_id);
+                  setSelectedPatientName(conv.patient_name);
+                  setSmsDialogOpened(true);
                 }}
               >
                 <Group justify="space-between">
@@ -146,6 +141,18 @@ export default function ConversationsTab() {
           </Stack>
         )}
       </ScrollArea>
+
+      {/* SMS Dialog */}
+      <SMSDialog
+        opened={smsDialogOpened}
+        onClose={() => {
+          setSmsDialogOpened(false);
+          // Refresh conversations after closing dialog
+          fetchConversations();
+        }}
+        patientId={selectedPatientId}
+        patientName={selectedPatientName}
+      />
     </Stack>
   );
 }
