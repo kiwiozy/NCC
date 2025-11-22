@@ -490,6 +490,7 @@ export default function ClinicCalendar() {
               center: 'title',
               right: 'timeGridDay,timeGridWeek,dayGridMonth'
             }}
+            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
             events={events}
             editable={true}
             selectable={false}
