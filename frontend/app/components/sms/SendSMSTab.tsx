@@ -313,8 +313,8 @@ export default function SendSMSTab() {
           placeholder="Your message here..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          minRows={6}
-          maxRows={12}
+          minRows={8}
+          maxRows={20}
           autosize
         />
 
