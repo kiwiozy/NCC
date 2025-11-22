@@ -200,9 +200,48 @@ def sms_inbound(request):
             is_processed=False
         )
         
-        # Auto-detect simple replies and confirmation
+        # Auto-detect confirmation replies (flexible matching)
         message_upper = message_text.upper().strip()
-        is_confirmation = message_upper in ['YES', 'Y', 'OK', 'CONFIRM', 'CONFIRMED', 'CONFIRMED APPOINTMENT', 'CONFIRMED']
+        message_words = set(message_upper.split())
+        
+        # Confirmation keywords and patterns
+        confirmation_exact = {'YES', 'Y', 'OK', 'CONFIRM', 'CONFIRMED', 'K', 'YEP', 'YUP', 'YEAH', 'SURE'}
+        confirmation_phrases = [
+            'CONFIRMED APPOINTMENT',
+            'WILL BE THERE',
+            'SEE YOU THEN',
+            'SOUNDS GOOD',
+            'ALL GOOD',
+            'IM COMING',
+            "I'M COMING",
+            'ILL BE THERE',
+            "I'LL BE THERE",
+            'YES PLEASE',
+            'OK THANKS',
+            'THANK YOU',
+            'THANKS',
+            'CONFIRM APPOINTMENT',
+        ]
+        confirmation_emojis = ['👍', '✅', '✓', '☑', '✔']
+        
+        # Check for confirmation
+        is_confirmation = False
+        
+        # Check exact word matches
+        if message_words.intersection(confirmation_exact):
+            is_confirmation = True
+        
+        # Check phrase contains
+        for phrase in confirmation_phrases:
+            if phrase in message_upper:
+                is_confirmation = True
+                break
+        
+        # Check emojis
+        for emoji in confirmation_emojis:
+            if emoji in message_text:
+                is_confirmation = True
+                break
         
         if is_confirmation:
             sms_inbound.notes = 'Auto-detected: Confirmation'
@@ -262,10 +301,37 @@ def sms_inbound(request):
                 sms_inbound.notes += f" - Linked to appointment {appointment_to_confirm.id}"
                 sms_inbound.save()
         
-        elif message_upper in ['NO', 'N', 'CANCEL']:
-            sms_inbound.notes = 'Auto-detected: Cancellation'
+        # Detect cancellation requests (flexible matching)
+        cancellation_words = {'NO', 'N', 'CANCEL', 'CANT', "CAN'T", 'UNABLE', 'WONT', "WON'T"}
+        cancellation_phrases = [
+            'NEED TO CANCEL',
+            'HAVE TO CANCEL',
+            'CANT MAKE IT',
+            "CAN'T MAKE IT",
+            'UNABLE TO ATTEND',
+            'WONT BE THERE',
+            "WON'T BE THERE",
+            'CANT COME',
+            "CAN'T COME",
+            'NOT COMING',
+            'NEED TO RESCHEDULE',
+            'RESCHEDULE',
+        ]
+        
+        is_cancellation = False
+        if message_words.intersection(cancellation_words):
+            is_cancellation = True
+        for phrase in cancellation_phrases:
+            if phrase in message_upper:
+                is_cancellation = True
+                break
+        
+        if is_cancellation:
+            sms_inbound.notes = 'Auto-detected: Cancellation/Reschedule request'
             sms_inbound.save()
-        elif message_upper in ['STOP', 'UNSUBSCRIBE', 'OPT OUT']:
+        
+        # Detect opt-out requests (flexible matching)
+        elif message_upper in ['STOP', 'UNSUBSCRIBE', 'OPT OUT', 'OPTOUT', 'REMOVE', 'REMOVE ME']:
             sms_inbound.notes = 'Auto-detected: Opt-out request'
             sms_inbound.save()
         
