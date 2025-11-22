@@ -35,7 +35,7 @@ def normalize_phone(phone):
 def find_patient_by_phone(phone_number):
     """
     Find a patient by phone number
-    Searches in contact_json.mobile, contact_json.phone, and emergency_json
+    Searches in contact_json.phones array, contact_json.mobile, contact_json.phone, and emergency_json
     """
     if not phone_number:
         return None
@@ -44,6 +44,8 @@ def find_patient_by_phone(phone_number):
     if not normalized_target:
         return None
     
+    logger.info(f"[SMS Webhook] Searching for patient with phone: {normalized_target}")
+    
     # Search all patients
     patients = Patient.objects.all()
     
@@ -51,34 +53,50 @@ def find_patient_by_phone(phone_number):
         contact_json = patient.contact_json or {}
         emergency_json = patient.emergency_json or {}
         
-        # Check mobile numbers - handle both string and dict formats
+        # NEW FORMAT: Check phones array first
+        phones_array = contact_json.get('phones', [])
+        if phones_array and isinstance(phones_array, list):
+            for phone_obj in phones_array:
+                if isinstance(phone_obj, dict):
+                    number = phone_obj.get('number')
+                    if number and normalize_phone(number) == normalized_target:
+                        logger.info(f"[SMS Webhook] ✓ Found patient via phones array: {patient.get_full_name()}")
+                        return patient
+        
+        # LEGACY FORMAT: Check mobile numbers - handle both string and dict formats
         mobile = contact_json.get('mobile')
         if mobile:
             if isinstance(mobile, str):
                 if normalize_phone(mobile) == normalized_target:
+                    logger.info(f"[SMS Webhook] ✓ Found patient via mobile string: {patient.get_full_name()}")
                     return patient
             elif isinstance(mobile, dict):
                 for key, value in mobile.items():
                     if isinstance(value, dict) and 'value' in value:
                         if normalize_phone(value['value']) == normalized_target:
+                            logger.info(f"[SMS Webhook] ✓ Found patient via mobile dict: {patient.get_full_name()}")
                             return patient
                     elif isinstance(value, str):
                         if normalize_phone(value) == normalized_target:
+                            logger.info(f"[SMS Webhook] ✓ Found patient via mobile dict value: {patient.get_full_name()}")
                             return patient
         
-        # Check phone numbers - handle both string and dict formats
+        # LEGACY FORMAT: Check phone numbers - handle both string and dict formats
         phone = contact_json.get('phone')
         if phone:
             if isinstance(phone, str):
                 if normalize_phone(phone) == normalized_target:
+                    logger.info(f"[SMS Webhook] ✓ Found patient via phone string: {patient.get_full_name()}")
                     return patient
             elif isinstance(phone, dict):
                 for key, value in phone.items():
                     if isinstance(value, dict) and 'value' in value:
                         if normalize_phone(value['value']) == normalized_target:
+                            logger.info(f"[SMS Webhook] ✓ Found patient via phone dict: {patient.get_full_name()}")
                             return patient
                     elif isinstance(value, str):
                         if normalize_phone(value) == normalized_target:
+                            logger.info(f"[SMS Webhook] ✓ Found patient via phone dict value: {patient.get_full_name()}")
                             return patient
         
         # Check emergency contacts
@@ -87,8 +105,10 @@ def find_patient_by_phone(phone_number):
             if isinstance(contact, dict):
                 emergency_mobile = contact.get('mobile') or contact.get('phone')
                 if emergency_mobile and normalize_phone(emergency_mobile) == normalized_target:
+                    logger.info(f"[SMS Webhook] ✓ Found patient via emergency contact: {patient.get_full_name()}")
                     return patient
     
+    logger.warning(f"[SMS Webhook] ✗ No patient found for phone: {normalized_target}")
     return None
 
 
