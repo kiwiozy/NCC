@@ -137,41 +137,22 @@ export default function AppointmentDetailsDialog({
       const templatesData = await templatesResponse.json();
       const templates = Array.isArray(templatesData) ? templatesData : (templatesData.results || []);
       
-      console.log('📋 All templates:', templates);
-      console.log('🔍 Looking for:', {
-        category: type,
-        clinic: appointment.clinic_name,
-      });
-      
       // 2. Find matching template (by category + clinic)
       // Note: category in DB is "appointment_reminder" not just "reminder"
       const categoryToMatch = type === 'reminder' ? 'appointment_reminder' : 'appointment_confirmation';
       
       let matchingTemplate = templates.find(
-        (t: any) => {
-          console.log('Checking template:', {
-            name: t.name,
-            category: t.category,
-            clinic_name: t.clinic_name,
-            matches_category: t.category === categoryToMatch,
-            matches_clinic: t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase(),
-          });
-          return t.category === categoryToMatch &&
-                 t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase();
-        }
+        (t: any) => 
+          t.category === categoryToMatch &&
+          t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase()
       );
       
       // Fallback: match by category only
       if (!matchingTemplate) {
-        console.log('❌ No clinic-specific match, trying category only...');
-        matchingTemplate = templates.find((t: any) => {
-          console.log('Fallback check:', t.name, t.category);
-          return t.category === categoryToMatch;
-        });
+        matchingTemplate = templates.find((t: any) => t.category === categoryToMatch);
       }
       
       if (!matchingTemplate) {
-        console.error('❌ No template found!');
         notifications.show({
           title: 'No Template Found',
           message: `No ${type} template found for ${appointment.clinic_name} clinic.`,
@@ -179,8 +160,6 @@ export default function AppointmentDetailsDialog({
         });
         return;
       }
-
-      console.log('✅ Selected template:', matchingTemplate.name);
 
       // 3. Get patient's phone numbers
       const phonesResponse = await fetch(`https://localhost:8000/api/sms/patient/${appointment.patient}/phones/`, {
@@ -190,11 +169,9 @@ export default function AppointmentDetailsDialog({
       if (!phonesResponse.ok) throw new Error('Failed to fetch patient phone numbers');
       
       const phonesData = await phonesResponse.json();
-      console.log('📱 Phone API response:', phonesData);
       
       // API returns 'available_phones', not 'phones'
       const phones = phonesData.available_phones || phonesData.phones || [];
-      console.log('📱 Phones array:', phones);
       
       if (phones.length === 0) {
         notifications.show({
@@ -207,7 +184,6 @@ export default function AppointmentDetailsDialog({
       
       // Get the default phone or first mobile
       const defaultPhone = phones.find((p: any) => p.is_default) || phones.find((p: any) => p.type === 'mobile') || phones[0];
-      console.log('📱 Using phone:', defaultPhone.value);
 
       // 4. Get CSRF token
       const csrfResponse = await fetch('https://localhost:8000/api/auth/csrf-token/', {
