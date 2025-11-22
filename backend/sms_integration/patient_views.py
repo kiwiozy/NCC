@@ -98,7 +98,7 @@ def get_available_phone_numbers(patient):
     """
     Extract all available phone numbers from patient's contact_json and emergency_json
     Returns list of dicts: [{value, label, is_default}, ...]
-    Handles both legacy string format and new nested object format
+    Handles multiple formats: phones array, legacy mobile/phone objects, and strings
     """
     if not patient:
         return []
@@ -107,7 +107,24 @@ def get_available_phone_numbers(patient):
     contact_json = patient.contact_json or {}
     emergency_json = patient.emergency_json or {}
     
-    # Extract mobile numbers - handle both formats
+    # NEW FORMAT: Check for phones array first
+    phones_array = contact_json.get('phones', [])
+    if phones_array and isinstance(phones_array, list):
+        for phone_obj in phones_array:
+            if isinstance(phone_obj, dict):
+                phone_type = phone_obj.get('type', 'phone')
+                number = phone_obj.get('number')
+                label = phone_obj.get('label', 'Unknown')
+                
+                if number:
+                    phones.append({
+                        'value': number,
+                        'label': f"{phone_type.title()} - {label}",
+                        'is_default': phone_obj.get('is_default', False),
+                        'type': phone_type
+                    })
+    
+    # LEGACY FORMAT: Extract mobile numbers - handle both formats
     mobile = contact_json.get('mobile')
     if mobile:
         if isinstance(mobile, str):
@@ -137,7 +154,7 @@ def get_available_phone_numbers(patient):
                         'type': 'mobile'
                     })
     
-    # Extract phone numbers - handle both formats
+    # LEGACY FORMAT: Extract phone numbers - handle both formats
     phone = contact_json.get('phone')
     if phone:
         if isinstance(phone, str):
