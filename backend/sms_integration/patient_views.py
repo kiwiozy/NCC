@@ -505,7 +505,7 @@ def patient_unread_count(request, patient_id):
         )
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def patient_mark_read(request, patient_id):
     """
@@ -539,3 +539,100 @@ def patient_mark_read(request, patient_id):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def conversation_list(request):
+    """
+    Get list of all SMS conversations
+    Returns patients with SMS history, sorted by most recent message
+    Each conversation includes:
+    - patient_id, patient_name
+    - last_message, last_message_time
+    - unread_count
+    - phone_number (most recent used)
+    """
+    from django.db.models import Max, Count, Q, OuterRef, Subquery
+    
+    # Get all patients with SMS messages (outbound or inbound)
+    # Subquery for last outbound message
+    last_outbound = SMSMessage.objects.filter(
+        patient=OuterRef('pk')
+    ).order_by('-created_at').values('created_at')[:1]
+    
+    # Subquery for last inbound message
+    last_inbound = SMSInbound.objects.filter(
+        patient=OuterRef('pk')
+    ).order_by('-received_at').values('received_at')[:1]
+    
+    # Get patients with either outbound or inbound messages
+    patients_with_messages = Patient.objects.annotate(
+        last_outbound_time=Subquery(last_outbound),
+        last_inbound_time=Subquery(last_inbound),
+    ).filter(
+        Q(last_outbound_time__isnull=False) | Q(last_inbound_time__isnull=False)
+    )
+    
+    conversations = []
+    
+    for patient in patients_with_messages:
+        # Get last outbound message
+        last_outbound_msg = SMSMessage.objects.filter(
+            patient=patient
+        ).order_by('-created_at').first()
+        
+        # Get last inbound message
+        last_inbound_msg = SMSInbound.objects.filter(
+            patient=patient
+        ).order_by('-received_at').first()
+        
+        # Determine which is most recent
+        last_message = None
+        last_message_time = None
+        phone_number = None
+        
+        if last_outbound_msg and last_inbound_msg:
+            outbound_time = last_outbound_msg.created_at
+            inbound_time = last_inbound_msg.received_at
+            
+            if outbound_time > inbound_time:
+                last_message = last_outbound_msg.message
+                last_message_time = outbound_time
+                phone_number = last_outbound_msg.phone_number
+            else:
+                last_message = last_inbound_msg.message_body
+                last_message_time = inbound_time
+                phone_number = last_inbound_msg.from_number
+        elif last_outbound_msg:
+            last_message = last_outbound_msg.message
+            last_message_time = last_outbound_msg.created_at
+            phone_number = last_outbound_msg.phone_number
+        elif last_inbound_msg:
+            last_message = last_inbound_msg.message_body
+            last_message_time = last_inbound_msg.received_at
+            phone_number = last_inbound_msg.from_number
+        
+        # Count unread inbound messages
+        unread_count = SMSInbound.objects.filter(
+            patient=patient,
+            is_processed=False
+        ).count()
+        
+        if last_message and last_message_time:
+            conversations.append({
+                'patient_id': str(patient.id),
+                'patient_name': patient.get_full_name() or f"{patient.first_name} {patient.last_name}",
+                'last_message': last_message[:100],  # Truncate for preview
+                'last_message_time': last_message_time.isoformat(),
+                'unread_count': unread_count,
+                'phone_number': phone_number or '',
+            })
+    
+    # Sort by most recent message first
+    conversations.sort(key=lambda x: x['last_message_time'], reverse=True)
+    
+    return Response({
+        'conversations': conversations,
+        'total_count': len(conversations)
+    }, status=status.HTTP_200_OK)

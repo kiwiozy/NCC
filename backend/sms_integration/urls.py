@@ -17,6 +17,7 @@ urlpatterns = [
     path('balance/', views.sms_balance, name='sms-balance'),
     path('appointment/<uuid:appointment_id>/reminder/', views.send_appointment_reminder, name='send-appointment-reminder'),
     # Patient-specific endpoints
+    path('conversations/', patient_views.conversation_list, name='sms-conversation-list'),
     path('patient/<uuid:patient_id>/conversation/', patient_views.patient_conversation, name='patient-sms-conversation'),
     path('patient/<uuid:patient_id>/phones/', patient_views.patient_phone_numbers, name='patient-phone-numbers'),
     path('patient/<uuid:patient_id>/send/', patient_views.patient_send_sms, name='patient-send-sms'),
