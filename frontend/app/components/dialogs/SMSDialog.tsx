@@ -747,9 +747,13 @@ function MessageBubble({
           backgroundColor: isOutbound
             ? '#34C759' // Green for outbound (iMessage style) 🍏
             : isDark
-            ? '#373A40'
-            : '#E9ECEF',
-          color: isOutbound ? '#FFFFFF' : isDark ? '#C1C2C5' : '#495057',
+            ? '#3A3A3C' // Dark gray for dark mode (iMessage style)
+            : '#E5E5EA', // Light gray for light mode (iMessage style)
+          color: isOutbound 
+            ? '#FFFFFF' 
+            : isDark 
+            ? '#FFFFFF' // White text in dark mode
+            : '#000000', // Black text in light mode
           fontWeight: isUnread ? 600 : 400, // Bold text for unread messages
           boxShadow: isUnread ? `0 0 0 2px ${isDark ? '#228BE6' : '#228BE6'}` : 'none', // Subtle border for unread
         }}
