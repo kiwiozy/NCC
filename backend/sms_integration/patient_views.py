@@ -665,8 +665,7 @@ def sms_history(request):
     Returns all SMS messages (sent and received) with patient, clinic, and status info
     """
     from appointments.models import Appointment
-    from clinics.models import Clinic
-    from clinicians.models import Clinician
+    from clinicians.models import Clinic, Clinician
     import logging
     
     logger = logging.getLogger(__name__)
