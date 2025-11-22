@@ -483,24 +483,25 @@ export default function ClinicCalendar() {
                   width: '100%',
                   height: '100%'
                 }}>
-                  {isSmsConfirmed && (
-                    <span style={{ 
-                      color: '#22c55e', 
-                      fontSize: '16px', 
-                      fontWeight: 'bold',
-                      lineHeight: '1',
-                      display: 'inline-block',
-                      flexShrink: 0,
-                      zIndex: 20,
-                      textShadow: '0 0 2px rgba(0,0,0,0.5)'
-                    }} title="Patient confirmed via SMS">✓</span>
-                  )}
                   <span style={{ 
                     overflow: 'hidden', 
                     textOverflow: 'ellipsis', 
                     whiteSpace: 'nowrap',
                     flexGrow: 1
                   }}>{eventInfo.event.title}</span>
+                  {isSmsConfirmed && (
+                    <span style={{ 
+                      color: '#ffffff', 
+                      fontSize: '16px', 
+                      fontWeight: 'bold',
+                      lineHeight: '1',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                      zIndex: 20,
+                      textShadow: '0 0 3px rgba(0,0,0,0.8)',
+                      marginLeft: 'auto'
+                    }} title="Patient confirmed via SMS">✓</span>
+                  )}
                 </div>
               );
             }}
