@@ -340,6 +340,7 @@ def patient_send_sms(request, patient_id):
     message = request.data.get('message')
     template_id = request.data.get('template_id')
     phone_label = request.data.get('phone_label')
+    appointment_id = request.data.get('appointment_id')  # Optional: for rendering appointment variables
     
     if not phone_number:
         return Response(
@@ -349,9 +350,18 @@ def patient_send_sms(request, patient_id):
     
     # Import models
     from .models import SMSMessage, SMSTemplate
+    from appointments.models import Appointment
     
     template = None
     rendered_message = message
+    appointment = None
+    
+    # Fetch appointment if provided
+    if appointment_id:
+        try:
+            appointment = Appointment.objects.select_related('clinic', 'clinician', 'appointment_type').get(id=appointment_id)
+        except Appointment.DoesNotExist:
+            pass  # Continue without appointment data
     
     # If template_id provided, render template with patient data
     if template_id:
@@ -380,15 +390,15 @@ def patient_send_sms(request, patient_id):
                 'company_email': 'info@walkeasy.com.au',
                 'company_website': 'https://www.walkeasy.com.au',
                 
-                # Placeholder for appointment data (will be empty for manual SMS)
-                'appointment_date': '',
-                'appointment_time': '',
-                'appointment_date_short': '',
-                'appointment_duration': '',
-                'appointment_type': '',
-                'clinician_name': '',
-                'clinician_first_name': '',
-                'clinician_title': '',
+                # Appointment data (if appointment provided)
+                'appointment_date': appointment.start_time.strftime('%A, %d %B %Y') if appointment else '',
+                'appointment_time': appointment.start_time.strftime('%-I:%M %p') if appointment else '',
+                'appointment_date_short': appointment.start_time.strftime('%d/%m/%Y') if appointment else '',
+                'appointment_duration': f"{appointment.duration_minutes} minutes" if appointment else '',
+                'appointment_type': appointment.appointment_type.name if appointment and appointment.appointment_type else '',
+                'clinician_name': appointment.clinician.get_full_name() if appointment and appointment.clinician else '',
+                'clinician_first_name': appointment.clinician.first_name if appointment and appointment.clinician else '',
+                'clinician_title': appointment.clinician.title if appointment and appointment.clinician else '',
             }
             
             # Render template with context
@@ -409,6 +419,7 @@ def patient_send_sms(request, patient_id):
     # Create SMS message
     sms_message = SMSMessage.objects.create(
         patient=patient,
+        appointment=appointment,  # Link to appointment if provided
         phone_number=phone_number,
         message=rendered_message,  # Store the rendered message
         template=template,

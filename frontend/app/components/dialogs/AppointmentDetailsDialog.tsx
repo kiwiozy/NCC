@@ -191,7 +191,7 @@ export default function AppointmentDetailsDialog({
       });
       const csrfData = await csrfResponse.json();
 
-      // 5. Send SMS with template_id and phone_number
+      // 5. Send SMS with template_id, phone_number, and appointment_id
       const sendResponse = await fetch(`https://localhost:8000/api/sms/patient/${appointment.patient}/send/`, {
         method: 'POST',
         headers: {
@@ -202,6 +202,7 @@ export default function AppointmentDetailsDialog({
         body: JSON.stringify({
           template_id: matchingTemplate.id,
           phone_number: defaultPhone.value,
+          appointment_id: appointment.id,  // Include appointment ID for template rendering
         }),
       });
 
