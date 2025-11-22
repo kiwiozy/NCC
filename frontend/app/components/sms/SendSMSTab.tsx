@@ -183,7 +183,14 @@ export default function SendSMSTab() {
   };
 
   const handleSend = async () => {
+    console.log('🚀 [SMS SEND] Starting send process...');
+    console.log('📝 Message:', message);
+    console.log('👤 Recipient Type:', recipientType);
+    console.log('🎯 Selected Patient ID:', selectedPatient);
+    console.log('📊 Recipient Count:', recipientCount);
+
     if (!message.trim()) {
+      console.log('❌ [SMS SEND] Message is empty');
       notifications.show({
         title: 'Error',
         message: 'Message cannot be empty',
@@ -194,6 +201,7 @@ export default function SendSMSTab() {
     }
 
     if (recipientCount === 0) {
+      console.log('❌ [SMS SEND] No recipients selected');
       notifications.show({
         title: 'Error',
         message: 'Please select at least one recipient',
@@ -208,29 +216,50 @@ export default function SendSMSTab() {
     try {
       // For now, only handle individual patient sending
       if (recipientType === 'individual' && selectedPatient) {
+        console.log('✅ [SMS SEND] Individual patient mode');
+        
         const patient = patients.find(p => p.id === selectedPatient);
+        console.log('👤 [SMS SEND] Patient found:', patient);
+        
         if (!patient) {
           throw new Error('Patient not found');
         }
 
         // Use the existing patient-specific SMS endpoint
+        console.log('🔑 [SMS SEND] Fetching CSRF token...');
         const csrfToken = await getCsrfToken();
-        const response = await fetch(`https://localhost:8000/api/sms/patient/${selectedPatient}/send/`, {
+        console.log('🔑 [SMS SEND] CSRF token:', csrfToken ? 'Retrieved' : 'MISSING');
+
+        const url = `https://localhost:8000/api/sms/patient/${selectedPatient}/send/`;
+        const payload = {
+          message: message.trim(),
+        };
+        
+        console.log('📡 [SMS SEND] Making API call...');
+        console.log('URL:', url);
+        console.log('Payload:', payload);
+
+        const response = await fetch(url, {
           method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,
           },
-          body: JSON.stringify({
-            message: message.trim(),
-          }),
+          body: JSON.stringify(payload),
         });
+
+        console.log('📡 [SMS SEND] Response status:', response.status);
+        console.log('📡 [SMS SEND] Response ok:', response.ok);
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('❌ [SMS SEND] API Error:', errorData);
           throw new Error(errorData.detail || errorData.message || 'Failed to send SMS');
         }
+
+        const responseData = await response.json();
+        console.log('✅ [SMS SEND] API Response:', responseData);
 
         notifications.show({
           title: 'Success',
@@ -239,10 +268,12 @@ export default function SendSMSTab() {
           icon: <IconCheck />,
         });
 
+        console.log('✅ [SMS SEND] Success! Clearing form...');
         // Clear the message
         setMessage('');
         setSelectedTemplate(null);
       } else {
+        console.log('ℹ️ [SMS SEND] Bulk sending not implemented yet');
         // Bulk sending not implemented yet
         notifications.show({
           title: 'Coming Soon',
@@ -251,7 +282,8 @@ export default function SendSMSTab() {
         });
       }
     } catch (error: any) {
-      console.error('Error sending SMS:', error);
+      console.error('❌ [SMS SEND] Error:', error);
+      console.error('Stack:', error.stack);
       notifications.show({
         title: 'Error',
         message: error.message || 'Failed to send SMS',
@@ -260,6 +292,7 @@ export default function SendSMSTab() {
       });
     } finally {
       setSending(false);
+      console.log('🏁 [SMS SEND] Process complete');
     }
   };
 
