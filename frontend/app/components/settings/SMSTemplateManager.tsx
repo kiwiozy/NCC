@@ -204,7 +204,10 @@ export default function SMSTemplateManager() {
         throw new Error('Failed to load clinics');
       }
       const data = await response.json();
-      setClinics(data);
+      // Handle both paginated and non-paginated responses
+      const clinicList = data.results || data;
+      console.log('Loaded clinics:', clinicList);
+      setClinics(clinicList);
     } catch (error) {
       console.error('Error loading clinics:', error);
       // Don't show error for clinics, just log it
@@ -570,13 +573,17 @@ export default function SMSTemplateManager() {
               label="Clinic"
               placeholder="All Clinics (available to everyone)"
               description="Leave blank to make this template available to all clinics"
-              data={[
-                { value: '', label: 'All Clinics' },
-                ...clinics.map((clinic) => ({
-                  value: clinic.id,
-                  label: clinic.name,
-                })),
-              ]}
+              data={(() => {
+                const options = [
+                  { value: '', label: 'All Clinics' },
+                  ...clinics.map((clinic) => ({
+                    value: clinic.id,
+                    label: clinic.name,
+                  })),
+                ];
+                console.log('Clinic dropdown options:', options);
+                return options;
+              })()}
               value={formClinic || ''}
               onChange={(value) => setFormClinic(value || null)}
               clearable
