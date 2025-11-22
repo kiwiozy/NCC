@@ -333,7 +333,7 @@ export default function AppointmentDetailsDialog({
         credentials: 'include',
         body: JSON.stringify({
           status: editStatus,
-          appointment_type: editAppointmentType,
+          appointment_type: editAppointmentType || null, // Send null instead of empty string
           notes: editNotes,
           needs_followup_reminder: editNeedsFollowup,
         }),
