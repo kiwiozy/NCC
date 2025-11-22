@@ -556,6 +556,7 @@ def conversation_list(request):
     from django.db.models import Max, Count, Q, OuterRef, Subquery
     
     # Get all patients with SMS messages (outbound or inbound)
+    # Only include patients that exist (not None)
     # Subquery for last outbound message
     last_outbound = SMSMessage.objects.filter(
         patient=OuterRef('pk')
@@ -577,57 +578,64 @@ def conversation_list(request):
     conversations = []
     
     for patient in patients_with_messages:
-        # Get last outbound message
-        last_outbound_msg = SMSMessage.objects.filter(
-            patient=patient
-        ).order_by('-created_at').first()
-        
-        # Get last inbound message
-        last_inbound_msg = SMSInbound.objects.filter(
-            patient=patient
-        ).order_by('-received_at').first()
-        
-        # Determine which is most recent
-        last_message = None
-        last_message_time = None
-        phone_number = None
-        
-        if last_outbound_msg and last_inbound_msg:
-            outbound_time = last_outbound_msg.created_at
-            inbound_time = last_inbound_msg.received_at
+        try:
+            # Get last outbound message
+            last_outbound_msg = SMSMessage.objects.filter(
+                patient=patient
+            ).order_by('-created_at').first()
             
-            if outbound_time > inbound_time:
+            # Get last inbound message
+            last_inbound_msg = SMSInbound.objects.filter(
+                patient=patient
+            ).order_by('-received_at').first()
+            
+            # Determine which is most recent
+            last_message = None
+            last_message_time = None
+            phone_number = None
+            
+            if last_outbound_msg and last_inbound_msg:
+                outbound_time = last_outbound_msg.created_at
+                inbound_time = last_inbound_msg.received_at
+                
+                if outbound_time > inbound_time:
+                    last_message = last_outbound_msg.message
+                    last_message_time = outbound_time
+                    phone_number = last_outbound_msg.phone_number
+                else:
+                    last_message = last_inbound_msg.message_body
+                    last_message_time = inbound_time
+                    phone_number = last_inbound_msg.from_number
+            elif last_outbound_msg:
                 last_message = last_outbound_msg.message
-                last_message_time = outbound_time
+                last_message_time = last_outbound_msg.created_at
                 phone_number = last_outbound_msg.phone_number
-            else:
+            elif last_inbound_msg:
                 last_message = last_inbound_msg.message_body
-                last_message_time = inbound_time
+                last_message_time = last_inbound_msg.received_at
                 phone_number = last_inbound_msg.from_number
-        elif last_outbound_msg:
-            last_message = last_outbound_msg.message
-            last_message_time = last_outbound_msg.created_at
-            phone_number = last_outbound_msg.phone_number
-        elif last_inbound_msg:
-            last_message = last_inbound_msg.message_body
-            last_message_time = last_inbound_msg.received_at
-            phone_number = last_inbound_msg.from_number
-        
-        # Count unread inbound messages
-        unread_count = SMSInbound.objects.filter(
-            patient=patient,
-            is_processed=False
-        ).count()
-        
-        if last_message and last_message_time:
-            conversations.append({
-                'patient_id': str(patient.id),
-                'patient_name': patient.get_full_name() or f"{patient.first_name} {patient.last_name}",
-                'last_message': last_message[:100],  # Truncate for preview
-                'last_message_time': last_message_time.isoformat(),
-                'unread_count': unread_count,
-                'phone_number': phone_number or '',
-            })
+            
+            # Count unread inbound messages
+            unread_count = SMSInbound.objects.filter(
+                patient=patient,
+                is_processed=False
+            ).count()
+            
+            if last_message and last_message_time:
+                patient_name = patient.get_full_name() or f"{patient.first_name} {patient.last_name}" if patient.first_name or patient.last_name else "Unknown Patient"
+                
+                conversations.append({
+                    'patient_id': str(patient.id),
+                    'patient_name': patient_name,
+                    'last_message': last_message[:100],  # Truncate for preview
+                    'last_message_time': last_message_time.isoformat(),
+                    'unread_count': unread_count,
+                    'phone_number': phone_number or '',
+                })
+        except Exception as e:
+            # Skip patients that cause errors
+            print(f"Error processing patient {patient.id}: {e}")
+            continue
     
     # Sort by most recent message first
     conversations.sort(key=lambda x: x['last_message_time'], reverse=True)
