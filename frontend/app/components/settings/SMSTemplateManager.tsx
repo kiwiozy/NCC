@@ -24,6 +24,7 @@ import {
   Divider,
   Code,
   useMantineColorScheme,
+  ScrollArea,
 } from '@mantine/core';
 import {
   IconPlus,
@@ -508,17 +509,19 @@ export default function SMSTemplateManager() {
               No templates found. Click "Add Template" to create one.
             </Text>
           ) : (
-            <Table style={{ tableLayout: 'fixed', width: '100%' }}>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th style={{ width: '25%' }}>Template</Table.Th>
-                  <Table.Th style={{ width: '50%' }}>Message Preview</Table.Th>
-                  <Table.Th style={{ width: '10%', whiteSpace: 'nowrap' }}>Status</Table.Th>
-                  <Table.Th style={{ width: '15%', whiteSpace: 'nowrap' }}>Actions</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+            <ScrollArea h="calc(100vh - 300px)">
+              <Table style={{ tableLayout: 'fixed', width: '100%' }}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th style={{ width: '25%' }}>Template</Table.Th>
+                    <Table.Th style={{ width: '50%' }}>Message Preview</Table.Th>
+                    <Table.Th style={{ width: '10%', whiteSpace: 'nowrap' }}>Status</Table.Th>
+                    <Table.Th style={{ width: '15%', whiteSpace: 'nowrap' }}>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
+            </ScrollArea>
           )}
         </Paper>
 
