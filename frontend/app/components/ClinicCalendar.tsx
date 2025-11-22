@@ -954,7 +954,8 @@ export default function ClinicCalendar() {
                     overflow: 'hidden', 
                     textOverflow: 'ellipsis', 
                     whiteSpace: 'nowrap',
-                    flexGrow: 1
+                    flexGrow: 1,
+                    fontWeight: 'bold'
                   }}>{eventInfo.event.title}</span>
                   {isSmsConfirmed && (
                     <span style={{ 
