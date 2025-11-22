@@ -144,16 +144,19 @@ export default function AppointmentDetailsDialog({
       });
       
       // 2. Find matching template (by category + clinic)
+      // Note: category in DB is "appointment_reminder" not just "reminder"
+      const categoryToMatch = type === 'reminder' ? 'appointment_reminder' : 'appointment_confirmation';
+      
       let matchingTemplate = templates.find(
         (t: any) => {
           console.log('Checking template:', {
             name: t.name,
             category: t.category,
             clinic_name: t.clinic_name,
-            matches_category: t.category?.toLowerCase() === type,
+            matches_category: t.category === categoryToMatch,
             matches_clinic: t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase(),
           });
-          return t.category?.toLowerCase() === type &&
+          return t.category === categoryToMatch &&
                  t.clinic_name?.toLowerCase() === appointment.clinic_name?.toLowerCase();
         }
       );
@@ -163,7 +166,7 @@ export default function AppointmentDetailsDialog({
         console.log('❌ No clinic-specific match, trying category only...');
         matchingTemplate = templates.find((t: any) => {
           console.log('Fallback check:', t.name, t.category);
-          return t.category?.toLowerCase() === type;
+          return t.category === categoryToMatch;
         });
       }
       
