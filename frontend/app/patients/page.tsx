@@ -1081,6 +1081,10 @@ export default function ContactsPage() {
       indexedDB.deleteDatabase('nexus_cache_v2');
       console.log('🗑️ Cleared cache database');
       
+      // Clear localStorage sort preference to reset to default
+      localStorage.removeItem('patientSort');
+      console.log('🗑️ Cleared sort preference');
+      
       // Reload page
       window.location.reload();
     } catch (error) {
