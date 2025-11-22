@@ -305,11 +305,16 @@ export default function Navigation({ children }: NavigationProps) {
       <AppShell
         header={{ height: 80 }}
         padding={0}
+        styles={{
+          root: {
+            backgroundColor: '#1A1B1E',
+          },
+        }}
       >
       <AppShell.Header
         style={{
-          backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#ffffff',
-          borderBottom: mounted ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : '1px solid #dee2e6',
+          backgroundColor: mounted ? (isDark ? '#25262b' : '#ffffff') : '#25262b',
+          borderBottom: mounted ? `1px solid ${isDark ? '#373A40' : '#dee2e6'}` : '1px solid #373A40',
           // Sticky positioning with Safari-specific fixes
           position: (browser.isSafari ? '-webkit-sticky' : 'sticky') as any,
           top: 0,
