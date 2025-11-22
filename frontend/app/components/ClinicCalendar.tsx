@@ -470,11 +470,36 @@ export default function ClinicCalendar() {
             eventContent={(eventInfo) => {
               const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
               return (
-                <div style={{ overflow: 'hidden', fontSize: '12px', padding: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ 
+                  overflow: 'hidden', 
+                  fontSize: '12px', 
+                  padding: '2px 4px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  position: 'relative',
+                  zIndex: 10,
+                  width: '100%',
+                  height: '100%'
+                }}>
                   {isSmsConfirmed && (
-                    <span style={{ color: '#22c55e', fontSize: '14px', fontWeight: 'bold' }} title="Patient confirmed via SMS">✓</span>
+                    <span style={{ 
+                      color: '#22c55e', 
+                      fontSize: '16px', 
+                      fontWeight: 'bold',
+                      lineHeight: '1',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                      zIndex: 20,
+                      textShadow: '0 0 2px rgba(0,0,0,0.5)'
+                    }} title="Patient confirmed via SMS">✓</span>
                   )}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eventInfo.event.title}</span>
+                  <span style={{ 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap',
+                    flexGrow: 1
+                  }}>{eventInfo.event.title}</span>
                 </div>
               );
             }}
