@@ -57,6 +57,8 @@ interface SMSTemplate {
   message_template: string;
   is_active: boolean;
   category?: string; // e.g., 'reminder', 'confirmation', 'followup', 'custom'
+  clinic?: string | null; // Clinic ID (null = all clinics)
+  clinic_name?: string | null; // Clinic name for display
 }
 
 interface SMSDialogProps {
@@ -368,11 +370,31 @@ export default function SMSDialog({
         const activeTemplates = templateList.filter((t: SMSTemplate) => t.is_active);
         setTemplates(activeTemplates);
         
-        // Auto-select template based on suggested category
-        if (suggestedTemplateCategory && activeTemplates.length > 0) {
-          const matchingTemplate = activeTemplates.find(
-            (t: SMSTemplate) => t.category?.toLowerCase() === suggestedTemplateCategory.toLowerCase()
+        // Auto-select template based on suggested category AND appointment clinic
+        if (suggestedTemplateCategory && appointmentContext && activeTemplates.length > 0) {
+          // First, try to find a template matching BOTH category AND clinic
+          let matchingTemplate = activeTemplates.find(
+            (t: SMSTemplate) => 
+              t.category?.toLowerCase() === suggestedTemplateCategory.toLowerCase() &&
+              t.clinic_name?.toLowerCase() === appointmentContext.clinicName?.toLowerCase()
           );
+          
+          // If no clinic-specific template, try category-only (for global templates)
+          if (!matchingTemplate) {
+            matchingTemplate = activeTemplates.find(
+              (t: SMSTemplate) => 
+                t.category?.toLowerCase() === suggestedTemplateCategory.toLowerCase() &&
+                !t.clinic // Global template (no clinic assigned)
+            );
+          }
+          
+          // If still no match, just match by category
+          if (!matchingTemplate) {
+            matchingTemplate = activeTemplates.find(
+              (t: SMSTemplate) => t.category?.toLowerCase() === suggestedTemplateCategory.toLowerCase()
+            );
+          }
+          
           if (matchingTemplate) {
             setSelectedTemplate(matchingTemplate.id);
             setMessageText(matchingTemplate.message_template);
