@@ -588,7 +588,7 @@ The scheduling is for the *automation system*, not for staff to manually schedul
 - ✅ Conversations Tab (2-way SMS) - DONE
 - ✅ iMessage-style UI - DONE
 - ✅ **Calendar Integration (Quick Send)** - DONE ⭐
-- ⏳ History Tab - TODO
+- ✅ **History Tab** - DONE ⭐
 - ⏳ Bulk SMS Sending - TODO
 - ⏳ SMS Automation - TODO (Future Phase)
 
@@ -649,11 +649,56 @@ Main navigation item with three tabs:
 - Message status indicators (delivered, failed, etc.)
 - Refresh on dialog close
 
-**Tab 3: History** ⏳ TODO
-- Currently shows "Coming soon" placeholder
-- Plan: Full SMS history table with filters
+**Tab 3: History** ✅ DONE ⭐
 
-#### 4. Calendar Integration - Quick Send ✅ DONE ⭐
+**Complete SMS history table with advanced filtering:**
+- 📊 **Unified view** of all sent and received messages
+- 🔍 **Multi-field search**:
+  - Patient name (real-time filtering)
+  - Phone number (exact or partial match)
+  - Message content (full-text search)
+- 🎛️ **Advanced filters**:
+  - **Direction**: All / Sent / Received
+  - **Status**: All / Delivered / Sent / Failed / Received
+  - **Clinic**: All / specific clinic (populated from message data)
+- 📅 **Smart timestamps**: "Just now", "5m ago", "2h ago", "25 Nov 10:30"
+- 🎨 **Color-coded badges**:
+  - Direction: 🔵 Blue (Sent), 🔷 Cyan (Received)
+  - Status: 🟢 Green (Delivered), 🔵 Blue (Sent), 🔴 Red (Failed), 🔷 Cyan (Received)
+- 🔧 **Quick actions**:
+  - 👁️ **View conversation** - Opens full 2-way SMS dialog
+  - 🗑️ **Delete message** - With confirmation prompt
+- ♻️ **Refresh button** - Reload history on demand
+- 📊 **Results counter** - Shows filtered count (e.g., "245 messages found")
+- 📜 **Scrollable table** with fixed header
+- 📱 **Responsive columns**:
+  - Time (10%) - Relative timestamps
+  - Patient (15%) - Full name with line clamp
+  - Phone (10%) - Formatted number
+  - Message (35%) - Preview with 2-line clamp
+  - Direction (8%) - Badge
+  - Status (8%) - Color-coded badge
+  - Clinic (10%) - Linked clinic name
+  - Actions (4%) - View/Delete icons
+
+**Backend API:**
+- `GET /api/sms/history/`
+  - Returns combined outbound (`SMSMessage`) and inbound (`SMSInbound`) messages
+  - Includes patient name, phone, clinic, clinician, appointment linking
+  - Character count and SMS segment calculation
+  - Sorted by most recent first
+  - Robust error handling (gracefully handles missing patient data)
+- `DELETE /api/sms/history/<message_id>/`
+  - Soft delete for both outbound and inbound messages
+  - Returns 404 if message not found
+
+**Technical Implementation:**
+- Frontend: `frontend/app/components/sms/HistoryTab.tsx`
+- Backend: `backend/sms_integration/patient_views.py` (sms_history, delete_sms_message)
+- Routes: `backend/sms_integration/urls.py`
+- Handles edge cases: missing patients, null message fields, deleted appointments
+
+#### 5. Calendar Integration - Quick Send ✅ DONE ⭐
 
 **One-Click SMS from Appointments:**
 - Added "Send Reminder" and "Send Confirmation" buttons to `AppointmentDetailsDialog`
@@ -702,7 +747,7 @@ Please reply YES to confirm or call 02 6766 3153
 - Template matching: `appointment_reminder` or `appointment_confirmation` category
 - Fallback logic: clinic-specific → global → category-only
 
-#### 5. Backend Enhancements
+#### 6. Backend Enhancements
 
 **SMS Template System:**
 - Model fields: `category`, `character_count`, `sms_segment_count`, `created_by`, `clinic` (optional)
