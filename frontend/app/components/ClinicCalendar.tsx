@@ -179,8 +179,6 @@ export default function ClinicCalendar() {
       // Only apply in month view
       if (currentView !== 'dayGridMonth') return;
       
-      console.log('[MONTH VIEW] Moving all-day events to top...');
-      
       // Find all day cells
       const dayCells = document.querySelectorAll('.fc-daygrid-day');
       
@@ -193,20 +191,15 @@ export default function ClinicCalendar() {
         // Find ALL block events (all-day events) in this cell
         const allBlockEvents = dayCell.querySelectorAll('.fc-daygrid-block-event');
         
-        console.log(`[DAY CELL] Found ${allBlockEvents.length} block events total`);
-        
-        allBlockEvents.forEach((blockEvent, index) => {
+        allBlockEvents.forEach((blockEvent) => {
           const harness = blockEvent.closest('.fc-daygrid-event-harness');
           
           if (!harness) return;
           
           // Check if already in day-top
           if (dayTop.contains(harness)) {
-            console.log(`[BLOCK EVENT ${index}] Already in day-top`);
             return;
           }
-          
-          console.log(`[BLOCK EVENT ${index}] Moving to day-top`);
           
           // Move before the date number
           const dateNumber = dayTop.querySelector('.fc-daygrid-day-number');
