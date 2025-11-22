@@ -41,7 +41,15 @@ This document contains EVERY change made to implement the complete calendar syst
 - ✅ Follow-up Appointment Scheduling
 - ✅ Recurring Appointments (Daily/Weekly/Biweekly/Monthly)
 - ✅ Apple Calendar-Style Deletion Options
+- ✅ SMS Appointment Confirmation Tracking
+- ✅ One-Click SMS Sending from Calendar
+- ✅ Calendar Navigation (Date Header → Day, Date Cell → Week)
+- ✅ Month View All-Day Events Layout
+- ✅ Month View Clinic Color Dots
+- ✅ "+X More" Hover Popover with Smart Positioning
 - ✅ Vertical Day Separators in Week View
+- ✅ Bold Text & 6px Spacing in Week/Day Views
+- ✅ Appointment Type Display in Event Titles
 - ✅ Multiple Dialog Components
 
 ---
@@ -1392,6 +1400,7 @@ git push origin main
 
 ## ✅ Features Checklist
 
+### Core Calendar Features
 - ✅ Appointment Types (Settings page)
 - ✅ Create regular appointments
 - ✅ Create all-day events
@@ -1402,7 +1411,6 @@ git push origin main
 - ✅ Follow-up scheduling with preset intervals
 - ✅ Follow-up appointment linking (parent_appointment)
 - ✅ Follow-up reminder checkbox
-- ✅ Vertical day separators in week view
 - ✅ Double-click to create appointment
 - ✅ Patient selection with pagination
 - ✅ Appointment type selection with default duration
@@ -1411,6 +1419,542 @@ git push origin main
 - ✅ All-day event dialog
 - ✅ Regular appointment dialog
 
+### Calendar UI/UX Enhancements
+- ✅ Vertical day separators in week view
+- ✅ Date header click navigation (week → day view)
+- ✅ Date cell click navigation (month → week view)
+- ✅ Simplified date header format ("Tue 18")
+- ✅ Month view all-day events at top with date overlay
+- ✅ Month view colored dots for clinic colors
+- ✅ `dayMaxEvents` limit with "+X more" popover
+- ✅ Hover-to-open popover for "+X more" link
+- ✅ Smart popover repositioning (prevents off-screen)
+- ✅ Filtered popover (hides all-day events)
+- ✅ Bold appointment text in week/day views
+- ✅ 6px spacing between events (week/day views)
+- ✅ Appointment type display in event titles
+
+### SMS Integration
+- ✅ SMS confirmation tracking (database fields)
+- ✅ One-click "Send Reminder" from appointment dialog
+- ✅ One-click "Send Confirmation" from appointment dialog
+- ✅ Automatic SMS confirmation detection (inbound webhook)
+- ✅ 3-tier smart confirmation matching (ref → recent reminder → upcoming)
+- ✅ White checkmark (✓) display on confirmed events
+- ✅ SMS confirmation badge in appointment details
+- ✅ Confirmation timestamp and reply message display
+
+---
+
+## 📱 SMS Integration Features
+
+### SMS Confirmation Tracking
+
+**Added:** November 22, 2025
+
+#### Database Changes
+
+Added new fields to `Appointment` model:
+
+```python
+# SMS CONFIRMATION TRACKING FIELDS
+sms_reminder_sent_at = models.DateTimeField(
+    null=True,
+    blank=True,
+    help_text="Timestamp when an SMS reminder was last sent for this appointment"
+)
+sms_confirmed = models.BooleanField(
+    default=False,
+    db_index=True,
+    help_text="Has the patient confirmed this appointment via SMS?"
+)
+sms_confirmed_at = models.DateTimeField(
+    null=True,
+    blank=True,
+    help_text="Timestamp when the patient confirmed the appointment via SMS"
+)
+sms_confirmation_message = models.TextField(
+    blank=True,
+    help_text="The actual message content of the patient's confirmation reply"
+)
+```
+
+#### Backend Logic
+
+1. **Send Reminder:** When "Send Reminder" is clicked in `AppointmentDetailsDialog`, the backend records `sms_reminder_sent_at`.
+
+2. **Detect Confirmation:** Inbound SMS webhook uses 3-tier smart matching:
+   - **Tier 1:** If reply has `ref` (original SMS ID), link to exact appointment
+   - **Tier 2:** Find appointments with `sms_reminder_sent_at` in last 7 days
+   - **Tier 3:** Fallback to earliest upcoming appointment within 30 days
+
+3. **Mark Confirmed:** Sets `sms_confirmed=True`, `sms_confirmed_at=now()`, and stores reply message
+
+#### Frontend Display
+
+1. **Calendar Events:** White checkmark (✓) appears on the right side of confirmed events (all views)
+
+2. **Appointment Details Dialog:** Shows green "SMS Confirmed" badge with:
+   - Checkmark icon
+   - Confirmation timestamp
+   - Patient's actual reply message
+
+#### One-Click SMS Sending
+
+Added "Send Reminder" and "Send Confirmation" buttons to `AppointmentDetailsDialog`:
+
+```typescript
+const handleQuickSendSMS = async (type: 'reminder' | 'confirmation') => {
+  // 1. Fetch CSRF token
+  // 2. Find appropriate template by category and clinic
+  // 3. Fetch patient's phone number
+  // 4. Send SMS with appointment_id for linking
+  // 5. Show success notification
+};
+```
+
+**Template Matching:**
+- "Send Reminder" → `appointment_reminder` category
+- "Send Confirmation" → `appointment_confirmation` category
+- Filters by clinic to use clinic-specific templates
+
+---
+
+## 🎨 Calendar UI/UX Enhancements
+
+### Date Header Click Navigation (Week View)
+
+**Added:** November 22, 2025
+
+Clicking a date header in week view navigates to that day in day view.
+
+```typescript
+// Add to useEffect in ClinicCalendar.tsx
+useEffect(() => {
+  // Attach click listeners to date headers
+  const headers = document.querySelectorAll('.fc-col-header-cell');
+  headers.forEach((header) => {
+    const dateStr = header.getAttribute('data-date');
+    if (dateStr) {
+      header.addEventListener('click', () => {
+        calendarApi.changeView('timeGridDay', dateStr);
+      });
+    }
+  });
+}, [calendarApi]);
+```
+
+**CSS:**
+```css
+.fc-timeGridWeek-view .fc-col-header-cell {
+  cursor: pointer;
+}
+
+.fc-timeGridWeek-view .fc-col-header-cell:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+```
+
+**Date Format:** Simplified to "Tue 18" using `dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}`
+
+---
+
+### Date Click Navigation (Month View)
+
+**Added:** November 22, 2025
+
+Clicking a date cell in month view navigates to that week in week view.
+
+```typescript
+const handleDateClick = (info: any) => {
+  const currentView = calendarApi.view.type;
+  
+  if (currentView === 'dayGridMonth') {
+    // Navigate to week view for clicked date
+    calendarApi.changeView('timeGridWeek', info.dateStr);
+  } else {
+    // Existing double-click logic for creating appointments
+    // ...
+  }
+};
+```
+
+**CSS:**
+```css
+.fc-dayGridMonth-view .fc-daygrid-day {
+  cursor: pointer;
+}
+
+.fc-dayGridMonth-view .fc-daygrid-day:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+```
+
+---
+
+### Month View All-Day Event Layout
+
+**Added:** November 22, 2025
+
+All-day events now appear at the top of each day cell with the date number positioned in the top-right corner.
+
+#### JavaScript DOM Manipulation
+
+```typescript
+const moveAllDayEvents = useCallback(() => {
+  const dayCells = document.querySelectorAll('.fc-dayGridMonth-view .fc-daygrid-day');
+  
+  dayCells.forEach((cell) => {
+    const dayTop = cell.querySelector('.fc-daygrid-day-top');
+    const dayFrame = cell.querySelector('.fc-daygrid-day-frame');
+    
+    if (!dayTop || !dayFrame) return;
+    
+    // Find all block events (all-day events)
+    const blockEvents = dayFrame.querySelectorAll('.fc-daygrid-event-harness[style*="position:absolute"]');
+    
+    blockEvents.forEach((event) => {
+      // Check if already moved
+      if (event.parentElement === dayTop) return;
+      
+      // Move event to dayTop
+      dayTop.appendChild(event);
+    });
+  });
+}, []);
+
+// Use MutationObserver to re-trigger on DOM changes
+useEffect(() => {
+  const calendarEl = document.querySelector('.fc-dayGridMonth-view');
+  if (!calendarEl) return;
+  
+  const observer = new MutationObserver(() => {
+    moveAllDayEvents();
+  });
+  
+  observer.observe(calendarEl, {
+    childList: true,
+    subtree: true,
+  });
+  
+  return () => observer.disconnect();
+}, [moveAllDayEvents]);
+```
+
+#### CSS Layout
+
+```css
+/* Day-top container: horizontal layout with date on right */
+.fc-dayGridMonth-view .fc-daygrid-day-top {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  position: relative !important;
+  min-height: 24px !important;
+  padding: 2px 4px !important;
+  gap: 2px !important;
+  overflow: hidden;
+}
+
+/* Date number: fixed in top-right corner */
+.fc-dayGridMonth-view .fc-daygrid-day-number {
+  position: absolute !important;
+  top: 2px !important;
+  right: 4px !important;
+  order: 999 !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--mantine-color-text) !important;
+  background-color: transparent !important;
+  line-height: 1.2 !important;
+  z-index: 10;
+  flex-shrink: 0 !important;
+}
+
+/* All-day events: shrink to fit on one line */
+.fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-event-harness {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 50px) !important;
+  margin: 0 !important;
+  padding-right: 5px !important;
+}
+
+.fc-dayGridMonth-view .fc-daygrid-day-top .fc-daygrid-block-event {
+  width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 10px !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  line-height: 1.2 !important;
+}
+```
+
+---
+
+### Month View Clinic Color Dots
+
+**Added:** November 22, 2025
+
+Regular appointments in month view display a colored dot (using clinic color) instead of a full colored bar.
+
+```typescript
+// In eventContent function
+if (view.type === 'dayGridMonth' && !eventInfo.event.allDay) {
+  // Month view - show colored dot + patient name
+  const clinicColor = eventInfo.event.extendedProps.clinicColor || '#228BE6';
+  
+  return (
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '4px',
+      padding: '2px',
+      overflow: 'hidden'
+    }}>
+      <span style={{ 
+        width: '8px', 
+        height: '8px', 
+        borderRadius: '50%', 
+        backgroundColor: clinicColor,
+        flexShrink: 0
+      }} />
+      <span style={{ 
+        overflow: 'hidden', 
+        textOverflow: 'ellipsis', 
+        whiteSpace: 'nowrap',
+        fontSize: '12px'
+      }}>{eventInfo.event.title}</span>
+      {isSmsConfirmed && (
+        <span style={{ /* checkmark styles */ }}>✓</span>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### "+X More" Hover Popover
+
+**Added:** November 22, 2025
+
+When `dayMaxEvents={4}` is exceeded, a "+X more" link appears. Hovering over it shows a popover with the full list.
+
+#### FullCalendar Config
+
+```typescript
+<FullCalendar
+  // ...
+  dayMaxEvents={4}
+  moreLinkClick={(info) => 'popover'}
+  moreLinkDidMount={(info) => {
+    // Smart repositioning if popover would go off-screen
+    const popover = document.querySelector('.fc-popover');
+    if (popover) {
+      const rect = popover.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      
+      if (rect.bottom > windowHeight) {
+        // Move popover above the "+X more" link
+        popover.style.top = 'auto';
+        popover.style.bottom = '100%';
+      }
+    }
+    
+    // Filter out all-day events from popover
+    const events = info.hiddenSegs.map(seg => seg.event).filter(e => !e.allDay);
+    if (events.length === 0) {
+      // Show all events if only all-day events exist
+      // (prevents empty popover)
+    }
+  }}
+/>
+```
+
+#### Hover-to-Open Logic
+
+```typescript
+useEffect(() => {
+  const moreLinks = document.querySelectorAll('.fc-more-link');
+  
+  moreLinks.forEach((link) => {
+    link.addEventListener('mouseenter', () => {
+      // Trigger click to open popover
+      link.click();
+    });
+    
+    link.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        const popover = document.querySelector('.fc-popover');
+        if (popover && !popover.matches(':hover')) {
+          popover.remove();
+        }
+      }, 300);
+    });
+  });
+}, []);
+```
+
+#### CSS Styling
+
+```css
+/* Popover styling */
+.fc-popover {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  background-color: var(--mantine-color-dark-6) !important;
+  border: 1px solid var(--mantine-color-dark-4) !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  z-index: 9999 !important;
+}
+
+/* Hide all-day events in popover */
+.fc-popover .fc-daygrid-block-event {
+  display: none !important;
+}
+
+/* Hover effect on "+X more" link */
+.fc-more-link {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.fc-more-link:hover {
+  color: var(--mantine-color-blue-4) !important;
+}
+```
+
+---
+
+### Week/Day View Bold Text & Spacing
+
+**Added:** November 22, 2025
+
+Appointments in week and day views now have bold text and 6px spacing between events for better readability.
+
+#### Bold Text
+
+```typescript
+// In eventContent function for week/day views
+return (
+  <div style={{ 
+    overflow: 'hidden', 
+    fontSize: '12px', 
+    padding: '2px 4px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '4px'
+  }}>
+    <span style={{ 
+      overflow: 'hidden', 
+      textOverflow: 'ellipsis', 
+      whiteSpace: 'nowrap',
+      flexGrow: 1,
+      fontWeight: 'bold' // Bold text
+    }}>{eventInfo.event.title}</span>
+    {/* SMS checkmark */}
+  </div>
+);
+```
+
+#### Event Spacing
+
+```css
+/* Add spacing between events in timeGrid views */
+.fc-timeGridDay-view .fc-event-harness,
+.fc-timeGridWeek-view .fc-event-harness {
+  padding: 3px !important;
+}
+
+.fc-timeGridDay-view .fc-event,
+.fc-timeGridWeek-view .fc-event {
+  margin: 2px 0 !important;
+  border-radius: 4px !important;
+}
+```
+
+**Total Spacing:** 3px padding + 2px margin = 6px between events
+
+---
+
+### Appointment Type Display in Event Titles
+
+**Added:** November 22, 2025
+
+Event titles now include the appointment type (e.g., "Craig Laird | Assessment First").
+
+#### Backend Serializer
+
+```python
+def get_title(self, obj):
+    """Generate event title - patient name | appointment type or event description"""
+    if obj.patient:
+        patient_name = obj.patient.get_full_name()
+        appointment_type_name = obj.appointment_type.name if obj.appointment_type else None
+        
+        if appointment_type_name:
+            return f"{patient_name} | {appointment_type_name}"
+        return f"{patient_name}"
+    else:
+        # All-day event without patient
+        clinic_name = obj.clinic.name if obj.clinic else "Unknown"
+        event_notes = obj.notes or "All-Day Event"
+        return f"{clinic_name} - {event_notes}"
+```
+
+---
+
+### SMS Confirmation Checkmark Styling
+
+**Added:** November 22, 2025
+
+Confirmed events display a white checkmark (✓) with 15px right padding.
+
+```typescript
+// In eventContent function
+{isSmsConfirmed && (
+  <span style={{ 
+    color: '#ffffff', 
+    fontSize: '16px', 
+    fontWeight: 'bold',
+    lineHeight: '1',
+    display: 'inline-block',
+    flexShrink: 0,
+    zIndex: 20,
+    textShadow: '0 0 3px rgba(0,0,0,0.8)',
+    marginLeft: 'auto',
+    paddingRight: '15px'
+  }} title="Patient confirmed via SMS">✓</span>
+)}
+```
+
+**Month View:** Checkmark is white  
+**Week/Day View:** Checkmark is white with text-shadow for visibility
+
+---
+
+## 📝 Complete Migration Guide
+
+### Files Changed Summary
+
+#### Backend Files (SMS Integration)
+1. `backend/appointments/models.py` - Added SMS confirmation fields
+2. `backend/appointments/migrations/0010_add_sms_confirmation_tracking.py` - Migration
+3. `backend/appointments/serializers.py` - Added SMS fields to serializer
+4. `backend/sms_integration/patient_views.py` - Set `sms_reminder_sent_at` on send
+5. `backend/sms_integration/webhook_views.py` - 3-tier confirmation matching
+6. `backend/appointments/views.py` - Fixed `partial=True` handling in update()
+
+#### Frontend Files (Calendar Enhancements)
+1. `frontend/app/components/ClinicCalendar.tsx` - All UI/UX enhancements
+2. `frontend/app/components/dialogs/AppointmentDetailsDialog.tsx` - SMS sending buttons
+
 ---
 
 ## 📞 Support
@@ -1418,16 +1962,20 @@ git push origin main
 If you encounter issues during implementation:
 
 1. Check that all 4 dialog files are present in `frontend/app/components/dialogs/`
-2. Verify backend migrations ran successfully
+2. Verify backend migrations ran successfully (`python manage.py migrate appointments`)
 3. Check browser console for errors
 4. Verify `credentials: 'include'` is in all fetch calls
 5. Check CSRF token is being fetched correctly
 6. Verify `allDaySlot={true}` is set in FullCalendar component
+7. **SMS Features:** Verify SMS templates are created with correct categories (`appointment_reminder`, `appointment_confirmation`)
+8. **Month View:** If all-day events not at top, check MutationObserver is running
+9. **Popover:** If "+X more" not working, check `dayMaxEvents={4}` is set
 
 ---
 
 **End of Implementation Guide**
 
-This document contains everything needed to re-implement the calendar features from CalV5 onto main without breaking the styling.
+This document contains everything needed to re-implement the calendar features with all UI/UX enhancements and SMS integration.
+
 
 
