@@ -792,3 +792,185 @@ def delete_sms_message(request, message_id):
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def bulk_send_sms(request):
+    """
+    Send SMS to multiple recipients based on filters
+    Supports:
+    - By clinic (all patients at specific clinic)
+    - By appointments (patients with appointments on specific date)
+    - All patients (use with caution!)
+    """
+    import logging
+    from clinicians.models import Clinic
+    from appointments.models import Appointment
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get filters from request
+        recipient_type = request.data.get('recipient_type')  # 'clinic', 'appointments', 'all'
+        clinic_id = request.data.get('clinic_id')
+        appointment_date = request.data.get('appointment_date')
+        message = request.data.get('message')
+        template_id = request.data.get('template_id')
+        
+        if not message:
+            return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not recipient_type:
+            return Response({'error': 'Recipient type is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Build recipient list based on type
+        recipients = []
+        
+        if recipient_type == 'clinic':
+            if not clinic_id:
+                return Response({'error': 'Clinic ID is required for clinic sending'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get all active patients at this clinic
+            patients = Patient.objects.filter(clinic_id=clinic_id, is_active=True)
+            recipients = list(patients)
+            
+        elif recipient_type == 'appointments':
+            if not appointment_date:
+                return Response({'error': 'Appointment date is required for appointment sending'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get all appointments on this date
+            from datetime import datetime
+            date_obj = datetime.fromisoformat(appointment_date.replace('Z', '+00:00'))
+            appointments = Appointment.objects.filter(
+                start_time__date=date_obj.date(),
+                patient__isnull=False
+            ).select_related('patient')
+            
+            # Get unique patients (avoid duplicate SMS)
+            patient_ids = set()
+            for apt in appointments:
+                if apt.patient and apt.patient.id not in patient_ids:
+                    recipients.append(apt.patient)
+                    patient_ids.add(apt.patient.id)
+                    
+        elif recipient_type == 'all':
+            # Get all active patients (use with caution!)
+            patients = Patient.objects.filter(is_active=True)
+            recipients = list(patients)
+            
+        else:
+            return Response({'error': 'Invalid recipient type'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if len(recipients) == 0:
+            return Response({'error': 'No recipients found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Send SMS to each recipient
+        sent_count = 0
+        failed_count = 0
+        failed_recipients = []
+        
+        for patient in recipients:
+            try:
+                # Get patient's phone numbers
+                phones = get_available_phone_numbers(patient)
+                
+                if len(phones) == 0:
+                    failed_count += 1
+                    failed_recipients.append({
+                        'patient_id': str(patient.id),
+                        'patient_name': patient.get_full_name() if hasattr(patient, 'get_full_name') else f"{patient.first_name} {patient.last_name}",
+                        'reason': 'No phone number'
+                    })
+                    continue
+                
+                # Use default phone or first available
+                default_phone = None
+                for phone in phones:
+                    if phone.get('is_default') or phone.get('default'):
+                        default_phone = phone
+                        break
+                
+                if not default_phone:
+                    # Fall back to first mobile
+                    for phone in phones:
+                        if phone.get('type') == 'mobile':
+                            default_phone = phone
+                            break
+                
+                if not default_phone:
+                    default_phone = phones[0]
+                
+                phone_number = default_phone.get('value') or default_phone.get('number')
+                phone_label = default_phone.get('label', 'Mobile')
+                
+                # Render template if template_id provided
+                final_message = message
+                if template_id:
+                    from .models import SMSTemplate
+                    try:
+                        template = SMSTemplate.objects.get(id=template_id)
+                        # Build context with patient data
+                        context = {
+                            'patient_name': patient.get_full_name() if hasattr(patient, 'get_full_name') else f"{patient.first_name} {patient.last_name}",
+                            'patient_first_name': patient.first_name or '',
+                            'patient_last_name': patient.last_name or '',
+                        }
+                        
+                        # Render template
+                        rendered = template.message_template
+                        for key, value in context.items():
+                            rendered = rendered.replace(f'{{{key}}}', str(value))
+                        
+                        final_message = rendered
+                    except SMSTemplate.DoesNotExist:
+                        pass  # Use plain message if template not found
+                
+                # Send SMS using existing service
+                from .services import send_sms
+                
+                sms_result = send_sms(
+                    to_number=phone_number,
+                    message=final_message,
+                    from_number=None  # Use default
+                )
+                
+                if sms_result.get('success'):
+                    # Create SMS record
+                    SMSMessage.objects.create(
+                        patient=patient,
+                        phone_number=phone_number,
+                        phone_label=phone_label,
+                        message=final_message,
+                        delivery_status='sent',
+                        created_by=request.user if hasattr(request, 'user') else None
+                    )
+                    sent_count += 1
+                else:
+                    failed_count += 1
+                    failed_recipients.append({
+                        'patient_id': str(patient.id),
+                        'patient_name': patient.get_full_name() if hasattr(patient, 'get_full_name') else f"{patient.first_name} {patient.last_name}",
+                        'reason': sms_result.get('error', 'Unknown error')
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error sending SMS to patient {patient.id}: {e}")
+                failed_count += 1
+                failed_recipients.append({
+                    'patient_id': str(patient.id),
+                    'patient_name': patient.get_full_name() if hasattr(patient, 'get_full_name') else f"{patient.first_name} {patient.last_name}",
+                    'reason': str(e)
+                })
+        
+        return Response({
+            'success': True,
+            'sent_count': sent_count,
+            'failed_count': failed_count,
+            'total_recipients': len(recipients),
+            'failed_recipients': failed_recipients,
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Error in bulk_send_sms: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

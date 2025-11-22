@@ -168,17 +168,45 @@ export default function SendSMSTab() {
     }
   };
 
-  const updateRecipientCount = () => {
+  const updateRecipientCount = async () => {
     if (recipientType === 'individual') {
       setRecipientCount(selectedPatient ? 1 : 0);
-    } else if (recipientType === 'appointments') {
-      // TODO: Call API to count patients with appointments on selected date
-      setRecipientCount(0); // Placeholder
-    } else if (recipientType === 'clinic') {
-      // TODO: Call API to count patients at selected clinic
-      setRecipientCount(0); // Placeholder
+    } else if (recipientType === 'appointments' && appointmentDate) {
+      // Count patients with appointments on selected date
+      try {
+        const dateStr = appointmentDate.toISOString().split('T')[0];
+        const response = await fetch(`https://localhost:8000/api/appointments/?start_time__date=${dateStr}`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const appointments = data.results || data;
+          // Count unique patients
+          const uniquePatients = new Set(appointments.filter((a: any) => a.patient).map((a: any) => a.patient));
+          setRecipientCount(uniquePatients.size);
+        }
+      } catch (error) {
+        console.error('Error counting appointment recipients:', error);
+        setRecipientCount(0);
+      }
+    } else if (recipientType === 'clinic' && selectedClinic) {
+      // Count patients at selected clinic
+      try {
+        const response = await fetch(`https://localhost:8000/api/patients/?clinic=${selectedClinic}`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setRecipientCount(data.count || (data.results || data).length);
+        }
+      } catch (error) {
+        console.error('Error counting clinic recipients:', error);
+        setRecipientCount(0);
+      }
     } else if (recipientType === 'all') {
       setRecipientCount(patients.length);
+    } else {
+      setRecipientCount(0);
     }
   };
 
@@ -209,6 +237,13 @@ export default function SendSMSTab() {
         icon: <IconAlertCircle />,
       });
       return;
+    }
+
+    // Confirm bulk sending
+    if (recipientType !== 'individual' && recipientCount > 10) {
+      if (!confirm(`You are about to send SMS to ${recipientCount} patients. Are you sure?`)) {
+        return;
+      }
     }
 
     setSending(true);
@@ -299,13 +334,61 @@ export default function SendSMSTab() {
         setMessage('');
         setSelectedTemplate(null);
       } else {
-        console.log('ℹ️ [SMS SEND] Bulk sending not implemented yet');
-        // Bulk sending not implemented yet
-        notifications.show({
-          title: 'Coming Soon',
-          message: 'Bulk SMS sending will be implemented next!',
-          color: 'blue',
+        // Bulk sending
+        console.log('🔄 [BULK SMS] Starting bulk send...');
+        
+        const csrfToken = await getCsrfToken();
+        
+        const payload: any = {
+          recipient_type: recipientType,
+          message: message.trim(),
+          template_id: selectedTemplate || undefined,
+        };
+        
+        if (recipientType === 'clinic') {
+          payload.clinic_id = selectedClinic;
+        } else if (recipientType === 'appointments') {
+          payload.appointment_date = appointmentDate?.toISOString();
+        }
+        
+        const response = await fetch('https://localhost:8000/api/sms/bulk/send/', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify(payload),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to send bulk SMS');
+        }
+
+        const result = await response.json();
+        console.log('✅ [BULK SMS] Result:', result);
+        
+        // Show detailed results
+        if (result.failed_count > 0) {
+          notifications.show({
+            title: 'Partial Success',
+            message: `Sent to ${result.sent_count} patients. ${result.failed_count} failed.`,
+            color: 'yellow',
+            icon: <IconAlertCircle />,
+          });
+        } else {
+          notifications.show({
+            title: 'Success',
+            message: `SMS sent to ${result.sent_count} patients successfully!`,
+            color: 'green',
+            icon: <IconCheck />,
+          });
+        }
+
+        // Clear form
+        setMessage('');
+        setSelectedTemplate(null);
       }
     } catch (error: any) {
       console.error('❌ [SMS SEND] Error:', error);
