@@ -394,7 +394,7 @@ def patient_send_sms(request, patient_id):
                 'appointment_date': appointment.start_time.strftime('%A, %d %B %Y') if appointment else '',
                 'appointment_time': appointment.start_time.strftime('%-I:%M %p') if appointment else '',
                 'appointment_date_short': appointment.start_time.strftime('%d/%m/%Y') if appointment else '',
-                'appointment_duration': f"{appointment.duration_minutes} minutes" if appointment else '',
+                'appointment_duration': f"{appointment.get_duration_minutes()} minutes" if appointment else '',
                 'appointment_type': appointment.appointment_type.name if appointment and appointment.appointment_type else '',
                 'clinician_name': appointment.clinician.get_full_name() if appointment and appointment.clinician else '',
                 'clinician_first_name': appointment.clinician.first_name if appointment and appointment.clinician else '',
