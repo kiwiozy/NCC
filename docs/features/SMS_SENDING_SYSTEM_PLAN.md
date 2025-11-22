@@ -579,7 +579,205 @@ The scheduling is for the *automation system*, not for staff to manually schedul
 
 ---
 
-**Document Status**: Draft - Awaiting Decisions on Key Questions
+**Document Status**: ✅ **PHASE 1 COMPLETE** - Manual SMS Sending Implemented
 **Last Updated**: 2025-11-22
-**Next Review**: After answering questions 1-8
+**Current Status**: 
+- ✅ SMS Templates Manager - DONE
+- ✅ Individual SMS Sending - DONE
+- ✅ SMS Center (Send Tab) - DONE
+- ✅ Conversations Tab (2-way SMS) - DONE
+- ✅ iMessage-style UI - DONE
+- ⏳ History Tab - TODO
+- ⏳ Bulk SMS Sending - TODO
+- ⏳ SMS Automation - TODO (Future Phase)
+
+---
+
+## 🎉 Implementation Summary - What We Built
+
+### ✅ Sprint 3: SMS Center - COMPLETED
+
+**Features Built:**
+
+#### 1. SMS Templates Manager (`/settings`)
+- ✅ Full CRUD for SMS templates
+- ✅ Template categories (Appointment, Reminder, Confirmation, Follow-up, Custom)
+- ✅ Dynamic variables with live preview:
+  - Patient data: `{patient_name}`, `{patient_first_name}`, etc.
+  - Appointment data: `{appointment_date}`, `{appointment_time}`, etc.
+  - Clinician data: `{clinician_name}`, `{clinician_title}`
+  - Clinic data: `{clinic_name}`, `{clinic_phone}`, `{clinic_address}`
+  - Company branding: `{company_name}`, `{company_phone}`, `{company_website}`
+- ✅ Character counter (SMS segment calculator)
+- ✅ Clinic-specific templates (optional linking to specific clinics)
+- ✅ Active/inactive status toggle
+- ✅ Searchable dropdown menu for inserting variables
+- ✅ Live preview with sample data
+
+#### 2. SMS Center Page (`/sms`)
+Main navigation item with three tabs:
+
+**Tab 1: Send SMS** ✅ DONE
+- Individual patient sending:
+  - Patient search (all patients, paginated)
+  - Template selection with live preview
+  - Character counter & SMS segment counter
+  - Real-time message preview
+  - Backend template rendering (patient/appointment/clinic data)
+- Message composition:
+  - Auto-expanding textarea
+  - Scrollable message area
+  - Template variables automatically rendered by backend
+- Successfully sends SMS via existing `/api/sms/patient/<id>/send/` endpoint
+
+**Tab 2: Conversations** ✅ DONE
+- List of all patients with SMS history
+- Shows:
+  - Patient name
+  - Last message (truncated preview)
+  - Timestamp (relative: "Just now", "5m ago", "2h ago", etc.)
+  - Unread count badge
+- Click conversation → Opens 2-way SMS dialog
+- Beautiful **iMessage-style UI**:
+  - 🟢 Outgoing messages: Green bubbles (`#34C759`)
+  - ⚪ Incoming messages: Gray bubbles (`#E5E5EA` light mode, `#3A3A3C` dark mode)
+  - Clean, minimalist design (no blue indicators)
+  - Rounded bubble corners (18px radius)
+  - White text on colored backgrounds
+- Real-time conversation view
+- Message status indicators (delivered, failed, etc.)
+- Refresh on dialog close
+
+**Tab 3: History** ⏳ TODO
+- Currently shows "Coming soon" placeholder
+- Plan: Full SMS history table with filters
+
+#### 3. Backend Enhancements
+
+**SMS Template System:**
+- Model fields: `category`, `character_count`, `sms_segment_count`, `created_by`, `clinic` (optional)
+- Template preview API endpoint: `POST /api/sms/templates/{id}/preview/`
+- Backend renders templates with context before sending
+
+**SMS Sending:**
+- Individual patient sending: `POST /api/sms/patient/<uuid:patient_id>/send/`
+  - Accepts `template_id` (optional) - backend renders template
+  - Accepts `message` (optional) - sends plain text
+  - Fetches patient's phone numbers (supports new `phones` array format)
+  - Respects user-set default phone number
+  - Falls back to first mobile if no default set
+- Proper error handling and validation
+
+**Conversations API:**
+- `GET /api/sms/conversations/` - Lists all patients with SMS history
+- Returns: patient ID, name, last message, timestamp, unread count
+- Sorted by most recent message first
+- Handles both outbound (`SMSMessage`) and inbound (`SMSInbound`) messages
+
+**Inbound SMS Webhook:**
+- Updated `find_patient_by_phone()` to support:
+  - New `phones` array format: `contact_json.phones[{number, type, label}]`
+  - Legacy `mobile` and `phone` object formats
+  - Emergency contact numbers
+- Phone number normalization (handles +61, 0, etc.)
+- Properly links inbound SMS replies to patient records
+
+#### 4. UI/UX Design
+
+**iMessage-Style Chat Bubbles:**
+- Outgoing (sent by clinic):
+  - Background: Apple green (`#34C759`)
+  - Text: White
+  - Aligned right
+- Incoming (patient replies):
+  - Background: Light gray (`#E5E5EA`) in light mode, dark gray (`#3A3A3C`) in dark mode
+  - Text: Black in light mode, white in dark mode
+  - Aligned left
+- No blue indicators (clean design)
+- Timestamp below each message
+- Status icons for outbound (delivered/failed/pending)
+
+**Responsive Design:**
+- Scrollable SMS Center page
+- Scrollable message textarea (8-20 rows, auto-expanding)
+- Scrollable variable picker menu
+- All components use Mantine UI
+- Dark mode support throughout
+
+---
+
+## 🚀 What's Next - TODO
+
+### Priority 1: History Tab
+Build comprehensive SMS history view:
+- Table showing all sent/received messages
+- Filters: date range, patient, clinic, status
+- Search functionality
+- Export to CSV
+- Click to view full conversation
+
+### Priority 2: Bulk SMS Sending
+Implement bulk sending from "Send SMS" tab:
+- Recipient selection:
+  - By clinic
+  - By appointment date range
+  - By funding source
+  - All patients
+- Recipient preview (list + count)
+- Bulk send with progress tracking
+- Send in batches (rate limit handling)
+- Results summary (sent/failed counts)
+
+### Priority 3: Calendar Integration
+Add SMS buttons to appointment dialogs:
+- "Send Reminder" button
+- "Send Confirmation" button
+- Pre-fill template with appointment context
+- Link sent SMS to appointment record
+
+### Future: Automation (Phase 2)
+- SMS Automation settings page
+- Global auto-send toggle (OFF by default)
+- Celery scheduled tasks
+- Business hours enforcement
+- Automatic reminders (24h before)
+- Confirmation messages on booking
+- Follow-up reminders
+
+---
+
+## 🔧 Technical Details
+
+### Key Files Modified/Created:
+
+**Frontend:**
+- ✅ `frontend/app/sms/page.tsx` - SMS Center main page
+- ✅ `frontend/app/components/sms/SendSMSTab.tsx` - Send SMS tab
+- ✅ `frontend/app/components/sms/ConversationsTab.tsx` - Conversations list
+- ✅ `frontend/app/components/dialogs/SMSDialog.tsx` - 2-way chat dialog (updated for iMessage style)
+- ✅ `frontend/app/components/settings/SMSTemplateManager.tsx` - Template CRUD UI
+- ✅ `frontend/app/components/Navigation.tsx` - Added SMS Center to main nav
+- ✅ `frontend/app/utils/csrf.ts` - CSRF token utility
+
+**Backend:**
+- ✅ `backend/sms_integration/models.py` - Added template fields
+- ✅ `backend/sms_integration/serializers.py` - Template serializers
+- ✅ `backend/sms_integration/views.py` - Template preview endpoint
+- ✅ `backend/sms_integration/patient_views.py` - Send SMS, conversations list, template rendering
+- ✅ `backend/sms_integration/webhook_views.py` - Inbound SMS matching (phones array support)
+- ✅ `backend/sms_integration/urls.py` - API routes
+
+**Migrations:**
+- ✅ `0003_add_template_categories.py` - Added template fields
+- ✅ Additional migration for clinic ForeignKey on templates
+
+### Git Branch:
+- Current branch: `Cal-SMS`
+- Ready to merge to `main` when testing complete
+
+---
+
+**Document Status**: ✅ **PHASE 1 COMPLETE** - Manual SMS Sending Implemented
+**Last Updated**: 2025-11-22
+**Next Steps**: Build History Tab, then Bulk SMS Sending
 
