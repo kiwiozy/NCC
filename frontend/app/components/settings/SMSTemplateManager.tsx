@@ -426,7 +426,7 @@ export default function SMSTemplateManager() {
 
   const rows = templates.map((template) => (
     <Table.Tr key={template.id}>
-      <Table.Td>
+      <Table.Td style={{ width: '20%' }}>
         <Stack gap={4}>
           <Group gap="xs">
             <Text fw={500}>{template.name}</Text>
@@ -457,17 +457,17 @@ export default function SMSTemplateManager() {
           </Text>
         </Stack>
       </Table.Td>
-      <Table.Td>
-        <Text size="sm" lineClamp={2}>
+      <Table.Td style={{ width: '55%' }}>
+        <Text size="sm" lineClamp={3} style={{ whiteSpace: 'pre-wrap' }}>
           {template.message_template}
         </Text>
       </Table.Td>
-      <Table.Td style={{ whiteSpace: 'nowrap' }}>
+      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap' }}>
         <Badge color={template.is_active ? 'green' : 'gray'} variant="light">
           {template.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </Table.Td>
-      <Table.Td style={{ whiteSpace: 'nowrap' }}>
+      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap' }}>
         <Group gap="xs" wrap="nowrap">
           <ActionIcon
             variant="subtle"
@@ -524,10 +524,10 @@ export default function SMSTemplateManager() {
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th style={{ width: '25%' }}>Template</Table.Th>
-                  <Table.Th style={{ width: '45%' }}>Message Preview</Table.Th>
-                  <Table.Th style={{ width: '12%' }}>Status</Table.Th>
-                  <Table.Th style={{ width: '18%' }}>Actions</Table.Th>
+                  <Table.Th style={{ width: '20%' }}>Template</Table.Th>
+                  <Table.Th style={{ width: '55%' }}>Message Preview</Table.Th>
+                  <Table.Th style={{ width: '10%', whiteSpace: 'nowrap' }}>Status</Table.Th>
+                  <Table.Th style={{ width: '15%', whiteSpace: 'nowrap' }}>Actions</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
