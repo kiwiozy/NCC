@@ -88,9 +88,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         data = request.data
         is_recurring = data.get('is_recurring', False)
         
-        print(f"🔵 CREATE APPOINTMENT - is_recurring: {is_recurring}")
-        print(f"🔵 CREATE APPOINTMENT - data: {data}")
-        
         if not is_recurring:
             # Normal single appointment creation
             return super().create(request, *args, **kwargs)
@@ -208,11 +205,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         """
         Override partial_update (PATCH) to handle converting an existing event to recurring.
         """
-        print(f"🟢 PARTIAL_UPDATE METHOD CALLED", flush=True)
-        sys.stdout.flush()
-        print(f"🟢 request.data: {request.data}", flush=True)
-        sys.stdout.flush()
-        
         # Call the common update logic
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
@@ -222,11 +214,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         Override update to handle converting an existing event to recurring.
         If is_recurring changes from False to True, generate additional recurring events.
         """
-        print(f"🟢 UPDATE METHOD CALLED", flush=True)
-        sys.stdout.flush()
-        print(f"🟢 request.data: {request.data}", flush=True)
-        sys.stdout.flush()
-        
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
@@ -234,13 +221,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         was_recurring = instance.is_recurring
         is_now_recurring = request.data.get('is_recurring', False)
         
-        print(f"🔵 UPDATE APPOINTMENT - was_recurring: {was_recurring}, is_now_recurring: {is_now_recurring}", flush=True)
-        sys.stdout.flush()
-        
         if not was_recurring and is_now_recurring:
             # Converting to recurring - generate additional events
-            print(f"🔵 Converting existing event to recurring")
-            
             recurrence_pattern = request.data.get('recurrence_pattern')
             recurrence_end_date = request.data.get('recurrence_end_date')
             number_of_occurrences = request.data.get('number_of_occurrences', 4)
@@ -305,8 +287,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             else:
                 occurrences_to_create = number_of_occurrences - 1  # -1 because we already have the first one
             
-            print(f"🔵 Creating {occurrences_to_create} additional recurring events")
-            
             for i in range(occurrences_to_create):
                 current_start += increment
                 current_end = current_start + duration
@@ -326,8 +306,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                     recurrence_end_date=instance.recurrence_end_date,
                 )
                 appointments_created.append(new_appointment.id)
-            
-            print(f"🔵 Created {len(appointments_created)} additional events")
             
             # Return success response with info about created appointments
             serializer = self.get_serializer(instance)
