@@ -972,6 +972,11 @@ export default function ContactHeader({
           borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
         }}
       >
+        {/* Left: Count Display */}
+        <Text component="span" size="md" c="blue" fw={600}>
+          {displayCount} of {contactCount} found
+        </Text>
+        
         {/* Center: Selected Patient Name */}
         {selectedPatientName && (
           <Title 

@@ -1365,17 +1365,6 @@ export default function ContactsPage() {
           flexDirection: 'column',
           padding: 0,
         }}>
-          {/* Count Display - Above patient list */}
-          <Box style={{
-            padding: `${rem(12)} ${rem(16)}`,
-            borderBottom: `1px solid ${isDark ? '#373A40' : '#dee2e6'}`,
-            backgroundColor: isDark ? '#1A1B1E' : '#f8f9fa',
-          }}>
-            <Text size="md" c="blue" fw={600}>
-              {contacts.length} of {allContacts.length} found
-            </Text>
-          </Box>
-          
           <ScrollArea 
             style={{ 
               flex: 1,
