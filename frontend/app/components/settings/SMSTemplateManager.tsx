@@ -425,58 +425,89 @@ export default function SMSTemplateManager() {
     return colors[category] || 'gray';
   };
 
-  const rows = templates.map((template) => (
-    <Table.Tr key={template.id}>
-      <Table.Td style={{ width: '25%', verticalAlign: 'middle', padding: '16px' }}>
-        <Stack gap={6}>
-          <Text fw={500} size="sm">{template.name}</Text>
-          <Group gap="xs">
-            <Badge size="xs" variant="dot" color={getCategoryBadgeColor(template.category)}>
-              {template.category_display}
-            </Badge>
-            {template.clinic_name && template.clinic_name !== 'All Clinics' && (
-              <Badge size="xs" variant="outline" color="blue">
-                {template.clinic_name}
+  // Sort templates by clinic, with "All Clinics" first
+  const sortedTemplates = [...templates].sort((a, b) => {
+    const aClinic = a.clinic_name || 'All Clinics';
+    const bClinic = b.clinic_name || 'All Clinics';
+    
+    // "All Clinics" comes first
+    if (aClinic === 'All Clinics' && bClinic !== 'All Clinics') return -1;
+    if (aClinic !== 'All Clinics' && bClinic === 'All Clinics') return 1;
+    
+    // Then alphabetically by clinic name
+    return aClinic.localeCompare(bClinic);
+  });
+
+  // Generate rows with clinic dividers
+  const rows: JSX.Element[] = [];
+  let lastClinic = '';
+
+  sortedTemplates.forEach((template, index) => {
+    const currentClinic = template.clinic_name || 'All Clinics';
+    
+    // Add divider if clinic changed
+    if (currentClinic !== lastClinic) {
+      rows.push(
+        <Table.Tr key={`divider-${currentClinic}-${index}`}>
+          <Table.Td colSpan={4} style={{ padding: '12px 16px', backgroundColor: isDark ? '#2C2E33' : '#f8f9fa' }}>
+            <Text fw={600} size="sm" c={isDark ? 'gray.4' : 'gray.7'}>
+              {currentClinic}
+            </Text>
+          </Table.Td>
+        </Table.Tr>
+      );
+      lastClinic = currentClinic;
+    }
+
+    // Add template row
+    rows.push(
+      <Table.Tr key={template.id}>
+        <Table.Td style={{ width: '25%', verticalAlign: 'middle', padding: '16px' }}>
+          <Stack gap={6}>
+            <Text fw={500} size="sm">{template.name}</Text>
+            <Group gap="xs">
+              <Badge size="xs" variant="dot" color={getCategoryBadgeColor(template.category)}>
+                {template.category_display}
               </Badge>
-            )}
-          </Group>
-          <Text size="xs" c="dimmed">
-            {template.character_count} chars ({template.sms_segment_count} SMS)
+            </Group>
+            <Text size="xs" c="dimmed">
+              {template.character_count} chars ({template.sms_segment_count} SMS)
+            </Text>
+          </Stack>
+        </Table.Td>
+        <Table.Td style={{ width: '50%', verticalAlign: 'middle', padding: '16px' }}>
+          <Text size="sm" lineClamp={2} c="dimmed">
+            {template.message_template}
           </Text>
-        </Stack>
-      </Table.Td>
-      <Table.Td style={{ width: '50%', verticalAlign: 'middle', padding: '16px' }}>
-        <Text size="sm" lineClamp={2} c="dimmed">
-          {template.message_template}
-        </Text>
-      </Table.Td>
-      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
-        <Badge size="sm" color={template.is_active ? 'green' : 'gray'} variant="light">
-          {template.is_active ? 'Active' : 'Inactive'}
-        </Badge>
-      </Table.Td>
-      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
-        <Group gap="xs" wrap="nowrap">
-          <ActionIcon
-            variant="subtle"
-            color="blue"
-            onClick={() => handleEdit(template)}
-            title="Edit template"
-          >
-            <IconEdit size={16} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            onClick={() => handleDelete(template.id)}
-            title="Delete template"
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  ));
+        </Table.Td>
+        <Table.Td style={{ width: '10%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
+          <Badge size="sm" color={template.is_active ? 'green' : 'gray'} variant="light">
+            {template.is_active ? 'Active' : 'Inactive'}
+          </Badge>
+        </Table.Td>
+        <Table.Td style={{ width: '15%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
+          <Group gap="xs" wrap="nowrap">
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              onClick={() => handleEdit(template)}
+              title="Edit template"
+            >
+              <IconEdit size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={() => handleDelete(template.id)}
+              title="Delete template"
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Group>
+        </Table.Td>
+      </Table.Tr>
+    );
+  });
 
   return (
     <Container size="xl" py="xl">
