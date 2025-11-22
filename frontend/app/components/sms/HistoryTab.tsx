@@ -20,7 +20,7 @@ import {
 import { IconSearch, IconRefresh, IconEye, IconTrash } from '@tabler/icons-react';
 import { useMantineColorScheme } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import SMSDialog from '@/app/components/dialogs/SMSDialog';
+import SMSDialog from '../dialogs/SMSDialog';
 
 interface SMSHistoryRecord {
   id: string;
