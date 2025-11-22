@@ -234,6 +234,34 @@ class Appointment(models.Model):
         help_text="PO number, special billing instructions, etc."
     )
     
+    # ═══════════════════════════════════════════════════════════════════
+    # SMS CONFIRMATION TRACKING (Added Nov 2025)
+    # ═══════════════════════════════════════════════════════════════════
+    
+    sms_reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When was the SMS reminder sent?"
+    )
+    
+    sms_confirmed = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Has patient confirmed appointment via SMS reply?"
+    )
+    
+    sms_confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When did patient confirm via SMS?"
+    )
+    
+    sms_confirmation_message = models.TextField(
+        null=True,
+        blank=True,
+        help_text="The actual SMS reply message from patient (e.g., 'YES', 'CONFIRM')"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

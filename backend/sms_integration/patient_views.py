@@ -426,6 +426,11 @@ def patient_send_sms(request, patient_id):
         status='pending'
     )
     
+    # If this is an appointment reminder, track when it was sent
+    if appointment and template and template.category in ['appointment_reminder', 'appointment_confirmation']:
+        appointment.sms_reminder_sent_at = timezone.now()
+        appointment.save(update_fields=['sms_reminder_sent_at'])
+    
     # Try to send via SMS service (if available)
     try:
         from .services import SMSService

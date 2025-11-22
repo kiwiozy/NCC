@@ -200,12 +200,41 @@ def sms_inbound(request):
             is_processed=False
         )
         
-        # Auto-detect simple replies
+        # Auto-detect simple replies and confirmation
         message_upper = message_text.upper().strip()
-        if message_upper in ['YES', 'Y', 'OK', 'CONFIRM']:
+        is_confirmation = message_upper in ['YES', 'Y', 'OK', 'CONFIRM', 'CONFIRMED', 'CONFIRMED APPOINTMENT', 'CONFIRMED']
+        
+        if is_confirmation:
             sms_inbound.notes = 'Auto-detected: Confirmation'
+            sms_inbound.save()
+            
+            # Try to link to upcoming appointment and mark as confirmed
+            if patient:
+                from appointments.models import Appointment
+                from datetime import timedelta
+                
+                # Find the patient's next upcoming appointment (within next 30 days)
+                upcoming_appointment = Appointment.objects.filter(
+                    patient=patient,
+                    start_time__gte=timezone.now(),
+                    start_time__lte=timezone.now() + timedelta(days=30),
+                    status='scheduled'
+                ).order_by('start_time').first()
+                
+                if upcoming_appointment:
+                    # Mark appointment as confirmed
+                    upcoming_appointment.sms_confirmed = True
+                    upcoming_appointment.sms_confirmed_at = timezone.now()
+                    upcoming_appointment.sms_confirmation_message = message_text
+                    upcoming_appointment.save(update_fields=['sms_confirmed', 'sms_confirmed_at', 'sms_confirmation_message'])
+                    
+                    logger.info(f"[SMS Webhook] ✓ Appointment confirmed: {upcoming_appointment.id} for {patient.get_full_name()}")
+                    sms_inbound.notes += f" - Linked to appointment {upcoming_appointment.id}"
+                    sms_inbound.save()
+        
         elif message_upper in ['NO', 'N', 'CANCEL']:
             sms_inbound.notes = 'Auto-detected: Cancellation'
+            sms_inbound.save()
         elif message_upper in ['STOP', 'UNSUBSCRIBE', 'OPT OUT']:
             sms_inbound.notes = 'Auto-detected: Opt-out request'
             sms_inbound.save()

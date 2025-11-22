@@ -75,6 +75,11 @@ interface AppointmentDetails {
   recurrence_pattern: string | null;
   recurrence_group_id: string | null;
   recurrence_end_date: string | null;
+  // SMS Confirmation fields
+  sms_reminder_sent_at: string | null;
+  sms_confirmed: boolean;
+  sms_confirmed_at: string | null;
+  sms_confirmation_message: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -817,6 +822,22 @@ export default function AppointmentDetailsDialog({
                     <Badge color={getStatusColor(appointment.status)} variant="light" size="lg">
                       {STATUS_OPTIONS.find((s) => s.value === appointment.status)?.label || appointment.status}
                     </Badge>
+                    {appointment.sms_confirmed && (
+                      <Badge color="green" variant="light" size="sm" leftSection="✓">
+                        SMS Confirmed
+                      </Badge>
+                    )}
+                    {appointment.sms_confirmed_at && (
+                      <Text size="xs" c="dimmed">
+                        Confirmed {new Date(appointment.sms_confirmed_at).toLocaleDateString('en-AU', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                        {appointment.sms_confirmation_message && ` - "${appointment.sms_confirmation_message}"`}
+                      </Text>
+                    )}
                     {appointment.needs_followup_reminder && (
                       <Badge color="yellow" variant="light" size="sm">
                         ⏰ Needs Follow-up

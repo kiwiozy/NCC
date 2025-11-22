@@ -467,6 +467,17 @@ export default function ClinicCalendar() {
             }}
             eventOverlap={true}
             slotEventOverlap={false}
+            eventContent={(eventInfo) => {
+              const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
+              return (
+                <div style={{ overflow: 'hidden', fontSize: '12px', padding: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {isSmsConfirmed && (
+                    <span style={{ color: '#22c55e', fontSize: '14px', fontWeight: 'bold' }} title="Patient confirmed via SMS">✓</span>
+                  )}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eventInfo.event.title}</span>
+                </div>
+              );
+            }}
           />
         </div>
       </Paper>

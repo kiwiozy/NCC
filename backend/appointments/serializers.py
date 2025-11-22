@@ -124,6 +124,11 @@ class AppointmentCalendarSerializer(serializers.ModelSerializer):
             'status': obj.status,
             'reason': obj.reason,
             'notes': obj.notes,
+            # SMS Confirmation fields
+            'smsReminderSentAt': obj.sms_reminder_sent_at.isoformat() if obj.sms_reminder_sent_at else None,
+            'smsConfirmed': obj.sms_confirmed,
+            'smsConfirmedAt': obj.sms_confirmed_at.isoformat() if obj.sms_confirmed_at else None,
+            'smsConfirmationMessage': obj.sms_confirmation_message,
         }
 
 
