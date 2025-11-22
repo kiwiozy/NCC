@@ -324,6 +324,15 @@ export default function AppointmentDetailsDialog({
       });
       const csrfData = await csrfResponse.json();
 
+      const payload = {
+        status: editStatus,
+        appointment_type: editAppointmentType || null, // Send null instead of empty string
+        notes: editNotes,
+        needs_followup_reminder: editNeedsFollowup,
+      };
+      
+      console.log('Saving appointment with payload:', payload);
+
       const response = await fetch(`https://localhost:8000/api/appointments/${appointment.id}/`, {
         method: 'PATCH',
         headers: {
@@ -331,12 +340,7 @@ export default function AppointmentDetailsDialog({
           'X-CSRFToken': csrfData.csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({
-          status: editStatus,
-          appointment_type: editAppointmentType || null, // Send null instead of empty string
-          notes: editNotes,
-          needs_followup_reminder: editNeedsFollowup,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -350,6 +354,8 @@ export default function AppointmentDetailsDialog({
         });
         if (onUpdate) onUpdate();
       } else {
+        const errorData = await response.json();
+        console.error('Server error response:', errorData);
         throw new Error('Failed to update appointment');
       }
     } catch (error) {

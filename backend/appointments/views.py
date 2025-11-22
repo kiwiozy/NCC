@@ -316,6 +316,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
         
         # Normal update (not converting to recurring)
+        kwargs['partial'] = partial
         return super().update(request, *args, **kwargs)
     
     def destroy(self, request, *args, **kwargs):
