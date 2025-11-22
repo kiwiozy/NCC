@@ -1441,7 +1441,7 @@ export default function ContactsPage() {
                         {contact.clinic}
                       </Text>
                       {contact.funding && (
-                        <Badge size="xs" variant="light">
+                        <Badge size="xs" variant="filled" color="blue">
                           {contact.funding}
                         </Badge>
                       )}
