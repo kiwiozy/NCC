@@ -30,6 +30,15 @@ import {
   IconArrowDown,
 } from '@tabler/icons-react';
 
+// Helper function to get CSRF token
+const getCsrfToken = async (): Promise<string> => {
+  const response = await fetch('https://localhost:8000/api/auth/csrf-token/', {
+    credentials: 'include',
+  });
+  const data = await response.json();
+  return data.csrfToken;
+};
+
 interface FundingSource {
   id: string;
   name: string;
@@ -64,7 +73,9 @@ export default function FundingSourcesSettings() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://localhost:8000/api/settings/funding-sources/');
+      const response = await fetch('https://localhost:8000/api/settings/funding-sources/', {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to load funding sources');
       }
@@ -108,6 +119,7 @@ export default function FundingSourcesSettings() {
     setSuccess(null);
 
     try {
+      const csrfToken = await getCsrfToken();
       const url = editingSource
         ? `https://localhost:8000/api/settings/funding-sources/${editingSource.id}/`
         : 'https://localhost:8000/api/settings/funding-sources/';
@@ -123,8 +135,10 @@ export default function FundingSourcesSettings() {
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify(payload),
       });
@@ -161,8 +175,13 @@ export default function FundingSourcesSettings() {
     setItemToDelete(null);
 
     try {
+      const csrfToken = await getCsrfToken();
       const response = await fetch(`https://localhost:8000/api/settings/funding-sources/${id}/`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       if (!response.ok) {
@@ -191,16 +210,25 @@ export default function FundingSourcesSettings() {
     const newOrder = targetSource.order;
 
     try {
+      const csrfToken = await getCsrfToken();
       // Swap orders
       const response1 = await fetch(`https://localhost:8000/api/settings/funding-sources/${source.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         body: JSON.stringify({ order: newOrder }),
       });
 
       const response2 = await fetch(`https://localhost:8000/api/settings/funding-sources/${targetSource.id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         body: JSON.stringify({ order: source.order }),
       });
 
