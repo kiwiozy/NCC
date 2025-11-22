@@ -32,7 +32,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import { getCsrfToken } from '@/app/utils/csrf';
+import { getCsrfToken } from '../../utils/csrf';
 
 interface Patient {
   id: string;
