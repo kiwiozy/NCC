@@ -636,11 +636,12 @@ export default function ClinicCalendar() {
         <style dangerouslySetInnerHTML={{__html: `
           /* Add spacing between events in day and week views */
           .fc-timegrid-event-harness {
-            padding: 2.5px !important;
+            padding: 3px !important;
           }
           
           .fc-timegrid-event {
             border-radius: 4px !important;
+            margin: 2px 0 !important;
           }
           
           /* Add vertical lines between days in week view */
