@@ -208,29 +208,59 @@ def sms_inbound(request):
             sms_inbound.notes = 'Auto-detected: Confirmation'
             sms_inbound.save()
             
-            # Try to link to upcoming appointment and mark as confirmed
-            if patient:
+            # Try to link to specific appointment via the original SMS message
+            appointment_to_confirm = None
+            
+            # OPTION A: If this is a reply to a specific SMS (best method)
+            if linked_message and linked_message.appointment:
+                appointment_to_confirm = linked_message.appointment
+                logger.info(f"[SMS Webhook] ✓ Found appointment via linked message: {appointment_to_confirm.id}")
+            
+            # OPTION B: Fallback - find appointment with recent reminder sent (within last 7 days)
+            elif patient:
                 from appointments.models import Appointment
                 from datetime import timedelta
                 
-                # Find the patient's next upcoming appointment (within next 30 days)
-                upcoming_appointment = Appointment.objects.filter(
+                # Find appointments that had reminders sent recently
+                recent_reminder_cutoff = timezone.now() - timedelta(days=7)
+                
+                appointment_to_confirm = Appointment.objects.filter(
+                    patient=patient,
+                    start_time__gte=timezone.now(),  # Future appointments only
+                    sms_reminder_sent_at__gte=recent_reminder_cutoff,  # Had reminder sent in last 7 days
+                    sms_confirmed=False,  # Not already confirmed
+                    status='scheduled'
+                ).order_by('start_time').first()  # Earliest upcoming
+                
+                if appointment_to_confirm:
+                    logger.info(f"[SMS Webhook] ✓ Found appointment via recent reminder: {appointment_to_confirm.id}")
+            
+            # OPTION C: Last fallback - find earliest upcoming appointment
+            if not appointment_to_confirm and patient:
+                from appointments.models import Appointment
+                from datetime import timedelta
+                
+                appointment_to_confirm = Appointment.objects.filter(
                     patient=patient,
                     start_time__gte=timezone.now(),
                     start_time__lte=timezone.now() + timedelta(days=30),
+                    sms_confirmed=False,
                     status='scheduled'
                 ).order_by('start_time').first()
                 
-                if upcoming_appointment:
-                    # Mark appointment as confirmed
-                    upcoming_appointment.sms_confirmed = True
-                    upcoming_appointment.sms_confirmed_at = timezone.now()
-                    upcoming_appointment.sms_confirmation_message = message_text
-                    upcoming_appointment.save(update_fields=['sms_confirmed', 'sms_confirmed_at', 'sms_confirmation_message'])
-                    
-                    logger.info(f"[SMS Webhook] ✓ Appointment confirmed: {upcoming_appointment.id} for {patient.get_full_name()}")
-                    sms_inbound.notes += f" - Linked to appointment {upcoming_appointment.id}"
-                    sms_inbound.save()
+                if appointment_to_confirm:
+                    logger.info(f"[SMS Webhook] ✓ Found appointment via earliest upcoming: {appointment_to_confirm.id}")
+            
+            # Mark appointment as confirmed
+            if appointment_to_confirm:
+                appointment_to_confirm.sms_confirmed = True
+                appointment_to_confirm.sms_confirmed_at = timezone.now()
+                appointment_to_confirm.sms_confirmation_message = message_text
+                appointment_to_confirm.save(update_fields=['sms_confirmed', 'sms_confirmed_at', 'sms_confirmation_message'])
+                
+                logger.info(f"[SMS Webhook] ✓ Appointment confirmed: {appointment_to_confirm.id} for {patient.get_full_name()}")
+                sms_inbound.notes += f" - Linked to appointment {appointment_to_confirm.id}"
+                sms_inbound.save()
         
         elif message_upper in ['NO', 'N', 'CANCEL']:
             sms_inbound.notes = 'Auto-detected: Cancellation'
