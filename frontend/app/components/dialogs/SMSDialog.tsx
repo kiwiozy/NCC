@@ -726,18 +726,7 @@ function MessageBubble({
         gap: rem(8),
       }}
     >
-      {/* Unread indicator (blue dot) - only for inbound messages */}
-      {isUnread && (
-        <Box
-          style={{
-            width: rem(8),
-            height: rem(8),
-            borderRadius: '50%',
-            backgroundColor: '#228BE6',
-            flexShrink: 0,
-          }}
-        />
-      )}
+      {/* No unread indicator - keep it clean like iMessage */}
       
       <Box
         style={{
@@ -754,8 +743,8 @@ function MessageBubble({
             : isDark 
             ? '#FFFFFF' // White text in dark mode
             : '#000000', // Black text in light mode
-          fontWeight: isUnread ? 600 : 400, // Bold text for unread messages
-          boxShadow: isUnread ? `0 0 0 2px ${isDark ? '#228BE6' : '#228BE6'}` : 'none', // Subtle border for unread
+          fontWeight: 400, // Normal weight for all messages
+          boxShadow: 'none', // No border - clean iMessage style
         }}
       >
         {/* Phone Label (if different from default) */}
