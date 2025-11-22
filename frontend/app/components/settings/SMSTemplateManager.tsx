@@ -426,7 +426,7 @@ export default function SMSTemplateManager() {
 
   const rows = templates.map((template) => (
     <Table.Tr key={template.id}>
-      <Table.Td style={{ width: '25%', verticalAlign: 'middle' }}>
+      <Table.Td style={{ width: '25%', verticalAlign: 'middle', padding: '16px' }}>
         <Stack gap={6}>
           <Text fw={500} size="sm">{template.name}</Text>
           <Group gap="xs">
@@ -439,19 +439,22 @@ export default function SMSTemplateManager() {
               </Badge>
             )}
           </Group>
+          <Text size="xs" c="dimmed">
+            {template.character_count} chars ({template.sms_segment_count} SMS)
+          </Text>
         </Stack>
       </Table.Td>
-      <Table.Td style={{ width: '50%', verticalAlign: 'middle' }}>
+      <Table.Td style={{ width: '50%', verticalAlign: 'middle', padding: '16px' }}>
         <Text size="sm" lineClamp={2} c="dimmed">
           {template.message_template}
         </Text>
       </Table.Td>
-      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+      <Table.Td style={{ width: '10%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
         <Badge size="sm" color={template.is_active ? 'green' : 'gray'} variant="light">
           {template.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </Table.Td>
-      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+      <Table.Td style={{ width: '15%', whiteSpace: 'nowrap', verticalAlign: 'middle', padding: '16px' }}>
         <Group gap="xs" wrap="nowrap">
           <ActionIcon
             variant="subtle"
