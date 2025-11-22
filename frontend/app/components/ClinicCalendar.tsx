@@ -336,8 +336,20 @@ export default function ClinicCalendar() {
 
     // Check if this is an all-day click
     const isAllDay = info.allDay || false;
+    
+    // Get current view
+    const currentView = calendarRef.current?.getApi().view.type;
 
-    // If clicked within 300ms, it's a double-click
+    // If in month view, navigate to week view for that date (single click)
+    if (currentView === 'dayGridMonth') {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        calendarApi.changeView('timeGridWeek', info.date);
+      }
+      return; // Don't process double-click in month view
+    }
+
+    // If clicked within 300ms, it's a double-click (for day/week views only)
     if (timeSinceLastClick < 300 && lastClickInfo?.dateStr === info.dateStr) {
       // Double-click detected
       
@@ -478,6 +490,16 @@ export default function ClinicCalendar() {
           /* Today column highlight */
           .fc-day-today {
             background-color: rgba(51, 154, 240, 0.08) !important;
+          }
+          
+          /* Make date cells clickable in month view */
+          .fc-dayGridMonth-view .fc-daygrid-day {
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+          
+          .fc-dayGridMonth-view .fc-daygrid-day:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
           }
         `}} />
         <div style={{ height: 'calc(100vh - 200px)' }}>
