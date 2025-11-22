@@ -117,10 +117,13 @@ def get_available_phone_numbers(patient):
                 label = phone_obj.get('label', 'Unknown')
                 
                 if number:
+                    # Check for default flag (both 'default' and 'is_default')
+                    is_default = phone_obj.get('is_default', False) or phone_obj.get('default', False)
+                    
                     phones.append({
                         'value': number,
                         'label': f"{phone_type.title()} - {label}",
-                        'is_default': phone_obj.get('is_default', False),
+                        'is_default': is_default,
                         'type': phone_type
                     })
     
@@ -132,17 +135,19 @@ def get_available_phone_numbers(patient):
             phones.append({
                 'value': mobile,
                 'label': 'Mobile - Home',
-                'is_default': True,  # If it's the only one, it's default
+                'is_default': len(phones) == 0,  # First mobile is default if no phones array
                 'type': 'mobile'
             })
         elif isinstance(mobile, dict):
             # New format: nested objects
             for key, value in mobile.items():
                 if isinstance(value, dict) and 'value' in value:
+                    # Check for 'default' flag in the object
+                    is_default = value.get('default', False)
                     phones.append({
                         'value': value['value'],
                         'label': f"Mobile - {key.title()}",
-                        'is_default': value.get('default', False),
+                        'is_default': is_default,
                         'type': 'mobile'
                     })
                 elif isinstance(value, str):
@@ -169,10 +174,12 @@ def get_available_phone_numbers(patient):
             # New format: nested objects
             for key, value in phone.items():
                 if isinstance(value, dict) and 'value' in value:
+                    # Check for 'default' flag in the object
+                    is_default = value.get('default', False)
                     phones.append({
                         'value': value['value'],
                         'label': f"Phone - {key.title()}",
-                        'is_default': value.get('default', False),
+                        'is_default': is_default,
                         'type': 'phone'
                     })
                 elif isinstance(value, str):
