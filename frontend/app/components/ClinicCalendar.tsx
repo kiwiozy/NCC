@@ -469,6 +469,7 @@ export default function ClinicCalendar() {
             slotEventOverlap={false}
             eventContent={(eventInfo) => {
               const isSmsConfirmed = eventInfo.event.extendedProps?.smsConfirmed;
+              
               return (
                 <div style={{ 
                   overflow: 'hidden', 
